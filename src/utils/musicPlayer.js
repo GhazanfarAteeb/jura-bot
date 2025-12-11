@@ -1,5 +1,4 @@
 import { Player, QueryType } from 'discord-player';
-import { DefaultExtractors } from '@discord-player/extractor';
 import client from '../index.js';
 import { playerConfig } from '../config/playerConfig.js';
 
@@ -10,17 +9,16 @@ export const player = new Player(client, playerConfig);
 try {
     console.log('🔧 Loading extractors...');
     
-    // Load all default extractors using loadMulti (loadDefault is deprecated)
-    // Configure extractors with bridge options for better accuracy
-    await player.extractors.loadMulti(DefaultExtractors, {
-        // Spotify bridge options - prefer Topic channels and exact matches
-        createStream: async (ext) => {
-            // If this is a Spotify bridge to YouTube, prefer Topic channels
-            return ext;
-        }
-    });
+    // Load only YouTube and SoundCloud extractors
+    // We'll handle Spotify manually with better search logic in play command
+    const { YouTubeExtractor, SoundCloudExtractor } = await import('@discord-player/extractor');
     
-    console.log('✅ All extractors loaded successfully');
+    await player.extractors.register(YouTubeExtractor, {});
+    console.log('✅ YouTube extractor loaded');
+    
+    await player.extractors.register(SoundCloudExtractor, {});
+    console.log('✅ SoundCloud extractor loaded');
+    
     console.log(`📊 Total registered extractors: ${player.extractors.size}`);
     
     // List all registered extractors
