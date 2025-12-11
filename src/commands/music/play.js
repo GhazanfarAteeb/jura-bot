@@ -5,7 +5,7 @@ import { errorEmbed, successEmbed } from '../../utils/embeds.js';
 export default {
     name: 'play',
     aliases: ['p'],
-    description: 'Play music from Deezer, Spotify, Tidal, Apple Music, SoundCloud, and more',
+    description: 'Play music from YouTube, Spotify, and Apple Music',
     usage: 'play <song name | url>',
     category: 'music',
     cooldown: 3,
@@ -20,7 +20,7 @@ export default {
         
         if (!args.length) {
             return message.reply({
-                embeds: [await errorEmbed(guildId, 'Missing Arguments', 'Please provide a song name or URL!\n\nUsage: `!play <song|url>`\n\nExamples:\n• `!play never gonna give you up`\n• `!play https://youtube.com/watch?v=...`\n• `!play https://open.spotify.com/track/...`')]
+                embeds: [await errorEmbed(guildId, 'Missing Arguments', 'Please provide a song name or URL!\n\n**Usage:** `R!play <song|url>`\n\n**Examples:**\n• `R!play never gonna give you up`\n• `R!play rick astley - never gonna give you up`\n• `R!play https://youtube.com/watch?v=...`\n• `R!play https://open.spotify.com/track/...`\n• `R!play https://music.apple.com/...`\n\n**Supported Platforms:**\n✅ YouTube (search or URL)\n✅ Spotify (URL only)\n✅ Apple Music (URL only)')]
             });
         }
         
@@ -31,17 +31,42 @@ export default {
         try {
             await message.channel.sendTyping();
             
+            // Determine search engine based on query type
+            let searchEngine = QueryType.AUTO;
+            let searchQuery = query;
+            
+            // Check if it's a URL
+            if (query.includes('http://') || query.includes('https://')) {
+                // Direct URL - use AUTO to detect platform
+                searchEngine = QueryType.AUTO;
+            } else {
+                // Plain text search - prioritize YouTube for best results
+                searchEngine = QueryType.YOUTUBE_SEARCH;
+                
+                // If query looks like "artist - song", format it better
+                if (query.includes(' - ')) {
+                    searchQuery = query; // Keep as is
+                } else {
+                    // Add quotes for exact match on YouTube
+                    searchQuery = query;
+                }
+            }
+            
+            console.log(`🔍 Searching: "${searchQuery}" using ${searchEngine}`);
+            
             // Search for the track
-            const searchResult = await player.search(query, {
+            const searchResult = await player.search(searchQuery, {
                 requestedBy: message.author,
-                searchEngine: QueryType.AUTO
+                searchEngine: searchEngine
             });
             
             if (!searchResult || !searchResult.tracks.length) {
                 return message.reply({
-                    embeds: [await errorEmbed(guildId, 'No results found!')]
+                    embeds: [await errorEmbed(guildId, 'No results found!', `Could not find: **${query}**\n\nTry:\n• Being more specific (artist name + song name)\n• Using a direct URL (Spotify, YouTube, Apple Music)`)]
                 });
             }
+            
+            console.log(`✅ Found: ${searchResult.tracks[0].title} by ${searchResult.tracks[0].author}`);
             
             // Create or get queue
             const queue = player.nodes.create(message.guild, {
