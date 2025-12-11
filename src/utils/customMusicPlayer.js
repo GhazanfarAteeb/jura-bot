@@ -5,7 +5,8 @@ import {
     AudioPlayerStatus,
     VoiceConnectionStatus,
     entersState,
-    getVoiceConnection
+    getVoiceConnection,
+    StreamType
 } from '@discordjs/voice';
 import { createReadStream } from 'fs';
 import play from 'play-dl';
@@ -63,22 +64,25 @@ class MusicQueue {
             console.log(`🎵 Playing: ${song.title} by ${song.author}`);
             
             // Get stream URL based on source
-            let stream;
+            let streamUrl;
             if (song.url.includes('spotify.com')) {
-                stream = await this.getSpotifyStream(song);
+                streamUrl = await this.getSpotifyStream(song);
             } else if (song.url.includes('youtube.com') || song.url.includes('youtu.be')) {
-                stream = await this.getYouTubeStream(song.url);
+                streamUrl = await this.getYouTubeStream(song.url);
             } else {
-                stream = await this.getGenericStream(song.url);
+                streamUrl = await this.getGenericStream(song.url);
             }
             
-            if (!stream) {
+            if (!streamUrl) {
                 throw new Error('Failed to get audio stream');
             }
             
-            // Create audio resource
-            const resource = createAudioResource(stream, {
-                inlineVolume: true
+            console.log('🎵 Creating audio resource from stream URL');
+            
+            // Create audio resource from the stream URL
+            const resource = createAudioResource(streamUrl, {
+                inlineVolume: true,
+                inputType: StreamType.Arbitrary
             });
             
             // Set volume
@@ -131,8 +135,29 @@ class MusicQueue {
     
     async getYouTubeStream(url) {
         try {
-            const stream = await play.stream(url);
-            return stream.stream;
+            console.log('🔗 Getting stream for URL:', url);
+            
+            // Use youtube-dl-exec for more reliable streaming
+            const info = await ytdl(url, {
+                dumpSingleJson: true,
+                noCheckCertificates: true,
+                noWarnings: true,
+                preferFreeFormats: true,
+                addHeader: ['referer:youtube.com', 'user-agent:googlebot']
+            });
+            
+            // Get the best audio format URL
+            const audioFormat = info.formats.find(f => 
+                f.acodec && f.acodec !== 'none' && !f.vcodec
+            ) || info.formats.find(f => f.acodec && f.acodec !== 'none');
+            
+            if (!audioFormat || !audioFormat.url) {
+                throw new Error('No audio format found');
+            }
+            
+            console.log('✅ Got audio stream URL');
+            return audioFormat.url;
+            
         } catch (error) {
             console.error('❌ Error getting YouTube stream:', error);
             return null;
@@ -141,8 +166,8 @@ class MusicQueue {
     
     async getGenericStream(url) {
         try {
-            const stream = await play.stream(url);
-            return stream.stream;
+            console.log('🔗 Getting generic stream for URL:', url);
+            return await this.getYouTubeStream(url);
         } catch (error) {
             console.error('❌ Error getting generic stream:', error);
             return null;
