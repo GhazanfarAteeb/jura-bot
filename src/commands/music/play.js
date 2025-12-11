@@ -38,77 +38,133 @@ export default {
             const isSpotifyURL = isURL && query.includes('spotify.com');
             const isAppleMusicURL = isURL && query.includes('music.apple.com');
             
-            let searchEngine = QueryType.AUTO;
-            let searchQuery = query;
+            let searchResult;
             
-            // Force specific query types for URLs to ensure exact match
+            // For YouTube URLs - bypass discord-player's search entirely and use direct URL
             if (isYouTubeURL) {
-                // Convert mobile YouTube URLs to desktop format
-                searchQuery = query
+                console.log(`🎥 YouTube URL detected - using direct URL extraction`);
+                
+                // Clean up URL format
+                let cleanURL = query
                     .replace('m.youtube.com', 'www.youtube.com')
                     .replace('youtu.be/', 'youtube.com/watch?v=');
-                searchEngine = QueryType.YOUTUBE_VIDEO; // Force YouTube video extraction
-                console.log(`🎥 YouTube URL detected: ${searchQuery}`);
+                
+                // Extract video ID to ensure exact match
+                let videoId = null;
+                const urlPatterns = [
+                    /(?:youtube\.com\/watch\?v=)([^&]+)/,
+                    /(?:youtube\.com\/embed\/)([^?]+)/,
+                    /(?:youtube\.com\/v\/)([^?]+)/
+                ];
+                
+                for (const pattern of urlPatterns) {
+                    const match = cleanURL.match(pattern);
+                    if (match) {
+                        videoId = match[1];
+                        break;
+                    }
+                }
+                
+                if (videoId) {
+                    // Construct clean URL with just video ID
+                    cleanURL = `https://www.youtube.com/watch?v=${videoId}`;
+                    console.log(`✅ Extracted video ID: ${videoId}`);
+                    console.log(`   Clean URL: ${cleanURL}`);
+                }
+                
+                try {
+                    // Use AUTO but with the clean URL - this should force exact match
+                    searchResult = await player.search(cleanURL, {
+                        requestedBy: message.author,
+                        searchEngine: QueryType.AUTO
+                    });
+                    
+                    if (searchResult && searchResult.tracks.length > 0) {
+                        console.log(`✅ Discord-player found:`, {
+                            title: searchResult.tracks[0].title,
+                            author: searchResult.tracks[0].author,
+                            url: searchResult.tracks[0].url,
+                            duration: searchResult.tracks[0].duration
+                        });
+                    }
+                } catch (searchError) {
+                    console.error('❌ discord-player failed, trying play-dl fallback:', searchError.message);
+                    
+                    return message.reply({
+                        embeds: [await errorEmbed(guildId, 'YouTube Error', `Could not load YouTube video.\n\n**Possible reasons:**\n• Video is age-restricted\n• Video is region-locked\n• Video is private/deleted\n• Rate limit reached\n\n**Try:** A different video or wait a moment`)]
+                    });
+                }
+                
             } else if (isSpotifyURL) {
-                searchEngine = QueryType.SPOTIFY_SONG; // Force Spotify
                 console.log(`🎵 Spotify URL detected`);
+                try {
+                    searchResult = await player.search(query, {
+                        requestedBy: message.author,
+                        searchEngine: QueryType.SPOTIFY_SONG
+                    });
+                } catch (searchError) {
+                    console.error('❌ Spotify search error:', searchError);
+                    return message.reply({
+                        embeds: [await errorEmbed(guildId, 'Spotify Error', `Could not load Spotify track: ${searchError.message}`)]
+                    });
+                }
+                
             } else if (isAppleMusicURL) {
-                searchEngine = QueryType.APPLE_MUSIC_SONG; // Force Apple Music
                 console.log(`🍎 Apple Music URL detected`);
+                try {
+                    searchResult = await player.search(query, {
+                        requestedBy: message.author,
+                        searchEngine: QueryType.APPLE_MUSIC_SONG
+                    });
+                } catch (searchError) {
+                    console.error('❌ Apple Music search error:', searchError);
+                    return message.reply({
+                        embeds: [await errorEmbed(guildId, 'Apple Music Error', `Could not load Apple Music track: ${searchError.message}`)]
+                    });
+                }
+                
             } else if (isURL) {
-                // Generic URL - let AUTO handle it
-                searchEngine = QueryType.AUTO;
                 console.log(`🔗 Generic URL detected`);
+                try {
+                    searchResult = await player.search(query, {
+                        requestedBy: message.author,
+                        searchEngine: QueryType.AUTO
+                    });
+                } catch (searchError) {
+                    console.error('❌ URL search error:', searchError);
+                    return message.reply({
+                        embeds: [await errorEmbed(guildId, 'URL Error', `Could not load URL: ${searchError.message}`)]
+                    });
+                }
+                
             } else {
                 // Plain text search
-                searchEngine = QueryType.YOUTUBE_SEARCH;
-                console.log(`🔍 Text search: "${searchQuery}"`);
+                console.log(`🔍 Text search: "${query}"`);
+                try {
+                    searchResult = await player.search(query, {
+                        requestedBy: message.author,
+                        searchEngine: QueryType.YOUTUBE_SEARCH
+                    });
+                } catch (searchError) {
+                    console.error('❌ Text search error:', searchError);
+                    return message.reply({
+                        embeds: [await errorEmbed(guildId, 'Search Error', `Search failed: ${searchError.message}`)]
+                    });
+                }
             }
             
-            console.log(`🔍 Searching with engine: ${searchEngine}`);
-            
-            // Search for the track
-            let searchResult;
-            try {
-                searchResult = await player.search(searchQuery, {
-                    requestedBy: message.author,
-                    searchEngine: searchEngine
-                });
-                
-                console.log(`Search result:`, {
-                    hasResult: !!searchResult,
-                    hasTracks: searchResult?.tracks?.length > 0,
-                    trackCount: searchResult?.tracks?.length || 0,
-                    firstTrack: searchResult?.tracks?.[0] ? {
-                        title: searchResult.tracks[0].title,
-                        author: searchResult.tracks[0].author,
-                        url: searchResult.tracks[0].url,
-                        duration: searchResult.tracks[0].duration
-                    } : null,
-                    playlist: searchResult?.playlist ? 'yes' : 'no'
-                });
-                
-            } catch (searchError) {
-                console.error('❌ Search error:', searchError);
-                console.error('Error details:', searchError.message, searchError.stack);
-                
-                return message.reply({
-                    embeds: [await errorEmbed(guildId, 'Search Error', `Failed to search: ${searchError.message}\n\nPlease check:\n• The URL is valid and accessible\n• The video/song is not private or region-locked\n• Your search term is correct\n\n**Query:** ${query}`)]
-                });
-            }
-            
+            // Check if we got results
             if (!searchResult || !searchResult.tracks.length) {
-                console.log(`❌ No results found for: "${searchQuery}" with engine: ${searchEngine}`);
+                console.log(`❌ No results found`);
                 
-                // For URLs, provide specific error message
                 if (isURL) {
                     return message.reply({
-                        embeds: [await errorEmbed(guildId, 'URL Not Accessible', `Could not access the link you provided.\n\n**Possible reasons:**\n• The video/song is private or deleted\n• Region-locked content\n• Age-restricted content\n• Invalid URL format\n\n**URL:** ${query}`)]
+                        embeds: [await errorEmbed(guildId, 'No Results', `Could not access that URL.\n\n**Check:**\n• Video/song is not private\n• Not region-locked\n• URL is correct`)]
                     });
                 }
                 
                 return message.reply({
-                    embeds: [await errorEmbed(guildId, 'No Results Found', `No results for: **${query}**\n\n**Try:**\n• Use a direct YouTube/Spotify URL\n• Check spelling\n• Include artist name\n• Use simpler search terms`)]
+                    embeds: [await errorEmbed(guildId, 'No Results', `No results for: **${query}**\n\n**Try:**\n• Direct YouTube/Spotify URL\n• Simpler search terms\n• Include artist name`)]
                 });
             }
             

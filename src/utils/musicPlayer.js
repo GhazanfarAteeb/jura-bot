@@ -1,35 +1,41 @@
 import { Player, QueryType } from 'discord-player';
-import { DefaultExtractors } from '@discord-player/extractor';
+import { 
+    YouTubeExtractor, 
+    SpotifyExtractor, 
+    SoundCloudExtractor,
+    AppleMusicExtractor 
+} from '@discord-player/extractor';
 import client from '../index.js';
 import { playerConfig } from '../config/playerConfig.js';
 
 // Initialize Discord Player with optimized configuration
 export const player = new Player(client, playerConfig);
 
-// Load all extractors using the new loadMulti method
-// Use default extractors with better configuration for accuracy
+// Load individual extractors for better control and accuracy
 try {
-    console.log('🔧 Loading extractors with DefaultExtractors...');
+    console.log('🔧 Loading individual extractors...');
     
-    // Load default extractors with Spotify bridge configuration
-    await player.extractors.loadMulti(DefaultExtractors);
+    // Load YouTube extractor (for direct URLs and searches)
+    await player.extractors.register(YouTubeExtractor, {});
+    console.log('✅ YouTube extractor loaded');
     
-    console.log('✅ All default extractors loaded successfully');
+    // Load Spotify extractor (for Spotify URLs - will bridge to YouTube for playback)
+    await player.extractors.register(SpotifyExtractor, {});
+    console.log('✅ Spotify extractor loaded');
+    
+    // Load Apple Music extractor (for Apple Music URLs - will bridge to YouTube)
+    await player.extractors.register(AppleMusicExtractor, {});
+    console.log('✅ Apple Music extractor loaded');
+    
+    // Load SoundCloud extractor (for SoundCloud URLs)
+    await player.extractors.register(SoundCloudExtractor, {});
+    console.log('✅ SoundCloud extractor loaded');
+    
     console.log(`📊 Total registered extractors: ${player.extractors.size}`);
     
     // List all registered extractors
     const extractorNames = Array.from(player.extractors.store.keys());
     console.log('📋 Registered extractors:', extractorNames.join(', '));
-    
-    // Configure Spotify extractor for better accuracy (like Jockie Music)
-    const spotifyExtractor = player.extractors.store.get('com.discord-player.spotifyextractor');
-    if (spotifyExtractor) {
-        console.log('🎵 Configuring Spotify extractor for better YouTube matching...');
-        // The extractor will prefer:
-        // 1. YouTube Music/Topic channels (auto-generated, most accurate)
-        // 2. Official Audio versions
-        // 3. Match duration closely
-    }
     
 } catch (extractorError) {
     console.error('❌ Failed to load extractors:', extractorError);
