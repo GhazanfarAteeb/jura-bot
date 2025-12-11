@@ -5,30 +5,41 @@ import { playerConfig } from '../config/playerConfig.js';
 // Initialize Discord Player with optimized configuration
 export const player = new Player(client, playerConfig);
 
-// Load all extractors - using DefaultExtractors which includes YouTube, Spotify, Apple Music, SoundCloud
+// Load extractors - we handle Spotify manually with play-dl in the play command
 try {
     console.log('🔧 Loading extractors...');
     
-    // Load only YouTube and SoundCloud extractors
-    // We'll handle Spotify manually with better search logic in play command
-    const { YouTubeExtractor, SoundCloudExtractor } = await import('@discord-player/extractor');
+    // Import the extractor package
+    const extractorPkg = await import('@discord-player/extractor');
     
-    await player.extractors.register(YouTubeExtractor, {});
-    console.log('✅ YouTube extractor loaded');
+    // Register YouTube extractor
+    if (extractorPkg.YouTubeExtractor) {
+        await player.extractors.register(extractorPkg.YouTubeExtractor, {});
+        console.log('✅ YouTube extractor loaded');
+    }
     
-    await player.extractors.register(SoundCloudExtractor, {});
-    console.log('✅ SoundCloud extractor loaded');
+    // Register SoundCloud extractor
+    if (extractorPkg.SoundCloudExtractor) {
+        await player.extractors.register(extractorPkg.SoundCloudExtractor, {});
+        console.log('✅ SoundCloud extractor loaded');
+    }
     
     console.log(`📊 Total registered extractors: ${player.extractors.size}`);
-    
-    // List all registered extractors
-    const extractorNames = Array.from(player.extractors.store.keys());
-    console.log('📋 Registered extractors:', extractorNames.join(', '));
     
 } catch (extractorError) {
     console.error('❌ Failed to load extractors:', extractorError);
     console.error('Error details:', extractorError.message, extractorError.stack);
-    console.error('Music functionality may be severely limited');
+    
+    // Fallback: try to use DefaultExtractors if individual loading fails
+    console.log('🔄 Attempting fallback to DefaultExtractors...');
+    try {
+        const { DefaultExtractors } = await import('@discord-player/extractor');
+        await player.extractors.loadDefault(DefaultExtractors);
+        console.log('✅ DefaultExtractors loaded as fallback');
+    } catch (fallbackError) {
+        console.error('❌ Fallback also failed:', fallbackError.message);
+        console.error('Music functionality may be severely limited');
+    }
 }
 
 // Configure hooks for better Spotify → YouTube matching (like Jockie Music)
