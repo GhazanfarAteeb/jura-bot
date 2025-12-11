@@ -10,7 +10,13 @@ export const player = new Player(client, {
     },
     connectionTimeout: 30000,
     skipFFmpeg: false,
-    useLegacyFFmpeg: false
+    useLegacyFFmpeg: false,
+    // Queue configuration
+    leaveOnEnd: false,  // Don't leave when queue ends
+    leaveOnStop: false, // Don't leave when stopped
+    leaveOnEmpty: true, // Leave when channel is empty
+    leaveOnEmptyCooldown: 300000, // Wait 5 minutes before leaving empty channel
+    selfDeaf: true
 });
 
 // Load all extractors including YouTube (needed as backend for Spotify/Apple Music streaming)
