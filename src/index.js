@@ -63,28 +63,31 @@ if (encryptionLoaded) {
     console.error('❌ No encryption library could be loaded - voice will not work');
 }
 
-// Initialize play-dl with Spotify credentials
+// Initialize play-dl with Spotify credentials GLOBALLY
 console.log('🎵 Initializing play-dl with Spotify...');
 try {
+    // Import play-dl at top level to ensure it's global
     const playdl = await import('play-dl');
     
     if (process.env.SPOTIFY_CLIENT_ID && process.env.SPOTIFY_CLIENT_SECRET) {
-        // Authorize with Spotify using client credentials
-        const spotifyData = await playdl.authorization();
-        
-        await spotifyData.setSpotify({
-            client_id: process.env.SPOTIFY_CLIENT_ID,
-            client_secret: process.env.SPOTIFY_CLIENT_SECRET,
-            market: 'US'
+        // Use the direct setToken method with client credentials
+        await playdl.setToken({
+            spotify: {
+                client_id: process.env.SPOTIFY_CLIENT_ID,
+                client_secret: process.env.SPOTIFY_CLIENT_SECRET,
+                market: 'US'
+            }
         });
         
         console.log('✅ play-dl Spotify authorization successful');
+        console.log('   Client ID:', process.env.SPOTIFY_CLIENT_ID.substring(0, 10) + '...');
     } else {
         console.warn('⚠️  Spotify credentials not found - Spotify URLs will not work');
         console.warn('   Add SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET to .env');
     }
 } catch (playdlError) {
-    console.error('❌ Failed to initialize play-dl:', playdlError.message);
+    console.error('❌ Failed to initialize play-dl:', playdlError);
+    console.error('   Stack:', playdlError.stack);
 }
 
 const __filename = fileURLToPath(import.meta.url);
