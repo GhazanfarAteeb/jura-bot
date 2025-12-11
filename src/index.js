@@ -70,13 +70,14 @@ try {
     const playdl = await import('play-dl');
     
     if (process.env.SPOTIFY_CLIENT_ID && process.env.SPOTIFY_CLIENT_SECRET) {
-        // Use the direct setToken method with client credentials
-        await playdl.setToken({
-            spotify: {
-                client_id: process.env.SPOTIFY_CLIENT_ID,
-                client_secret: process.env.SPOTIFY_CLIENT_SECRET,
-                market: 'US'
-            }
+        // Get authorization data object
+        const data = await playdl.getFreeClientID();
+        
+        // Set Spotify credentials using the data object
+        await data.setToken({
+            clientID: process.env.SPOTIFY_CLIENT_ID,
+            clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
+            market: 'US'
         });
         
         console.log('✅ play-dl Spotify authorization successful');
