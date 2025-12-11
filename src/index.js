@@ -69,14 +69,15 @@ try {
     const playdl = await import('play-dl');
     
     if (process.env.SPOTIFY_CLIENT_ID && process.env.SPOTIFY_CLIENT_SECRET) {
-        await playdl.setToken({
-            spotify: {
-                client_id: process.env.SPOTIFY_CLIENT_ID,
-                client_secret: process.env.SPOTIFY_CLIENT_SECRET,
-                refresh_token: '',
-                market: 'US'
-            }
+        // Authorize with Spotify using client credentials
+        const spotifyData = await playdl.authorization();
+        
+        await spotifyData.setSpotify({
+            client_id: process.env.SPOTIFY_CLIENT_ID,
+            client_secret: process.env.SPOTIFY_CLIENT_SECRET,
+            market: 'US'
         });
+        
         console.log('✅ play-dl Spotify authorization successful');
     } else {
         console.warn('⚠️  Spotify credentials not found - Spotify URLs will not work');
