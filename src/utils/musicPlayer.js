@@ -14,17 +14,24 @@ export const player = new Player(client, {
 });
 
 // Load all extractors except YouTube (Deezer, Spotify, Tidal, Apple Music, SoundCloud, Bandcamp, Vimeo, etc.)
-await player.extractors.loadDefault((ext) => ext !== 'YouTubeExtractor');
-console.log('✅ Loaded platform extractors: Deezer, Spotify, Tidal, Apple Music, SoundCloud, Bandcamp, Vimeo, Twitch');
+try {
+    await player.extractors.loadDefault((ext) => ext !== 'YouTubeExtractor');
+    console.log('✅ Loaded platform extractors: Deezer, Spotify, Tidal, Apple Music, SoundCloud, Bandcamp, Vimeo, Twitch');
+} catch (extractorError) {
+    console.error('❌ Failed to load extractors:', extractorError);
+    console.error('Music functionality may be limited');
+}
 
 // Player events
 player.events.on('playerStart', (queue, track) => {
+    console.log(`▶️ Started playing: ${track.title} in ${queue.guild.name}`);
     queue.metadata.channel.send({
         content: `🎶 Now playing: **${track.title}** by **${track.author}**`
     });
 });
 
 player.events.on('audioTrackAdd', (queue, track) => {
+    console.log(`➕ Track added to queue: ${track.title}`);
     if (queue.tracks.toArray().length > 1) {
         queue.metadata.channel.send({
             content: `✅ Added to queue: **${track.title}** by **${track.author}**`
@@ -33,27 +40,36 @@ player.events.on('audioTrackAdd', (queue, track) => {
 });
 
 player.events.on('audioTracksAdd', (queue, tracks) => {
+    console.log(`➕ ${tracks.length} tracks added to queue`);
     queue.metadata.channel.send({
         content: `✅ Added **${tracks.length}** tracks to the queue!`
     });
 });
 
 player.events.on('playerError', (queue, error) => {
-    console.error(`Player error:`, error);
+    console.error(`❌ Player error in ${queue.guild.name}:`, error);
+    console.error('Error details:', error.message, error.stack);
     queue.metadata.channel.send('❌ An error occurred while playing the track.');
 });
 
 player.events.on('error', (queue, error) => {
-    console.error(`General error:`, error);
+    console.error(`❌ General error in ${queue.guild.name}:`, error);
+    console.error('Error details:', error.message);
     queue.metadata.channel.send('❌ An error occurred.');
 });
 
 player.events.on('emptyQueue', (queue) => {
+    console.log(`✅ Queue finished in ${queue.guild.name}`);
     queue.metadata.channel.send('✅ Queue finished!');
 });
 
 player.events.on('emptyChannel', (queue) => {
+    console.log(`👋 Leaving ${queue.guild.name} due to inactivity`);
     queue.metadata.channel.send('👋 Leaving voice channel due to inactivity.');
+});
+
+player.events.on('debug', (queue, message) => {
+    console.log(`[DEBUG ${queue.guild.name}]:`, message);
 });
 
 // Helper function to check if user is in voice channel
@@ -87,8 +103,16 @@ export function checkSameVoiceChannel(message) {
     const botCheck = checkBotInVoice(message);
     if (botCheck.error) return botCheck;
     
-    const botChannel = botCheck.queue.connection.channel;
-    if (message.member.voice.channel.id !== botChannel.id) {
+    // Get the voice channel the bot is connected to
+    const botVoiceChannel = message.guild.members.me?.voice?.channel;
+    if (!botVoiceChannel) {
+        return {
+            error: true,
+            message: '❌ I\'m not in a voice channel!'
+        };
+    }
+    
+    if (message.member.voice.channel.id !== botVoiceChannel.id) {
         return {
             error: true,
             message: '❌ You must be in the same voice channel as me!'

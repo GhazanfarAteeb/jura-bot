@@ -113,10 +113,20 @@ export default {
                     if (justConnected) {
                         await new Promise(resolve => setTimeout(resolve, 2000));
                     }
+                    
+                    console.log(`🎵 Starting playback in ${message.guild.name}...`);
+                    console.log(`   Track: ${queue.tracks.toArray()[0]?.title || 'Unknown'}`);
+                    console.log(`   Volume: ${queue.node.volume}%`);
+                    
                     await queue.node.play();
-                    console.log(`▶️ Started playing in guild: ${message.guild.name}`);
+                    
+                    // Set volume explicitly
+                    queue.node.setVolume(80);
+                    
+                    console.log(`▶️ Playback started successfully in ${message.guild.name}`);
                 } catch (playError) {
-                    console.error('Play error:', playError);
+                    console.error('❌ Play error:', playError);
+                    console.error('Play error details:', playError.message, playError.stack);
                     return message.reply({
                         embeds: [await errorEmbed(guildId, 'Playback Error', `Failed to start playback: ${playError.message}`)]
                     });
