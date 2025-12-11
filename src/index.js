@@ -7,6 +7,7 @@ import { readdirSync } from 'fs';
 import { initializeSchedulers } from './utils/schedulers.js';
 import express from 'express';
 import Guild from './models/Guild.js';
+import logger from './utils/logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -45,9 +46,15 @@ client.invites = new Collection();
 // Connect to MongoDB
 async function connectDatabase() {
     try {
+        const startTime = Date.now();
         await mongoose.connect(process.env.MONGODB_URI);
+        const duration = Date.now() - startTime;
+        logger.database('MongoDB connection established', true);
+        logger.performance('Database connection', duration);
         console.log('✅ Connected to MongoDB');
     } catch (error) {
+        logger.database('MongoDB connection failed', false, error);
+        logger.error('MongoDB connection error', error);
         console.error('❌ MongoDB connection error:', error);
         process.exit(1);
     }
@@ -56,39 +63,60 @@ async function connectDatabase() {
 // Load commands
 async function loadCommands() {
     const commandFolders = readdirSync(join(__dirname, 'commands'));
+    let totalCommands = 0;
     
     for (const folder of commandFolders) {
         const commandFiles = readdirSync(join(__dirname, 'commands', folder))
             .filter(file => file.endsWith('.js'));
         
         for (const file of commandFiles) {
-            const { default: command } = await import(`./commands/${folder}/${file}`);
-            if (command.name) {
-                client.commands.set(command.name, command);
-                console.log(`📝 Loaded command: ${command.name}`);
+            try {
+                const { default: command } = await import(`./commands/${folder}/${file}`);
+                if (command.name) {
+                    client.commands.set(command.name, command);
+                    console.log(`📝 Loaded command: ${command.name}`);
+                    totalCommands++;
+                }
+            } catch (error) {
+                logger.error(`Failed to load command ${file}`, error);
             }
         }
     }
+    
+    logger.startup(`Loaded ${totalCommands} commands`);
 }
 
 // Load events
 async function loadEvents() {
     const eventFiles = readdirSync(join(__dirname, 'events'))
         .filter(file => file.endsWith('.js'));
+    let totalEvents = 0;
     
     for (const file of eventFiles) {
-        const { default: event } = await import(`./events/${file}`);
-        if (event.once) {
-            client.once(event.name, (...args) => event.execute(...args, client));
-        } else {
-            client.on(event.name, (...args) => event.execute(...args, client));
+        try {
+            const { default: event } = await import(`./events/${file}`);
+            if (event.once) {
+                client.once(event.name, (...args) => event.execute(...args, client));
+            } else {
+                client.on(event.name, (...args) => event.execute(...args, client));
+            }
+            console.log(`🎯 Loaded event: ${event.name}`);
+            totalEvents++;
+        } catch (error) {
+            logger.error(`Failed to load event ${file}`, error);
         }
-        console.log(`🎯 Loaded event: ${event.name}`);
     }
+    
+    logger.startup(`Loaded ${totalEvents} events`);
 }
 
 // Initialize bot
 async function initialize() {
+    const startTime = Date.now();
+    logger.startup('Starting JURA BOT...');
+    logger.build('Bot version: 2.1.0');
+    logger.build('Node version: ' + process.version);
+    logger.build('Environment: ' + (process.env.NODE_ENV || 'production'));
     console.log('🚀 Starting JURA BOT...');
     
     await connectDatabase();
@@ -98,6 +126,10 @@ async function initialize() {
     // Login to Discord
     await client.login(process.env.DISCORD_TOKEN);
     
+    const duration = Date.now() - startTime;
+    logger.performance('Bot initialization', duration);
+    logger.startup(`Bot started successfully in ${duration}ms`);
+    
     // Initialize scheduled tasks (birthdays, events, etc.)
     client.once('ready', () => {
         initializeSchedulers(client);
@@ -106,10 +138,12 @@ async function initialize() {
 
 // Error handling
 process.on('unhandledRejection', error => {
+    logger.error('Unhandled promise rejection', error);
     console.error('Unhandled promise rejection:', error);
 });
 
 process.on('uncaughtException', error => {
+    logger.error('Uncaught exception', error);
     console.error('Uncaught exception:', error);
     process.exit(1);
 });
@@ -182,6 +216,8 @@ function startStatusMonitoring() {
 }
 
 async function notifyStatusChange(status) {
+    logger.event(`Bot status changed to ${status}`);
+    
     try {
         const guilds = await Guild.find({ 'channels.botStatus': { $exists: true, $ne: null } });
         

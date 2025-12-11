@@ -10,6 +10,7 @@ import { createCanvas, loadImage, GlobalFonts } from '@napi-rs/canvas';
 import { join } from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import logger from '../utils/logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -98,7 +99,21 @@ export default {
             }
             
             // Execute command
-            await command.execute(message, args, client);
+            try {
+                const startTime = Date.now();
+                await command.execute(message, args, client);
+                const duration = Date.now() - startTime;
+                
+                logger.command(command.name, message.author, message.guild, true);
+                logger.performance(`Command: ${command.name}`, duration, {
+                    user: message.author.tag,
+                    guild: message.guild.name
+                });
+            } catch (cmdError) {
+                logger.command(command.name, message.author, message.guild, false, cmdError);
+                logger.error(`Command execution failed: ${command.name}`, cmdError);
+                throw cmdError;
+            }
             
         } catch (error) {
             console.error('Error in messageCreate event:', error);

@@ -6,6 +6,9 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
+    "build": "node -e \"require('./src/utils/logger.js').default.build('Build completed')\"",
+    "deploy:start": "node -e \"require('./src/utils/logger.js').default.deployment('Deployment started')\"",
+    "deploy:complete": "node -e \"require('./src/utils/logger.js').default.deployment('Deployment completed successfully')\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
