@@ -66,21 +66,41 @@ if (encryptionLoaded) {
 // Initialize play-dl with Spotify credentials GLOBALLY
 console.log('🎵 Initializing play-dl with Spotify...');
 try {
-    // Import play-dl at top level to ensure it's global
     const playdl = await import('play-dl');
     
     if (process.env.SPOTIFY_CLIENT_ID && process.env.SPOTIFY_CLIENT_SECRET) {
-        // Use the proper method to set Spotify credentials
+        console.log('   Requesting Spotify access token...');
+        
+        // Request access token using Client Credentials flow
+        const tokenResponse = await fetch('https://accounts.spotify.com/api/token', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Authorization': 'Basic ' + Buffer.from(
+                    process.env.SPOTIFY_CLIENT_ID + ':' + process.env.SPOTIFY_CLIENT_SECRET
+                ).toString('base64')
+            },
+            body: 'grant_type=client_credentials'
+        });
+        
+        if (!tokenResponse.ok) {
+            throw new Error(`Spotify token request failed: ${tokenResponse.status} ${tokenResponse.statusText}`);
+        }
+        
+        const tokenData = await tokenResponse.json();
+        
+        // Set the access token in play-dl
         await playdl.setToken({
             spotify: {
                 client_id: process.env.SPOTIFY_CLIENT_ID,
                 client_secret: process.env.SPOTIFY_CLIENT_SECRET,
+                refresh_token: tokenData.access_token,
                 market: 'US'
             }
         });
         
         console.log('✅ play-dl Spotify authorization successful');
-        console.log('   Client ID:', process.env.SPOTIFY_CLIENT_ID.substring(0, 10) + '...');
+        console.log('   Access token expires in:', tokenData.expires_in, 'seconds');
     } else {
         console.warn('⚠️  Spotify credentials not found - Spotify URLs will not work');
         console.warn('   Add SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET to .env');
