@@ -10,10 +10,16 @@ import Guild from './models/Guild.js';
 import logger from './utils/logger.js';
 
 // Load libsodium-wrappers FIRST for voice encryption (pure JS, no compilation needed)
+// Must be exposed globally for discord-voip to detect it
 try {
     const libsodium = await import('libsodium-wrappers');
     await libsodium.ready;
+    
+    // Expose sodium globally so discord-voip can find it
+    global.sodium = libsodium;
+    
     console.log('✅ Loaded libsodium-wrappers for voice encryption');
+    console.log('✅ Sodium exposed globally for discord-voip');
 } catch (err) {
     console.error('❌ Failed to load libsodium-wrappers:', err.message);
     console.error('Voice features will not work');
