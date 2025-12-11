@@ -308,7 +308,6 @@ const executeCommand = async (message, args) => {
                 message.reply('An error occurred while generating your profile. Please try again!');
             }
         }
-    }
 };
 
 export default {
