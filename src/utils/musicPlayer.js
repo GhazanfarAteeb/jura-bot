@@ -7,7 +7,8 @@ export const player = new Player(client, {
     ytdlOptions: {
         quality: 'highestaudio',
         highWaterMark: 1 << 25,
-        filter: 'audioonly'
+        filter: 'audioonly',
+        dlChunkSize: 0 // Download entire file instead of chunks for better stability
     },
     connectionTimeout: 30000,
     skipFFmpeg: false,
@@ -17,7 +18,17 @@ export const player = new Player(client, {
     leaveOnStop: false, // Don't leave when stopped
     leaveOnEmpty: true, // Leave when channel is empty
     leaveOnEmptyCooldown: 300000, // Wait 5 minutes before leaving empty channel
-    selfDeaf: true
+    selfDeaf: true,
+    // Stream quality settings for better stability
+    bufferingTimeout: 3000,
+    // Retry settings
+    queryCache: true,
+    // Better audio quality settings
+    audioFilters: {
+        normalizeAudio: true,
+        fadeIn: true,
+        fadeOut: true
+    }
 });
 
 // Load all extractors using the new loadMulti method
@@ -56,23 +67,68 @@ player.events.on('audioTracksAdd', (queue, tracks) => {
 player.events.on('playerError', (queue, error) => {
     console.error(`❌ Player error in ${queue.guild.name}:`, error);
     console.error('Error details:', error.message, error.stack);
-    queue.metadata.channel.send('❌ An error occurred while playing the track.');
+    
+    // Try to play next track if available
+    if (queue.tracks.toArray().length > 0) {
+        console.log('⏭️ Attempting to play next track after error...');
+        queue.node.skip();
+    } else {
+        queue.metadata.channel.send('❌ An error occurred while playing the track.');
+    }
 });
 
 player.events.on('error', (queue, error) => {
     console.error(`❌ General error in ${queue.guild.name}:`, error);
     console.error('Error details:', error.message);
-    queue.metadata.channel.send('❌ An error occurred.');
+    
+    // Try to reconnect if connection was lost
+    if (error.message && error.message.includes('socket')) {
+        console.log('🔄 Attempting to reconnect...');
+        setTimeout(() => {
+            if (queue.connection && !queue.connection.state) {
+                queue.connect(queue.metadata.channel.guild.members.me.voice.channel);
+            }
+        }, 1000);
+    }
+});
+
+player.events.on('connectionError', (queue, error) => {
+    console.error(`❌ Connection error in ${queue.guild.name}:`, error);
+    queue.metadata.channel.send('❌ Voice connection error. Retrying...');
+    
+    // Try to reconnect after 2 seconds
+    setTimeout(() => {
+        try {
+            const voiceChannel = queue.metadata.channel.guild.members.me.voice.channel;
+            if (voiceChannel) {
+                queue.connect(voiceChannel);
+            }
+        } catch (err) {
+            console.error('❌ Failed to reconnect:', err);
+        }
+    }, 2000);
 });
 
 player.events.on('emptyQueue', (queue) => {
     console.log(`✅ Queue finished in ${queue.guild.name}`);
-    queue.metadata.channel.send('✅ Queue finished!');
+    queue.metadata.channel.send('✅ Queue finished! Add more songs with `R!play <song>`');
 });
 
 player.events.on('emptyChannel', (queue) => {
     console.log(`👋 Leaving ${queue.guild.name} due to inactivity`);
     queue.metadata.channel.send('👋 Leaving voice channel due to inactivity.');
+});
+
+player.events.on('disconnect', (queue) => {
+    console.log(`🔌 Disconnected from ${queue.guild.name}`);
+});
+
+player.events.on('audioTrackRemove', (queue, track) => {
+    console.log(`➖ Track removed: ${track.title}`);
+});
+
+player.events.on('playerSkip', (queue, track) => {
+    console.log(`⏭️ Skipped: ${track.title}`);
 });
 
 player.events.on('debug', (queue, message) => {

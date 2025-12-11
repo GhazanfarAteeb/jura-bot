@@ -118,17 +118,37 @@ export default {
                     console.log(`   Track: ${queue.tracks.toArray()[0]?.title || 'Unknown'}`);
                     console.log(`   Volume: ${queue.node.volume}%`);
                     
-                    await queue.node.play();
+                    // Play with retry mechanism
+                    let playAttempts = 0;
+                    let playSuccess = false;
                     
-                    // Set volume explicitly
-                    queue.node.setVolume(80);
+                    while (playAttempts < 3 && !playSuccess) {
+                        try {
+                            await queue.node.play();
+                            playSuccess = true;
+                            
+                            // Set volume explicitly
+                            queue.node.setVolume(80);
+                            
+                            console.log(`▶️ Playback started successfully in ${message.guild.name}`);
+                        } catch (attemptError) {
+                            playAttempts++;
+                            console.error(`❌ Play attempt ${playAttempts} failed:`, attemptError.message);
+                            
+                            if (playAttempts < 3) {
+                                console.log(`🔄 Retrying in 1 second...`);
+                                await new Promise(resolve => setTimeout(resolve, 1000));
+                            } else {
+                                throw attemptError;
+                            }
+                        }
+                    }
                     
-                    console.log(`▶️ Playback started successfully in ${message.guild.name}`);
                 } catch (playError) {
                     console.error('❌ Play error:', playError);
                     console.error('Play error details:', playError.message, playError.stack);
                     return message.reply({
-                        embeds: [await errorEmbed(guildId, 'Playback Error', `Failed to start playback: ${playError.message}`)]
+                        embeds: [await errorEmbed(guildId, 'Playback Error', `Failed to start playback after 3 attempts: ${playError.message}`)]
                     });
                 }
             }
