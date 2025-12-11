@@ -29,13 +29,7 @@ export const playerConfig = {
     leaveOnEmpty: true,
     leaveOnEmptyCooldown: 300000,
     selfDeaf: true,
-    bufferingTimeout: 3000,
-    
-    // Query cache for performance
-    queryCache: {
-        enabled: true,
-        ttl: 3600000 // 1 hour
-    }
+    bufferingTimeout: 3000
 };
 
 /**
