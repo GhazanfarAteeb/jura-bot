@@ -127,7 +127,7 @@ class MusicQueue {
             console.error('❌ Error getting Spotify stream:', error);
             return null;
         }
-    },
+    }
     
     async getYouTubeStream(url) {
         try {
