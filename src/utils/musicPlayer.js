@@ -8,44 +8,14 @@ export const player = new Player(client, {
         highWaterMark: 1 << 25,
         filter: 'audioonly'
     },
-    // Enable support for all platforms
     connectionTimeout: 30000,
     skipFFmpeg: false,
-    // Audio quality settings to prevent encoding errors
-    useLegacyFFmpeg: false,
-    // Set default audio settings
-    audioPlayerOptions: {
-        initialVolume: 80,
-        bufferingTimeout: 3000
-    },
-    // Set Deezer as default search engine
-    queryCache: {
-        enabled: true
-    }
+    useLegacyFFmpeg: false
 });
 
-// Load streaming platform extractors with Deezer as default
-// Includes: Deezer (default), Spotify, Tidal, Apple Music, SoundCloud, Bandcamp, Vimeo, etc.
-player.extractors.loadDefault((ext) => {
-    const supportedPlatforms = [
-        'DeezerExtractor',      // Default streaming service
-        'SpotifyExtractor',     // Spotify support
-        'AppleMusicExtractor',  // Apple Music support
-        'SoundCloudExtractor',
-        'BandcampExtractor', 
-        'VimeoExtractor',
-        'TwitchExtractor',
-        'NewgroundsExtractor',
-        'MixcloudExtractor',
-        'ReverbnationExtractor',
-        'AttachmentExtractor'
-    ];
-    return supportedPlatforms.includes(ext);
-}).then(() => {
-    console.log('✅ Loaded platform extractors: Deezer (default), Spotify, Tidal, Apple Music, SoundCloud, Bandcamp, Vimeo, Twitch, Newgrounds, Mixcloud');
-}).catch(err => {
-    console.error('❌ Failed to load extractors:', err);
-});
+// Load all extractors except YouTube (Deezer, Spotify, Tidal, Apple Music, SoundCloud, Bandcamp, Vimeo, etc.)
+await player.extractors.loadDefault((ext) => ext !== 'YouTubeExtractor');
+console.log('✅ Loaded platform extractors: Deezer, Spotify, Tidal, Apple Music, SoundCloud, Bandcamp, Vimeo, Twitch');
 
 // Player events
 player.events.on('playerStart', (queue, track) => {

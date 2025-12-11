@@ -59,10 +59,13 @@ export default {
             });
             
             // Connect to voice channel if not connected
+            let justConnected = false;
             try {
                 if (!queue.connection) {
                     await queue.connect(channel);
+                    justConnected = true;
                     console.log(`✅ Connected to voice channel: ${channel.name} in guild: ${message.guild.name}`);
+                    await message.channel.send(`🎵 Joined **${channel.name}**! Preparing to play...`);
                 }
             } catch (error) {
                 console.error('Voice connection error:', error);
@@ -81,14 +84,12 @@ export default {
                     `**${searchResult.playlist.title}**\n\n${searchResult.tracks.length} tracks added to queue`
                 );
                 embed.setThumbnail(searchResult.playlist.thumbnail);
-                message.reply({ embeds: [embed] });
+                await message.reply({ embeds: [embed] });
             } else {
                 const track = searchResult.tracks[0];
                 queue.addTrack(track);
                 
-                if (!queue.isPlaying()) {
-                    // Will start playing automatically and trigger playerStart event
-                } else {
+                if (queue.tracks.size > 1) {
                     const embed = await successEmbed(
                         guildId,
                         '✅ Added to Queue',
@@ -99,13 +100,25 @@ export default {
                         { name: 'Position in Queue', value: `${queue.tracks.size}`, inline: true }
                     );
                     if (track.thumbnail) embed.setThumbnail(track.thumbnail);
-                    message.reply({ embeds: [embed] });
+                    await message.reply({ embeds: [embed] });
                 }
             }
             
             // Start playing if not already
-            if (!queue.isPlaying()) {
-                await queue.node.play();
+            if (!queue.node.isPlaying()) {
+                try {
+                    // Wait 2 seconds after joining before playing
+                    if (justConnected) {
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+                    }
+                    await queue.node.play();
+                    console.log(`▶️ Started playing in guild: ${message.guild.name}`);
+                } catch (playError) {
+                    console.error('Play error:', playError);
+                    return message.reply({
+                        embeds: [await errorEmbed(guildId, 'Playback Error', `Failed to start playback: ${playError.message}`)]
+                    });
+                }
             }
             
         } catch (error) {
