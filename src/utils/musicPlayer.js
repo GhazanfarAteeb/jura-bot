@@ -1,6 +1,5 @@
 import { Player, QueryType } from 'discord-player';
 import { DefaultExtractors } from '@discord-player/extractor';
-import { attach, ext } from '@discord-player/extractor';
 import client from '../index.js';
 
 // Initialize Discord Player with proper configuration
