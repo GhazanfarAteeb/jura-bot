@@ -97,25 +97,81 @@ export default {
                 
             } else if (isSpotifyURL) {
                 console.log(`🎵 Spotify URL detected: ${query}`);
+                
+                // First, get Spotify metadata
+                let spotifyMetadata = null;
                 try {
-                    // Use AUTO to let discord-player handle Spotify and bridge to YouTube
-                    searchResult = await player.search(query, {
+                    const spotifyResult = await player.search(query, {
                         requestedBy: message.author,
                         searchEngine: QueryType.AUTO
                     });
                     
-                    if (searchResult && searchResult.tracks.length > 0) {
-                        console.log(`✅ Spotify bridge successful:`, {
-                            title: searchResult.tracks[0].title,
-                            author: searchResult.tracks[0].author,
-                            source: searchResult.tracks[0].source
+                    if (spotifyResult && spotifyResult.tracks.length > 0) {
+                        spotifyMetadata = spotifyResult.tracks[0];
+                        console.log(`✅ Spotify metadata:`, {
+                            title: spotifyMetadata.title,
+                            author: spotifyMetadata.author,
+                            duration: spotifyMetadata.duration
                         });
                     }
-                } catch (searchError) {
-                    console.error('❌ Spotify search error:', searchError);
-                    console.error('Full error:', searchError.message, searchError.stack);
+                } catch (spotifyError) {
+                    console.error('❌ Spotify metadata fetch failed:', spotifyError);
+                }
+                
+                // If we got Spotify metadata, try to find better YouTube match
+                if (spotifyMetadata) {
+                    // Clean up the search query for better YouTube matching
+                    const cleanTitle = spotifyMetadata.title
+                        .replace(/\s*\(feat\.?.*?\)/gi, '')
+                        .replace(/\s*\[.*?\]/g, '')
+                        .replace(/\s*\(official.*?\)/gi, '')
+                        .replace(/\s*-\s*remaster.*$/gi, '')
+                        .trim();
+                    
+                    const cleanArtist = spotifyMetadata.author
+                        .split(',')[0]
+                        .split('&')[0]
+                        .split('feat')[0]
+                        .trim();
+                    
+                    // Try multiple search strategies
+                    const searchQueries = [
+                        `${cleanArtist} ${cleanTitle} topic`, // Prefer Topic channels (most accurate)
+                        `${cleanArtist} ${cleanTitle} official audio`,
+                        `${cleanArtist} ${cleanTitle} audio`,
+                        `${cleanArtist} ${cleanTitle}`
+                    ];
+                    
+                    console.log(`🔍 Trying improved searches for better match...`);
+                    
+                    for (const searchQuery of searchQueries) {
+                        try {
+                            const ytResult = await player.search(searchQuery, {
+                                requestedBy: message.author,
+                                searchEngine: QueryType.YOUTUBE_SEARCH
+                            });
+                            
+                            if (ytResult && ytResult.tracks.length > 0) {
+                                console.log(`✅ Found via: "${searchQuery}"`);
+                                console.log(`   Result: ${ytResult.tracks[0].title} by ${ytResult.tracks[0].author}`);
+                                searchResult = ytResult;
+                                break;
+                            }
+                        } catch (err) {
+                            console.log(`   ❌ "${searchQuery}" failed, trying next...`);
+                            continue;
+                        }
+                    }
+                    
+                    // If no improved search worked, fall back to original Spotify result
+                    if (!searchResult || !searchResult.tracks.length) {
+                        console.log(`⚠️ Improved searches failed, using original Spotify bridge`);
+                        searchResult = { tracks: [spotifyMetadata] };
+                    }
+                } else {
+                    // Spotify metadata fetch failed
                     return message.reply({
-                        embeds: [await errorEmbed(guildId, 'Spotify Error', `Could not load Spotify track.\n\n**Possible reasons:**\n• Spotify link is invalid or expired\n• Track not found on YouTube\n• Regional restrictions\n\n**Error:** ${searchError.message}\n\n**Try:** Searching by song name instead`)]
+                        embeds: [await errorEmbed(guildId, 'Spotify Error', `Could not load Spotify track.\n\n**Try:** Searching by song name instead`)]
                     });
                 }
                 

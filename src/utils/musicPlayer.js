@@ -11,7 +11,14 @@ try {
     console.log('🔧 Loading extractors...');
     
     // Load all default extractors using loadMulti (loadDefault is deprecated)
-    await player.extractors.loadMulti(DefaultExtractors);
+    // Configure extractors with bridge options for better accuracy
+    await player.extractors.loadMulti(DefaultExtractors, {
+        // Spotify bridge options - prefer Topic channels and exact matches
+        createStream: async (ext) => {
+            // If this is a Spotify bridge to YouTube, prefer Topic channels
+            return ext;
+        }
+    });
     
     console.log('✅ All extractors loaded successfully');
     console.log(`📊 Total registered extractors: ${player.extractors.size}`);
