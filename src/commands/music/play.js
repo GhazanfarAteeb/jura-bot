@@ -5,7 +5,7 @@ import { errorEmbed, successEmbed } from '../../utils/embeds.js';
 export default {
     name: 'play',
     aliases: ['p'],
-    description: 'Play music from YouTube, Spotify, or SoundCloud',
+    description: 'Play music from Deezer, Spotify, Tidal, Apple Music, SoundCloud, and more',
     usage: 'play <song name | url>',
     category: 'music',
     cooldown: 3,

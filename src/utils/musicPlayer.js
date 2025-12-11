@@ -17,13 +17,32 @@ export const player = new Player(client, {
     audioPlayerOptions: {
         initialVolume: 80,
         bufferingTimeout: 3000
+    },
+    // Set Deezer as default search engine
+    queryCache: {
+        enabled: true
     }
 });
 
-// Load all default extractors (YouTube, Spotify, SoundCloud, Apple Music, Vimeo, etc.)
-// This includes: YouTube, Spotify, SoundCloud, Apple Music, Deezer, Vimeo, Bandcamp, Twitch, and more
-player.extractors.loadDefault((ext) => ext !== 'YouTubeExtractor').then(() => {
-    console.log('✅ Loaded all music platform extractors');
+// Load streaming platform extractors with Deezer as default
+// Includes: Deezer (default), Spotify, Tidal, Apple Music, SoundCloud, Bandcamp, Vimeo, etc.
+player.extractors.loadDefault((ext) => {
+    const supportedPlatforms = [
+        'DeezerExtractor',      // Default streaming service
+        'SpotifyExtractor',     // Spotify support
+        'AppleMusicExtractor',  // Apple Music support
+        'SoundCloudExtractor',
+        'BandcampExtractor', 
+        'VimeoExtractor',
+        'TwitchExtractor',
+        'NewgroundsExtractor',
+        'MixcloudExtractor',
+        'ReverbnationExtractor',
+        'AttachmentExtractor'
+    ];
+    return supportedPlatforms.includes(ext);
+}).then(() => {
+    console.log('✅ Loaded platform extractors: Deezer (default), Spotify, Tidal, Apple Music, SoundCloud, Bandcamp, Vimeo, Twitch, Newgrounds, Mixcloud');
 }).catch(err => {
     console.error('❌ Failed to load extractors:', err);
 });
