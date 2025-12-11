@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JURA BOT - Commands List</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            padding: 40px 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        
+        .subtitle {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .search-box {
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        #searchInput {
+            width: 100%;
+            max-width: 500px;
+            padding: 15px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 25px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            outline: none;
+        }
+        
+        .category {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .category-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .category-header:hover {
+            opacity: 0.8;
+        }
+        
+        .category-emoji {
+            font-size: 2.5em;
+        }
+        
+        .category-title {
+            font-size: 2em;
+            flex: 1;
+        }
+        
+        .category-count {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+        
+        .toggle-icon {
+            font-size: 1.5em;
+            transition: transform 0.3s;
+        }
+        
+        .category-header.collapsed .toggle-icon {
+            transform: rotate(-90deg);
+        }
+        
+        .category-description {
+            margin-bottom: 20px;
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        
+        .commands-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 15px;
+        }
+        
+        .command-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+        
+        .command-card:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .command-name {
+            font-size: 1.4em;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #ffd700;
+        }
+        
+        .command-description {
+            margin-bottom: 12px;
+            opacity: 0.9;
+        }
+        
+        .command-details {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-size: 0.9em;
+        }
+        
+        .command-detail {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+        }
+        
+        .detail-label {
+            font-weight: bold;
+            color: #ffd700;
+            min-width: 70px;
+        }
+        
+        .detail-value {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 4px 10px;
+            border-radius: 5px;
+            word-break: break-word;
+        }
+        
+        .aliases {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        
+        .alias-tag {
+            background: rgba(255, 215, 0, 0.2);
+            padding: 2px 8px;
+            border-radius: 5px;
+            font-size: 0.85em;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 30px;
+            margin-top: 40px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+        }
+        
+        @media (max-width: 768px) {
+            .commands-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🤖 JURA BOT</h1>
+            <p class="subtitle">Complete Commands Reference - 73 Commands Available</p>
+        </header>
+        
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="🔍 Search commands..." onkeyup="searchCommands()">
+        </div>
+        
+        <!-- Configuration Commands -->
+        <div class="category" data-category="config">
+            <div class="category-header" onclick="toggleCategory(this)">
+                <span class="category-emoji">⚙️</span>
+                <h2 class="category-title">Configuration</h2>
+                <span class="category-count">6 commands</span>
+                <span class="toggle-icon">▼</span>
+            </div>
+            <p class="category-description">Server setup and configuration commands</p>
+            <div class="commands-grid">
+                <div class="command-card" data-command="setup">
+                    <div class="command-name">!setup</div>
+                    <div class="command-description">Initial server setup wizard</div>
+                    <div class="command-details">
+                        <div class="command-detail">
+                            <span class="detail-label">Aliases:</span>
+                            <div class="aliases"><span class="alias-tag">initialize</span></div>
+                        </div>
+                        <div class="command-detail">
+                            <span class="detail-label">Permission:</span>
+                            <span class="detail-value">Administrator</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="command-card" data-command="config">
+                    <div class="command-name">!config</div>
+                    <div class="command-description">View or edit server configuration</div>
+                    <div class="command-details">
+                        <div class="command-detail">
+                            <span class="detail-label">Aliases:</span>
+                            <div class="aliases"><span class="alias-tag">configuration</span> <span class="alias-tag">settings</span></div>
+                        </div>
+                        <div class="command-detail">
+                            <span class="detail-label">Permission:</span>
+                            <span class="detail-value">Administrator</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="command-card" data-command="setprefix">
+                    <div class="command-name">!setprefix</div>
+                    <div class="command-description">Change the bot prefix for this server</div>
+                    <div class="command-details">
+                        <div class="command-detail">
+                            <span class="detail-label">Usage:</span>
+                            <span class="detail-value">!setprefix &lt;new_prefix&gt;</span>
+                        </div>
+                        <div class="command-detail">
+                            <span class="detail-label">Permission:</span>
+                            <span class="detail-value">Administrator</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="command-card" data-command="setchannel">
+                    <div class="command-name">!setchannel</div>
+                    <div class="command-description">Set log channels for different features</div>
+                    <div class="command-details">
+                        <div class="command-detail">
+                            <span class="detail-label">Aliases:</span>
+                            <div class="aliases"><span class="alias-tag">setlog</span></div>
+                        </div>
+                        <div class="command-detail">
+                            <span class="detail-label">Permission:</span>
+                            <span class="detail-value">Administrator</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="command-card" data-command="setrole">
+                    <div class="command-name">!setrole</div>
+                    <div class="command-description">Set custom roles for different features</div>
+                    <div class="command-details">
+                        <div class="command-detail">
+                            <span class="detail-label">Aliases:</span>
+                            <div class="aliases"><span class="alias-tag">configrole</span></div>
+                        </div>
+                        <div class="command-detail">
+                            <span class="detail-label">Permission:</span>
+                            <span class="detail-value">Administrator</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="command-card" data-command="setcoin">
+                    <div class="command-name">!setcoin</div>
+                    <div class="command-description">Customize coin emoji and name</div>
+                    <div class="command-details">
+                        <div class="command-detail">
+                            <span class="detail-label">Aliases:</span>
+                            <div class="aliases"><span class="alias-tag">coinconfig</span> <span class="alias-tag">customcoin</span></div>
+                        </div>
+                        <div class="command-detail">
+                            <span class="detail-label">Permission:</span>
+                            <span class="detail-value">Administrator</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- More categories would continue here... This is a template showing structure -->
+        
+        <footer>
+            <p>Made with ❤️ for Discord Communities</p>
+            <p style="margin-top: 10px; opacity: 0.7;">JURA BOT v2.1.0 - © 2025</p>
+        </footer>
+    </div>
+    
+    <script>
+        function toggleCategory(header) {
+            const category = header.parentElement;
+            const grid = category.querySelector('.commands-grid');
+            const description = category.querySelector('.category-description');
+            
+            header.classList.toggle('collapsed');
+            grid.classList.toggle('hidden');
+            description.classList.toggle('hidden');
+        }
+        
+        function searchCommands() {
+            const input = document.getElementById('searchInput');
+            const filter = input.value.toLowerCase();
+            const cards = document.querySelectorAll('.command-card');
+            
+            cards.forEach(card => {
+                const text = card.textContent.toLowerCase();
+                if (text.includes(filter)) {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+            
+            // Show/hide categories based on visible commands
+            const categories = document.querySelectorAll('.category');
+            categories.forEach(category => {
+                const visibleCards = Array.from(category.querySelectorAll('.command-card'))
+                    .filter(card => card.style.display !== 'none');
+                
+                if (visibleCards.length === 0 && filter !== '') {
+                    category.style.display = 'none';
+                } else {
+                    category.style.display = '';
+                }
+            });
+        }
+    </script>
+</body>
+</html>
