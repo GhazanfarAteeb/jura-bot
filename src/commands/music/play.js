@@ -54,15 +54,59 @@ export default {
             
             console.log(`🔍 Searching: "${searchQuery}" using ${searchEngine}`);
             
-            // Search for the track
-            const searchResult = await player.search(searchQuery, {
-                requestedBy: message.author,
-                searchEngine: searchEngine
-            });
+            // Search for the track with better error handling and fallback
+            let searchResult;
+            try {
+                searchResult = await player.search(searchQuery, {
+                    requestedBy: message.author,
+                    searchEngine: searchEngine
+                });
+                
+                console.log(`Search result:`, {
+                    hasResult: !!searchResult,
+                    hasTracks: searchResult?.tracks?.length > 0,
+                    trackCount: searchResult?.tracks?.length || 0,
+                    playlist: searchResult?.playlist ? 'yes' : 'no'
+                });
+                
+                // If no results and we used AUTO, try YouTube directly
+                if ((!searchResult || !searchResult.tracks.length) && searchEngine === QueryType.AUTO) {
+                    console.log('⚠️ AUTO search failed, trying YOUTUBE_SEARCH as fallback...');
+                    searchResult = await player.search(searchQuery, {
+                        requestedBy: message.author,
+                        searchEngine: QueryType.YOUTUBE_SEARCH
+                    });
+                    console.log(`Fallback result: ${searchResult?.tracks?.length || 0} tracks found`);
+                }
+                
+            } catch (searchError) {
+                console.error('Search error:', searchError);
+                console.error('Error details:', searchError.message, searchError.stack);
+                
+                // Try one more time with YouTube direct search
+                if (searchEngine !== QueryType.YOUTUBE_SEARCH) {
+                    console.log('🔄 Retrying with YouTube search...');
+                    try {
+                        searchResult = await player.search(searchQuery, {
+                            requestedBy: message.author,
+                            searchEngine: QueryType.YOUTUBE_SEARCH
+                        });
+                    } catch (retryError) {
+                        return message.reply({
+                            embeds: [await errorEmbed(guildId, 'Search Error', `Failed to search: ${searchError.message}\n\nThis may be due to:\n• Rate limiting\n• Extractor issues\n• Network problems\n\nTry again in a moment or use a direct YouTube URL.`)]
+                        });
+                    }
+                } else {
+                    return message.reply({
+                        embeds: [await errorEmbed(guildId, 'Search Error', `Failed to search: ${searchError.message}\n\nThis may be due to:\n• Rate limiting\n• Extractor issues\n• Network problems\n\nTry again in a moment or use a direct YouTube URL.`)]
+                    });
+                }
+            }
             
             if (!searchResult || !searchResult.tracks.length) {
+                console.log(`❌ No results found for: "${searchQuery}" with engine: ${searchEngine}`);
                 return message.reply({
-                    embeds: [await errorEmbed(guildId, 'No results found!', `Could not find: **${query}**\n\nTry:\n• Being more specific (artist name + song name)\n• Using a direct URL (Spotify, YouTube, Apple Music)`)]
+                    embeds: [await errorEmbed(guildId, 'No results found!', `Could not find: **${query}**\n\nTry:\n• Being more specific (artist name + song name)\n• Using a direct YouTube URL: \`https://youtube.com/watch?v=...\`\n• Checking if the song exists on YouTube`)]
                 });
             }
             

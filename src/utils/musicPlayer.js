@@ -1,5 +1,6 @@
 import { Player, QueryType } from 'discord-player';
 import { DefaultExtractors } from '@discord-player/extractor';
+import { attach, ext } from '@discord-player/extractor';
 import client from '../index.js';
 
 // Initialize Discord Player with proper configuration
@@ -24,26 +25,24 @@ export const player = new Player(client, {
 });
 
 // Load all extractors using the new loadMulti method
-// Exclude SoundCloudExtractor as it's unreliable and gets blocked
+// Use default extractors but we'll monitor which ones work
 try {
-    const { SpotifyExtractor, AppleMusicExtractor, YouTubeExtractor } = await import('@discord-player/extractor');
+    console.log('🔧 Loading extractors with DefaultExtractors...');
     
-    await player.extractors.register(SpotifyExtractor, {});
-    await player.extractors.register(AppleMusicExtractor, {});
-    await player.extractors.register(YouTubeExtractor, {});
+    // Load default extractors (includes YouTube, Spotify, Apple Music, etc.)
+    await player.extractors.loadMulti(DefaultExtractors);
     
-    console.log('✅ Loaded extractors: Spotify, Apple Music, YouTube');
-    console.log('⚠️  SoundCloud disabled due to blocking issues - use YouTube/Spotify instead');
+    console.log('✅ All default extractors loaded successfully');
+    console.log(`📊 Total registered extractors: ${player.extractors.size}`);
+    
+    // List all registered extractors
+    const extractorNames = Array.from(player.extractors.store.keys());
+    console.log('📋 Registered extractors:', extractorNames.join(', '));
+    
 } catch (extractorError) {
     console.error('❌ Failed to load extractors:', extractorError);
-    console.error('Trying fallback with all extractors...');
-    try {
-        await player.extractors.loadMulti(DefaultExtractors);
-        console.log('✅ Loaded all extractors with defaults');
-    } catch (fallbackError) {
-        console.error('❌ Fallback also failed:', fallbackError);
-        console.error('Music functionality may be limited');
-    }
+    console.error('Error details:', extractorError.message, extractorError.stack);
+    console.error('Music functionality may be severely limited');
 }
 
 // Player events
