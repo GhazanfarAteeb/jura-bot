@@ -24,12 +24,26 @@ export const player = new Player(client, {
 });
 
 // Load all extractors using the new loadMulti method
+// Exclude SoundCloudExtractor as it's unreliable and gets blocked
 try {
-    await player.extractors.loadMulti(DefaultExtractors);
-    console.log('✅ Loaded all platform extractors (including YouTube backend for Spotify/Apple Music)');
+    const { SpotifyExtractor, AppleMusicExtractor, YouTubeExtractor } = await import('@discord-player/extractor');
+    
+    await player.extractors.register(SpotifyExtractor, {});
+    await player.extractors.register(AppleMusicExtractor, {});
+    await player.extractors.register(YouTubeExtractor, {});
+    
+    console.log('✅ Loaded extractors: Spotify, Apple Music, YouTube');
+    console.log('⚠️  SoundCloud disabled due to blocking issues - use YouTube/Spotify instead');
 } catch (extractorError) {
     console.error('❌ Failed to load extractors:', extractorError);
-    console.error('Music functionality may be limited');
+    console.error('Trying fallback with all extractors...');
+    try {
+        await player.extractors.loadMulti(DefaultExtractors);
+        console.log('✅ Loaded all extractors with defaults');
+    } catch (fallbackError) {
+        console.error('❌ Fallback also failed:', fallbackError);
+        console.error('Music functionality may be limited');
+    }
 }
 
 // Player events
