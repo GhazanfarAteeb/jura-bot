@@ -5,19 +5,52 @@ import { infoEmbed, GLYPHS } from '../../utils/embeds.js';
 export default {
     name: 'leaderboard',
     aliases: ['lb', 'top'],
-    description: 'View the server XP leaderboard',
-    usage: 'leaderboard [page]',
+    description: 'View server leaderboards (coins, level, or messages)',
+    usage: 'leaderboard [type] [page]',
     category: 'utility',
     cooldown: 10,
     
     async execute(message, args) {
         const guildId = message.guild.id;
-        const page = parseInt(args[0]) || 1;
+        
+        // Determine leaderboard type
+        const validTypes = ['coins', 'level', 'messages', 'xp'];
+        let type = 'level'; // default
+        let page = 1;
+        
+        if (args[0] && validTypes.includes(args[0].toLowerCase())) {
+            type = args[0].toLowerCase();
+            page = parseInt(args[1]) || 1;
+        } else {
+            page = parseInt(args[0]) || 1;
+        }
+        
         const perPage = 10;
         
         try {
-            // Get leaderboard
-            const leaderboard = await Level.getLeaderboard(guildId, perPage * 10);
+            let leaderboard;
+            let title;
+            
+            // Get appropriate leaderboard based on type
+            if (type === 'coins') {
+                const Economy = (await import('../../models/Economy.js')).default;
+                leaderboard = await Economy.find({ guildId })
+                    .sort({ coins: -1 })
+                    .limit(perPage * 10)
+                    .lean();
+                title = '💰 Coins Leaderboard';
+            } else if (type === 'messages') {
+                const Economy = (await import('../../models/Economy.js')).default;
+                leaderboard = await Economy.find({ guildId })
+                    .sort({ 'stats.messagesCount': -1 })
+                    .limit(perPage * 10)
+                    .lean();
+                title = '💬 Messages Leaderboard';
+            } else {
+                // level or xp
+                leaderboard = await Level.getLeaderboard(guildId, perPage * 10);
+                title = '📊 Level Leaderboard';
+            }
             
             if (!leaderboard.length) {
                 const embed = await infoEmbed(guildId, 'Leaderboard',
@@ -46,7 +79,15 @@ export default {
                     const username = member ? member.user.username : user.username || 'Unknown User';
                     
                     leaderboardText += `${medal} **${username}**\n`;
-                    leaderboardText += `${GLYPHS.ARROW_RIGHT} Level ${user.level} • ${user.totalXP} Total XP\n\n`;
+                    
+                    // Display different stats based on type
+                    if (type === 'coins') {
+                        leaderboardText += `${GLYPHS.ARROW_RIGHT} ${user.coins?.toLocaleString() || 0} coins\n\n`;
+                    } else if (type === 'messages') {
+                        leaderboardText += `${GLYPHS.ARROW_RIGHT} ${user.stats?.messagesCount?.toLocaleString() || 0} messages\n\n`;
+                    } else {
+                        leaderboardText += `${GLYPHS.ARROW_RIGHT} Level ${user.level} • ${user.totalXP} Total XP\n\n`;
+                    }
                 } catch (error) {
                     console.error('Error fetching member:', error);
                 }
@@ -56,11 +97,11 @@ export default {
             const userPosition = leaderboard.findIndex(u => u.userId === message.author.id) + 1;
             
             const embed = new EmbedBuilder()
-                .setTitle(`${GLYPHS.TROPHY} Server Leaderboard`)
-                .setDescription(leaderboardText)
+                .setTitle(title)
+                .setDescription(leaderboardText || 'No data available.')
                 .setColor('#667eea')
                 .setFooter({ 
-                    text: `Page ${currentPage}/${maxPage}${userPosition ? ` • Your Rank: #${userPosition}` : ''}`
+                    text: `Page ${currentPage}/${maxPage}${userPosition ? ` • Your Rank: #${userPosition}` : ''} • Type: ${type}`
                 })
                 .setTimestamp();
             
@@ -70,7 +111,7 @@ export default {
             console.error('Error fetching leaderboard:', error);
             const { errorEmbed } = await import('../../utils/embeds.js');
             return message.reply({
-                embeds: [await errorEmbed(guildId, 'Failed to fetch leaderboard. Please try again later.')]
+                embeds: [await errorEmbed(guildId, 'Leaderboard Error', 'Failed to fetch leaderboard. Please try again later.')]
             });
         }
     }

@@ -14,7 +14,7 @@ export default {
         // Check if user is in same voice channel
         const check = checkSameVoiceChannel(message);
         if (check.error) {
-            return message.reply({ embeds: [await errorEmbed(guildId, check.message)] });
+            return message.reply({ embeds: [await errorEmbed(guildId, 'Error', check.message)] });
         }
         
         const queue = check.queue;

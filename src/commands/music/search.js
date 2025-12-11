@@ -14,13 +14,13 @@ export default {
         // Check voice channel
         const voiceCheck = checkVoiceChannel(message);
         if (voiceCheck.error) {
-            return message.reply({ embeds: [await errorEmbed(guildId, voiceCheck.message)] });
+            return message.reply({ embeds: [await errorEmbed(guildId, 'Voice Channel Error', voiceCheck.message)] });
         }
         
         const query = args.join(' ');
         if (!query) {
             return message.reply({
-                embeds: [await errorEmbed(guildId, 'Please provide a search query!')]
+                embeds: [await errorEmbed(guildId, 'Missing Query', 'Please provide a search query!')]
             });
         }
         
@@ -34,7 +34,7 @@ export default {
             
             if (!searchResult.hasTracks()) {
                 return message.reply({
-                    embeds: [await errorEmbed(guildId, `No results found for: ${query}`)]
+                    embeds: [await errorEmbed(guildId, 'No Results', `No results found for: ${query}`)]
                 });
             }
             
@@ -86,15 +86,15 @@ export default {
                 } catch (error) {
                     console.error('Search play error:', error);
                     m.reply({
-                        embeds: [await errorEmbed(guildId, 'An error occurred while trying to play the song!')]
+                        embeds: [await errorEmbed(guildId, 'Playback Error', 'An error occurred while trying to play the song!')]
                     });
                 }
             });
             
-            collector.on('end', collected => {
+            collector.on('end', async collected => {
                 if (collected.size === 0) {
                     message.reply({
-                        embeds: [await errorEmbed(guildId, 'Search timed out. No song was selected.')]
+                        embeds: [await errorEmbed(guildId, 'Timeout', 'Search timed out. No song was selected.')]
                     });
                 }
             });
@@ -102,7 +102,7 @@ export default {
         } catch (error) {
             console.error('Search error:', error);
             return message.reply({
-                embeds: [await errorEmbed(guildId, 'An error occurred while searching!')]
+                embeds: [await errorEmbed(guildId, 'Search Error', 'An error occurred while searching!')]
             });
         }
     }

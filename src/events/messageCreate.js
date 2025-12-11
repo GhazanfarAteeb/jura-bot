@@ -93,11 +93,22 @@ export default {
                     const expirationTime = timestamps.get(message.author.id) + cooldownAmount;
                     
                     if (now < expirationTime) {
-                        const timeLeft = (expirationTime - now) / 1000;
-                        const embed = await warningEmbed(guildId, 'Cooldown',
-                            `${GLYPHS.LOADING} Please wait ${timeLeft.toFixed(1)} seconds before using this command again.`
+                        const timeLeft = Math.ceil((expirationTime - now) / 1000);
+                        
+                        // Format time left nicely
+                        let timeString;
+                        if (timeLeft >= 60) {
+                            const minutes = Math.floor(timeLeft / 60);
+                            const seconds = timeLeft % 60;
+                            timeString = `${minutes} minute${minutes !== 1 ? 's' : ''} ${seconds} second${seconds !== 1 ? 's' : ''}`;
+                        } else {
+                            timeString = `${timeLeft} second${timeLeft !== 1 ? 's' : ''}`;
+                        }
+                        
+                        const embed = await warningEmbed(guildId, '⏰ Cooldown Active',
+                            `${GLYPHS.LOADING} Please wait **${timeString}** before using \`${command.name}\` again.\n\n⏱️ Available <t:${Math.floor(expirationTime / 1000)}:R>`
                         );
-                        return message.reply({ embeds: [embed], ephemeral: true });
+                        return message.reply({ embeds: [embed] });
                     }
                 }
                 
