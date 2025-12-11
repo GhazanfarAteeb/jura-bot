@@ -10,8 +10,8 @@ export const player = new Player(client, playerConfig);
 try {
     console.log('🔧 Loading extractors...');
     
-    // Load all default extractors
-    await player.extractors.loadDefault();
+    // Load all default extractors using loadMulti (loadDefault is deprecated)
+    await player.extractors.loadMulti(DefaultExtractors);
     
     console.log('✅ All extractors loaded successfully');
     console.log(`📊 Total registered extractors: ${player.extractors.size}`);
