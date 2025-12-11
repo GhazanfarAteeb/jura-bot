@@ -9,7 +9,8 @@
     "register": "node src/register-commands.js",
     "build": "echo 'Build completed'",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "test-encryption": "node test-encryption.js"
+    "test-encryption": "node test-encryption.js",
+    "debug-voice": "node debug-voice-deps.js"
   },
   "repository": {
     "type": "git",
