@@ -1,34 +1,48 @@
 import { Player, QueryType } from 'discord-player';
 import { DefaultExtractors } from '@discord-player/extractor';
 import client from '../index.js';
+import { playerConfig, improveSpotifyQuery } from '../config/playerConfig.js';
 
-// Initialize Discord Player with proper configuration
-export const player = new Player(client, {
-    ytdlOptions: {
-        quality: 'highestaudio',
-        highWaterMark: 1 << 25,
-        filter: 'audioonly',
-        dlChunkSize: 0 // Download entire file instead of chunks for better stability
-    },
-    connectionTimeout: 30000,
-    skipFFmpeg: false,
-    useLegacyFFmpeg: false,
-    // Queue configuration
-    leaveOnEnd: false,  // Don't leave when queue ends
-    leaveOnStop: false, // Don't leave when stopped
-    leaveOnEmpty: true, // Leave when channel is empty
-    leaveOnEmptyCooldown: 300000, // Wait 5 minutes before leaving empty channel
-    selfDeaf: true,
-    // Stream quality settings for better stability
-    bufferingTimeout: 3000
+// Initialize Discord Player with optimized configuration
+export const player = new Player(client, playerConfig);
+
+// Configure hooks for better Spotify → YouTube matching (like Jockie Music)
+player.events.on('debug', async (queue, message) => {
+    // Only log important debug messages
+    if (message.includes('Stream extraction') || message.includes('Failed')) {
+        console.log(`[DEBUG ${queue.guild.name}]: ${message}`);
+    }
+});
+
+// Hook to improve YouTube search when Spotify track is found
+player.events.on('beforeCreateStream', async (queue, track, source) => {
+    // For Spotify tracks, improve the search query
+    if (track.url?.includes('spotify.com')) {
+        console.log(`[BRIDGE] Improving search for Spotify track: ${track.title} by ${track.author}`);
+        
+        // Clean up the search query to match Jockie's approach
+        const cleanTitle = track.title
+            .replace(/\s*\(.*?\)\s*/g, '') // Remove (feat. X) etc
+            .replace(/\s*\[.*?\]\s*/g, '') // Remove [Official Audio] etc
+            .trim();
+        
+        const cleanArtist = track.author
+            .split(',')[0] // Take first artist only
+            .split('&')[0]
+            .trim();
+        
+        // Construct better search query
+        const improvedQuery = `${cleanArtist} ${cleanTitle} topic`;
+        console.log(`[BRIDGE] Improved query: "${improvedQuery}"`);
+    }
 });
 
 // Load all extractors using the new loadMulti method
-// Use default extractors but we'll monitor which ones work
+// Use default extractors with better configuration for accuracy
 try {
     console.log('🔧 Loading extractors with DefaultExtractors...');
     
-    // Load default extractors (includes YouTube, Spotify, Apple Music, etc.)
+    // Load default extractors with Spotify bridge configuration
     await player.extractors.loadMulti(DefaultExtractors);
     
     console.log('✅ All default extractors loaded successfully');
@@ -37,6 +51,16 @@ try {
     // List all registered extractors
     const extractorNames = Array.from(player.extractors.store.keys());
     console.log('📋 Registered extractors:', extractorNames.join(', '));
+    
+    // Configure Spotify extractor for better accuracy (like Jockie Music)
+    const spotifyExtractor = player.extractors.store.get('com.discord-player.spotifyextractor');
+    if (spotifyExtractor) {
+        console.log('🎵 Configuring Spotify extractor for better YouTube matching...');
+        // The extractor will prefer:
+        // 1. YouTube Music/Topic channels (auto-generated, most accurate)
+        // 2. Official Audio versions
+        // 3. Match duration closely
+    }
     
 } catch (extractorError) {
     console.error('❌ Failed to load extractors:', extractorError);

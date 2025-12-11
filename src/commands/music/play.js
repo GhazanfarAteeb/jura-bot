@@ -1,6 +1,7 @@
 import { player, checkVoiceChannel } from '../../utils/musicPlayer.js';
 import { QueryType } from 'discord-player';
 import { errorEmbed, successEmbed } from '../../utils/embeds.js';
+import playdl from 'play-dl';
 
 export default {
     name: 'play',
@@ -105,9 +106,32 @@ export default {
             
             if (!searchResult || !searchResult.tracks.length) {
                 console.log(`❌ No results found for: "${searchQuery}" with engine: ${searchEngine}`);
-                return message.reply({
-                    embeds: [await errorEmbed(guildId, 'No results found!', `Could not find: **${query}**\n\nTry:\n• Being more specific (artist name + song name)\n• Using a direct YouTube URL: \`https://youtube.com/watch?v=...\`\n• Checking if the song exists on YouTube`)]
-                });
+                
+                // Last resort: Try play-dl directly
+                if (!query.includes('http')) {
+                    console.log('🔄 Trying play-dl direct search as last resort...');
+                    try {
+                        const playDlResults = await playdl.search(searchQuery, { limit: 1, source: { youtube: "video" } });
+                        if (playDlResults && playDlResults.length > 0) {
+                            console.log(`✅ play-dl found: ${playDlResults[0].title}`);
+                            // Use the YouTube URL with discord-player
+                            searchResult = await player.search(playDlResults[0].url, {
+                                requestedBy: message.author,
+                                searchEngine: QueryType.YOUTUBE_VIDEO
+                            });
+                            console.log(`play-dl fallback result: ${searchResult?.tracks?.length || 0} tracks`);
+                        }
+                    } catch (playDlError) {
+                        console.error('play-dl also failed:', playDlError.message);
+                    }
+                }
+                
+                // Still no results after all attempts
+                if (!searchResult || !searchResult.tracks.length) {
+                    return message.reply({
+                        embeds: [await errorEmbed(guildId, 'No results found!', `Could not find: **${query}**\n\nTried multiple search methods but nothing worked.\n\nTry:\n• Using a direct YouTube URL: \`https://youtube.com/watch?v=...\`\n• Checking if the song exists on YouTube\n• Different search terms`)]
+                    });
+                }
             }
             
             console.log(`✅ Found: ${searchResult.tracks[0].title} by ${searchResult.tracks[0].author}`);
