@@ -9,20 +9,48 @@ import express from 'express';
 import Guild from './models/Guild.js';
 import logger from './utils/logger.js';
 
-// Load libsodium-wrappers FIRST for voice encryption (pure JS, no compilation needed)
-// Must be exposed globally for discord-voip to detect it
-try {
-    const libsodium = await import('libsodium-wrappers');
-    await libsodium.ready;
-    
-    // Expose sodium globally so discord-voip can find it
-    global.sodium = libsodium;
-    
-    console.log('✅ Loaded libsodium-wrappers for voice encryption');
-    console.log('✅ Sodium exposed globally for discord-voip');
-} catch (err) {
-    console.error('❌ Failed to load libsodium-wrappers:', err.message);
-    console.error('Voice features will not work');
+// Encryption libraries to try in order of preference (all pure JS, no compilation)
+const encryptionLibraries = [
+    { name: 'libsodium-wrappers', needsReady: true },
+    { name: '@stablelib/xchacha20poly1305', needsReady: false },
+    { name: '@noble/ciphers/chacha', needsReady: false },
+    { name: 'tweetnacl', needsReady: false }
+];
+
+// Recursive function to try loading encryption libraries
+async function loadEncryptionLibrary(libraries, index = 0) {
+    if (index >= libraries.length) {
+        console.error('❌ No encryption library available - voice features will not work');
+        return false;
+    }
+
+    const lib = libraries[index];
+    console.log(`ℹ️  Trying to load ${lib.name}...`);
+
+    try {
+        const module = await import(lib.name);
+        
+        // Wait for ready if needed (libsodium-wrappers)
+        if (lib.needsReady && module.ready) {
+            await module.ready;
+        }
+        
+        // Expose globally for @discordjs/voice
+        global.sodium = module;
+        console.log(`✅ Successfully loaded ${lib.name} for voice encryption`);
+        return true;
+    } catch (err) {
+        console.log(`⚠️  ${lib.name} not available (${err.message})`);
+        // Try next library recursively
+        return await loadEncryptionLibrary(libraries, index + 1);
+    }
+}
+
+// Load encryption library with fallback chain
+const encryptionLoaded = await loadEncryptionLibrary(encryptionLibraries);
+
+if (encryptionLoaded) {
+    console.log('✅ Encryption library exposed globally for @discordjs/voice');
 }
 
 const __filename = fileURLToPath(import.meta.url);

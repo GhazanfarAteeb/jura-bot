@@ -8,7 +8,8 @@
     "dev": "node --watch src/index.js",
     "register": "node src/register-commands.js",
     "build": "echo 'Build completed'",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "test-encryption": "node test-encryption.js"
   },
   "repository": {
     "type": "git",
@@ -26,6 +27,8 @@
     "@discordjs/opus": "^0.9.0",
     "@discordjs/voice": "^0.19.0",
     "@napi-rs/canvas": "^0.1.44",
+    "@noble/ciphers": "^1.0.0",
+    "@stablelib/xchacha20poly1305": "^2.0.0",
     "discord-player": "^6.6.6",
     "discord.js": "^14.14.1",
     "dotenv": "^16.3.1",
