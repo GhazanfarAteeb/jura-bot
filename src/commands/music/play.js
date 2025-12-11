@@ -14,9 +14,13 @@ export default {
         { type: 'string', name: 'query', description: 'Song name or URL (e.g., "payphone maroon 5")', required: true }
     ]),
     executeSlash: async (interaction) => {
-        return await executeSlashWrapper(interaction, async (message, args) => {
-            args = [interaction.options.getString('query')];
-            return await exports.default.execute(message, args);
+        // Extract query from slash command
+        const query = interaction.options.getString('query');
+        const args = [query];
+        
+        // Create pseudo message and execute
+        return await executeSlashWrapper(interaction, async (message, passedArgs) => {
+            return await command.execute(message, args);
         });
     },
     execute: async (message, args) => {

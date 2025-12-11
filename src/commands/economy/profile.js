@@ -24,7 +24,7 @@ export default {
         { type: 'user', name: 'user', description: 'User to view profile of', required: false }
     ]),
     executeSlash: async (interaction) => {
-        return await executeSlashWrapper(interaction, exports.default.execute);
+        return await executeSlashWrapper(interaction, command.execute);
     },
     
     execute: async (message, args) => {
