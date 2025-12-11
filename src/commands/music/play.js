@@ -118,9 +118,9 @@ export default {
                     console.error('❌ Spotify metadata fetch failed:', spotifyError);
                 }
                 
-                // If we got Spotify metadata, try to find better YouTube match
+                // If we got Spotify metadata, use play-dl with multiple search strategies (like MusicBot does)
                 if (spotifyMetadata) {
-                    // Clean up the search query for better YouTube matching
+                    // Clean up the search query
                     const cleanTitle = spotifyMetadata.title
                         .replace(/\s*\(feat\.?.*?\)/gi, '')
                         .replace(/\s*\[.*?\]/g, '')
@@ -134,38 +134,79 @@ export default {
                         .split('feat')[0]
                         .trim();
                     
-                    // Try multiple search strategies
+                    // Multiple search queries with decreasing specificity (MusicBot strategy)
                     const searchQueries = [
-                        `${cleanArtist} ${cleanTitle} topic`, // Prefer Topic channels (most accurate)
-                        `${cleanArtist} ${cleanTitle} official audio`,
-                        `${cleanArtist} ${cleanTitle} audio`,
-                        `${cleanArtist} ${cleanTitle}`
+                        `"${cleanTitle}" "${cleanArtist}"`,     // Exact match with quotes (MOST accurate)
+                        `${cleanArtist} ${cleanTitle} official`, // Official version
+                        `${cleanArtist} ${cleanTitle}`,         // Normal search
+                        `${cleanTitle}`                          // Title only (fallback)
                     ];
                     
-                    console.log(`🔍 Trying improved searches for better match...`);
+                    console.log(`🔍 Using MusicBot strategy - trying ${searchQueries.length} search variations...`);
                     
-                    for (const searchQuery of searchQueries) {
+                    let bestResult = null;
+                    
+                    for (let i = 0; i < searchQueries.length; i++) {
+                        const searchQuery = searchQueries[i];
                         try {
-                            const ytResult = await player.search(searchQuery, {
-                                requestedBy: message.author,
-                                searchEngine: QueryType.YOUTUBE_SEARCH
+                            const playDlResults = await playdl.search(searchQuery, {
+                                limit: 5,
+                                source: { youtube: 'video' }
                             });
                             
-                            if (ytResult && ytResult.tracks.length > 0) {
-                                console.log(`✅ Found via: "${searchQuery}"`);
-                                console.log(`   Result: ${ytResult.tracks[0].title} by ${ytResult.tracks[0].author}`);
-                                searchResult = ytResult;
-                                break;
+                            if (playDlResults && playDlResults.length > 0) {
+                                // Filter for best match - prefer Topic channels and official
+                                for (const result of playDlResults) {
+                                    const title = result.title.toLowerCase();
+                                    const channel = result.channel?.name?.toLowerCase() || '';
+                                    
+                                    // BEST: Topic channels (e.g., "Artist - Topic")
+                                    if (channel.includes('- topic')) {
+                                        bestResult = result;
+                                        console.log(`✅ [Strategy ${i+1}] Found Topic channel: ${result.title}`);
+                                        break;
+                                    }
+                                    
+                                    // GOOD: Official videos
+                                    if (title.includes('official') && (title.includes(cleanTitle.toLowerCase()) || title.includes(cleanArtist.toLowerCase()))) {
+                                        bestResult = result;
+                                        console.log(`✅ [Strategy ${i+1}] Found official: ${result.title}`);
+                                    }
+                                    
+                                    // OKAY: First result that matches
+                                    if (!bestResult) {
+                                        bestResult = result;
+                                    }
+                                }
+                                
+                                if (bestResult) {
+                                    console.log(`🎯 Selected: ${bestResult.title} by ${bestResult.channel?.name || 'Unknown'}`);
+                                    break; // Stop searching, we found something good
+                                }
                             }
-                        } catch (err) {
-                            console.log(`   ❌ "${searchQuery}" failed, trying next...`);
+                        } catch (searchError) {
+                            console.log(`   ⚠️ Strategy ${i+1} failed: ${searchError.message}`);
                             continue;
                         }
                     }
                     
-                    // If no improved search worked, fall back to original Spotify result
-                    if (!searchResult || !searchResult.tracks.length) {
-                        console.log(`⚠️ Improved searches failed, using original Spotify bridge`);
+                    if (bestResult) {
+                        // Use the YouTube URL we found
+                        try {
+                            searchResult = await player.search(bestResult.url, {
+                                requestedBy: message.author,
+                                searchEngine: QueryType.AUTO
+                            });
+                            
+                            if (searchResult && searchResult.tracks.length > 0) {
+                                console.log(`✅ Successfully loaded: ${searchResult.tracks[0].title}`);
+                            }
+                        } catch (loadError) {
+                            console.error(`❌ Failed to load best result:`, loadError.message);
+                            searchResult = { tracks: [spotifyMetadata] };
+                        }
+                    } else {
+                        console.log(`⚠️ All search strategies failed, using Spotify bridge`);
                         searchResult = { tracks: [spotifyMetadata] };
                     }
                 } else {
