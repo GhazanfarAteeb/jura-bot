@@ -174,10 +174,19 @@ app.get('/health', (req, res) => {
 app.get('/', (req, res) => {
     res.json({
         name: 'JURA BOT',
-        version: '2.0.0',
+        version: '2.1.0',
         status: 'running',
-        message: 'Bot is online and operational'
+        message: 'Bot is online and operational',
+        endpoints: {
+            health: '/health',
+            commands: '/commands'
+        }
     });
+});
+
+// Commands page endpoint
+app.get('/commands', (req, res) => {
+    res.sendFile(join(__dirname, '../docs/commands.html'));
 });
 
 function formatUptime(seconds) {

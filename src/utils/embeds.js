@@ -112,13 +112,22 @@ export async function successEmbed(guildId, title, description) {
 }
 
 // Error embed
-export async function errorEmbed(guildId, title, description) {
+export async function errorEmbed(guildId, title = 'Error', description) {
     const embed = await createEmbed(guildId, 'error');
     const guildConfig = await Guild.getGuild(guildId);
     const useGlyphs = guildConfig?.embedStyle?.useGlyphs !== false;
     
-    embed.setTitle(`${useGlyphs ? GLYPHS.ERROR : '✗'} ${title}`)
-        .setDescription(description);
+    // If only 2 parameters, treat second param as description
+    if (description === undefined && title) {
+        description = title;
+        title = 'Error';
+    }
+    
+    embed.setTitle(`${useGlyphs ? GLYPHS.ERROR : '✗'} ${title}`);
+    
+    if (description) {
+        embed.setDescription(description);
+    }
     
     return embed;
 }

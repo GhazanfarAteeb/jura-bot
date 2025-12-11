@@ -3,6 +3,7 @@ import { createCanvas, loadImage, GlobalFonts } from '@napi-rs/canvas';
 import Economy from '../../models/Economy.js';
 import Member from '../../models/Member.js';
 import { getBackground } from '../../utils/shopItems.js';
+import { createSlashCommand, executeSlashWrapper } from '../../utils/slashCommands.js';
 
 // Register fonts if available
 try {
@@ -19,6 +20,12 @@ export default {
     category: 'economy',
     aliases: ['prof', 'card', 'me'],
     cooldown: 5,
+    data: createSlashCommand('profile', 'View your customized profile card', [
+        { type: 'user', name: 'user', description: 'User to view profile of', required: false }
+    ]),
+    executeSlash: async (interaction) => {
+        return await executeSlashWrapper(interaction, exports.default.execute);
+    },
     
     execute: async (message, args) => {
         const targetUser = message.mentions.users.first() || message.author;
@@ -43,31 +50,42 @@ export default {
             const background = getBackground(economy.profile.background || 'default');
             
             // Create canvas
-            const canvas = createCanvas(900, 300);
+            const canvas = createCanvas(900, 350);
             const ctx = canvas.getContext('2d');
             
-            // Draw background
+            // Draw background with gradient default
             if (background && background.image) {
                 try {
                     const bgImage = await loadImage(background.image).catch(() => null);
                     if (bgImage) {
                         ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
                     } else {
-                        // Fallback to solid color
-                        ctx.fillStyle = background.color || economy.profile.backgroundColor || '#2C2F33';
+                        // Fallback to gradient
+                        const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+                        gradient.addColorStop(0, '#23272A');
+                        gradient.addColorStop(1, '#2C2F33');
+                        ctx.fillStyle = gradient;
                         ctx.fillRect(0, 0, canvas.width, canvas.height);
                     }
                 } catch {
-                    ctx.fillStyle = background.color || economy.profile.backgroundColor || '#2C2F33';
+                    // Gradient fallback
+                    const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+                    gradient.addColorStop(0, economy.profile.backgroundColor || '#23272A');
+                    gradient.addColorStop(1, '#2C2F33');
+                    ctx.fillStyle = gradient;
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
                 }
             } else {
-                ctx.fillStyle = economy.profile.backgroundColor || '#2C2F33';
+                // Default gradient background
+                const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+                gradient.addColorStop(0, economy.profile.backgroundColor || '#23272A');
+                gradient.addColorStop(1, '#2C2F33');
+                ctx.fillStyle = gradient;
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
             }
             
-            // Draw overlay for better text readability
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            // Draw subtle overlay for better text readability
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
             // Draw avatar border
@@ -109,37 +127,35 @@ export default {
             
             textY += 35;
             
-            // Draw title if set
-            if (economy.profile.title) {
-                ctx.font = 'italic 18px "Poppins", sans-serif';
-                ctx.fillStyle = economy.profile.accentColor || '#7289DA';
-                ctx.fillText(`"${economy.profile.title}"`, textX, textY);
-                textY += 30;
-            }
+            // Draw title (with default)
+            const profileTitle = economy.profile.title || 'Discord Member';
+            ctx.font = 'italic 20px "Poppins", sans-serif';
+            ctx.fillStyle = economy.profile.accentColor || '#7289DA';
+            ctx.fillText(`"${profileTitle}"`, textX, textY);
+            textY += 35;
             
-            // Draw bio if set
-            if (economy.profile.bio) {
-                ctx.font = '16px "Poppins", sans-serif';
-                ctx.fillStyle = '#DCDDDE';
-                const maxWidth = 550;
-                const words = economy.profile.bio.split(' ');
-                let line = '';
+            // Draw bio (with default)
+            const profileBio = economy.profile.bio || 'Welcome to my profile! Use R!editprofile to customize.';
+            ctx.font = '16px "Poppins", sans-serif';
+            ctx.fillStyle = '#DCDDDE';
+            const maxWidth = 550;
+            const words = profileBio.split(' ');
+            let line = '';
+            
+            for (let word of words) {
+                const testLine = line + word + ' ';
+                const metrics = ctx.measureText(testLine);
                 
-                for (let word of words) {
-                    const testLine = line + word + ' ';
-                    const metrics = ctx.measureText(testLine);
-                    
-                    if (metrics.width > maxWidth && line !== '') {
-                        ctx.fillText(line, textX, textY);
-                        line = word + ' ';
-                        textY += 20;
-                    } else {
-                        line = testLine;
-                    }
+                if (metrics.width > maxWidth && line !== '') {
+                    ctx.fillText(line, textX, textY);
+                    line = word + ' ';
+                    textY += 22;
+                } else {
+                    line = testLine;
                 }
-                ctx.fillText(line, textX, textY);
-                textY += 30;
             }
+            ctx.fillText(line, textX, textY);
+            textY += 30;
             
             // Draw description if set (below bio, separate section)
             if (economy.profile.description) {
@@ -193,64 +209,81 @@ export default {
             if (economy.profile.showStats !== false) {
                 textY = canvas.height - 100;
                 
-                // Stats background
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-                ctx.fillRect(textX - 10, textY - 25, 550, 80);
+                // Stats background with rounded corners effect
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillRect(textX - 10, textY - 30, 550, 85);
                 
-                ctx.font = '18px "Poppins", sans-serif';
+                // Add border
+                ctx.strokeStyle = economy.profile.accentColor || '#7289DA';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(textX - 10, textY - 30, 550, 85);
+                
+                ctx.font = 'bold 20px "Poppins", sans-serif';
                 
                 // Coins
                 ctx.fillStyle = '#FFD700';
                 ctx.fillText('💰', textX, textY);
                 ctx.fillStyle = '#FFFFFF';
-                ctx.fillText(`${economy.coins.toLocaleString()}`, textX + 30, textY);
+                ctx.fillText(`${economy.coins.toLocaleString()}`, textX + 35, textY);
                 
                 // Streak
                 ctx.fillStyle = '#FF6B6B';
-                ctx.fillText('🔥', textX + 150, textY);
+                ctx.fillText('🔥', textX + 180, textY);
                 ctx.fillStyle = '#FFFFFF';
-                ctx.fillText(`${economy.daily.streak || 0} days`, textX + 180, textY);
+                ctx.fillText(`${economy.daily.streak || 0} days`, textX + 215, textY);
                 
-                // Rep (if available)
-                if (memberData.stats && memberData.stats.reputation !== undefined) {
-                    ctx.fillStyle = '#3498DB';
-                    ctx.fillText('⭐', textX + 300, textY);
-                    ctx.fillStyle = '#FFFFFF';
-                    ctx.fillText(`${memberData.stats.reputation || 0}`, textX + 330, textY);
-                }
+                // Rep
+                ctx.fillStyle = '#3498DB';
+                ctx.fillText('⭐', textX + 380, textY);
+                ctx.fillStyle = '#FFFFFF';
+                const repValue = (memberData.stats && memberData.stats.reputation) || 0;
+                ctx.fillText(`${repValue}`, textX + 415, textY);
                 
-                textY += 35;
+                textY += 38;
                 
                 // Total earned
-                ctx.font = '14px "Poppins", sans-serif';
+                ctx.font = '16px "Poppins", sans-serif';
                 ctx.fillStyle = '#B9BBBE';
                 ctx.fillText(`Total Earned: ${economy.stats.totalEarned.toLocaleString()} coins`, textX, textY);
                 
                 // Messages sent
                 if (economy.stats.messagesCount > 0) {
-                    ctx.fillText(`Messages: ${economy.stats.messagesCount.toLocaleString()}`, textX + 250, textY);
+                    ctx.fillText(`| Messages: ${economy.stats.messagesCount.toLocaleString()}`, textX + 280, textY);
                 }
             }
             
             // Draw badges if enabled
             if (economy.profile.showBadges !== false && economy.inventory.badges.length > 0) {
-                const badgeY = 40;
-                const badgeSize = 32;
-                const badgeSpacing = 40;
-                let badgeX = canvas.width - 60;
+                const badgeY = 50;
+                const badgeSize = 40;
+                const badgeSpacing = 50;
+                let badgeX = canvas.width - 80;
                 
                 // Draw up to 5 badges
                 for (let i = 0; i < Math.min(economy.inventory.badges.length, 5); i++) {
                     const badge = economy.inventory.badges[i];
                     
-                    // Draw badge background
-                    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-                    ctx.fillRect(badgeX - badgeSize / 2 - 2, badgeY - badgeSize / 2 - 2, badgeSize + 4, badgeSize + 4);
+                    // Draw badge background circle
+                    ctx.beginPath();
+                    ctx.arc(badgeX, badgeY, badgeSize / 2 + 3, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+                    ctx.fill();
                     
-                    // Draw badge emoji/icon (simplified)
-                    ctx.font = '24px sans-serif';
+                    // Draw badge border
+                    ctx.strokeStyle = '#FFD700';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    
+                    // Draw badge emoji
+                    ctx.font = '28px "Segoe UI Emoji", "Apple Color Emoji", sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
                     ctx.fillStyle = '#FFD700';
-                    ctx.fillText('🏅', badgeX - badgeSize / 2, badgeY + badgeSize / 4);
+                    ctx.fillText('🏅', badgeX, badgeY);
+                    
+                    // Reset text align
+                    ctx.textAlign = 'left';
+                    ctx.textBaseline = 'alphabetic';
                     
                     badgeX -= badgeSpacing;
                 }

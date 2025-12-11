@@ -1,6 +1,7 @@
 import { player, checkVoiceChannel } from '../../utils/musicPlayer.js';
 import { QueryType } from 'discord-player';
 import { errorEmbed, successEmbed } from '../../utils/embeds.js';
+import { createSlashCommand, executeSlashWrapper } from '../../utils/slashCommands.js';
 
 export default {
     name: 'play',
@@ -9,21 +10,31 @@ export default {
     usage: 'play <song name | url>',
     category: 'music',
     cooldown: 3,
+    data: createSlashCommand('play', 'Play music from YouTube, Spotify, or SoundCloud', [
+        { type: 'string', name: 'query', description: 'Song name or URL (e.g., "payphone maroon 5")', required: true }
+    ]),
+    executeSlash: async (interaction) => {
+        return await executeSlashWrapper(interaction, async (message, args) => {
+            args = [interaction.options.getString('query')];
+            return await exports.default.execute(message, args);
+        });
+    },
     execute: async (message, args) => {
         const guildId = message.guild.id;
         
         // Check if user is in voice channel
         const voiceCheck = checkVoiceChannel(message);
         if (voiceCheck.error) {
-            return message.reply({ embeds: [await errorEmbed(guildId, voiceCheck.message)] });
+            return message.reply({ embeds: [await errorEmbed(guildId, 'Voice Channel Error', voiceCheck.message)] });
         }
         
         if (!args.length) {
             return message.reply({
-                embeds: [await errorEmbed(guildId, 'Please provide a song name or URL!\n\nUsage: `!play <song|url>`\n\nExamples:\n• `!play never gonna give you up`\n• `!play https://youtube.com/watch?v=...`\n• `!play https://open.spotify.com/track/...`')]
+                embeds: [await errorEmbed(guildId, 'Missing Arguments', 'Please provide a song name or URL!\n\nUsage: `!play <song|url>`\n\nExamples:\n• `!play never gonna give you up`\n• `!play https://youtube.com/watch?v=...`\n• `!play https://open.spotify.com/track/...`')]
             });
         }
         
+        // Join all args to support "song name artist name"
         const query = args.join(' ');
         const channel = message.member.voice.channel;
         

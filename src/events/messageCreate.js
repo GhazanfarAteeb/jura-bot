@@ -44,10 +44,17 @@ export default {
             }
             
             // Handle commands
-            const prefix = guildConfig.prefix;
-            if (!message.content.startsWith(prefix)) return;
+            const prefix = guildConfig.prefix.toLowerCase();
+            const messageContent = message.content.toLowerCase();
             
-            const args = message.content.slice(prefix.length).trim().split(/ +/);
+            // Check if message starts with prefix (case-insensitive)
+            if (!messageContent.startsWith(prefix)) return;
+            
+            // Extract command and args, handling optional space after prefix
+            const contentAfterPrefix = message.content.slice(prefix.length).trim();
+            if (!contentAfterPrefix) return;
+            
+            const args = contentAfterPrefix.split(/ +/);
             const commandName = args.shift().toLowerCase();
             
             // Get command

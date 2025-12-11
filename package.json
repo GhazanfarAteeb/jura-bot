@@ -7,6 +7,7 @@
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
     "build": "echo 'Build completed'",
+    "deploy-commands": "node src/deploy-commands.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
