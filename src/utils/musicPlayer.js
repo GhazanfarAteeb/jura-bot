@@ -9,37 +9,17 @@ export const player = new Player(client, playerConfig);
 try {
     console.log('🔧 Loading extractors...');
     
-    // Import the extractor package
-    const extractorPkg = await import('@discord-player/extractor');
+    // Use loadMulti with DefaultExtractors
+    const { DefaultExtractors } = await import('@discord-player/extractor');
+    await player.extractors.loadMulti(DefaultExtractors);
     
-    // Register YouTube extractor
-    if (extractorPkg.YouTubeExtractor) {
-        await player.extractors.register(extractorPkg.YouTubeExtractor, {});
-        console.log('✅ YouTube extractor loaded');
-    }
-    
-    // Register SoundCloud extractor
-    if (extractorPkg.SoundCloudExtractor) {
-        await player.extractors.register(extractorPkg.SoundCloudExtractor, {});
-        console.log('✅ SoundCloud extractor loaded');
-    }
-    
+    console.log('✅ Extractors loaded successfully');
     console.log(`📊 Total registered extractors: ${player.extractors.size}`);
     
 } catch (extractorError) {
     console.error('❌ Failed to load extractors:', extractorError);
-    console.error('Error details:', extractorError.message, extractorError.stack);
-    
-    // Fallback: try to use DefaultExtractors if individual loading fails
-    console.log('🔄 Attempting fallback to DefaultExtractors...');
-    try {
-        const { DefaultExtractors } = await import('@discord-player/extractor');
-        await player.extractors.loadDefault(DefaultExtractors);
-        console.log('✅ DefaultExtractors loaded as fallback');
-    } catch (fallbackError) {
-        console.error('❌ Fallback also failed:', fallbackError.message);
-        console.error('Music functionality may be severely limited');
-    }
+    console.error('Error details:', extractorError.message);
+    console.error('Music functionality may be severely limited');
 }
 
 // Configure hooks for better Spotify → YouTube matching (like Jockie Music)
