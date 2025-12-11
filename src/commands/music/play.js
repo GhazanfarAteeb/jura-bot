@@ -1,9 +1,15 @@
 import { player, checkVoiceChannel } from '../../utils/musicPlayer.js';
 import { QueryType } from 'discord-player';
 import { errorEmbed, successEmbed } from '../../utils/embeds.js';
-import { createSlashCommand, executeSlashWrapper } from '../../utils/slashCommands.js';
 
-const executeCommand = async (message, args) => {
+export default {
+    name: 'play',
+    aliases: ['p'],
+    description: 'Play music from YouTube, Spotify, or SoundCloud',
+    usage: 'play <song name | url>',
+    category: 'music',
+    cooldown: 3,
+    execute: async (message, args) => {
         const guildId = message.guild.id;
         
         // Check if user is in voice channel
@@ -106,23 +112,5 @@ const executeCommand = async (message, args) => {
                 embeds: [await errorEmbed(guildId, 'An error occurred while trying to play the song!')]
             });
         }
-};
-
-export default {
-    name: 'play',
-    aliases: ['p'],
-    description: 'Play music from YouTube, Spotify, or SoundCloud',
-    usage: 'play <song name | url>',
-    category: 'music',
-    cooldown: 3,
-    data: createSlashCommand('play', 'Play music from YouTube, Spotify, or SoundCloud', [
-        { type: 'string', name: 'query', description: 'Song name or URL (e.g., "payphone maroon 5")', required: true }
-    ]),
-    executeSlash: async (interaction) => {
-        const query = interaction.options.getString('query');
-        return await executeSlashWrapper(interaction, async (message) => {
-            return await executeCommand(message, [query]);
-        });
-    },
-    execute: executeCommand
+    }
 };

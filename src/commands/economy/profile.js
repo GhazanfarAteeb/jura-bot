@@ -3,7 +3,6 @@ import { createCanvas, loadImage, GlobalFonts } from '@napi-rs/canvas';
 import Economy from '../../models/Economy.js';
 import Member from '../../models/Member.js';
 import { getBackground } from '../../utils/shopItems.js';
-import { createSlashCommand, executeSlashWrapper } from '../../utils/slashCommands.js';
 
 // Register fonts if available
 try {
@@ -13,7 +12,15 @@ try {
     console.log('Custom fonts not found, using system fonts');
 }
 
-const executeCommand = async (message, args) => {
+export default {
+    name: 'profile',
+    description: 'View your customized profile card',
+    usage: 'profile [@user]',
+    category: 'economy',
+    aliases: ['prof', 'card', 'me'],
+    cooldown: 5,
+    
+    execute: async (message, args) => {
         const targetUser = message.mentions.users.first() || message.author;
         const userId = targetUser.id;
         const guildId = message.guild.id;
@@ -308,20 +315,5 @@ const executeCommand = async (message, args) => {
                 message.reply('An error occurred while generating your profile. Please try again!');
             }
         }
-};
-
-export default {
-    name: 'profile',
-    description: 'View your customized profile card',
-    usage: 'profile [@user]',
-    category: 'economy',
-    aliases: ['prof', 'card', 'me'],
-    cooldown: 5,
-    data: createSlashCommand('profile', 'View your customized profile card', [
-        { type: 'user', name: 'user', description: 'User to view profile of', required: false }
-    ]),
-    executeSlash: async (interaction) => {
-        return await executeSlashWrapper(interaction, executeCommand);
-    },
-    execute: executeCommand
+    }
 };
