@@ -108,7 +108,15 @@ class MusicQueue {
             
             const searchResults = await play.search(searchQuery, { limit: 1, source: { youtube: 'video' } });
             if (!searchResults || searchResults.length === 0) {
-                throw new Error('No YouTube results found');
+                console.log('⚠️ No YouTube results, trying alternative search...');
+                // Try without artist name
+                const altSearch = await play.search(song.title, { limit: 1, source: { youtube: 'video' } });
+                if (!altSearch || altSearch.length === 0) {
+                    throw new Error('No YouTube results found');
+                }
+                const videoUrl = altSearch[0].url;
+                console.log(`✅ Found YouTube video (alternative): ${videoUrl}`);
+                return await this.getYouTubeStream(videoUrl);
             }
             
             const videoUrl = searchResults[0].url;
@@ -119,7 +127,7 @@ class MusicQueue {
             console.error('❌ Error getting Spotify stream:', error);
             return null;
         }
-    }
+    },
     
     async getYouTubeStream(url) {
         try {
@@ -165,6 +173,9 @@ class MusicQueue {
     
     async connect(channel) {
         try {
+            console.log(`🔌 Attempting to connect to voice channel: ${channel.name} (${channel.id})`);
+            console.log(`   Guild: ${channel.guild.name} (${channel.guild.id})`);
+            
             this.connection = joinVoiceChannel({
                 channelId: channel.id,
                 guildId: channel.guild.id,
@@ -173,36 +184,61 @@ class MusicQueue {
                 selfMute: false
             });
             
+            console.log('🔌 Voice connection created, waiting for Ready state...');
+            
             // Handle connection state changes
             this.connection.on(VoiceConnectionStatus.Ready, () => {
                 console.log('✅ Voice connection is ready');
             });
             
+            this.connection.on(VoiceConnectionStatus.Connecting, () => {
+                console.log('🔄 Voice connection is connecting...');
+            });
+            
+            this.connection.on(VoiceConnectionStatus.Signalling, () => {
+                console.log('📡 Voice connection is signalling...');
+            });
+            
             this.connection.on(VoiceConnectionStatus.Disconnected, async () => {
+                console.log('⚠️ Voice connection disconnected');
                 try {
                     await Promise.race([
                         entersState(this.connection, VoiceConnectionStatus.Signalling, 5_000),
                         entersState(this.connection, VoiceConnectionStatus.Connecting, 5_000),
                     ]);
-                    // Reconnecting
+                    console.log('🔄 Attempting to reconnect...');
                 } catch (error) {
                     // Real disconnect
+                    console.log('❌ Failed to reconnect, destroying connection');
                     this.connection.destroy();
-                    console.log('👋 Disconnected from voice channel');
                 }
             });
             
-            // Wait for connection to be ready
+            this.connection.on('error', (error) => {
+                console.error('❌ Voice connection error:', error);
+            });
+            
+            // Wait for connection to be ready with longer timeout
+            console.log('⏳ Waiting for connection to be ready (30s timeout)...');
             await entersState(this.connection, VoiceConnectionStatus.Ready, 30_000);
             
-            console.log(`✅ Connected to voice channel: ${channel.name}`);
+            console.log(`✅ Successfully connected to voice channel: ${channel.name}`);
             return this.connection;
             
         } catch (error) {
-            console.error('❌ Error connecting to voice:', error);
+            console.error('❌ Error connecting to voice channel:', error);
+            console.error('   Error stack:', error.stack);
+            
+            if (this.connection) {
+                console.log('🧹 Cleaning up failed connection...');
+                this.connection.destroy();
+                this.connection = null;
+            }
+            
             throw error;
         }
     }
+
     
     disconnect() {
         if (this.connection) {

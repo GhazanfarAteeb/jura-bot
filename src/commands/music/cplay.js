@@ -36,8 +36,8 @@ export default {
             // Search for the song
             let songInfo;
             if (query.includes('spotify.com')) {
-                // Spotify URL
-                songInfo = await this.searchSpotify(query);
+                // Spotify URL - extract track ID and search YouTube
+                songInfo = await this.handleSpotifyUrl(query);
             } else if (query.includes('youtube.com') || query.includes('youtu.be')) {
                 // YouTube URL
                 songInfo = await this.searchYouTube(query);
@@ -55,8 +55,15 @@ export default {
             
             // Connect to voice if not connected
             if (!queue.connection) {
-                await queue.connect(voiceChannel);
-                await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
+                try {
+                    await message.channel.send('🔌 Connecting to voice channel...');
+                    await queue.connect(voiceChannel);
+                    await message.channel.send('✅ Connected! Preparing audio...');
+                    await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
+                } catch (error) {
+                    console.error('Failed to connect to voice:', error);
+                    return message.reply(`❌ Failed to connect to voice channel: ${error.message}`);
+                }
             }
             
             // Add song to queue
@@ -88,21 +95,38 @@ export default {
         }
     },
     
-    async searchSpotify(url) {
+    async handleSpotifyUrl(url) {
         try {
-            const spotifyData = await play.spotify(url);
-            return {
-                title: spotifyData.name,
-                author: spotifyData.artists?.[0]?.name || 'Unknown',
-                url: url,
-                thumbnail: spotifyData.thumbnail?.url || null,
-                duration: this.formatDuration(spotifyData.durationInMs),
-                durationMs: spotifyData.durationInMs
-            };
+            // Extract Spotify track info using fetch (no auth needed for public data)
+            const trackId = url.match(/track\/([a-zA-Z0-9]+)/)?.[1];
+            if (!trackId) {
+                throw new Error('Invalid Spotify URL');
+            }
+            
+            // Use public Spotify oEmbed API (no auth required)
+            const response = await fetch(`https://open.spotify.com/oembed?url=https://open.spotify.com/track/${trackId}`);
+            const data = await response.json();
+            
+            // Extract title and artist from the title string (format: "Song Name by Artist Name")
+            const fullTitle = data.title || '';
+            const [title, artist] = fullTitle.split(' by ');
+            
+            // Search YouTube with the track info
+            const searchQuery = `${title} ${artist || ''}`.trim();
+            console.log(`🔍 Searching YouTube for Spotify track: ${searchQuery}`);
+            
+            return await this.searchYouTube(searchQuery);
+            
         } catch (error) {
-            console.error('Error searching Spotify:', error);
-            return null;
+            console.error('Error handling Spotify URL:', error);
+            // Fallback: try to search YouTube with just the URL as query
+            return await this.searchYouTube(url);
         }
+    },
+    
+    async searchSpotify(url) {
+        // Deprecated - use handleSpotifyUrl instead
+        return await this.handleSpotifyUrl(url);
     },
     
     async searchYouTube(query) {
