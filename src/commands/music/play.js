@@ -96,30 +96,50 @@ export default {
                 }
                 
             } else if (isSpotifyURL) {
-                console.log(`🎵 Spotify URL detected`);
+                console.log(`🎵 Spotify URL detected: ${query}`);
                 try {
+                    // Use AUTO to let discord-player handle Spotify and bridge to YouTube
                     searchResult = await player.search(query, {
                         requestedBy: message.author,
-                        searchEngine: QueryType.SPOTIFY_SONG
+                        searchEngine: QueryType.AUTO
                     });
+                    
+                    if (searchResult && searchResult.tracks.length > 0) {
+                        console.log(`✅ Spotify bridge successful:`, {
+                            title: searchResult.tracks[0].title,
+                            author: searchResult.tracks[0].author,
+                            source: searchResult.tracks[0].source
+                        });
+                    }
                 } catch (searchError) {
                     console.error('❌ Spotify search error:', searchError);
+                    console.error('Full error:', searchError.message, searchError.stack);
                     return message.reply({
-                        embeds: [await errorEmbed(guildId, 'Spotify Error', `Could not load Spotify track: ${searchError.message}`)]
+                        embeds: [await errorEmbed(guildId, 'Spotify Error', `Could not load Spotify track.\n\n**Possible reasons:**\n• Spotify link is invalid or expired\n• Track not found on YouTube\n• Regional restrictions\n\n**Error:** ${searchError.message}\n\n**Try:** Searching by song name instead`)]
                     });
                 }
                 
             } else if (isAppleMusicURL) {
-                console.log(`🍎 Apple Music URL detected`);
+                console.log(`🍎 Apple Music URL detected: ${query}`);
                 try {
+                    // Use AUTO to let discord-player handle Apple Music and bridge to YouTube
                     searchResult = await player.search(query, {
                         requestedBy: message.author,
-                        searchEngine: QueryType.APPLE_MUSIC_SONG
+                        searchEngine: QueryType.AUTO
                     });
+                    
+                    if (searchResult && searchResult.tracks.length > 0) {
+                        console.log(`✅ Apple Music bridge successful:`, {
+                            title: searchResult.tracks[0].title,
+                            author: searchResult.tracks[0].author,
+                            source: searchResult.tracks[0].source
+                        });
+                    }
                 } catch (searchError) {
                     console.error('❌ Apple Music search error:', searchError);
+                    console.error('Full error:', searchError.message, searchError.stack);
                     return message.reply({
-                        embeds: [await errorEmbed(guildId, 'Apple Music Error', `Could not load Apple Music track: ${searchError.message}`)]
+                        embeds: [await errorEmbed(guildId, 'Apple Music Error', `Could not load Apple Music track.\n\n**Error:** ${searchError.message}\n\n**Try:** Searching by song name instead`)]
                     });
                 }
                 
@@ -155,11 +175,19 @@ export default {
             
             // Check if we got results
             if (!searchResult || !searchResult.tracks.length) {
-                console.log(`❌ No results found`);
+                console.log(`❌ No results found for query type: ${isSpotifyURL ? 'Spotify' : isYouTubeURL ? 'YouTube' : isAppleMusicURL ? 'Apple Music' : 'Search'}`);
+                console.log(`   Query: ${query}`);
+                console.log(`   Search result object:`, searchResult);
+                
+                if (isSpotifyURL) {
+                    return message.reply({
+                        embeds: [await errorEmbed(guildId, 'Spotify Track Not Found', `Could not find this Spotify track on YouTube.\n\n**This usually means:**\n• The track is not available on YouTube\n• Regional restrictions\n• The track was removed\n\n**Try:** Searching for the song name directly instead of using Spotify URL`)]
+                    });
+                }
                 
                 if (isURL) {
                     return message.reply({
-                        embeds: [await errorEmbed(guildId, 'No Results', `Could not access that URL.\n\n**Check:**\n• Video/song is not private\n• Not region-locked\n• URL is correct`)]
+                        embeds: [await errorEmbed(guildId, 'No Results', `Could not access that URL.\n\n**Check:**\n• Video/song is not private\n• Not region-locked\n• URL is correct\n\n**URL:** ${query}`)]
                     });
                 }
                 
