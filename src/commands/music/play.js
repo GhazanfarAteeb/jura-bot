@@ -62,11 +62,13 @@ export default {
             try {
                 if (!queue.connection) {
                     await queue.connect(channel);
+                    console.log(`✅ Connected to voice channel: ${channel.name} in guild: ${message.guild.name}`);
                 }
-            } catch {
+            } catch (error) {
+                console.error('Voice connection error:', error);
                 player.nodes.delete(message.guild.id);
                 return message.reply({
-                    embeds: [await errorEmbed(guildId, 'Could not join your voice channel!')]
+                    embeds: [await errorEmbed(guildId, 'Voice Connection Failed', `Could not join your voice channel!\n\n**Error:** ${error.message}\n\nMake sure I have permission to **Connect** and **Speak** in the voice channel.`)]
                 });
             }
             

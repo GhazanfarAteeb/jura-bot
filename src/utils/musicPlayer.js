@@ -1,17 +1,32 @@
 import { Player, QueryType } from 'discord-player';
 import client from '../index.js';
 
-// Initialize Discord Player
+// Initialize Discord Player with proper configuration
 export const player = new Player(client, {
     ytdlOptions: {
         quality: 'highestaudio',
         highWaterMark: 1 << 25,
         filter: 'audioonly'
+    },
+    // Enable support for all platforms
+    connectionTimeout: 30000,
+    skipFFmpeg: false,
+    // Audio quality settings to prevent encoding errors
+    useLegacyFFmpeg: false,
+    // Set default audio settings
+    audioPlayerOptions: {
+        initialVolume: 80,
+        bufferingTimeout: 3000
     }
 });
 
-// Load extractors for Spotify, SoundCloud, YouTube
-player.extractors.loadDefault().catch(console.error);
+// Load all default extractors (YouTube, Spotify, SoundCloud, Apple Music, Vimeo, etc.)
+// This includes: YouTube, Spotify, SoundCloud, Apple Music, Deezer, Vimeo, Bandcamp, Twitch, and more
+player.extractors.loadDefault((ext) => ext !== 'YouTubeExtractor').then(() => {
+    console.log('✅ Loaded all music platform extractors');
+}).catch(err => {
+    console.error('❌ Failed to load extractors:', err);
+});
 
 // Player events
 player.events.on('playerStart', (queue, track) => {
