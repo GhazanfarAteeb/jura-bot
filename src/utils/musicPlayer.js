@@ -1,41 +1,10 @@
 import { Player, QueryType } from 'discord-player';
 import { DefaultExtractors } from '@discord-player/extractor';
 import client from '../index.js';
-import { playerConfig, improveSpotifyQuery } from '../config/playerConfig.js';
+import { playerConfig } from '../config/playerConfig.js';
 
 // Initialize Discord Player with optimized configuration
 export const player = new Player(client, playerConfig);
-
-// Configure hooks for better Spotify → YouTube matching (like Jockie Music)
-player.events.on('debug', async (queue, message) => {
-    // Only log important debug messages
-    if (message.includes('Stream extraction') || message.includes('Failed')) {
-        console.log(`[DEBUG ${queue.guild.name}]: ${message}`);
-    }
-});
-
-// Hook to improve YouTube search when Spotify track is found
-player.events.on('beforeCreateStream', async (queue, track, source) => {
-    // For Spotify tracks, improve the search query
-    if (track.url?.includes('spotify.com')) {
-        console.log(`[BRIDGE] Improving search for Spotify track: ${track.title} by ${track.author}`);
-        
-        // Clean up the search query to match Jockie's approach
-        const cleanTitle = track.title
-            .replace(/\s*\(.*?\)\s*/g, '') // Remove (feat. X) etc
-            .replace(/\s*\[.*?\]\s*/g, '') // Remove [Official Audio] etc
-            .trim();
-        
-        const cleanArtist = track.author
-            .split(',')[0] // Take first artist only
-            .split('&')[0]
-            .trim();
-        
-        // Construct better search query
-        const improvedQuery = `${cleanArtist} ${cleanTitle} topic`;
-        console.log(`[BRIDGE] Improved query: "${improvedQuery}"`);
-    }
-});
 
 // Load all extractors using the new loadMulti method
 // Use default extractors with better configuration for accuracy

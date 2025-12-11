@@ -32,30 +32,42 @@ export default {
         try {
             await message.channel.sendTyping();
             
-            // Determine search engine based on query type
+            // Determine if query is a URL and which type
+            const isURL = query.includes('http://') || query.includes('https://');
+            const isYouTubeURL = isURL && (query.includes('youtube.com') || query.includes('youtu.be') || query.includes('m.youtube.com'));
+            const isSpotifyURL = isURL && query.includes('spotify.com');
+            const isAppleMusicURL = isURL && query.includes('music.apple.com');
+            
             let searchEngine = QueryType.AUTO;
             let searchQuery = query;
             
-            // Check if it's a URL
-            if (query.includes('http://') || query.includes('https://')) {
-                // Direct URL - use AUTO to detect platform
+            // Force specific query types for URLs to ensure exact match
+            if (isYouTubeURL) {
+                // Convert mobile YouTube URLs to desktop format
+                searchQuery = query
+                    .replace('m.youtube.com', 'www.youtube.com')
+                    .replace('youtu.be/', 'youtube.com/watch?v=');
+                searchEngine = QueryType.YOUTUBE_VIDEO; // Force YouTube video extraction
+                console.log(`🎥 YouTube URL detected: ${searchQuery}`);
+            } else if (isSpotifyURL) {
+                searchEngine = QueryType.SPOTIFY_SONG; // Force Spotify
+                console.log(`🎵 Spotify URL detected`);
+            } else if (isAppleMusicURL) {
+                searchEngine = QueryType.APPLE_MUSIC_SONG; // Force Apple Music
+                console.log(`🍎 Apple Music URL detected`);
+            } else if (isURL) {
+                // Generic URL - let AUTO handle it
                 searchEngine = QueryType.AUTO;
+                console.log(`🔗 Generic URL detected`);
             } else {
-                // Plain text search - prioritize YouTube for best results
+                // Plain text search
                 searchEngine = QueryType.YOUTUBE_SEARCH;
-                
-                // If query looks like "artist - song", format it better
-                if (query.includes(' - ')) {
-                    searchQuery = query; // Keep as is
-                } else {
-                    // Add quotes for exact match on YouTube
-                    searchQuery = query;
-                }
+                console.log(`🔍 Text search: "${searchQuery}"`);
             }
             
-            console.log(`🔍 Searching: "${searchQuery}" using ${searchEngine}`);
+            console.log(`🔍 Searching with engine: ${searchEngine}`);
             
-            // Search for the track with better error handling and fallback
+            // Search for the track
             let searchResult;
             try {
                 searchResult = await player.search(searchQuery, {
@@ -67,71 +79,37 @@ export default {
                     hasResult: !!searchResult,
                     hasTracks: searchResult?.tracks?.length > 0,
                     trackCount: searchResult?.tracks?.length || 0,
+                    firstTrack: searchResult?.tracks?.[0] ? {
+                        title: searchResult.tracks[0].title,
+                        author: searchResult.tracks[0].author,
+                        url: searchResult.tracks[0].url,
+                        duration: searchResult.tracks[0].duration
+                    } : null,
                     playlist: searchResult?.playlist ? 'yes' : 'no'
                 });
                 
-                // If no results and we used AUTO, try YouTube directly
-                if ((!searchResult || !searchResult.tracks.length) && searchEngine === QueryType.AUTO) {
-                    console.log('⚠️ AUTO search failed, trying YOUTUBE_SEARCH as fallback...');
-                    searchResult = await player.search(searchQuery, {
-                        requestedBy: message.author,
-                        searchEngine: QueryType.YOUTUBE_SEARCH
-                    });
-                    console.log(`Fallback result: ${searchResult?.tracks?.length || 0} tracks found`);
-                }
-                
             } catch (searchError) {
-                console.error('Search error:', searchError);
+                console.error('❌ Search error:', searchError);
                 console.error('Error details:', searchError.message, searchError.stack);
                 
-                // Try one more time with YouTube direct search
-                if (searchEngine !== QueryType.YOUTUBE_SEARCH) {
-                    console.log('🔄 Retrying with YouTube search...');
-                    try {
-                        searchResult = await player.search(searchQuery, {
-                            requestedBy: message.author,
-                            searchEngine: QueryType.YOUTUBE_SEARCH
-                        });
-                    } catch (retryError) {
-                        return message.reply({
-                            embeds: [await errorEmbed(guildId, 'Search Error', `Failed to search: ${searchError.message}\n\nThis may be due to:\n• Rate limiting\n• Extractor issues\n• Network problems\n\nTry again in a moment or use a direct YouTube URL.`)]
-                        });
-                    }
-                } else {
-                    return message.reply({
-                        embeds: [await errorEmbed(guildId, 'Search Error', `Failed to search: ${searchError.message}\n\nThis may be due to:\n• Rate limiting\n• Extractor issues\n• Network problems\n\nTry again in a moment or use a direct YouTube URL.`)]
-                    });
-                }
+                return message.reply({
+                    embeds: [await errorEmbed(guildId, 'Search Error', `Failed to search: ${searchError.message}\n\nPlease check:\n• The URL is valid and accessible\n• The video/song is not private or region-locked\n• Your search term is correct\n\n**Query:** ${query}`)]
+                });
             }
             
             if (!searchResult || !searchResult.tracks.length) {
                 console.log(`❌ No results found for: "${searchQuery}" with engine: ${searchEngine}`);
                 
-                // Last resort: Try play-dl directly
-                if (!query.includes('http')) {
-                    console.log('🔄 Trying play-dl direct search as last resort...');
-                    try {
-                        const playDlResults = await playdl.search(searchQuery, { limit: 1, source: { youtube: "video" } });
-                        if (playDlResults && playDlResults.length > 0) {
-                            console.log(`✅ play-dl found: ${playDlResults[0].title}`);
-                            // Use the YouTube URL with discord-player
-                            searchResult = await player.search(playDlResults[0].url, {
-                                requestedBy: message.author,
-                                searchEngine: QueryType.YOUTUBE_VIDEO
-                            });
-                            console.log(`play-dl fallback result: ${searchResult?.tracks?.length || 0} tracks`);
-                        }
-                    } catch (playDlError) {
-                        console.error('play-dl also failed:', playDlError.message);
-                    }
-                }
-                
-                // Still no results after all attempts
-                if (!searchResult || !searchResult.tracks.length) {
+                // For URLs, provide specific error message
+                if (isURL) {
                     return message.reply({
-                        embeds: [await errorEmbed(guildId, 'No results found!', `Could not find: **${query}**\n\nTried multiple search methods but nothing worked.\n\nTry:\n• Using a direct YouTube URL: \`https://youtube.com/watch?v=...\`\n• Checking if the song exists on YouTube\n• Different search terms`)]
+                        embeds: [await errorEmbed(guildId, 'URL Not Accessible', `Could not access the link you provided.\n\n**Possible reasons:**\n• The video/song is private or deleted\n• Region-locked content\n• Age-restricted content\n• Invalid URL format\n\n**URL:** ${query}`)]
                     });
                 }
+                
+                return message.reply({
+                    embeds: [await errorEmbed(guildId, 'No Results Found', `No results for: **${query}**\n\n**Try:**\n• Use a direct YouTube/Spotify URL\n• Check spelling\n• Include artist name\n• Use simpler search terms`)]
+                });
             }
             
             console.log(`✅ Found: ${searchResult.tracks[0].title} by ${searchResult.tracks[0].author}`);
