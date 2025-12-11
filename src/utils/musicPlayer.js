@@ -20,15 +20,7 @@ export const player = new Player(client, {
     leaveOnEmptyCooldown: 300000, // Wait 5 minutes before leaving empty channel
     selfDeaf: true,
     // Stream quality settings for better stability
-    bufferingTimeout: 3000,
-    // Retry settings
-    queryCache: true,
-    // Better audio quality settings
-    audioFilters: {
-        normalizeAudio: true,
-        fadeIn: true,
-        fadeOut: true
-    }
+    bufferingTimeout: 3000
 });
 
 // Load all extractors using the new loadMulti method
