@@ -184,7 +184,11 @@ class MusicQueue {
                 selfMute: false
             });
             
-            console.log('🔌 Voice connection created, waiting for Ready state...');
+            console.log('🔌 Voice connection created');
+            
+            // Subscribe player immediately
+            this.connection.subscribe(this.player);
+            console.log('✅ Player subscribed to connection');
             
             // Handle connection state changes
             this.connection.on(VoiceConnectionStatus.Ready, () => {
@@ -218,11 +222,11 @@ class MusicQueue {
                 console.error('❌ Voice connection error:', error);
             });
             
-            // Wait for connection to be ready with longer timeout
-            console.log('⏳ Waiting for connection to be ready (30s timeout)...');
-            await entersState(this.connection, VoiceConnectionStatus.Ready, 30_000);
+            // Don't wait for Ready state - connection will transition automatically
+            // Just give it a moment to establish
+            await new Promise(resolve => setTimeout(resolve, 1000));
             
-            console.log(`✅ Successfully connected to voice channel: ${channel.name}`);
+            console.log(`✅ Voice connection established for: ${channel.name}`);
             return this.connection;
             
         } catch (error) {
