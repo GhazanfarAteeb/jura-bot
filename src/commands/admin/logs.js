@@ -1,4 +1,4 @@
-import logger from '../utils/logger.js';
+import logger from '../../utils/logger.js';
 import { EmbedBuilder } from 'discord.js';
 import { readdir, stat } from 'fs/promises';
 import { join } from 'path';
