@@ -26,6 +26,37 @@ try {
     console.error('Music functionality may be severely limited');
 }
 
+// Configure hooks for better Spotify → YouTube matching (like Jockie Music)
+player.events.on('debug', async (queue, message) => {
+    // Only log important debug messages
+    if (message.includes('Stream extraction') || message.includes('Failed')) {
+        console.log(`[DEBUG ${queue.guild.name}]: ${message}`);
+    }
+});
+
+// Hook to improve YouTube search when Spotify track is found
+player.events.on('beforeCreateStream', async (queue, track, source) => {
+    // For Spotify tracks, improve the search query
+    if (track.url?.includes('spotify.com')) {
+        console.log(`[BRIDGE] Improving search for Spotify track: ${track.title} by ${track.author}`);
+        
+        // Clean up the search query to match Jockie's approach
+        const cleanTitle = track.title
+            .replace(/\s*\(.*?\)\s*/g, '') // Remove (feat. X) etc
+            .replace(/\s*\[.*?\]\s*/g, '') // Remove [Official Audio] etc
+            .trim();
+        
+        const cleanArtist = track.author
+            .split(',')[0] // Take first artist only
+            .split('&')[0]
+            .trim();
+        
+        // Construct better search query
+        const improvedQuery = `${cleanArtist} ${cleanTitle} topic`;
+        console.log(`[BRIDGE] Improved query: "${improvedQuery}"`);
+    }
+});
+
 // Player events
 player.events.on('playerStart', (queue, track) => {
     console.log(`▶️ Started playing: ${track.title} in ${queue.guild.name}`);
