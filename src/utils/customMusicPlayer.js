@@ -6,7 +6,8 @@ import {
     VoiceConnectionStatus,
     entersState,
     getVoiceConnection,
-    StreamType
+    StreamType,
+    demuxProbe
 } from '@discordjs/voice';
 import { createReadStream } from 'fs';
 import play from 'play-dl';
@@ -77,12 +78,15 @@ class MusicQueue {
                 throw new Error('Failed to get audio stream');
             }
             
-            console.log('🎵 Creating audio resource from stream URL');
+            console.log('🎵 Creating audio resource from stream');
             
-            // Create audio resource from the stream URL
-            const resource = createAudioResource(streamUrl, {
-                inlineVolume: true,
-                inputType: StreamType.Arbitrary
+            // Probe the stream to detect the type
+            const { stream, type } = await demuxProbe(streamUrl);
+            
+            // Create audio resource with probed stream
+            const resource = createAudioResource(stream, {
+                inputType: type,
+                inlineVolume: true
             });
             
             // Set volume
@@ -137,26 +141,19 @@ class MusicQueue {
         try {
             console.log('🔗 Getting stream for URL:', url);
             
-            // Use youtube-dl-exec for more reliable streaming
-            const info = await ytdl(url, {
-                dumpSingleJson: true,
+            // Use ytdl to stream audio directly (piped output)
+            const stream = ytdl.exec(url, {
+                output: '-',
+                quiet: true,
+                format: 'bestaudio',
                 noCheckCertificates: true,
                 noWarnings: true,
                 preferFreeFormats: true,
-                addHeader: ['referer:youtube.com', 'user-agent:googlebot']
+                rmCacheDir: true
             });
             
-            // Get the best audio format URL
-            const audioFormat = info.formats.find(f => 
-                f.acodec && f.acodec !== 'none' && !f.vcodec
-            ) || info.formats.find(f => f.acodec && f.acodec !== 'none');
-            
-            if (!audioFormat || !audioFormat.url) {
-                throw new Error('No audio format found');
-            }
-            
-            console.log('✅ Got audio stream URL');
-            return audioFormat.url;
+            console.log('✅ Created YouTube audio stream');
+            return stream.stdout;
             
         } catch (error) {
             console.error('❌ Error getting YouTube stream:', error);
