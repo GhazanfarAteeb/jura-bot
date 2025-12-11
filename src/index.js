@@ -9,6 +9,21 @@ import express from 'express';
 import Guild from './models/Guild.js';
 import logger from './utils/logger.js';
 
+// Load sodium for voice encryption
+try {
+    const sodium = await import('sodium-native');
+    console.log('✅ Loaded sodium-native for voice encryption');
+} catch (err) {
+    try {
+        const libsodium = await import('libsodium-wrappers');
+        await libsodium.ready;
+        console.log('✅ Loaded libsodium-wrappers for voice encryption');
+    } catch (err2) {
+        const tweetnacl = await import('tweetnacl');
+        console.log('✅ Loaded tweetnacl for voice encryption');
+    }
+}
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 

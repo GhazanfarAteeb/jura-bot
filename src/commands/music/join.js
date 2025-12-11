@@ -50,7 +50,9 @@ export default {
             });
             
             // Connect to voice channel
-            await newQueue.connect(channel);
+            await newQueue.connect(channel, {
+                deaf: true
+            });
             
             const embed = await successEmbed(
                 guildId,

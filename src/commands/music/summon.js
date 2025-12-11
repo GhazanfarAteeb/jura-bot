@@ -25,7 +25,9 @@ export default {
             // Move bot to new channel if different
             if (queue.connection.channel.id !== channel.id) {
                 try {
-                    await queue.connect(channel);
+                    await queue.connect(channel, {
+                        deaf: true
+                    });
                     const embed = await successEmbed(
                         guildId,
                         '🎵 Summoned!',
@@ -62,7 +64,9 @@ export default {
             });
             
             // Connect to voice channel
-            await newQueue.connect(channel);
+            await newQueue.connect(channel, {
+                deaf: true
+            });
             
             const embed = await successEmbed(
                 guildId,

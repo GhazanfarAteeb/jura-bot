@@ -62,7 +62,9 @@ export default {
             let justConnected = false;
             try {
                 if (!queue.connection) {
-                    await queue.connect(channel);
+                    await queue.connect(channel, {
+                        deaf: true
+                    });
                     justConnected = true;
                     console.log(`✅ Connected to voice channel: ${channel.name} in guild: ${message.guild.name}`);
                     await message.channel.send(`🎵 Joined **${channel.name}**! Preparing to play...`);
