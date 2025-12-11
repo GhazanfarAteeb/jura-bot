@@ -13,10 +13,10 @@ export const player = new Player(client, {
     useLegacyFFmpeg: false
 });
 
-// Load all extractors except YouTube (Deezer, Spotify, Tidal, Apple Music, SoundCloud, Bandcamp, Vimeo, etc.)
+// Load all extractors including YouTube (needed as backend for Spotify/Apple Music streaming)
 try {
-    await player.extractors.loadDefault((ext) => ext !== 'YouTubeExtractor');
-    console.log('✅ Loaded platform extractors: Deezer, Spotify, Tidal, Apple Music, SoundCloud, Bandcamp, Vimeo, Twitch');
+    await player.extractors.loadDefault();
+    console.log('✅ Loaded all platform extractors (including YouTube backend for Spotify/Apple Music)');
 } catch (extractorError) {
     console.error('❌ Failed to load extractors:', extractorError);
     console.error('Music functionality may be limited');
