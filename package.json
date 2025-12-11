@@ -32,7 +32,10 @@
     "discord-player": "^6.6.6",
     "@discord-player/extractor": "^4.4.5",
     "ytdl-core": "^4.11.5",
-    "play-dl": "^1.9.7"
+    "play-dl": "^1.9.7",
+    "opusscript": "^0.1.1",
+    "libsodium-wrappers": "^0.7.13",
+    "tweetnacl": "^1.0.3"
   },
   "engines": {
     "node": ">=18.0.0"
