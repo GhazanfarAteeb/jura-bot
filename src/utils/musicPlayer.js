@@ -1,36 +1,19 @@
 import { Player, QueryType } from 'discord-player';
-import { 
-    YouTubeExtractor, 
-    SpotifyExtractor, 
-    SoundCloudExtractor,
-    AppleMusicExtractor 
-} from '@discord-player/extractor';
+import { DefaultExtractors } from '@discord-player/extractor';
 import client from '../index.js';
 import { playerConfig } from '../config/playerConfig.js';
 
 // Initialize Discord Player with optimized configuration
 export const player = new Player(client, playerConfig);
 
-// Load individual extractors for better control and accuracy
+// Load all extractors - using DefaultExtractors which includes YouTube, Spotify, Apple Music, SoundCloud
 try {
-    console.log('🔧 Loading individual extractors...');
+    console.log('🔧 Loading extractors...');
     
-    // Load YouTube extractor (for direct URLs and searches)
-    await player.extractors.register(YouTubeExtractor, {});
-    console.log('✅ YouTube extractor loaded');
+    // Load all default extractors
+    await player.extractors.loadDefault();
     
-    // Load Spotify extractor (for Spotify URLs - will bridge to YouTube for playback)
-    await player.extractors.register(SpotifyExtractor, {});
-    console.log('✅ Spotify extractor loaded');
-    
-    // Load Apple Music extractor (for Apple Music URLs - will bridge to YouTube)
-    await player.extractors.register(AppleMusicExtractor, {});
-    console.log('✅ Apple Music extractor loaded');
-    
-    // Load SoundCloud extractor (for SoundCloud URLs)
-    await player.extractors.register(SoundCloudExtractor, {});
-    console.log('✅ SoundCloud extractor loaded');
-    
+    console.log('✅ All extractors loaded successfully');
     console.log(`📊 Total registered extractors: ${player.extractors.size}`);
     
     // List all registered extractors
