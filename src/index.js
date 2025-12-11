@@ -9,48 +9,58 @@ import express from 'express';
 import Guild from './models/Guild.js';
 import logger from './utils/logger.js';
 
-// Encryption libraries to try in order of preference (all pure JS, no compilation)
-const encryptionLibraries = [
-    { name: 'libsodium-wrappers', needsReady: true },
-    { name: '@stablelib/xchacha20poly1305', needsReady: false },
-    { name: '@noble/ciphers/chacha', needsReady: false },
-    { name: 'tweetnacl', needsReady: false }
-];
+// Load encryption libraries for voice (discord-voip compatibility)
+// discord-voip looks for methods object with open/close methods
+console.log('🔐 Loading encryption libraries for voice...');
 
-// Recursive function to try loading encryption libraries
-async function loadEncryptionLibrary(libraries, index = 0) {
-    if (index >= libraries.length) {
-        console.error('❌ No encryption library available - voice features will not work');
-        return false;
+let encryptionLoaded = false;
+
+// Try libsodium-wrappers first (best compatibility with discord-voip)
+try {
+    const libsodium = await import('libsodium-wrappers');
+    await libsodium.ready;
+    
+    // Expose for @discordjs/voice
+    global.sodium = libsodium;
+    
+    // Also expose methods for discord-voip compatibility
+    if (!global.sodium.methods) {
+        global.sodium.methods = libsodium;
     }
+    
+    console.log('✅ Loaded libsodium-wrappers for voice encryption');
+    console.log('   Available methods:', Object.keys(libsodium).filter(k => k.includes('crypto')).slice(0, 5).join(', '), '...');
+    encryptionLoaded = true;
+} catch (err) {
+    console.log(`⚠️  libsodium-wrappers not available: ${err.message}`);
+}
 
-    const lib = libraries[index];
-    console.log(`ℹ️  Trying to load ${lib.name}...`);
-
-    try {
-        const module = await import(lib.name);
-        
-        // Wait for ready if needed (libsodium-wrappers)
-        if (lib.needsReady && module.ready) {
-            await module.ready;
+// Fallback to other libraries if needed
+if (!encryptionLoaded) {
+    const fallbacks = [
+        '@stablelib/xchacha20poly1305',
+        '@noble/ciphers/chacha',
+        'tweetnacl'
+    ];
+    
+    for (const lib of fallbacks) {
+        try {
+            const module = await import(lib);
+            global.sodium = module;
+            console.log(`✅ Loaded ${lib} for voice encryption`);
+            encryptionLoaded = true;
+            break;
+        } catch (err) {
+            console.log(`⚠️  ${lib} not available`);
         }
-        
-        // Expose globally for @discordjs/voice
-        global.sodium = module;
-        console.log(`✅ Successfully loaded ${lib.name} for voice encryption`);
-        return true;
-    } catch (err) {
-        console.log(`⚠️  ${lib.name} not available (${err.message})`);
-        // Try next library recursively
-        return await loadEncryptionLibrary(libraries, index + 1);
     }
 }
 
-// Load encryption library with fallback chain
-const encryptionLoaded = await loadEncryptionLibrary(encryptionLibraries);
-
 if (encryptionLoaded) {
-    console.log('✅ Encryption library exposed globally for @discordjs/voice');
+    console.log('✅ Encryption library exposed globally for voice');
+    console.log('   global.sodium available:', !!global.sodium);
+} else {
+    console.error('❌ No encryption library could be loaded - voice will not work');
 }
 
 const __filename = fileURLToPath(import.meta.url);
