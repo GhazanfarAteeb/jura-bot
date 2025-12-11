@@ -1,4 +1,5 @@
 import { Player, QueryType } from 'discord-player';
+import { DefaultExtractors } from '@discord-player/extractor';
 import client from '../index.js';
 
 // Initialize Discord Player with proper configuration
@@ -19,9 +20,9 @@ export const player = new Player(client, {
     selfDeaf: true
 });
 
-// Load all extractors including YouTube (needed as backend for Spotify/Apple Music streaming)
+// Load all extractors using the new loadMulti method
 try {
-    await player.extractors.loadDefault();
+    await player.extractors.loadMulti(DefaultExtractors);
     console.log('✅ Loaded all platform extractors (including YouTube backend for Spotify/Apple Music)');
 } catch (extractorError) {
     console.error('❌ Failed to load extractors:', extractorError);

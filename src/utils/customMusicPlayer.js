@@ -141,23 +141,30 @@ class MusicQueue {
         try {
             console.log('🔗 Getting stream for URL:', url);
             
-            // Use ytdl to stream audio directly (piped output)
-            const stream = ytdl.exec(url, {
-                output: '-',
-                quiet: true,
-                format: 'bestaudio',
-                noCheckCertificates: true,
-                noWarnings: true,
-                preferFreeFormats: true,
-                rmCacheDir: true
-            });
+            // Use play-dl to get the stream (bypasses YouTube bot detection better)
+            const info = await play.video_info(url);
+            const stream = await play.stream_from_info(info);
             
             console.log('✅ Created YouTube audio stream');
-            return stream.stdout;
+            return stream.stream;
             
         } catch (error) {
             console.error('❌ Error getting YouTube stream:', error);
-            return null;
+            // Fallback to ytdl if play-dl fails
+            try {
+                console.log('⚠️ Trying ytdl fallback...');
+                const ytdlStream = ytdl.exec(url, {
+                    output: '-',
+                    quiet: true,
+                    format: 'bestaudio[ext=webm]/bestaudio',
+                    noCheckCertificates: true,
+                    noWarnings: true
+                });
+                return ytdlStream.stdout;
+            } catch (fallbackError) {
+                console.error('❌ Ytdl fallback also failed:', fallbackError);
+                return null;
+            }
         }
     }
     
