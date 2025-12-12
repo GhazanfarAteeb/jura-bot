@@ -101,7 +101,8 @@ class Dispatcher {
         }
         this.current = this.queue.length !== 0 ? this.queue.shift() : this.queue[0];
         if (!this.current) return;
-        this.player.playTrack({ track: this.current?.encoded });
+    await this.player.playTrack({ track: { encoded: this.current?.encoded } });
+    await this.player.setGlobalVolume(80);
         if (this.current) {
             this.history.push(this.current);
             if (this.history.length > 100) {
