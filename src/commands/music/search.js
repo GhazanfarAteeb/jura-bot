@@ -1,6 +1,6 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from "discord.js";
 
-import { LoadType } from "shoukaku.js";
+import { LoadType } from "shoukaku";
 
 import Command from "../../structures/Command.js";
 
