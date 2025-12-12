@@ -12,6 +12,7 @@ import express from 'express';
 import Guild from './models/Guild.js';
 import logger from './utils/logger.js';
 import ServerData from './database/server.js';
+import Utils from './structures/Utils.js';
 
 // Load encryption libraries for voice (discord-voip compatibility)
 // discord-voip looks for methods object with open/close methods
@@ -102,6 +103,10 @@ client.commands = new Collection();
 
 // Initialize database
 client.db = new ServerData();
+
+// Initialize utils for Wave-Music
+client.utils = Utils;
+
 client.cooldowns = new Collection();
 client.invites = new Collection();
 
