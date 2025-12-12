@@ -171,27 +171,32 @@ async function loadCommands() {
 
 // Load events
 async function loadEvents() {
-    const eventFiles = readdirSync(join(__dirname, 'events'))
-        .filter(file => file.endsWith('.js'));
-    let totalEvents = 0;
-    
-    for (const file of eventFiles) {
-        try {
-            const { default: event } = await import(`./events/${file}`);
-            if (event.once) {
-                client.once(event.name, (...args) => event.execute(...args, client));
-            } else {
-                client.on(event.name, (...args) => event.execute(...args, client));
+    const eventsPath = fs.readdirSync(path.join(__dirname, "../events"));
+    eventsPath.forEach((dir) => {
+      try {
+        const events = readdirSync(path.join(__dirname, `../events/${dir}`))
+          .filter((file) => file.endsWith(".js"));
+        events.forEach((file) => {
+          try {
+            const EventClass = require(`../events/${dir}/${file}`);
+            const evt = new EventClass(this, file);
+            switch (dir) {
+              case "player":
+                this.shoukaku.on(evt.name, (...args) => evt.run(...args));
+                break;
+              default:
+                this.on(evt.name, (...args) => evt.run(...args));
+                break;
             }
-            console.log(`🎯 Loaded event: ${event.name}`);
-            totalEvents++;
-        } catch (error) {
-            logger.error(`Failed to load event ${file}`, error);
-        }
-    }
-    
-    logger.startup(`Loaded ${totalEvents} events`);
-}
+          } catch (error) {
+            console.error(`Error loading event ${file}:`, error);
+          }
+        });
+      } catch (error) {
+        console.error(`Error reading directory ${dir}:`, error);
+      }
+    });
+  }
 
 // Initialize bot
 async function initialize() {
