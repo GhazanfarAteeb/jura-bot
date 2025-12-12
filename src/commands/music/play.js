@@ -65,14 +65,27 @@ export default {
             // Search for the track using Lavalink
             const result = await node.rest.resolve(searchQuery);
             
-            if (!result || !result.tracks || result.tracks.length === 0) {
+            console.log('📊 Lavalink result:', JSON.stringify(result, null, 2));
+            
+            // Handle Lavalink v4 response format
+            let tracks = [];
+            if (result.loadType === 'track') {
+                tracks = [result.data];
+            } else if (result.loadType === 'search' || result.loadType === 'playlist') {
+                tracks = result.data.tracks || result.data || [];
+            } else if (result.tracks) {
+                // Fallback for older format
+                tracks = result.tracks;
+            }
+            
+            if (!tracks || tracks.length === 0) {
                 return message.reply({
                     embeds: [await errorEmbed(guildId, 'No Results', `No results found for: **${query}**`)]
                 });
             }
             
             // Get the first track
-            const track = result.tracks[0];
+            const track = tracks[0];
             
             // Get or create player
             let player = players.get(guildId);
