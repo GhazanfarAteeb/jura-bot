@@ -136,11 +136,11 @@ async function connectDatabase() {
 
 // Load commands
 async function loadCommands() {
-    const commandFolders = readdirSync(join(__dirname, 'commands'));
+    const commandFolders = readdirSync(path.join(__dirname, 'commands'));
     let totalCommands = 0;
     
     for (const folder of commandFolders) {
-        const commandFiles = readdirSync(join(__dirname, 'commands', folder))
+        const commandFiles = readdirSync(path.join(__dirname, 'commands', folder))
             .filter(file => file.endsWith('.js'));
         
         for (const file of commandFiles) {
