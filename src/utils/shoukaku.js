@@ -55,51 +55,51 @@ export function initializeShoukaku(client) {
     });
     
     // Track start event - send now playing message
-    shoukaku.on('trackStart', async (player, track, dispatcher) => {
-        const channel = client.channels.cache.get(dispatcher.channelId);
-        if (channel) {
-            await channel.send({
-                embeds: [{
-                    color: 0x00ff00,
-                    title: '🎵 Now Playing',
-                    description: `**[${track.info.title}](${track.info.uri})**\nBy: ${track.info.author}\nRequested by: ${track.info.requester}`,
-                    timestamp: new Date()
-                }]
-            });
-        }
-    });
+    // shoukaku.on('trackStart', async (player, track, dispatcher) => {
+    //     const channel = client.channels.cache.get(dispatcher.channelId);
+    //     if (channel) {
+    //         await channel.send({
+    //             embeds: [{
+    //                 color: 0x00ff00,
+    //                 title: '🎵 Now Playing',
+    //                 description: `**[${track.info.title}](${track.info.uri})**\nBy: ${track.info.author}\nRequested by: ${track.info.requester}`,
+    //                 timestamp: new Date()
+    //             }]
+    //         });
+    //     }
+    // });
     
     // Track end event - play next track
-    shoukaku.on('trackEnd', async (player, track, dispatcher) => {
-        if (dispatcher.loop === 'track') {
-            dispatcher.queue.unshift(track);
-        } else if (dispatcher.loop === 'queue') {
-            dispatcher.queue.push(track);
-        }
+    // shoukaku.on('trackEnd', async (player, track, dispatcher) => {
+    //     if (dispatcher.loop === 'track') {
+    //         dispatcher.queue.unshift(track);
+    //     } else if (dispatcher.loop === 'queue') {
+    //         dispatcher.queue.push(track);
+    //     }
         
-        await dispatcher.play();
-    });
+    //     await dispatcher.play();
+    // });
     
     // Queue end event - disconnect
-    shoukaku.on('queueEnd', async (player, track, dispatcher) => {
-        const channel = client.channels.cache.get(dispatcher.channelId);
-        if (channel) {
-            await channel.send({
-                embeds: [{
-                    color: 0xff9900,
-                    title: '👋 Queue Ended',
-                    description: 'The queue has ended. See you next time!',
-                    timestamp: new Date()
-                }]
-            });
-        }
+    // shoukaku.on('queueEnd', async (player, track, dispatcher) => {
+    //     const channel = client.channels.cache.get(dispatcher.channelId);
+    //     if (channel) {
+    //         await channel.send({
+    //             embeds: [{
+    //                 color: 0xff9900,
+    //                 title: '👋 Queue Ended',
+    //                 description: 'The queue has ended. See you next time!',
+    //                 timestamp: new Date()
+    //             }]
+    //         });
+    //     }
         
-        setTimeout(() => {
-            if (dispatcher.exists) {
-                dispatcher.destroy();
-            }
-        }, 60000); // 1 minute delay
-    });
+    //     setTimeout(() => {
+    //         if (dispatcher.exists) {
+    //             dispatcher.destroy();
+    //         }
+    //     }, 60000); // 1 minute delay
+    // });
 
     return shoukaku;
 }
