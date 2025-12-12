@@ -110,6 +110,13 @@ client.utils = Utils;
 client.cooldowns = new Collection();
 client.invites = new Collection();
 
+// Initialize Shoukaku BEFORE client.login()
+// This is critical - Shoukaku's connector must be attached before the client connects
+// to properly intercept VOICE_STATE_UPDATE and VOICE_SERVER_UPDATE events
+console.log('🎵 Pre-initializing Shoukaku connector...');
+initializeShoukaku(client);
+console.log('✅ Shoukaku connector initialized (will fully connect when client is ready)');
+
 // Configuration
 client.config = {
     searchEngine: 'ytsearch', // YouTube Music search via LavaSrc plugin
@@ -268,21 +275,17 @@ async function initialize() {
     
     // Initialize Shoukaku and events after client is ready
     client.once('ready', async () => {
-        console.log('🤖 Client is ready, initializing Shoukaku and events...');
+        console.log('🤖 Client is ready!');
         console.log(`   Logged in as: ${client.user.tag}`);
         console.log(`   Guilds: ${client.guilds.cache.size}`);
         console.log(`   WS Status: ${client.ws.status}, Ping: ${client.ws.ping}ms`);
         
-        // Initialize Shoukaku FIRST, before any custom event handlers
-        // This ensures Shoukaku's connector can properly intercept voice events
-        initializeShoukaku(client);
-        console.log('✅ Shoukaku initialized');
-        
-        // Wait a bit for Shoukaku to fully initialize and connect to Lavalink
+        // Wait for Shoukaku to connect to Lavalink
+        console.log('⏳ Waiting for Lavalink connection...');
         await new Promise(resolve => setTimeout(resolve, 2000));
         
-        // Load events after Shoukaku is ready
-        // This way custom voiceStateUpdate won't interfere with Shoukaku's handler
+        // Load custom event handlers AFTER Shoukaku is ready
+        // Shoukaku connector was already initialized before client login
         await loadEvents();
         
         // Initialize schedulers

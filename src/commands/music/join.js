@@ -33,23 +33,36 @@ export default class Join extends Command {
     const embed = this.client.embed();
     if (!player) {
       const vc = ctx.member;
-      player = await client.queue.create(
-        ctx.guild,
-        vc.voice.channel,
-        ctx.channel,
-        client.shoukaku.options.nodeResolver(client.shoukaku.nodes)
-      );
-      return await ctx.sendMessage({
-        embeds: [
-          embed
-            .setColor(this.client.color.main)
-            .setDescription(
-              `Joined <#${
-                player.node.manager.connections.get(ctx.guild.id).channelId
-              }>`
-            ),
-        ],
-      });
+      try {
+        player = await client.queue.create(
+          ctx.guild,
+          vc.voice.channel,
+          ctx.channel,
+          client.shoukaku.options.nodeResolver(client.shoukaku.nodes)
+        );
+        return await ctx.sendMessage({
+          embeds: [
+            embed
+              .setColor(this.client.color.main)
+              .setDescription(
+                `Joined <#${
+                  player.node.manager.connections.get(ctx.guild.id).channelId
+                }>`
+              ),
+          ],
+        });
+      } catch (error) {
+        console.error('Failed to join voice channel:', error);
+        return await ctx.sendMessage({
+          embeds: [
+            embed
+              .setColor(this.client.color.red)
+              .setDescription(
+                `❌ Failed to join voice channel: ${error.message}\n\nMake sure I have proper permissions and try again.`
+              ),
+          ],
+        });
+      }
     } else {
       return await ctx.sendMessage({
         embeds: [
