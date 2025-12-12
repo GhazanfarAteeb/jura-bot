@@ -65,15 +65,30 @@ export default {
             
             // Check permissions
             if (command.permissions) {
-                const hasPerms = command.permissions.every(perm => 
-                    message.member.permissions.has(perm)
-                );
-                
-                if (!hasPerms) {
-                    const embed = await warningEmbed(guildId, 'Missing Permissions',
-                        `${GLYPHS.LOCK} You don't have permission to use this command.`
+                // Wave-Music Command class format (permissions.user array)
+                if (command.permissions.user && Array.isArray(command.permissions.user)) {
+                    const hasPerms = command.permissions.user.length === 0 || 
+                        command.permissions.user.every(perm => message.member.permissions.has(perm));
+                    
+                    if (!hasPerms) {
+                        const embed = await warningEmbed(guildId, 'Missing Permissions',
+                            `${GLYPHS.LOCK} You don't have permission to use this command.`
+                        );
+                        return message.reply({ embeds: [embed] });
+                    }
+                }
+                // Legacy command format (permissions as array)
+                else if (Array.isArray(command.permissions)) {
+                    const hasPerms = command.permissions.every(perm => 
+                        message.member.permissions.has(perm)
                     );
-                    return message.reply({ embeds: [embed] });
+                    
+                    if (!hasPerms) {
+                        const embed = await warningEmbed(guildId, 'Missing Permissions',
+                            `${GLYPHS.LOCK} You don't have permission to use this command.`
+                        );
+                        return message.reply({ embeds: [embed] });
+                    }
                 }
             }
             
