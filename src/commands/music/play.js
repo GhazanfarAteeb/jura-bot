@@ -1,4 +1,4 @@
-import { shoukaku, players } from '../../utils/shoukaku.js';
+import { shoukaku } from '../../utils/shoukaku.js';
 import { checkVoiceChannel } from '../../utils/musicPlayer.js';
 import { errorEmbed, successEmbed } from '../../utils/embeds.js';
 
@@ -39,179 +39,110 @@ export default {
                 });
             }
             
-            // Determine search type based on URL
-            let searchQuery = query;
-            const isURL = query.includes('http://') || query.includes('https://');
+            // Get or create dispatcher (queue system)
+            let dispatcher = message.client.queue.get(guildId);
             
-            // For Spotify URLs, use direct resolution
-            if (isURL && query.includes('spotify.com')) {
-                searchQuery = query; // Lavalink will handle Spotify URLs directly
-            }
-            // For Apple Music URLs
-            else if (isURL && query.includes('music.apple.com')) {
-                searchQuery = query; // Lavalink will handle Apple Music URLs directly
-            }
-            // For YouTube URLs
-            else if (isURL && (query.includes('youtube.com') || query.includes('youtu.be'))) {
-                searchQuery = query; // Direct YouTube URL
-            }
-            // For search queries, use YouTube search
-            else {
-                searchQuery = `ytsearch:${query}`;
+            if (!dispatcher) {
+                dispatcher = await message.client.queue.create(
+                    message.guild,
+                    channel,
+                    message.channel,
+                    node
+                );
             }
             
-            console.log(`🔍 Searching Lavalink: ${searchQuery}`);
+            // Search for the track using Queue's search method
+            console.log(`🔍 Searching: ${query}`);
+            const result = await message.client.queue.search(query);
             
-            // Use Shoukaku's search method - correct API for v4
-            let result;
-            try {
-                result = await node.rest.resolve(searchQuery);
-                console.log(`📊 Raw Lavalink Response:`, JSON.stringify(result, null, 2));
-            } catch (err) {
-                console.error(`❌ Lavalink resolve error:`, err);
+            if (!result) {
                 return message.reply({
-                    embeds: [await errorEmbed(guildId, 'Lavalink Error', `Failed to search: ${err.message}`)]
+                    embeds: [await errorEmbed(guildId, 'Search Error', 'Failed to search for the track.')]
                 });
             }
             
-            // Shoukaku v4 returns: { loadType, data }
-            // loadType can be: 'track', 'search', 'playlist', 'empty', 'error'
+            console.log(`📊 Search result loadType: ${result.loadType}`);
             
-            let track;
-            
-            switch (result?.loadType) {
-                case 'track':
-                    // Direct track (Spotify/Apple Music URL)
-                    track = result.data;
-                    console.log(`✅ Track loaded: ${track?.info?.title}`);
-                    break;
+            // Handle different load types
+            switch (result.loadType) {
+                case 'track': {
+                    // Single track (Spotify/Apple Music URL)
+                    const track = dispatcher.buildTrack(result.data, message.author);
+                    dispatcher.queue.push(track);
                     
-                case 'search':
-                    // Search results array
+                    await dispatcher.isPlaying();
+                    
+                    return message.reply({
+                        embeds: [await successEmbed(
+                            guildId,
+                            dispatcher.queue.length === 0 ? '🎵 Now Playing' : '📝 Added to Queue',
+                            `**[${track.info.title}](${track.info.uri})**\nBy: ${track.info.author}\nDuration: ${formatDuration(track.info.length)}${dispatcher.queue.length > 0 ? `\n\nPosition in queue: ${dispatcher.queue.length}` : ''}`
+                        )]
+                    });
+                }
+                
+                case 'search': {
+                    // Search results - take first result
                     if (!result.data || result.data.length === 0) {
-                        console.log(`❌ Search returned no results`);
                         return message.reply({
                             embeds: [await errorEmbed(guildId, 'No Results', `No results found for: **${query}**`)]
                         });
                     }
-                    track = result.data[0];
-                    console.log(`✅ Search result: ${track?.info?.title}`);
-                    break;
                     
-                case 'playlist':
+                    const track = dispatcher.buildTrack(result.data[0], message.author);
+                    dispatcher.queue.push(track);
+                    
+                    await dispatcher.isPlaying();
+                    
+                    return message.reply({
+                        embeds: [await successEmbed(
+                            guildId,
+                            dispatcher.queue.length === 0 ? '🎵 Now Playing' : '📝 Added to Queue',
+                            `**[${track.info.title}](${track.info.uri})**\nBy: ${track.info.author}\nDuration: ${formatDuration(track.info.length)}${dispatcher.queue.length > 0 ? `\n\nPosition in queue: ${dispatcher.queue.length}` : ''}`
+                        )]
+                    });
+                }
+                
+                case 'playlist': {
                     // Playlist
                     if (!result.data?.tracks || result.data.tracks.length === 0) {
                         return message.reply({
-                            embeds: [await errorEmbed(guildId, 'Empty Playlist', `The playlist has no tracks.`)]
+                            embeds: [await errorEmbed(guildId, 'Empty Playlist', 'The playlist has no tracks.')]
                         });
                     }
-                    track = result.data.tracks[0];
-                    console.log(`✅ Playlist track: ${track?.info?.title}`);
-                    break;
                     
-                case 'empty':
-                    console.log(`❌ Lavalink returned empty`);
+                    // Add all tracks to queue
+                    const tracks = result.data.tracks.map(track => dispatcher.buildTrack(track, message.author));
+                    dispatcher.queue.push(...tracks);
+                    
+                    await dispatcher.isPlaying();
+                    
+                    return message.reply({
+                        embeds: [await successEmbed(
+                            guildId,
+                            '📝 Playlist Added',
+                            `**${result.data.info?.name || 'Playlist'}**\nAdded ${tracks.length} tracks to the queue`
+                        )]
+                    });
+                }
+                
+                case 'empty': {
                     return message.reply({
                         embeds: [await errorEmbed(guildId, 'No Results', `No results found for: **${query}**`)]
                     });
-                    
-                case 'error':
-                    console.log(`❌ Lavalink error:`, result.data);
+                }
+                
+                case 'error': {
                     return message.reply({
                         embeds: [await errorEmbed(guildId, 'Search Error', `Failed to search: ${result.data?.message || 'Unknown error'}`)]
                     });
-                    
-                default:
-                    console.log(`❌ Unknown loadType: ${result?.loadType}`);
+                }
+                
+                default: {
                     return message.reply({
-                        embeds: [await errorEmbed(guildId, 'Unknown Error', `Unexpected response from Lavalink`)]
+                        embeds: [await errorEmbed(guildId, 'Unknown Error', 'Unexpected response from Lavalink')]
                     });
-            }
-            
-            // Final validation
-            if (!track || !track.encoded) {
-                console.log(`❌ Invalid track object:`, track);
-                return message.reply({
-                    embeds: [await errorEmbed(guildId, 'Invalid Track', `Could not load track information.`)]
-                });
-            }
-            
-            console.log(`🎵 Ready to play: ${track.info.title} by ${track.info.author}`);
-            
-            // Get or create player
-            let player = players.get(guildId);
-            
-            if (!player) {
-                // Create new player
-                player = await node.joinChannel({
-                    guildId: guildId,
-                    channelId: channel.id,
-                    shardId: 0
-                });
-                
-                // Store player
-                players.set(guildId, {
-                    player: player,
-                    queue: [],
-                    nowPlaying: null,
-                    textChannel: message.channel.id,
-                    voiceChannel: channel.id
-                });
-                
-                // Setup player event handlers
-                player.on('start', () => {
-                    const playerData = players.get(guildId);
-                    if (playerData && playerData.nowPlaying) {
-                        const track = playerData.nowPlaying;
-                        message.channel.send({
-                            embeds: [successEmbed(guildId, '🎵 Now Playing', `**[${track.info.title}](${track.info.uri})**\nBy: ${track.info.author}\nDuration: ${formatDuration(track.info.length)}`)]
-                        });
-                    }
-                });
-                
-                player.on('end', async () => {
-                    const playerData = players.get(guildId);
-                    if (playerData && playerData.queue.length > 0) {
-                        // Play next track in queue
-                        const nextTrack = playerData.queue.shift();
-                        playerData.nowPlaying = nextTrack;
-                        await player.playTrack({ track: nextTrack.encoded });
-                    } else {
-                        // Queue is empty, disconnect
-                        playerData.nowPlaying = null;
-                    }
-                });
-                
-                player.on('closed', (reason) => {
-                    console.log(`Player closed: ${reason}`);
-                    players.delete(guildId);
-                });
-                
-                player.on('exception', (error) => {
-                    console.error(`Player exception:`, error);
-                    message.channel.send({
-                        embeds: [errorEmbed(guildId, 'Playback Error', 'An error occurred during playback.')]
-                    });
-                });
-            }
-            
-            const playerData = players.get(guildId);
-            
-            // If nothing is currently playing, play immediately
-            if (!playerData.nowPlaying) {
-                playerData.nowPlaying = track;
-                await playerData.player.playTrack({ track: track.encoded });
-                
-                return message.reply({
-                    embeds: [await successEmbed(guildId, '🎵 Now Playing', `**[${track.info.title}](${track.info.uri})**\nBy: ${track.info.author}\nDuration: ${formatDuration(track.info.length)}\n\n🔊 Started playing in ${channel.name}`)]
-                });
-            } else {
-                // Add to queue
-                playerData.queue.push(track);
-                
-                return message.reply({
-                    embeds: [await successEmbed(guildId, '📝 Added to Queue', `**[${track.info.title}](${track.info.uri})**\nBy: ${track.info.author}\nDuration: ${formatDuration(track.info.length)}\n\nPosition in queue: ${playerData.queue.length}`)]
-                });
+                }
             }
             
         } catch (error) {
