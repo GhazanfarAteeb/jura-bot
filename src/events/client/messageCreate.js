@@ -17,9 +17,7 @@ class MessageCreate extends Event {
         return this.client.emit("setupSystem", message);
       }
     }
-    let prefix = (await this.client.db.getPrefix(message.guildId)).prefix.toLowerCase();
-    const defaultPrefix = "!";
-    const currentPrefix = prefix?.prefix || defaultPrefix;
+    const currentPrefix = await this.client.db.getPrefix(message.guildId);
     
     const mention = new RegExp(`^<@!?${this.client.user.id}>( |)$`);
     if (message.content.match(mention)) {

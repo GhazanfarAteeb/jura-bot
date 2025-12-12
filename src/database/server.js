@@ -1,8 +1,10 @@
 import Music from '../models/Music.js';
+import Guild from '../models/Guild.js';
 
 export default class ServerData {
   constructor() {
     this.Music = Music;
+    this.Guild = Guild;
   }
 
   async get(guildId) {
@@ -19,26 +21,15 @@ export default class ServerData {
   }
 
   async setPrefix(guildId, prefix) {
-    await this.Music.updateOne(
-      { guildId, type: 'guild' },
-      { $set: { prefix } },
-      { upsert: true }
-    );
+    const guild = await this.Guild.getGuild(guildId);
+    guild.prefix = prefix;
+    await guild.save();
   }
 
   async getPrefix(guildId) {
-    const data = await this.Music.findOne({ guildId, type: 'guild' });
-    
-    if (!data || !data.prefix) {
-      const defaultPrefix = process.env.DEFAULT_PREFIX || '!';
-      await this.Music.updateOne(
-        { guildId, type: 'guild' },
-        { $set: { prefix: defaultPrefix } },
-        { upsert: true }
-      );
-      return { prefix: defaultPrefix };
-    }
-    return { prefix: data.prefix };
+    const guild = await this.Guild.getGuild(guildId);
+    const prefix = guild?.prefix || process.env.DEFAULT_PREFIX || '!';
+    return prefix;
   }
 
   async set_247(guildId, textId, voiceId) {
