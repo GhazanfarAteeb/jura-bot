@@ -47,12 +47,47 @@ class Queue extends Map {
               const node = givenNode || this.client.shoukaku.options.nodeResolver(this.client.shoukaku.nodes);
               console.log(`🔗 Queue.create() - Joining voice channel ID: ${voice.id} in guild ID: ${guild.id}`)
                 console.log("🔗 Node details:", node);
-                const player = await this.client.shoukaku.joinVoiceChannel({
-                    guildId: guild.id,
-                    channelId: voice.id,
-                  shardId: guild.shardId || 0,
-                  deaf: true,
-                });
+                console.log(`🔗 Guild shard ID: ${guild.shardId}, Guild available: ${guild.available}`);
+                console.log(`🔗 Client WS status: ${this.client.ws.status}, Ping: ${this.client.ws.ping}ms`);
+                
+                // Add retry logic for voice connection
+                let player = null;
+                let retries = 3;
+                let lastError = null;
+                
+                for (let i = 0; i < retries; i++) {
+                    try {
+                        console.log(`🔗 Attempt ${i + 1}/${retries} to join voice channel...`);
+                        
+                        player = await this.client.shoukaku.joinVoiceChannel({
+                            guildId: guild.id,
+                            channelId: voice.id,
+                            shardId: guild.shardId || 0,
+                            deaf: true,
+                        });
+                        
+                        // If successful, break out of retry loop
+                        console.log(`✅ Successfully joined voice channel on attempt ${i + 1}`);
+                        break;
+                        
+                    } catch (error) {
+                        lastError = error;
+                        console.error(`❌ Attempt ${i + 1}/${retries} failed:`, error.message);
+                        
+                        // If this isn't the last attempt, wait before retrying
+                        if (i < retries - 1) {
+                            const delay = (i + 1) * 1000; // Increasing delay: 1s, 2s, 3s
+                            console.log(`⏳ Waiting ${delay}ms before retry...`);
+                            await new Promise(resolve => setTimeout(resolve, delay));
+                        }
+                    }
+                }
+                
+                // If all retries failed, throw the last error
+                if (!player) {
+                    throw lastError || new Error('Failed to join voice channel after all retries');
+                }
+                
               console.log("Player details:", player);
               console.log(`✅ Queue.create() - Joined voice channel ID: ${voice.id} and created player for guild ID: ${guild.id}`);
                 

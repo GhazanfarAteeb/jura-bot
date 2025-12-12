@@ -9,6 +9,9 @@ export let shoukaku = null;
 
 // Initialize Shoukaku with client
 export function initializeShoukaku(client) {
+    console.log('🎵 Initializing Shoukaku...');
+    console.log(`   Client ready: ${client.isReady()}, User: ${client.user ? client.user.tag : 'Not ready'}`);
+    
     // Lavalink nodes configuration
     const nodes = [{
         name: 'Main',
@@ -17,18 +20,27 @@ export function initializeShoukaku(client) {
         secure: process.env.LAVALINK_SECURE === 'true'
     }];
 
-    // Create Shoukaku instance
-    shoukaku = new Shoukaku(new Connectors.DiscordJS(client), nodes, {
-        moveOnDisconnect: false,
-        resume: false,
-        resumeTimeout: 30,
-        reconnectTries: 2,
-        reconnectInterval: 5,
-      restTimeout: 10000,
-      userAgent: 'Jura-Bot/2.0',
-        nodeResolver: nodes => [...nodes.values()].sort((a, b) => a.penalties - b.penalties).shift()
-    });
-  console.log('✅ Shoukaku instance created.');
+    console.log(`   Lavalink node: ${nodes[0].url}, Secure: ${nodes[0].secure}`);
+
+    // Create Shoukaku instance with DiscordJS connector
+    // The connector will automatically handle voice state and server updates
+    try {
+        shoukaku = new Shoukaku(new Connectors.DiscordJS(client), nodes, {
+            moveOnDisconnect: false,
+            resume: false,
+            resumeTimeout: 30,
+            reconnectTries: 2,
+            reconnectInterval: 5,
+            restTimeout: 10000,
+            userAgent: 'Jura-Bot/2.0',
+            nodeResolver: nodes => [...nodes.values()].sort((a, b) => a.penalties - b.penalties).shift()
+        });
+        console.log('✅ Shoukaku instance created with DiscordJS connector');
+    } catch (error) {
+        console.error('❌ Failed to create Shoukaku instance:', error);
+        throw error;
+    }
+  
 
     // Initialize Queue system
     client.queue = new Queue(client);
@@ -37,6 +49,8 @@ export function initializeShoukaku(client) {
     // Event handlers
     shoukaku.on('ready', (name) => {
         console.log(`✅ Lavalink ${name} is ready!`);
+        console.log(`   Connected nodes: ${shoukaku.nodes.size}`);
+        console.log(`   Active players: ${shoukaku.players.size}`);
     });
 
     shoukaku.on('error', (name, error) => {

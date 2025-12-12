@@ -9,6 +9,19 @@ export default {
     
     execute: async (oldState, newState) => {
         try {
+            // Log voice state updates for debugging (only for bot's own updates)
+            if (newState.member.user.bot && newState.guild.members.me && newState.member.id === newState.guild.members.me.id) {
+                console.log(`🔊 BOT Voice State Update in ${newState.guild.id}:`, {
+                    channelId: newState.channelId,
+                    sessionId: newState.sessionId,
+                    deaf: newState.deaf,
+                    mute: newState.mute
+                });
+            }
+            
+            // Skip tracking for bot users
+            if (newState.member.user.bot) return;
+            
             const userId = newState.member.user.id;
             const guildId = newState.guild.id;
             const sessionKey = `${userId}-${guildId}`;

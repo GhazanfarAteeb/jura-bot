@@ -259,7 +259,7 @@ async function initialize() {
     await connectDatabase();
     await loadCommands();
     
-    // Login to Discord
+    // Login to Discord first
     await client.login(process.env.DISCORD_TOKEN);
     
     const duration = Date.now() - startTime;
@@ -268,15 +268,27 @@ async function initialize() {
     
     // Initialize Shoukaku and events after client is ready
     client.once('ready', async () => {
-        // Initialize Shoukaku first
+        console.log('🤖 Client is ready, initializing Shoukaku and events...');
+        console.log(`   Logged in as: ${client.user.tag}`);
+        console.log(`   Guilds: ${client.guilds.cache.size}`);
+        console.log(`   WS Status: ${client.ws.status}, Ping: ${client.ws.ping}ms`);
+        
+        // Initialize Shoukaku FIRST, before any custom event handlers
+        // This ensures Shoukaku's connector can properly intercept voice events
         initializeShoukaku(client);
         console.log('✅ Shoukaku initialized');
         
+        // Wait a bit for Shoukaku to fully initialize and connect to Lavalink
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
         // Load events after Shoukaku is ready
+        // This way custom voiceStateUpdate won't interfere with Shoukaku's handler
         await loadEvents();
         
         // Initialize schedulers
         initializeSchedulers(client);
+        
+        console.log('✅ All systems initialized and ready!');
     });
 }
 
