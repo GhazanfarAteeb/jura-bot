@@ -183,15 +183,15 @@ export default {
                 
                 // Multiple search queries with decreasing specificity (simplified - no quotes)
                 const searchQueries = [
-                    `${cleanArtist} ${cleanTitle} audio`,       // With audio keyword
-                    `${cleanArtist} ${cleanTitle} official`,    // Official version
-                    `${cleanArtist} ${cleanTitle}`,             // Normal search
+                    `${cleanArtist} ${cleanTitle}`,             // Basic search first
                     `${cleanTitle} ${cleanArtist}`,             // Reversed order
-                    `${cleanTitle}`                             // Title only (last resort)
+                    `${cleanTitle}`,                            // Title only
+                    `${cleanArtist} ${cleanTitle} official`,    // Official version
+                    `${cleanArtist} ${cleanTitle} audio`        // With audio keyword
                 ];
                 
                 console.log(`🔍 Smart Search - ${searchQueries.length} attempts for: "${cleanTitle}" by "${cleanArtist}"`);
-                console.log(`   Target duration: ${Math.floor(spotifyInfo.durationInMs / 1000)}s (±10s tolerance)`);
+                console.log(`   Target duration: ${Math.floor(spotifyInfo.durationInMs / 1000)}s (±15s tolerance)`);
                 
                 const targetDurationSec = Math.floor(spotifyInfo.durationInMs / 1000);
                 let bestYouTubeUrl = null;
@@ -210,6 +210,8 @@ export default {
                         });
                         
                         if (youtubeResults && youtubeResults.tracks && youtubeResults.tracks.length > 0) {
+                            console.log(`      Found ${youtubeResults.tracks.length} results`);
+                            
                             // Score each result based on multiple factors
                             for (const track of youtubeResults.tracks) {
                                 const title = track.title?.toLowerCase() || '';
@@ -228,15 +230,15 @@ export default {
                                 
                                 let score = 0;
                                 
-                                // Duration match is CRITICAL (within 10 seconds = high score)
-                                if (durationDiff <= 10) {
+                                // Duration match is CRITICAL (within 15 seconds = high score)
+                                if (durationDiff <= 15) {
                                     score += 100;
                                     console.log(`      → ${track.title} [${track.author}] (${track.duration}) - Duration match! +100`);
-                                } else if (durationDiff <= 30) {
+                                } else if (durationDiff <= 45) {
                                     score += 50;
                                     console.log(`      → ${track.title} [${track.author}] (${track.duration}) - Close duration +50`);
                                 } else {
-                                    console.log(`      → ${track.title} [${track.author}] (${track.duration}) - Duration off by ${durationDiff}s`);
+                                    console.log(`      → ${track.title} [${track.author}] (${track.duration}) - Duration off by ${durationDiff}s, skipping`);
                                     continue; // Skip tracks with very different duration
                                 }
                                 
@@ -276,7 +278,7 @@ export default {
                             }
                             
                             // If we found a great match (score >= 100), stop searching
-                            if (bestScore >= 100) {
+                            if (bestScore >= 150) {
                                 console.log(`🎯 Excellent match found (score: ${bestScore}), stopping search`);
                                 break;
                             }
