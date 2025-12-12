@@ -238,7 +238,6 @@ async function initialize() {
     
     await connectDatabase();
     await loadCommands();
-    await loadEvents();
     
     // Login to Discord
     await client.login(process.env.DISCORD_TOKEN);
@@ -247,12 +246,16 @@ async function initialize() {
     logger.performance('Bot initialization', duration);
     logger.startup(`Bot started successfully in ${duration}ms`);
     
-    // Initialize scheduled tasks and Shoukaku (birthdays, events, etc.)
-    client.once('ready', () => {
-        // Initialize Shoukaku after client is ready
+    // Initialize Shoukaku and events after client is ready
+    client.once('ready', async () => {
+        // Initialize Shoukaku first
         initializeShoukaku(client);
         console.log('✅ Shoukaku initialized');
         
+        // Load events after Shoukaku is ready
+        await loadEvents();
+        
+        // Initialize schedulers
         initializeSchedulers(client);
     });
 }

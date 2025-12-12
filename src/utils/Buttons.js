@@ -1,7 +1,7 @@
 // const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 
-function getButtons() {
+const getButtons = () => {
     let pausebut = new ButtonBuilder()
         .setCustomId(`PAUSE_BUT`)
         .setEmoji({ name: '⏸️' })
@@ -57,4 +57,5 @@ function getButtons() {
     return [row, row2];
 }
 
-export default  getButtons;
+export { getButtons };
+export default getButtons;
