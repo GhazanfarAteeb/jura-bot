@@ -173,15 +173,15 @@ async function loadCommands() {
 
 // Load events
 async function loadEvents() {
-    const eventsPath = readdirSync(path.join(__dirname, "../events"));
+    const eventsPath = readdirSync(path.join(__dirname, "./events"));
     eventsPath.forEach((dir) => {
       try {
-        const events = readdirSync(path.join(__dirname, `../events/${dir}`))
+        const events = readdirSync(path.join(__dirname, `./events/${dir}`))
           .filter((file) => file.endsWith(".js"));
         events.forEach((file) => {
           try {
             console.log("📂 Loading event:", file);
-            const EventClass = require(`../events/${dir}/${file}`);
+            const EventClass = require(`./events/${dir}/${file}`);
             const evt = new EventClass(this, file);
             switch (dir) {
               case "player":
