@@ -79,29 +79,37 @@ export default class Play extends Command {
         break;
       case LoadType.TRACK: {
         let trackData = res.data;
-        
         // Convert Spotify to YouTube using ISRC
-        if (trackData.info.sourceName === 'spotify' && trackData.info.isrc) {
-            console.log('🔄 Converting Spotify to YouTube via ISRC:', trackData.info.isrc);
-            const node = this.client.shoukaku.options.nodeResolver(this.client.shoukaku.nodes);
+        // if (trackData.info.sourceName === 'spotify' && trackData.info.isrc) {
+        //     console.log('🔄 Converting Spotify to YouTube via ISRC:', trackData.info.isrc);
+        //     const node = this.client.shoukaku.options.nodeResolver(this.client.shoukaku.nodes);
             
-            // Try ISRC search without quotes first
-            let ytSearch = await node.rest.resolve(`ytsearch:${trackData.info.isrc}`);
-            console.log('   - ISRC search result:', ytSearch.loadType, 'tracks:', ytSearch.data?.length || 0);
+        //     // Try multiple ISRC search formats
+        //     let ytSearch = null;
             
-            if (ytSearch.loadType === LoadType.SEARCH && ytSearch.data.length > 0) {
-                trackData = ytSearch.data[0];
-                console.log('✅ Converted to YouTube via ISRC:', trackData.info.title, 'by', trackData.info.author);
-                console.log('   - Source:', trackData.info.sourceName);
-            } else {
-                console.log('⚠️ ISRC search failed, trying title search...');
-                const titleSearch = await node.rest.resolve(`ytsearch:${trackData.info.title} ${trackData.info.author}`);
-                if (titleSearch.loadType === LoadType.SEARCH && titleSearch.data.length > 0) {
-                    trackData = titleSearch.data[0];
-                    console.log('✅ Converted via title:', trackData.info.title);
-                }
-            }
-        }
+        //     // Format 1: Quoted ISRC (LavaSrc provider format)
+        //     ytSearch = await node.rest.resolve(`ytsearch:"${trackData.info.isrc}"`);
+        //     console.log('   - Quoted ISRC search:', ytSearch.loadType, 'tracks:', ytSearch.data?.length || 0);
+            
+        //     // Format 2: If no results, try ISRC with artist/title
+        //     if ((!ytSearch.data || ytSearch.data.length === 0) && trackData.info.title && trackData.info.author) {
+        //         ytSearch = await node.rest.resolve(`ytsearch:"${trackData.info.isrc}" ${trackData.info.author} ${trackData.info.title}`);
+        //         console.log('   - ISRC + metadata search:', ytSearch.loadType, 'tracks:', ytSearch.data?.length || 0);
+        //     }
+            
+        //     if (ytSearch && ytSearch.loadType === LoadType.SEARCH && ytSearch.data.length > 0) {
+        //         trackData = ytSearch.data[0];
+        //         console.log('✅ Converted to YouTube via ISRC:', trackData.info.title, 'by', trackData.info.author);
+        //         console.log('   - Source:', trackData.info.sourceName);
+        //     } else {
+        //         console.log('⚠️ ISRC search failed, trying title search...');
+        //         const titleSearch = await node.rest.resolve(`ytsearch:${trackData.info.title} ${trackData.info.author}`);
+        //         if (titleSearch.loadType === LoadType.SEARCH && titleSearch.data.length > 0) {
+        //             trackData = titleSearch.data[0];
+        //             console.log('✅ Converted via title:', trackData.info.title);
+        //         }
+        //     }
+        // }
         
         const track = player.buildTrack(trackData, ctx.author);
         if (player.queue.length > client.config.maxQueueSize)
