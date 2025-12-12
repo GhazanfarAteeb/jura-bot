@@ -1,4 +1,4 @@
-import Member from '../models/Member.js';
+import Member from '../../models/Member.js';
 
 // Track voice state changes for stats
 const voiceSessions = new Map(); // userId-guildId -> { joinedAt, channelId }

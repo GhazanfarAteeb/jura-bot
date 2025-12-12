@@ -1,7 +1,7 @@
 import { Events } from 'discord.js';
-import Member from '../models/Member.js';
-import Guild from '../models/Guild.js';
-import { infoEmbed, GLYPHS } from '../utils/embeds.js';
+import Member from '../../models/Member.js';
+import Guild from '../../models/Guild.js';
+import { infoEmbed, GLYPHS } from '../../utils/embeds.js';
 
 export default {
     name: Events.GuildMemberRemove,

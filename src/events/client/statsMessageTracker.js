@@ -1,4 +1,4 @@
-import Member from '../models/Member.js';
+import Member from '../../models/Member.js';
 
 export default {
     name: 'messageCreate',

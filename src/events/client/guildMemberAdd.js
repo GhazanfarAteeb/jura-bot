@@ -1,8 +1,8 @@
 import { Events } from 'discord.js';
-import Guild from '../models/Guild.js';
-import Member from '../models/Member.js';
-import { getHoursSince } from '../utils/helpers.js';
-import { susAlertEmbed, newAccountEmbed } from '../utils/embeds.js';
+import Guild from '../../models/Guild.js';
+import Member from '../../models/Member.js';
+import { getHoursSince } from '../../utils/helpers.js';
+import { susAlertEmbed, newAccountEmbed } from '../../utils/embeds.js';
 
 export default {
     name: Events.GuildMemberAdd,
@@ -191,7 +191,7 @@ export default {
                 try {
                     const joinLogChannel = member.guild.channels.cache.get(guildConfig.channels.joinLog);
                     if (joinLogChannel) {
-                        const { infoEmbed, GLYPHS } = await import('../utils/embeds.js');
+                        const { infoEmbed, GLYPHS } = await import('../../utils/embeds.js');
                         const embed = await infoEmbed(guildId, 'Member Joined', 
                             `${GLYPHS.ARROW_RIGHT} **User:** ${member.user.tag} (${member.user.id})\n` +
                             `${GLYPHS.ARROW_RIGHT} **Account Created:** <t:${Math.floor(member.user.createdTimestamp / 1000)}:R>\n` +

@@ -1,16 +1,16 @@
 import { Events, AttachmentBuilder } from 'discord.js';
-import Guild from '../models/Guild.js';
-import Member from '../models/Member.js';
-import ModLog from '../models/ModLog.js';
-import Level from '../models/Level.js';
-import Economy from '../models/Economy.js';
-import { hasInviteLink, extractInviteCode } from '../utils/helpers.js';
-import { warningEmbed, modLogEmbed, GLYPHS } from '../utils/embeds.js';
+import Guild from '../../models/Guild.js';
+import Member from '../../models/Member.js';
+import ModLog from '../../models/ModLog.js';
+import Level from '../../models/Level.js';
+import Economy from '../../models/Economy.js';
+import { hasInviteLink, extractInviteCode } from '../../utils/helpers.js';
+import { warningEmbed, modLogEmbed, GLYPHS } from '../../utils/embeds.js';
 import { createCanvas, loadImage, GlobalFonts } from '@napi-rs/canvas';
 import { join } from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
-import logger from '../utils/logger.js';
+import logger from '../../utils/logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -137,7 +137,7 @@ export default {
                 
                 // Wave-Music Command class (uses run method with Context)
                 if (typeof command.run === 'function') {
-                    const Context = (await import('../structures/Context.js')).default;
+                    const Context = (await import('../../structures/Context.js')).default;
                     const ctx = new Context(message, args);
                     await command.run(client, ctx, args);
                 }
@@ -163,7 +163,7 @@ export default {
             console.error('Error in messageCreate event:', error);
             
             try {
-                const { errorEmbed } = await import('../utils/embeds.js');
+                const { errorEmbed } = await import('../../utils/embeds.js');
                 const embed = await errorEmbed(message.guild.id, 'Error',
                     'An error occurred while executing this command.'
                 );
@@ -213,7 +213,7 @@ async function handleInviteLink(message, guildConfig) {
         try {
             await message.delete();
             
-            const { warningEmbed, GLYPHS } = await import('../utils/embeds.js');
+            const { warningEmbed, GLYPHS } = await import('../../utils/embeds.js');
             const embed = await warningEmbed(message.guild.id, 'Invite Link Detected',
                 `${GLYPHS.SHIELD} ${message.author}, posting invite links is not allowed here.`
             );

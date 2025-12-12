@@ -1,5 +1,5 @@
 import { Events, Collection } from 'discord.js';
-import logger from '../utils/logger.js';
+import logger from '../../utils/logger.js';
 
 export default {
     name: Events.InteractionCreate,
@@ -118,7 +118,7 @@ export default {
             // Execute the command
             // Wave-Music Command class (uses run method with Context)
             if (typeof command.run === 'function') {
-                const Context = (await import('../structures/Context.js')).default;
+                const Context = (await import('../../structures/Context.js')).default;
                 const ctx = new Context(interaction, args);
                 await command.run(client, ctx, args);
             }

@@ -1,5 +1,5 @@
 import { Events, ActivityType } from 'discord.js';
-import Guild from '../models/Guild.js';
+import Guild from '../../models/Guild.js';
 
 export default {
     name: Events.ClientReady,

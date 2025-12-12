@@ -1,5 +1,5 @@
-import Member from '../models/Member.js';
-import Economy from '../models/Economy.js';
+import Member from '../../models/Member.js';
+import Economy from '../../models/Economy.js';
 
 export default {
     name: 'guildCreate',
