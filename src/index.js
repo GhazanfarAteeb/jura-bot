@@ -5,10 +5,10 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { readdirSync } from 'fs';
 import { initializeSchedulers } from './utils/schedulers.js';
+import { initializeShoukaku } from './utils/shoukaku.js';
 import express from 'express';
 import Guild from './models/Guild.js';
 import logger from './utils/logger.js';
-import './utils/shoukaku.js'; // Initialize Shoukaku
 
 // Load encryption libraries for voice (discord-voip compatibility)
 // discord-voip looks for methods object with open/close methods
@@ -186,8 +186,12 @@ async function initialize() {
     logger.performance('Bot initialization', duration);
     logger.startup(`Bot started successfully in ${duration}ms`);
     
-    // Initialize scheduled tasks (birthdays, events, etc.)
+    // Initialize scheduled tasks and Shoukaku (birthdays, events, etc.)
     client.once('ready', () => {
+        // Initialize Shoukaku after client is ready
+        initializeShoukaku(client);
+        console.log('✅ Shoukaku initialized');
+        
         initializeSchedulers(client);
     });
 }
