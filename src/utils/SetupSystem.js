@@ -381,13 +381,5 @@ async function oops(channel, args) {
     return console.error(e);
   }
 }
-module.exports = {
-  neb,
-  setupStart,
-  trackStart,
-  updateSetup,
-  buttonReply,
-  oops,
-};
 
 export { neb, setupStart, trackStart, updateSetup, buttonReply, oops };
