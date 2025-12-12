@@ -134,10 +134,21 @@ async function loadCommands() {
         
         for (const file of commandFiles) {
             try {
-                const { default: command } = await import(`./commands/${folder}/${file}`);
-                if (command.name) {
-                    client.commands.set(command.name, command);
-                    console.log(`📝 Loaded command: ${command.name}`);
+                const { default: CommandClass } = await import(`./commands/${folder}/${file}`);
+                
+                // Check if it's a Wave-Music Command class (needs instantiation)
+                if (typeof CommandClass === 'function' && CommandClass.prototype.run) {
+                    const commandInstance = new CommandClass(client);
+                    if (commandInstance.name) {
+                        client.commands.set(commandInstance.name, commandInstance);
+                        console.log(`📝 Loaded command: ${commandInstance.name}`);
+                        totalCommands++;
+                    }
+                }
+                // Legacy command object format (plain object with execute method)
+                else if (CommandClass && CommandClass.name && CommandClass.execute) {
+                    client.commands.set(CommandClass.name, CommandClass);
+                    console.log(`📝 Loaded command: ${CommandClass.name}`);
                     totalCommands++;
                 }
             } catch (error) {

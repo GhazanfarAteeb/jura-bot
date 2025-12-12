@@ -119,7 +119,18 @@ export default {
             // Execute command
             try {
                 const startTime = Date.now();
-                await command.execute(message, args, client);
+                
+                // Wave-Music Command class (uses run method with Context)
+                if (typeof command.run === 'function') {
+                    const Context = (await import('../structures/Context.js')).default;
+                    const ctx = new Context(message, args);
+                    await command.run(client, ctx, args);
+                }
+                // Legacy command object (uses execute method)
+                else if (typeof command.execute === 'function') {
+                    await command.execute(message, args, client);
+                }
+                
                 const duration = Date.now() - startTime;
                 
                 logger.command(command.name, message.author, message.guild, true);
