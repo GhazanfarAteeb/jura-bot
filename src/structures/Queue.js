@@ -33,8 +33,8 @@ class Queue extends Map {
                 const player = await this.client.shoukaku.joinVoiceChannel({
                     guildId: guild.id,
                     channelId: voice.id,
-                    shardId: guild.shardId || 0,
-                    deaf: true,
+                  shardId: guild.shardId || 0,
+                  deaf: true,
                 });
                 
                 // Add error handler to player

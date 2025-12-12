@@ -56,41 +56,56 @@ class Dispatcher {
         return this.player.volume;
     }
 
-    async play() {
-        console.log('🎵 Dispatcher.play() called');
-        console.log('   - Exists:', this.exists);
-        console.log('   - Queue length:', this.queue.length);
-        console.log('   - Current track:', this.current ? this.current.info.title : 'none');
+    // async play() {
+    //     console.log('🎵 Dispatcher.play() called');
+    //     console.log('   - Exists:', this.exists);
+    //     console.log('   - Queue length:', this.queue.length);
+    //     console.log('   - Current track:', this.current ? this.current.info.title : 'none');
         
+    //     if (!this.exists || (!this.queue.length && !this.current)) {
+    //         console.log('❌ Cannot play: no queue or dispatcher does not exist');
+    //         return;
+    //     }
+    //     this.current = this.queue.length !== 0 ? this.queue.shift() : this.queue[0];
+    //     if (!this.current) {
+    //         console.log('❌ No current track after shift');
+    //         return;
+    //     }
+        
+    //     console.log('▶️ Playing track:', this.current.info.title, 'by', this.current.info.author);
+        
+    //     try {
+    //         // Shoukaku v4 API: playTrack requires { track: { encoded: ... } }
+    //         await this.player.playTrack({ track: { encoded: this.current?.encoded } });
+    //         console.log('✅ playTrack() successful');
+    //         if (this.current) {
+    //             this.history.push(this.current);
+    //             if (this.history.length > 100) {
+    //                 this.history.shift();
+    //             }
+    //         }
+    //     } catch (error) {
+    //         console.error('❌ Failed to play track:', error);
+    //         // Try to recover by skipping to next track
+    //         if (this.queue.length > 0) {
+    //             await this.play();
+    //         } else {
+    //             this.destroy();
+    //         }
+    //     }
+  // }
+  
+  async play() {
         if (!this.exists || (!this.queue.length && !this.current)) {
-            console.log('❌ Cannot play: no queue or dispatcher does not exist');
             return;
         }
         this.current = this.queue.length !== 0 ? this.queue.shift() : this.queue[0];
-        if (!this.current) {
-            console.log('❌ No current track after shift');
-            return;
-        }
-        
-        console.log('▶️ Playing track:', this.current.info.title, 'by', this.current.info.author);
-        
-        try {
-            // Shoukaku v4 API: playTrack requires { track: { encoded: ... } }
-            await this.player.playTrack({ track: { encoded: this.current?.encoded } });
-            console.log('✅ playTrack() successful');
-            if (this.current) {
-                this.history.push(this.current);
-                if (this.history.length > 100) {
-                    this.history.shift();
-                }
-            }
-        } catch (error) {
-            console.error('❌ Failed to play track:', error);
-            // Try to recover by skipping to next track
-            if (this.queue.length > 0) {
-                await this.play();
-            } else {
-                this.destroy();
+        if (!this.current) return;
+        this.player.playTrack({ track: this.current?.encoded });
+        if (this.current) {
+            this.history.push(this.current);
+            if (this.history.length > 100) {
+                this.history.shift();
             }
         }
     }
