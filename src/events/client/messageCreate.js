@@ -18,16 +18,19 @@ class MessageCreate extends Event {
       }
     }
     let prefix = this.client.db.getPrefix(message.guildId);
+    const defaultPrefix = "!";
+    const currentPrefix = prefix?.prefix || defaultPrefix;
+    
     const mention = new RegExp(`^<@!?${this.client.user.id}>( |)$`);
     if (message.content.match(mention)) {
       await message.reply({
-        content: `Hey, my prefix for this server is \`${prefix.prefix}\` Want more info? then do \`${prefix.prefix}help\`\nStay Safe, Stay Awesome!`,
+        content: `Hey, my prefix for this server is \`${currentPrefix}\` Want more info? then do \`${currentPrefix}help\`\nStay Safe, Stay Awesome!`,
       });
       return;
     }
     const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const prefixRegex = new RegExp(
-      `^(<@!?${this.client.user.id}>|${escapeRegex(prefix.prefix)})\\s*`
+      `^(<@!?${this.client.user.id}>|${escapeRegex(currentPrefix)})\\s*`
     );
     if (!prefixRegex.test(message.content)) return;
     const [matchedPrefix] = message.content.match(prefixRegex);
