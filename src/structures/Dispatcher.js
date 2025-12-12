@@ -42,6 +42,10 @@ class Dispatcher {
                 console.log('   - Track:', this.current?.info?.title);
                 console.log('   - Position at end:', this.player.position, 'ms');
                 console.log('   - Duration:', this.current?.info?.length, 'ms');
+                
+                // Store the end reason for the event handler
+                this.player.track = { reason: reason?.reason || 'finished' };
+                
                 if (!this.queue.length) this.client.shoukaku.emit('queueEnd', this.player, this.current, this);
                 this.client.shoukaku.emit('trackEnd', this.player, this.current, this);
             })
@@ -90,12 +94,11 @@ class Dispatcher {
             await this.player.playTrack({ track: { encoded: this.current?.encoded } });
             console.log('✅ playTrack() called successfully');
             
-            // Set default volume if not already set
-            if (this.player.volume === 0 || this.player.volume === undefined) {
-                console.log('🔊 Setting volume to 100 (default)...');
-                await this.player.setGlobalVolume(100);
-                console.log('✅ Volume set successfully');
-            }
+            // Set default volume to 100 (Shoukaku v4 uses 0-1000 range, so 100 = 100%)
+            console.log('🔊 Current volume:', this.player.volume);
+            console.log('🔊 Setting volume to 100 (100% volume)...');
+            await this.player.setGlobalVolume(100);
+            console.log('✅ Volume set to:', this.player.volume);
             
             console.log('✅ Track setup complete');
             if (this.current) {
