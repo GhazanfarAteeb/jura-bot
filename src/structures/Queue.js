@@ -3,33 +3,50 @@ import Dispatcher from './Dispatcher.js';
 class Queue extends Map {
     constructor(client) {
         super();
-        this.client = client;
+      this.client = client;
+      console.log('✅ Queue system initialized.');
     }
 
     get(guildId) {
-        return super.get(guildId);
+      console.log(`🔍 Queue.get() - Retrieving dispatcher for guild ID: ${guildId}`);
+      return super.get(guildId);
+      
     }
 
-    set(guildId, dispatcher) {
+  set(guildId, dispatcher) {
+      console.log(`💾 Queue.set() - Setting dispatcher for guild ID: ${guildId}`);
         return super.set(guildId, dispatcher);
     }
 
-    delete(guildId) {
+  delete(guildId) {
+      console.log(`🗑️ Queue.delete() - Deleting dispatcher for guild ID: ${guildId}`);
         return super.delete(guildId);
     }
 
-    clear() {
+  clear() {
+      console.log('🧹 Queue.clear() - Clearing all dispatchers from the queue.');
         return super.clear();
     }
 
-    async create(guild, voice, channel, givenNode) {
+  async create(guild, voice, channel, givenNode) {
+        console.log(`🎶 Queue.create() - Creating dispatcher for guild ID: ${guild.id}`);
         let dispatcher = this.get(guild.id);
-        if (!voice) throw new Error('No voice channel was provided');
-        if (!channel) throw new Error('No text channel was provided');
-        if (!guild) throw new Error('No guild was provided');
-        if (!dispatcher) {
+    if (!voice) {
+      
+      throw new Error('No voice channel was provided');
+    }
+        if (!channel) {
+          throw new Error('No text channel was provided');
+        }
+        if (!guild) {
+          throw new Error('No guild was provided');
+        }
+    if (!dispatcher) {
+          console.log(`➕ Queue.create() - No existing dispatcher found. Creating new dispatcher for guild ID: ${guild.id}`);
             try {
-                const node = givenNode || this.client.shoukaku.options.nodeResolver(this.client.shoukaku.nodes);
+              const node = givenNode || this.client.shoukaku.options.nodeResolver(this.client.shoukaku.nodes);
+              console.log(`🔗 Queue.create() - Joining voice channel ID: ${voice.id} in guild ID: ${guild.id}`)
+                console.log("🔗 Node details:", node);
                 const player = await this.client.shoukaku.joinVoiceChannel({
                     guildId: guild.id,
                     channelId: voice.id,
@@ -42,6 +59,7 @@ class Queue extends Map {
                     console.error(`❌ Player error for guild ${guild.id}:`, error);
                 });
                 
+              console.log(`✅ Queue.create() - Voice channel joined and player created for guild ID: ${guild.id}`);
                 dispatcher = new Dispatcher({
                     client: this.client,
                     guildId: guild.id,
@@ -49,7 +67,10 @@ class Queue extends Map {
                     player,
                     node,
                 });
+              console.log(`💾 Queue.create() - Dispatcher created for guild ID: ${guild.id}`);
                 this.set(guild.id, dispatcher);
+                
+                console.log(`🚨 Queue.create() - Emitting playerCreate event for guild ID: ${guild.id}`);
                 this.client.shoukaku.emit('playerCreate', dispatcher.player);
                 return dispatcher;
             } catch (error) {

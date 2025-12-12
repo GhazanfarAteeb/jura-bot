@@ -25,7 +25,7 @@ export function initializeShoukaku(client) {
         reconnectTries: 2,
         reconnectInterval: 5,
         restTimeout: 10000,
-        userAgent: 'Jura-Bot/2.0',
+      userAgent: 'Jura-Bot/2.0',
         nodeResolver: nodes => [...nodes.values()].sort((a, b) => a.penalties - b.penalties).shift()
     });
 
