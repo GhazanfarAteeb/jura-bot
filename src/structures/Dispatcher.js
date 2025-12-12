@@ -29,7 +29,10 @@ class Dispatcher {
         this.autoplay = false;
         this.nowPlayingMessage = null;
         this.player
-            .on('start', () => {
+          .on('start', () => {
+            console.log("player", JSON.stringify(this.player));
+            console.log("current", JSON.stringify(this.current));
+
                 console.log('🎵 Player event: START - Track started playing');
                 this.client.shoukaku.emit('trackStart', this.player, this.current, this);
             })
@@ -78,9 +81,15 @@ class Dispatcher {
         
         try {
             // Shoukaku v4 API: playTrack requires { track: { encoded: ... } }
-            await this.player.playTrack({ track: { encoded: this.current?.encoded } });
-            await this.player.setGlobalVolume(80);
-            console.log('✅ playTrack() successful');
+            console.log('📡 Calling player.playTrack()...');
+            const playResult = await this.player.playTrack({ track: { encoded: this.current?.encoded } });
+            console.log('✅ playTrack() returned:', playResult);
+            
+            console.log('🔊 Setting volume to 80...');
+            const volumeResult = await this.player.setGlobalVolume(80);
+            console.log('✅ setGlobalVolume() returned:', volumeResult);
+            
+            console.log('✅ Track setup complete');
             if (this.current) {
                 this.history.push(this.current);
                 if (this.history.length > 100) {
@@ -89,6 +98,9 @@ class Dispatcher {
             }
         } catch (error) {
             console.error('❌ Failed to play track:', error);
+            console.error('   Error name:', error.name);
+            console.error('   Error message:', error.message);
+            console.error('   Error stack:', error.stack);
             // Try to recover by skipping to next track
             if (this.queue.length > 0) {
                 await this.play();
