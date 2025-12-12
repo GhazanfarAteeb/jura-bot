@@ -1,4 +1,4 @@
-
+import Music from '../models/Music.js';
 
 export default class ServerData {
   constructor() {
