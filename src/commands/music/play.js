@@ -63,9 +63,16 @@ export default {
             console.log(`🔍 Searching Lavalink: ${searchQuery}`);
             
             // Use Shoukaku's search method - correct API for v4
-            const result = await node.rest.resolve(searchQuery);
-            
-            console.log(`📊 Raw Lavalink Response:`, JSON.stringify(result, null, 2));
+            let result;
+            try {
+                result = await node.rest.resolve(searchQuery);
+                console.log(`📊 Raw Lavalink Response:`, JSON.stringify(result, null, 2));
+            } catch (err) {
+                console.error(`❌ Lavalink resolve error:`, err);
+                return message.reply({
+                    embeds: [await errorEmbed(guildId, 'Lavalink Error', `Failed to search: ${err.message}`)]
+                });
+            }
             
             // Shoukaku v4 returns: { loadType, data }
             // loadType can be: 'track', 'search', 'playlist', 'empty', 'error'
