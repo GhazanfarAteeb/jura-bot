@@ -181,7 +181,7 @@ async function loadEvents() {
         events.forEach((file) => {
           try {
             console.log("📂 Loading event:", file);
-            const EventClass = require(`./events/${dir}/${file}`);
+            const EventClass = await import(`./events/${dir}/${file}`);
             const evt = new EventClass(this, file);
             switch (dir) {
               case "player":
