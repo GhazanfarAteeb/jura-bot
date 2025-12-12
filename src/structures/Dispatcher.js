@@ -73,10 +73,10 @@ class Dispatcher {
         console.log('   - Queue length:', this.queue.length);
         console.log('   - Current track:', this.current ? this.current.info.title : 'none');
         
-        if (!this.exists || (!this.queue.length && !this.current)) {
-            console.log('❌ Cannot play: no queue or dispatcher does not exist');
-            return;
-        }
+        // if (!this.exists || (!this.queue.length && !this.current)) {
+        //     // console.log('❌ Cannot play: no queue or dispatcher does not exist');
+        //     return;
+        // }
         this.current = this.queue.length !== 0 ? this.queue.shift() : this.queue[0];
         if (!this.current) {
             console.log('❌ No current track after shift');
@@ -91,7 +91,8 @@ class Dispatcher {
             // Shoukaku v4 API: playTrack requires { track: { encoded: ... } }
           console.log('📡 Calling player.playTrack()...');
           console.log('   - Encoded track:', this.current.encoded);
-            await this.player.playTrack({ track: { encoded: this.current?.encoded } });
+          await this.player.playTrack({ track: { encoded: this.current?.encoded } });
+          console.log("player", this.player)
             console.log('✅ playTrack() called successfully');
             
             // Set default volume to 100 (Shoukaku v4 uses 0-1000 range, so 100 = 100%)
