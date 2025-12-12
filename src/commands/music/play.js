@@ -62,44 +62,54 @@ export default {
             
             console.log(`🔍 Searching Lavalink: ${searchQuery}`);
             
-            try {
-                // Search for the track using Lavalink
-                const result = await node.rest.resolve(searchQuery);
-                
-                console.log(`📊 Result received:`, JSON.stringify(result, null, 2));
-                
-                // Handle Lavalink v4 response format
-                let tracks = [];
-                if (result.loadType === 'track') {
-                    // Single track (e.g., Spotify URL)
-                    console.log(`✅ Single track found: ${result.data?.info?.title}`);
-                    tracks = [result.data];
-                } else if (result.loadType === 'search') {
-                    // Search results
-                    console.log(`✅ Search results: ${result.data?.length || 0} tracks`);
-                    tracks = result.data || [];
-                } else if (result.loadType === 'playlist') {
-                    // Playlist
-                    console.log(`✅ Playlist found with ${result.data?.tracks?.length || 0} tracks`);
-                    tracks = result.data?.tracks || [];
-                } else if (result.tracks) {
-                    // Fallback for older format
-                    console.log(`✅ Fallback format: ${result.tracks?.length || 0} tracks`);
-                    tracks = result.tracks;
-                } else {
-                    console.log(`❌ Unknown format:`, result);
-                }
-                
-                console.log(`📋 Total tracks extracted: ${tracks?.length || 0}`);
-                
-                if (!tracks || tracks.length === 0) {
+            // Search for the track using Lavalink - Shoukaku v4 uses loadTrack
+            const result = await node.rest.loadTrack(searchQuery);
+            
+            console.log(`📊 Raw result:`, JSON.stringify(result, null, 2));
+            
+            // Check if no results
+            if (!result || result.loadType === 'empty' || result.loadType === 'error') {
+                console.log(`❌ No results or error`);
+                return message.reply({
+                    embeds: [await errorEmbed(guildId, 'No Results', `No results found for: **${query}**`)]
+                });
+            }
+            
+            // Extract track(s) based on loadType
+            let track;
+            if (result.loadType === 'track') {
+                // Single track (Spotify/Apple Music/direct URL)
+                track = result.data;
+                console.log(`✅ Single track: ${track?.info?.title}`);
+            } else if (result.loadType === 'search') {
+                // Search results - take first
+                if (!result.data || result.data.length === 0) {
                     return message.reply({
                         embeds: [await errorEmbed(guildId, 'No Results', `No results found for: **${query}**`)]
                     });
                 }
-                
-                // Get the first track
-                const track = tracks[0];
+                track = result.data[0];
+                console.log(`✅ Search result: ${track?.info?.title}`);
+            } else if (result.loadType === 'playlist') {
+                // Playlist - take first track
+                if (!result.data?.tracks || result.data.tracks.length === 0) {
+                    return message.reply({
+                        embeds: [await errorEmbed(guildId, 'Empty Playlist', `The playlist has no tracks.`)]
+                    });
+                }
+                track = result.data.tracks[0];
+                console.log(`✅ Playlist track: ${track?.info?.title}`);
+            }
+            
+            // Validate track
+            if (!track || !track.encoded) {
+                console.log(`❌ Invalid track object:`, track);
+                return message.reply({
+                    embeds: [await errorEmbed(guildId, 'Invalid Track', `Could not load track information.`)]
+                });
+            }
+            
+            console.log(`🎵 Playing: ${track.info.title} by ${track.info.author}`);
             
             // Get or create player
             let player = players.get(guildId);
