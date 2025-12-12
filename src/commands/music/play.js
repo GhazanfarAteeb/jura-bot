@@ -271,7 +271,6 @@ export default {
                                     console.log(`         ✅ NEW BEST MATCH!`);
                                 }
                             }
-                            }
                             
                             // If we found a great match (score >= 100), stop searching
                             if (bestScore >= 150) {

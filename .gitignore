@@ -31,3 +31,4 @@ build/
 # Cache
 .cache/
 .temp/
+*.pem
