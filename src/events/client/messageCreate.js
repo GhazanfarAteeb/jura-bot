@@ -1,6 +1,3 @@
-// const Event = require("../../structures/Event.js");
-// const { ChannelType, Collection, PermissionFlagsBits } = require("discord.js");
-// const Context = require("../../structures/Context.js");
 
 import Event from "../../structures/Event.js";
 import { ChannelType, Collection, PermissionFlagsBits } from "discord.js";
@@ -225,4 +222,4 @@ class MessageCreate extends Event {
   }
 };
 
-module.exports = MessageCreate;
+export default MessageCreate;
