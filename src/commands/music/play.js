@@ -1,7 +1,6 @@
 import { player, checkVoiceChannel } from '../../utils/musicPlayer.js';
 import { QueryType } from 'discord-player';
 import { errorEmbed, successEmbed } from '../../utils/embeds.js';
-import playdl from 'play-dl';
 
 export default {
     name: 'play',
@@ -49,12 +48,13 @@ export default {
                     .replace('m.youtube.com', 'www.youtube.com')
                     .replace('youtu.be/', 'youtube.com/watch?v=');
                 
-                // Extract video ID to ensure exact match
+                // Extract video ID to ensure exact match (11 characters, alphanumeric + underscore/hyphen)
                 let videoId = null;
                 const urlPatterns = [
-                    /(?:youtube\.com\/watch\?v=)([^&]+)/,
-                    /(?:youtube\.com\/embed\/)([^?]+)/,
-                    /(?:youtube\.com\/v\/)([^?]+)/
+                    /(?:youtube\.com\/watch\?v=)([a-zA-Z0-9_-]{11})/,
+                    /(?:youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
+                    /(?:youtube\.com\/v\/)([a-zA-Z0-9_-]{11})/,
+                    /(?:youtu\.be\/)([a-zA-Z0-9_-]{11})/
                 ];
                 
                 for (const pattern of urlPatterns) {
@@ -166,12 +166,15 @@ export default {
                     });
                 }
                 
-                // Clean up search terms
-                const cleanTitle = spotifyInfo.name
+                // Clean up search terms - remove version info to find official
+                let cleanTitle = spotifyInfo.name
                     .replace(/\s*\(feat\.?.*?\)/gi, '')
                     .replace(/\s*\[.*?\]/g, '')
                     .replace(/\s*\(official.*?\)/gi, '')
                     .replace(/\s*-\s*remaster.*$/gi, '')
+                    .replace(/\s*-\s*twin version/gi, '')      // Remove "- Twin Version"
+                    .replace(/\s*-\s*sped up/gi, '')           // Remove "- Sped Up"
+                    .replace(/\s*-\s*slowed/gi, '')            // Remove "- Slowed"
                     .trim();
                 
                 const artistName = spotifyInfo.artists?.[0]?.name || '';
@@ -180,6 +183,8 @@ export default {
                     .split('&')[0]
                     .split('feat')[0]
                     .trim();
+                
+                console.log(`🧹 Cleaned: "${cleanTitle}" by "${cleanArtist}" (was: "${spotifyInfo.name}")`);
                 
                 // Multiple search queries with decreasing specificity (simplified - no quotes)
                 const searchQueries = [

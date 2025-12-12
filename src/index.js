@@ -63,61 +63,6 @@ if (encryptionLoaded) {
     console.error('❌ No encryption library could be loaded - voice will not work');
 }
 
-// Initialize play-dl with Spotify credentials GLOBALLY
-console.log('🎵 Initializing play-dl with Spotify...');
-try {
-    const playdl = await import('play-dl');
-    
-    if (process.env.SPOTIFY_CLIENT_ID && process.env.SPOTIFY_CLIENT_SECRET) {
-        console.log('   Setting up Spotify credentials...');
-        
-        // Request Spotify access token using Client Credentials flow
-        const authString = Buffer.from(
-            `${process.env.SPOTIFY_CLIENT_ID}:${process.env.SPOTIFY_CLIENT_SECRET}`
-        ).toString('base64');
-        
-        const tokenResponse = await fetch('https://accounts.spotify.com/api/token', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'Authorization': `Basic ${authString}`
-            },
-            body: 'grant_type=client_credentials'
-        });
-        
-        if (!tokenResponse.ok) {
-            const errorText = await tokenResponse.text();
-            throw new Error(`Spotify auth failed (${tokenResponse.status}): ${errorText}`);
-        }
-        
-        const tokenData = await tokenResponse.json();
-        
-        // Store token in play-dl's expected format
-        const spotifyData = {
-            client_id: process.env.SPOTIFY_CLIENT_ID,
-            client_secret: process.env.SPOTIFY_CLIENT_SECRET,
-            access_token: tokenData.access_token,
-            token_type: 'Bearer',
-            expires_in: tokenData.expires_in,
-            expiry: Date.now() + (tokenData.expires_in * 1000)
-        };
-        
-        // Set the token data globally for play-dl
-        await playdl.setToken({
-            spotify: spotifyData
-        });
-        
-        console.log('✅ play-dl Spotify authorization successful');
-        console.log('   Token expires in:', tokenData.expires_in, 'seconds');
-    } else {
-        console.warn('⚠️  Spotify credentials not found - Spotify URLs will not work');
-        console.warn('   Add SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET to .env');
-    }
-} catch (playdlError) {
-    console.error('❌ Failed to initialize play-dl:', playdlError);
-    console.error('   Message:', playdlError.message);
-}
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
