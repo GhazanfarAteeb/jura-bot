@@ -30,23 +30,23 @@ export default class Queue extends Command {
   }
   async run(client, ctx) {
     const player = client.queue.get(ctx.guild.id);
-    if (player.queue.length === 0)
-      return await ctx.sendMessage({
-        embeds: [
-          this.client
-            .embed()
-            .setColor(this.client.color.main)
-            .setDescription(
-              `Now playing: [${player.current.info.title}](${
-                player.current.info.uri
-              }) - Request By: ${player.current?.info.requester} - Duration: ${
-                player.current.info.isStream
-                  ? "LIVE"
-                  : this.client.utils.formatTime(player.current.info.length)
-              }`
-            ),
-        ],
-      });
+    // if (player.queue.length === 0)
+    //   return await ctx.sendMessage({
+    //     embeds: [
+    //       this.client
+    //         .embed()
+    //         .setColor(this.client.color.main)
+    //         .setDescription(
+    //           `Now playing: [${player.current.info.title}](${
+    //             player.current.info.uri
+    //           }) - Request By: ${player.current?.info.requester} - Duration: ${
+    //             player.current.info.isStream
+    //               ? "LIVE"
+    //               : this.client.utils.formatTime(player.current.info.length)
+    //           }`
+    //         ),
+    //     ],
+    //   });
     const queue = player.queue.map(
       (track, index) =>
         `${index + 1}. [${track.info.title}](${track.info.uri}) - Request By: ${
