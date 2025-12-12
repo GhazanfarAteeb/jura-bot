@@ -98,21 +98,63 @@ export default {
             } else if (isSpotifyURL) {
                 console.log(`🎵 Spotify URL detected: ${query}`);
                 
-                // Get Spotify metadata using play-dl DIRECTLY (bypass discord-player extractors)
+                // Get Spotify metadata using direct Spotify API (bypass play-dl issues)
                 let spotifyInfo = null;
                 try {
-                    // play-dl can fetch Spotify track info directly without any extractor
-                    spotifyInfo = await playdl.spotify(query);
-                    
-                    if (spotifyInfo) {
-                        console.log(`✅ Spotify metadata from play-dl:`, {
-                            title: spotifyInfo.name,
-                            artists: spotifyInfo.artists?.map(a => a.name).join(', '),
-                            duration: `${Math.floor(spotifyInfo.durationInMs / 1000)}s`
-                        });
+                    // Extract track ID from Spotify URL
+                    const trackIdMatch = query.match(/track\/([a-zA-Z0-9]+)/);
+                    if (!trackIdMatch) {
+                        throw new Error('Invalid Spotify track URL');
                     }
+                    const trackId = trackIdMatch[1];
+                    
+                    // Get Spotify access token using Client Credentials
+                    const authString = Buffer.from(
+                        `${process.env.SPOTIFY_CLIENT_ID}:${process.env.SPOTIFY_CLIENT_SECRET}`
+                    ).toString('base64');
+                    
+                    const tokenResponse = await fetch('https://accounts.spotify.com/api/token', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'Authorization': `Basic ${authString}`
+                        },
+                        body: 'grant_type=client_credentials'
+                    });
+                    
+                    if (!tokenResponse.ok) {
+                        throw new Error(`Spotify auth failed: ${tokenResponse.status}`);
+                    }
+                    
+                    const tokenData = await tokenResponse.json();
+                    
+                    // Fetch track info from Spotify API
+                    const trackResponse = await fetch(`https://api.spotify.com/v1/tracks/${trackId}`, {
+                        headers: {
+                            'Authorization': `Bearer ${tokenData.access_token}`
+                        }
+                    });
+                    
+                    if (!trackResponse.ok) {
+                        throw new Error(`Spotify track fetch failed: ${trackResponse.status}`);
+                    }
+                    
+                    const trackData = await trackResponse.json();
+                    
+                    spotifyInfo = {
+                        name: trackData.name,
+                        artists: trackData.artists.map(a => ({ name: a.name })),
+                        durationInMs: trackData.duration_ms
+                    };
+                    
+                    console.log(`✅ Spotify metadata from API:`, {
+                        title: spotifyInfo.name,
+                        artists: spotifyInfo.artists.map(a => a.name).join(', '),
+                        duration: `${Math.floor(spotifyInfo.durationInMs / 1000)}s`
+                    });
+                    
                 } catch (spotifyError) {
-                    console.error('❌ play-dl Spotify fetch failed:', spotifyError.message);
+                    console.error('❌ Spotify API fetch failed:', spotifyError.message);
                     return message.reply({
                         embeds: [await errorEmbed(guildId, 'Spotify Error', `Could not access Spotify track.\n\n**Error:** ${spotifyError.message}\n\n**Try:** Using a direct YouTube URL instead`)]
                     });
