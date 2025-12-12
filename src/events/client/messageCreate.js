@@ -25,9 +25,11 @@ try {
 
 export default {
     name: Events.MessageCreate,
-    async execute(message, client) {
+    async execute(message) {
         // Ignore bots and DMs
         if (message.author.bot || !message.guild) return;
+        
+        const client = message.client;
         
         try {
             const guildId = message.guild.id;
