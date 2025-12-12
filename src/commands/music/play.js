@@ -65,14 +65,17 @@ export default {
             // Search for the track using Lavalink
             const result = await node.rest.resolve(searchQuery);
             
-            console.log('📊 Lavalink result:', JSON.stringify(result, null, 2));
-            
             // Handle Lavalink v4 response format
             let tracks = [];
             if (result.loadType === 'track') {
+                // Single track (e.g., Spotify URL)
                 tracks = [result.data];
-            } else if (result.loadType === 'search' || result.loadType === 'playlist') {
-                tracks = result.data.tracks || result.data || [];
+            } else if (result.loadType === 'search') {
+                // Search results
+                tracks = result.data || [];
+            } else if (result.loadType === 'playlist') {
+                // Playlist
+                tracks = result.data?.tracks || [];
             } else if (result.tracks) {
                 // Fallback for older format
                 tracks = result.tracks;
