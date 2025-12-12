@@ -56,7 +56,8 @@ class Dispatcher {
         if (!this.current) return;
         
         try {
-            await this.player.playTrack({ track: this.current?.encoded });
+            // Shoukaku v4 API: playTrack requires { track: { encoded: ... } }
+            await this.player.playTrack({ track: { encoded: this.current?.encoded } });
             if (this.current) {
                 this.history.push(this.current);
                 if (this.history.length > 100) {
