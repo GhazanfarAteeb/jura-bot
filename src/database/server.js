@@ -30,13 +30,13 @@ export default class ServerData {
     const data = await this.Music.findOne({ guildId, type: 'guild' });
     
     if (!data || !data.prefix) {
-      const config = await import('../config.js');
+      const defaultPrefix = process.env.DEFAULT_PREFIX || '!';
       await this.Music.updateOne(
         { guildId, type: 'guild' },
-        { $set: { prefix: config.default.prefix } },
+        { $set: { prefix: defaultPrefix } },
         { upsert: true }
       );
-      return { prefix: config.default.prefix };
+      return { prefix: defaultPrefix };
     }
     return { prefix: data.prefix };
   }
