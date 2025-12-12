@@ -82,12 +82,12 @@ class Dispatcher {
         try {
             // Shoukaku v4 API: playTrack requires { track: { encoded: ... } }
             console.log('📡 Calling player.playTrack()...');
-            const playResult = await this.player.playTrack({ track: { encoded: this.current?.encoded } });
-            console.log('✅ playTrack() returned:', playResult);
+            await this.player.playTrack({ track: { encoded: this.current?.encoded } });
+            console.log('✅ playTrack() called successfully');
             
             console.log('🔊 Setting volume to 80...');
-            const volumeResult = await this.player.setGlobalVolume(80);
-            console.log('✅ setGlobalVolume() returned:', volumeResult);
+            await this.player.setGlobalVolume(80);
+            console.log('✅ Volume set successfully');
             
             console.log('✅ Track setup complete');
             if (this.current) {

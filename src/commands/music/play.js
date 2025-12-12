@@ -78,7 +78,29 @@ export default class Play extends Command {
         });
         break;
       case LoadType.TRACK: {
-        const track = player.buildTrack(res.data, ctx.author);
+        let trackData = res.data;
+        
+        // Convert Spotify to YouTube using ISRC
+        if (trackData.info.sourceName === 'spotify' && trackData.info.isrc) {
+            console.log('🔄 Converting Spotify to YouTube via ISRC:', trackData.info.isrc);
+            const node = this.client.shoukaku.options.nodeResolver(this.client.shoukaku.nodes);
+            const ytSearch = await node.rest.resolve(`ytsearch:"${trackData.info.isrc}"`);
+            
+            if (ytSearch.loadType === LoadType.SEARCH && ytSearch.data.length > 0) {
+                trackData = ytSearch.data[0];
+                console.log('✅ Converted to YouTube:', trackData.info.title, 'by', trackData.info.author);
+                console.log('   - Source:', trackData.info.sourceName);
+            } else {
+                console.log('⚠️ ISRC search failed, trying title search...');
+                const titleSearch = await node.rest.resolve(`ytsearch:${trackData.info.title} ${trackData.info.author}`);
+                if (titleSearch.loadType === LoadType.SEARCH && titleSearch.data.length > 0) {
+                    trackData = titleSearch.data[0];
+                    console.log('✅ Converted via title:', trackData.info.title);
+                }
+            }
+        }
+        
+        const track = player.buildTrack(trackData, ctx.author);
         if (player.queue.length > client.config.maxQueueSize)
           return await ctx.sendMessage({
             embeds: [
