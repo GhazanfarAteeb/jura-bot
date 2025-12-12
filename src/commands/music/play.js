@@ -43,6 +43,8 @@ export default {
             // Search for track
             const res = await message.client.queue.search(query);
             
+            console.log('🔍 Search result:', JSON.stringify(res, null, 2));
+            
             if (!res) {
                 return message.reply({
                     embeds: [await errorEmbed(guildId, 'Search Error', 'Failed to search for the track.')]
