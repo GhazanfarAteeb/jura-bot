@@ -11,7 +11,8 @@ export default class TrackEnd extends Event {
     dispatcher.previous = dispatcher.current;
     dispatcher.current = null;
     const m = await dispatcher.nowPlayingMessage?.fetch().catch(() => {});
-    
+    console.log(`⏹️ Track ended in guild ID: ${dispatcher.guildId} - Track: ${track.info.title}`);
+    console.log("Track Ended Reason :", player.track?.reason || "unknown");
     // Handle track load failures
     if (player.track && player.track.reason === 'loadFailed') {
       console.log('⚠️ Track failed to load, skipping to next track');
