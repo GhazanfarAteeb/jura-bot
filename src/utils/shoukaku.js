@@ -24,10 +24,11 @@ export function initializeShoukaku(client) {
         resumeTimeout: 30,
         reconnectTries: 2,
         reconnectInterval: 5,
-        restTimeout: 10000,
+      restTimeout: 10000,
       userAgent: 'Jura-Bot/2.0',
         nodeResolver: nodes => [...nodes.values()].sort((a, b) => a.penalties - b.penalties).shift()
     });
+  console.log('✅ Shoukaku instance created.');
 
     // Initialize Queue system
     client.queue = new Queue(client);
@@ -50,8 +51,11 @@ export function initializeShoukaku(client) {
         console.log(`⚠️ Lavalink ${name} disconnected:`, reason);
     });
 
-    shoukaku.on('debug', (name, info) => {
-        console.log(`🔍 Lavalink ${name} debug:`, info);
+  shoukaku.on('debug', (name, info) => {
+      console.log("================================================================");
+    console.log(`🔍🔍🔍🔍🔍 Lavalink DEBUG ${name} debug:`, info);
+      console.log("================================================================");
+    
     });
     
     // Track start event - send now playing message

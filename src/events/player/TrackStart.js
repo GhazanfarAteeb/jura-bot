@@ -97,7 +97,7 @@ class TrackStart extends Event {
         components: [buttonBuilder()],
       });
       dispatcher.nowPlayingMessage = message;
-      const collector = message.createMessageComponentCollector({
+      const collector = await message.createMessageComponentCollector({
         filter: async (b) => {
           if (
             b.guild.members.me.voice.channel &&

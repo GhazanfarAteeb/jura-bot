@@ -53,6 +53,7 @@ class Queue extends Map {
                   shardId: guild.shardId || 0,
                   deaf: true,
                 });
+              console.log(`✅ Queue.create() - Joined voice channel ID: ${voice.id} and created player for guild ID: ${guild.id}`);
                 
                 // Add error handler to player
                 player.on('error', (error) => {

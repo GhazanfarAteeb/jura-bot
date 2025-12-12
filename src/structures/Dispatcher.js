@@ -205,7 +205,8 @@ class Dispatcher {
         this.loop = loop;
     }
 
-    buildTrack(track, user) {
+  buildTrack(track, user) {
+        console.log('🔍 buildTrack() called for track:', track);
         return new Song(track, user);
     }
 
