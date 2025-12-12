@@ -112,7 +112,7 @@ client.invites = new Collection();
 
 // Configuration
 client.config = {
-    searchEngine: 'ytmsearch', // YouTube Music search via LavaSrc plugin
+    searchEngine: 'ytsearch', // YouTube Music search via LavaSrc plugin
     maxQueueSize: 1000,
     maxPlaylistSize: 100,
     icons: {
