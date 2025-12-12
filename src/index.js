@@ -11,6 +11,7 @@ import { initializeShoukaku } from './utils/shoukaku.js';
 import express from 'express';
 import Guild from './models/Guild.js';
 import logger from './utils/logger.js';
+import ServerData from './database/server.js';
 
 // Load encryption libraries for voice (discord-voip compatibility)
 // discord-voip looks for methods object with open/close methods
@@ -98,6 +99,9 @@ const client = new Client({
 
 // Collections for commands and events
 client.commands = new Collection();
+
+// Initialize database
+client.db = new ServerData();
 client.cooldowns = new Collection();
 client.invites = new Collection();
 
