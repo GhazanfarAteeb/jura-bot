@@ -17,7 +17,7 @@ class MessageCreate extends Event {
         return this.client.emit("setupSystem", message);
       }
     }
-    let prefix = this.client.db.getPrefix(message.guildId);
+    let prefix = (await this.client.db.getPrefix(message.guildId)).prefix.toLowerCase();
     const defaultPrefix = "!";
     const currentPrefix = prefix?.prefix || defaultPrefix;
     
@@ -189,11 +189,11 @@ class MessageCreate extends Event {
         return await message.reply({ embeds: [embed] });
       }
     }
-    if (!this.client.cooldown.has(cmd)) {
-      this.client.cooldown.set(cmd, new Collection());
+    if (!this.client.cooldowns.has(cmd)) {
+      this.client.cooldowns.set(cmd, new Collection());
     }
     const now = Date.now();
-    const timestamps = this.client.cooldown.get(cmd);
+    const timestamps = this.client.cooldowns.get(cmd);
     const cooldownAmount = Math.floor(command.cooldown || 5) * 1000;
     if (!timestamps.has(message.author.id)) {
       timestamps.set(message.author.id, now);
