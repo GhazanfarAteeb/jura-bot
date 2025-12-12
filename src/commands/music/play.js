@@ -62,46 +62,66 @@ export default {
             
             console.log(`🔍 Searching Lavalink: ${searchQuery}`);
             
-            // Search for the track using Lavalink - Shoukaku v4 uses loadTrack
-            const result = await node.rest.loadTrack(searchQuery);
+            // Use Shoukaku's search method - correct API for v4
+            const result = await node.rest.resolve(searchQuery);
             
-            console.log(`📊 Raw result:`, JSON.stringify(result, null, 2));
+            console.log(`📊 Raw Lavalink Response:`, JSON.stringify(result, null, 2));
             
-            // Check if no results
-            if (!result || result.loadType === 'empty' || result.loadType === 'error') {
-                console.log(`❌ No results or error`);
-                return message.reply({
-                    embeds: [await errorEmbed(guildId, 'No Results', `No results found for: **${query}**`)]
-                });
-            }
+            // Shoukaku v4 returns: { loadType, data }
+            // loadType can be: 'track', 'search', 'playlist', 'empty', 'error'
             
-            // Extract track(s) based on loadType
             let track;
-            if (result.loadType === 'track') {
-                // Single track (Spotify/Apple Music/direct URL)
-                track = result.data;
-                console.log(`✅ Single track: ${track?.info?.title}`);
-            } else if (result.loadType === 'search') {
-                // Search results - take first
-                if (!result.data || result.data.length === 0) {
+            
+            switch (result?.loadType) {
+                case 'track':
+                    // Direct track (Spotify/Apple Music URL)
+                    track = result.data;
+                    console.log(`✅ Track loaded: ${track?.info?.title}`);
+                    break;
+                    
+                case 'search':
+                    // Search results array
+                    if (!result.data || result.data.length === 0) {
+                        console.log(`❌ Search returned no results`);
+                        return message.reply({
+                            embeds: [await errorEmbed(guildId, 'No Results', `No results found for: **${query}**`)]
+                        });
+                    }
+                    track = result.data[0];
+                    console.log(`✅ Search result: ${track?.info?.title}`);
+                    break;
+                    
+                case 'playlist':
+                    // Playlist
+                    if (!result.data?.tracks || result.data.tracks.length === 0) {
+                        return message.reply({
+                            embeds: [await errorEmbed(guildId, 'Empty Playlist', `The playlist has no tracks.`)]
+                        });
+                    }
+                    track = result.data.tracks[0];
+                    console.log(`✅ Playlist track: ${track?.info?.title}`);
+                    break;
+                    
+                case 'empty':
+                    console.log(`❌ Lavalink returned empty`);
                     return message.reply({
                         embeds: [await errorEmbed(guildId, 'No Results', `No results found for: **${query}**`)]
                     });
-                }
-                track = result.data[0];
-                console.log(`✅ Search result: ${track?.info?.title}`);
-            } else if (result.loadType === 'playlist') {
-                // Playlist - take first track
-                if (!result.data?.tracks || result.data.tracks.length === 0) {
+                    
+                case 'error':
+                    console.log(`❌ Lavalink error:`, result.data);
                     return message.reply({
-                        embeds: [await errorEmbed(guildId, 'Empty Playlist', `The playlist has no tracks.`)]
+                        embeds: [await errorEmbed(guildId, 'Search Error', `Failed to search: ${result.data?.message || 'Unknown error'}`)]
                     });
-                }
-                track = result.data.tracks[0];
-                console.log(`✅ Playlist track: ${track?.info?.title}`);
+                    
+                default:
+                    console.log(`❌ Unknown loadType: ${result?.loadType}`);
+                    return message.reply({
+                        embeds: [await errorEmbed(guildId, 'Unknown Error', `Unexpected response from Lavalink`)]
+                    });
             }
             
-            // Validate track
+            // Final validation
             if (!track || !track.encoded) {
                 console.log(`❌ Invalid track object:`, track);
                 return message.reply({
@@ -109,7 +129,7 @@ export default {
                 });
             }
             
-            console.log(`🎵 Playing: ${track.info.title} by ${track.info.author}`);
+            console.log(`🎵 Ready to play: ${track.info.title} by ${track.info.author}`);
             
             // Get or create player
             let player = players.get(guildId);
