@@ -15,8 +15,10 @@ class TrackStart extends Event {
   }
   async run(player, track, dispatcher) {
     const guild = this.client.guilds.cache.get(player.guildId);
+    console.log(`▶️ TrackStart Event Triggered for guild ID: ${dispatcher.guildId} - Track: ${track.info.title}`);
     if (!guild) return;
     const channel = guild.channels.cache.get(dispatcher.channelId);
+    console.log(`▶️ TrackStart Event - Text channel ID: ${dispatcher.channelId} in guild ID: ${dispatcher.guildId}`);
     if (!channel) return;
 
     function buttonBuilder() {

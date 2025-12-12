@@ -8,10 +8,11 @@ export default class TrackEnd extends Event {
   }
 
   async run(player, track, dispatcher) {
+    console.log(`⏹️ TrackEnd Event Triggered for guild ID: ${dispatcher.guildId}`);
     dispatcher.previous = dispatcher.current;
     dispatcher.current = null;
     const m = await dispatcher.nowPlayingMessage?.fetch().catch(() => {});
-    console.log(`⏹️ Track ended in guild ID: ${dispatcher.guildId} - Track: ${track.info.title}`);
+    // console.log(`⏹️ Track ended in guild ID: ${dispatcher.guildId} - Track: ${track.info.title}`);
     console.log("Track Ended Reason :", player.track?.reason || "unknown");
     // Handle track load failures
     if (player.track && player.track.reason === 'loadFailed') {
