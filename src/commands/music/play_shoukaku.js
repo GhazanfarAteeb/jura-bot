@@ -9,154 +9,126 @@ export default {
     usage: 'play <song name | url>',
     category: 'music',
     cooldown: 3,
-    execute: async (message, args) => {
-        const guildId = message.guild.id;
-        
-        // Check if user is in voice channel
-        const voiceCheck = checkVoiceChannel(message);
-        if (voiceCheck.error) {
-            return message.reply({ embeds: [await errorEmbed(guildId, 'Voice Channel Error', voiceCheck.message)] });
-        }
-        
-        if (!args.length) {
-            return message.reply({
-                embeds: [await errorEmbed(guildId, 'Missing Arguments', 'Please provide a song name or URL!\n\n**Usage:** `R!play <song|url>`\n\n**Examples:**\n• `R!play never gonna give you up`\n• `R!play rick astley - never gonna give you up`\n• `R!play https://youtube.com/watch?v=...`\n• `R!play https://open.spotify.com/track/...`\n• `R!play https://music.apple.com/...`\n\n**Supported Platforms:**\n✅ YouTube (search or URL)\n✅ Spotify (URL only)\n✅ Apple Music (URL only)')]
+    execute: async (client, ctx, args) => {
+    const query = args.join(" ");
+    let player = client.queue.get(ctx.guild.id);
+    const vc = ctx.member;
+    if (!player)
+      player = await client.queue.create(
+        ctx.guild,
+        vc.voice.channel,
+        ctx.channel
+      );
+    const res = await this.client.queue.search(query);
+    const embed = this.client.embed();
+    switch (res.loadType) {
+      case LoadType.ERROR:
+        ctx.sendMessage({
+          embeds: [
+            embed
+              .setColor(this.client.color.red)
+              .setDescription("There was an error while searching."),
+          ],
+        });
+        break;
+      case LoadType.EMPTY:
+        ctx.sendMessage({
+          embeds: [
+            embed
+              .setColor(this.client.color.red)
+              .setDescription("There were no results found."),
+          ],
+        });
+        break;
+      case LoadType.TRACK: {
+        const track = player.buildTrack(res.data, ctx.author);
+        if (player.queue.length > client.config.maxQueueSize)
+          return await ctx.sendMessage({
+            embeds: [
+              embed
+                .setColor(this.client.color.red)
+                .setDescription(
+                  `The queue is too long. The maximum length is ${client.config.maxQueueSize} songs.`
+                ),
+            ],
+          });
+        player.queue.push(track);
+        await player.isPlaying();
+        ctx.sendMessage({
+          embeds: [
+            embed
+              .setColor(this.client.color.main)
+              .setDescription(
+                `Added [${res.data.info.title}](${res.data.info.uri}) to the queue.`
+              ),
+          ],
+        });
+        break;
+      }
+      case LoadType.PLAYLIST: {
+        if (res.data.tracks.length > client.config.maxPlaylistSize)
+          return await ctx.sendMessage({
+            embeds: [
+              embed
+                .setColor(this.client.color.red)
+                .setDescription(
+                  `The playlist is too long. The maximum length is ${client.config.maxPlaylistSize} songs.`
+                ),
+            ],
+          });
+        for (const track of res.data.tracks) {
+          const pl = player.buildTrack(track, ctx.author);
+          if (player.queue.length > client.config.maxQueueSize)
+            return await ctx.sendMessage({
+              embeds: [
+                embed
+                  .setColor(this.client.color.red)
+                  .setDescription(
+                    `The queue is too long. The maximum length is ${client.config.maxQueueSize} songs.`
+                  ),
+              ],
             });
+          player.queue.push(pl);
         }
-        
-        const query = args.join(' ');
-        const channel = message.member.voice.channel;
-        
-        try {
-            await message.channel.sendTyping();
-            
-            // Get a Lavalink node
-            const node = shoukaku.options.nodeResolver(shoukaku.nodes);
-            
-            if (!node) {
-                return message.reply({
-                    embeds: [await errorEmbed(guildId, 'Lavalink Error', 'No Lavalink nodes available. Please try again later.')]
-                });
-            }
-            
-            // Determine search type based on URL
-            let searchQuery = query;
-            const isURL = query.includes('http://') || query.includes('https://');
-            
-            // For Spotify URLs, use direct resolution
-            if (isURL && query.includes('spotify.com')) {
-                searchQuery = query; // Lavalink will handle Spotify URLs directly
-            }
-            // For Apple Music URLs
-            else if (isURL && query.includes('music.apple.com')) {
-                searchQuery = query; // Lavalink will handle Apple Music URLs directly
-            }
-            // For YouTube URLs
-            else if (isURL && (query.includes('youtube.com') || query.includes('youtu.be'))) {
-                searchQuery = query; // Direct YouTube URL
-            }
-            // For search queries, use YouTube search
-            else {
-                searchQuery = `ytsearch:${query}`;
-            }
-            
-            console.log(`🔍 Searching Lavalink: ${searchQuery}`);
-            
-            // Search for the track using Lavalink
-            const result = await node.rest.resolve(searchQuery);
-            
-            if (!result || !result.tracks || result.tracks.length === 0) {
-                return message.reply({
-                    embeds: [await errorEmbed(guildId, 'No Results', `No results found for: **${query}**`)]
-                });
-            }
-            
-            // Get the first track
-            const track = result.tracks[0];
-            
-            // Get or create player
-            let player = players.get(guildId);
-            
-            if (!player) {
-                // Create new player
-                player = await node.joinChannel({
-                    guildId: guildId,
-                    channelId: channel.id,
-                    shardId: 0
-                });
-                
-                // Store player
-                players.set(guildId, {
-                    player: player,
-                    queue: [],
-                    nowPlaying: null,
-                    textChannel: message.channel.id,
-                    voiceChannel: channel.id
-                });
-                
-                // Setup player event handlers
-                player.on('start', () => {
-                    const playerData = players.get(guildId);
-                    if (playerData && playerData.nowPlaying) {
-                        const track = playerData.nowPlaying;
-                        message.channel.send({
-                            embeds: [successEmbed(guildId, '🎵 Now Playing', `**[${track.info.title}](${track.info.uri})**\nBy: ${track.info.author}\nDuration: ${formatDuration(track.info.length)}`)]
-                        });
-                    }
-                });
-                
-                player.on('end', async () => {
-                    const playerData = players.get(guildId);
-                    if (playerData && playerData.queue.length > 0) {
-                        // Play next track in queue
-                        const nextTrack = playerData.queue.shift();
-                        playerData.nowPlaying = nextTrack;
-                        await player.playTrack({ track: nextTrack.encoded });
-                    } else {
-                        // Queue is empty, disconnect
-                        playerData.nowPlaying = null;
-                    }
-                });
-                
-                player.on('closed', (reason) => {
-                    console.log(`Player closed: ${reason}`);
-                    players.delete(guildId);
-                });
-                
-                player.on('exception', (error) => {
-                    console.error(`Player exception:`, error);
-                    message.channel.send({
-                        embeds: [errorEmbed(guildId, 'Playback Error', 'An error occurred during playback.')]
-                    });
-                });
-            }
-            
-            const playerData = players.get(guildId);
-            
-            // If nothing is currently playing, play immediately
-            if (!playerData.nowPlaying) {
-                playerData.nowPlaying = track;
-                await playerData.player.playTrack({ track: track.encoded });
-                
-                return message.reply({
-                    embeds: [await successEmbed(guildId, '🎵 Now Playing', `**[${track.info.title}](${track.info.uri})**\nBy: ${track.info.author}\nDuration: ${formatDuration(track.info.length)}\n\n🔊 Started playing in ${channel.name}`)]
-                });
-            } else {
-                // Add to queue
-                playerData.queue.push(track);
-                
-                return message.reply({
-                    embeds: [await successEmbed(guildId, '📝 Added to Queue', `**[${track.info.title}](${track.info.uri})**\nBy: ${track.info.author}\nDuration: ${formatDuration(track.info.length)}\n\nPosition in queue: ${playerData.queue.length}`)]
-                });
-            }
-            
-        } catch (error) {
-            console.error('Error in play command:', error);
-            return message.reply({
-                embeds: [await errorEmbed(guildId, 'Error', `Failed to play track: ${error.message}`)]
-            });
-        }
+        await player.isPlaying();
+        ctx.sendMessage({
+          embeds: [
+            embed
+              .setColor(this.client.color.main)
+              .setDescription(
+                `Added ${res.data.tracks.length} songs to the queue.`
+              ),
+          ],
+        });
+        break;
+      }
+      case LoadType.SEARCH: {
+        const track1 = player.buildTrack(res.data[0], ctx.author);
+        if (player.queue.length > client.config.maxQueueSize)
+          return await ctx.sendMessage({
+            embeds: [
+              embed
+                .setColor(this.client.color.red)
+                .setDescription(
+                  `The queue is too long. The maximum length is ${client.config.maxQueueSize} songs.`
+                ),
+            ],
+          });
+        player.queue.push(track1);
+        await player.isPlaying();
+        ctx.sendMessage({
+          embeds: [
+            embed
+              .setColor(this.client.color.main)
+              .setDescription(
+                `Added [${res.data[0].info.title}](${res.data[0].info.uri}) to the queue.`
+              ),
+          ],
+        });
+        break;
+      }
     }
+  }
 };
 
 // Helper function to format duration
