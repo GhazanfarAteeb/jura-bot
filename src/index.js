@@ -101,7 +101,7 @@ client.invites = new Collection();
 
 // Configuration
 client.config = {
-    searchEngine: 'ytsearch',
+    searchEngine: 'ytmsearch',
     maxQueueSize: 1000,
     maxPlaylistSize: 100
 };
