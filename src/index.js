@@ -106,6 +106,15 @@ client.config = {
     maxPlaylistSize: 100
 };
 
+// Wave-Music compatibility: Add embed builder and colors
+client.embed = () => new EmbedBuilder();
+client.color = {
+    main: '#0099ff',
+    red: '#ff0000',
+    green: '#00ff00',
+    yellow: '#ffff00'
+};
+
 // Connect to MongoDB
 async function connectDatabase() {
     try {
