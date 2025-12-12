@@ -55,8 +55,11 @@ class Queue extends Map {
         const regex = /^https?:\/\//;
         let result;
         try {
+            console.log('🔍 Queue.search() - Resolving query:', query);
             result = await node.rest.resolve(regex.test(query) ? query : `${this.client.config.searchEngine}:${query}`);
+            console.log('✅ Queue.search() - Result received:', JSON.stringify(result, null, 2));
         } catch (err) {
+            console.error('❌ Queue.search() - Error:', err);
             return null;
         }
         return result;
