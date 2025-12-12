@@ -1,4 +1,3 @@
-import { players } from '../utils/shoukaku.js';
 import Dispatcher from './Dispatcher.js';
 
 class Queue extends Map {
@@ -23,19 +22,19 @@ class Queue extends Map {
         return super.clear();
     }
 
-    async create(guild, voice, channel, node) {
+    async create(guild, voice, channel, givenNode) {
         let dispatcher = this.get(guild.id);
         if (!voice) throw new Error('No voice channel was provided');
         if (!channel) throw new Error('No text channel was provided');
         if (!guild) throw new Error('No guild was provided');
-        
         if (!dispatcher) {
-            const player = await node.joinChannel({
+            const node = givenNode || this.client.shoukaku.options.nodeResolver(this.client.shoukaku.nodes);
+            const player = await this.client.shoukaku.joinVoiceChannel({
                 guildId: guild.id,
                 channelId: voice.id,
-                shardId: guild.shardId || 0
+                shardId: guild.shardId || 0,
+                deaf: true,
             });
-            
             dispatcher = new Dispatcher({
                 client: this.client,
                 guildId: guild.id,
@@ -43,8 +42,8 @@ class Queue extends Map {
                 player,
                 node,
             });
-            
             this.set(guild.id, dispatcher);
+            this.client.shoukaku.emit('playerCreate', dispatcher.player);
             return dispatcher;
         } else {
             return dispatcher;
@@ -52,19 +51,14 @@ class Queue extends Map {
     }
 
     async search(query) {
-        const { shoukaku } = await import('../utils/shoukaku.js');
-        const node = shoukaku.options.nodeResolver(shoukaku.nodes);
+        const node = this.client.shoukaku.options.nodeResolver(this.client.shoukaku.nodes);
         const regex = /^https?:\/\//;
         let result;
-        
         try {
-            // If it's a URL, use it directly; otherwise, add ytsearch prefix
-            result = await node.rest.resolve(regex.test(query) ? query : `ytsearch:${query}`);
+            result = await node.rest.resolve(regex.test(query) ? query : `${this.client.config.searchEngine}:${query}`);
         } catch (err) {
-            console.error('Search error:', err);
             return null;
         }
-        
         return result;
     }
 }

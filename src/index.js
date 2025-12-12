@@ -99,6 +99,13 @@ client.commands = new Collection();
 client.cooldowns = new Collection();
 client.invites = new Collection();
 
+// Configuration
+client.config = {
+    searchEngine: 'ytsearch',
+    maxQueueSize: 1000,
+    maxPlaylistSize: 100
+};
+
 // Connect to MongoDB
 async function connectDatabase() {
     try {

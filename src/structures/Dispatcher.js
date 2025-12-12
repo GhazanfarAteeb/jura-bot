@@ -1,9 +1,10 @@
 class Song {
     constructor(track, user) {
+        if (!track) throw new Error('Track is not provided');
         this.encoded = track.encoded;
         this.info = {
             ...track.info,
-            requester: user
+            requester: user,
         };
     }
 }
@@ -27,15 +28,16 @@ class Dispatcher {
         this.filters = [];
         this.autoplay = false;
         this.nowPlayingMessage = null;
-        
         this.player
             .on('start', () => this.client.shoukaku.emit('trackStart', this.player, this.current, this))
             .on('end', () => {
                 if (!this.queue.length) this.client.shoukaku.emit('queueEnd', this.player, this.current, this);
                 this.client.shoukaku.emit('trackEnd', this.player, this.current, this);
             })
-            .on('stuck', () => this.client.shoukaku.emit('trackStuck', this.player, this.current, this))
-            .on('closed', (...args) => this.client.shoukaku.emit('socketClosed', this.player, ...args));
+            .on('stuck', () => this.client.shoukaku.emit('trackStuck', this.player, this.current))
+            .on('closed', (...arr) => {
+                this.client.shoukaku.emit('socketClosed', this.player, ...arr);
+            });
     }
 
     get exists() {
@@ -148,6 +150,36 @@ class Dispatcher {
     async isPlaying() {
         if (this.queue.length && !this.current && !this.player.paused) {
             this.play();
+        }
+    }
+
+    async Autoplay(song) {
+        const resolve = await this.node.rest.resolve(`${this.client.config.searchEngine}:${song.info.author}`);
+        if (!resolve || !resolve?.data || !Array.isArray(resolve.data)) return this.destroy();
+        const metadata = resolve.data;
+        let choosed = null;
+        const maxAttempts = 10; // Maximum number of attempts to find a unique song
+        let attempts = 0;
+        while (attempts < maxAttempts) {
+            const potentialChoice = this.buildTrack(metadata[Math.floor(Math.random() * metadata.length)], this.client.user);
+            if (!this.queue.some(s => s.encoded === potentialChoice.encoded) &&
+                !this.history.some(s => s.encoded === potentialChoice.encoded)) {
+                choosed = potentialChoice;
+                break;
+            }
+            attempts++;
+        }
+        if (choosed) {
+            this.queue.push(choosed);
+            return await this.isPlaying();
+        }
+        return this.destroy();
+    }
+
+    async setAutoplay(autoplay) {
+        this.autoplay = autoplay;
+        if (autoplay) {
+            this.Autoplay(this.current ? this.current : this.queue[0]);
         }
     }
 }
