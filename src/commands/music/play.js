@@ -20,7 +20,7 @@ export default {
         
         if (!args.length) {
             return message.reply({
-                embeds: [await errorEmbed(guildId, 'Missing Arguments', 'Please provide a song name or URL!\n\n**Usage:** `R!play <song|url>`')]
+                embeds: [await errorEmbed(guildId, 'Missing Arguments', 'Please provide a song name or URL!\n\n**Usage:** `R!play <song|url>`\n\n**Examples:**\n• `R!play never gonna give you up`\n• `R!play https://youtube.com/watch?v=...`\n• `R!play https://open.spotify.com/track/...`')]
             });
         }
 
@@ -43,15 +43,15 @@ export default {
             // Search for track
             const res = await message.client.queue.search(query);
             
-            console.log('🔍 Search result:', JSON.stringify(res, null, 2));
-            
             if (!res) {
                 return message.reply({
                     embeds: [await errorEmbed(guildId, 'Search Error', 'Failed to search for the track.')]
                 });
             }
 
-            // Handle different load types
+            console.log(`📊 LoadType: ${res.loadType}`);
+
+            // Handle different load types (Wave-Music pattern)
             switch (res.loadType) {
                 case LoadType.ERROR:
                     return message.reply({
@@ -65,18 +65,20 @@ export default {
 
                 case LoadType.TRACK: {
                     const track = player.buildTrack(res.data, message.author);
-                    if (player.queue.length > 100) {
+                    
+                    if (player.queue.length > 1000) {
                         return message.reply({
-                            embeds: [await errorEmbed(guildId, 'Queue Full', 'The queue is too long. The maximum length is 100 songs.')]
+                            embeds: [await errorEmbed(guildId, 'Queue Full', 'The queue is too long. Max allowed is 1000 songs.')]
                         });
                     }
+                    
                     player.queue.push(track);
                     await player.isPlaying();
                     
                     return message.reply({
                         embeds: [await successEmbed(
                             guildId,
-                            player.current ? '📝 Added to Queue' : '🎵 Now Playing',
+                            '📝 Added to Queue',
                             `**[${res.data.info.title}](${res.data.info.uri})**\nBy: ${res.data.info.author}\nRequested by: ${message.author}`
                         )]
                     });
@@ -85,51 +87,56 @@ export default {
                 case LoadType.PLAYLIST: {
                     if (res.data.tracks.length > 100) {
                         return message.reply({
-                            embeds: [await errorEmbed(guildId, 'Playlist Too Large', 'The playlist is too long. The maximum length is 100 songs.')]
+                            embeds: [await errorEmbed(guildId, 'Playlist Too Large', 'The playlist is too long. Max allowed is 100 songs.')]
                         });
                     }
                     
                     for (const track of res.data.tracks) {
-                        const pl = player.buildTrack(track, message.author);
-                        if (player.queue.length > 100) {
+                        if (player.queue.length > 1000) {
                             return message.reply({
-                                embeds: [await errorEmbed(guildId, 'Queue Full', 'The queue is too long. The maximum length is 100 songs.')]
+                                embeds: [await errorEmbed(guildId, 'Queue Full', 'The queue is too long. Max allowed is 1000 songs.')]
                             });
                         }
-                        player.queue.push(pl);
+                        
+                        const plTrack = player.buildTrack(track, message.author);
+                        player.queue.push(plTrack);
                     }
+                    
                     await player.isPlaying();
                     
                     return message.reply({
                         embeds: [await successEmbed(
                             guildId,
                             '📝 Playlist Added',
-                            `Added ${res.data.tracks.length} songs from **${res.data.info?.name || 'playlist'}** to the queue.`
+                            `Added ${res.data.tracks.length} songs to the queue.`
                         )]
                     });
                 }
 
                 case LoadType.SEARCH: {
-                    const track = player.buildTrack(res.data[0], message.author);
-                    if (player.queue.length > 100) {
+                    const first = res.data[0];
+                    const track = player.buildTrack(first, message.author);
+                    
+                    if (player.queue.length > 1000) {
                         return message.reply({
-                            embeds: [await errorEmbed(guildId, 'Queue Full', 'The queue is too long. The maximum length is 100 songs.')]
+                            embeds: [await errorEmbed(guildId, 'Queue Full', 'The queue is too long. Max allowed is 1000 songs.')]
                         });
                     }
+                    
                     player.queue.push(track);
                     await player.isPlaying();
                     
                     return message.reply({
                         embeds: [await successEmbed(
                             guildId,
-                            player.current ? '📝 Added to Queue' : '🎵 Now Playing',
-                            `**[${res.data[0].info.title}](${res.data[0].info.uri})**\nBy: ${res.data[0].info.author}\nRequested by: ${message.author}`
+                            '📝 Added to Queue',
+                            `**[${first.info.title}](${first.info.uri})**\nBy: ${first.info.author}\nRequested by: ${message.author}`
                         )]
                     });
                 }
             }
         } catch (error) {
-            console.error('Error in play command:', error);
+            console.error('❌ Error in play command:', error);
             return message.reply({
                 embeds: [await errorEmbed(guildId, 'Error', `Failed to play track: ${error.message}`)]
             });
