@@ -29,13 +29,21 @@ class Dispatcher {
         this.autoplay = false;
         this.nowPlayingMessage = null;
         this.player
-            .on('start', () => this.client.shoukaku.emit('trackStart', this.player, this.current, this))
+            .on('start', () => {
+                console.log('🎵 Player event: START - Track started playing');
+                this.client.shoukaku.emit('trackStart', this.player, this.current, this);
+            })
             .on('end', () => {
+                console.log('⏹️ Player event: END - Track ended');
                 if (!this.queue.length) this.client.shoukaku.emit('queueEnd', this.player, this.current, this);
                 this.client.shoukaku.emit('trackEnd', this.player, this.current, this);
             })
-            .on('stuck', () => this.client.shoukaku.emit('trackStuck', this.player, this.current))
+            .on('stuck', () => {
+                console.log('⚠️ Player event: STUCK - Track is stuck');
+                this.client.shoukaku.emit('trackStuck', this.player, this.current);
+            })
             .on('closed', (...arr) => {
+                console.log('🔒 Player event: CLOSED - Connection closed', arr);
                 this.client.shoukaku.emit('socketClosed', this.player, ...arr);
             });
     }
@@ -49,15 +57,27 @@ class Dispatcher {
     }
 
     async play() {
+        console.log('🎵 Dispatcher.play() called');
+        console.log('   - Exists:', this.exists);
+        console.log('   - Queue length:', this.queue.length);
+        console.log('   - Current track:', this.current ? this.current.info.title : 'none');
+        
         if (!this.exists || (!this.queue.length && !this.current)) {
+            console.log('❌ Cannot play: no queue or dispatcher does not exist');
             return;
         }
         this.current = this.queue.length !== 0 ? this.queue.shift() : this.queue[0];
-        if (!this.current) return;
+        if (!this.current) {
+            console.log('❌ No current track after shift');
+            return;
+        }
+        
+        console.log('▶️ Playing track:', this.current.info.title, 'by', this.current.info.author);
         
         try {
             // Shoukaku v4 API: playTrack requires { track: { encoded: ... } }
             await this.player.playTrack({ track: { encoded: this.current?.encoded } });
+            console.log('✅ playTrack() successful');
             if (this.current) {
                 this.history.push(this.current);
                 if (this.history.length > 100) {
@@ -164,8 +184,16 @@ class Dispatcher {
     }
 
     async isPlaying() {
+        console.log('🔍 isPlaying() called');
+        console.log('   - Queue length:', this.queue.length);
+        console.log('   - Current:', this.current ? this.current.info.title : 'none');
+        console.log('   - Player paused:', this.paused);
+        
         if (this.queue.length && !this.current) {
+            console.log('✅ Starting playback...');
             await this.play();
+        } else {
+            console.log('⏸️ Not starting playback (current exists or queue empty)');
         }
     }
 
