@@ -186,14 +186,29 @@ async function loadEvents() {
                     console.log("📂 Loading event:", file);
                     const EventModule = await import(`./events/${dir}/${file}`);
                     const EventClass = EventModule.default || EventModule;
-                    const evt = new EventClass(client, file);
+                    
+                    // Handle both Event class format and plain object format
+                    let evt, eventName, eventHandler;
+                    
+                    if (typeof EventClass === 'function') {
+                        // Event class format (player events)
+                        evt = new EventClass(client, file);
+                        eventName = evt.name;
+                        eventHandler = (...args) => evt.run(...args);
+                    } else if (typeof EventClass === 'object' && EventClass.execute) {
+                        // Plain object format (client events)
+                        eventName = EventClass.name;
+                        eventHandler = (...args) => EventClass.execute(...args);
+                    } else {
+                        throw new Error(`Invalid event format in ${file}`);
+                    }
                     
                     switch (dir) {
                         case "player":
-                            client.shoukaku.on(evt.name, (...args) => evt.run(...args));
+                            client.shoukaku.on(eventName, eventHandler);
                             break;
                         default:
-                            client.on(evt.name, (...args) => evt.run(...args));
+                            client.on(eventName, eventHandler);
                             break;
                     }
                     
