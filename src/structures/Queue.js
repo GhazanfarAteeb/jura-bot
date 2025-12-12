@@ -28,23 +28,34 @@ class Queue extends Map {
         if (!channel) throw new Error('No text channel was provided');
         if (!guild) throw new Error('No guild was provided');
         if (!dispatcher) {
-            const node = givenNode || this.client.shoukaku.options.nodeResolver(this.client.shoukaku.nodes);
-            const player = await this.client.shoukaku.joinVoiceChannel({
-                guildId: guild.id,
-                channelId: voice.id,
-                shardId: guild.shardId || 0,
-                deaf: true,
-            });
-            dispatcher = new Dispatcher({
-                client: this.client,
-                guildId: guild.id,
-                channelId: channel.id,
-                player,
-                node,
-            });
-            this.set(guild.id, dispatcher);
-            this.client.shoukaku.emit('playerCreate', dispatcher.player);
-            return dispatcher;
+            try {
+                const node = givenNode || this.client.shoukaku.options.nodeResolver(this.client.shoukaku.nodes);
+                const player = await this.client.shoukaku.joinVoiceChannel({
+                    guildId: guild.id,
+                    channelId: voice.id,
+                    shardId: guild.shardId || 0,
+                    deaf: true,
+                });
+                
+                // Add error handler to player
+                player.on('error', (error) => {
+                    console.error(`❌ Player error for guild ${guild.id}:`, error);
+                });
+                
+                dispatcher = new Dispatcher({
+                    client: this.client,
+                    guildId: guild.id,
+                    channelId: channel.id,
+                    player,
+                    node,
+                });
+                this.set(guild.id, dispatcher);
+                this.client.shoukaku.emit('playerCreate', dispatcher.player);
+                return dispatcher;
+            } catch (error) {
+                console.error('❌ Failed to create player:', error);
+                throw error;
+            }
         } else {
             return dispatcher;
         }

@@ -54,23 +54,38 @@ class Dispatcher {
         }
         this.current = this.queue.length !== 0 ? this.queue.shift() : this.queue[0];
         if (!this.current) return;
-        this.player.playTrack({ track: this.current?.encoded });
-        if (this.current) {
-            this.history.push(this.current);
-            if (this.history.length > 100) {
-                this.history.shift();
+        
+        try {
+            await this.player.playTrack({ track: this.current?.encoded });
+            if (this.current) {
+                this.history.push(this.current);
+                if (this.history.length > 100) {
+                    this.history.shift();
+                }
+            }
+        } catch (error) {
+            console.error('❌ Failed to play track:', error);
+            // Try to recover by skipping to next track
+            if (this.queue.length > 0) {
+                await this.play();
+            } else {
+                this.destroy();
             }
         }
     }
 
     pause() {
         if (!this.player) return;
-        if (!this.paused) {
-            this.player.setPaused(true);
-            this.paused = true;
-        } else {
-            this.player.setPaused(false);
-            this.paused = false;
+        try {
+            if (!this.paused) {
+                this.player.setPaused(true);
+                this.paused = true;
+            } else {
+                this.player.setPaused(false);
+                this.paused = false;
+            }
+        } catch (error) {
+            console.error('❌ Failed to pause/resume:', error);
         }
     }
 
