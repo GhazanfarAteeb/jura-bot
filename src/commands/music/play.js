@@ -84,11 +84,14 @@ export default class Play extends Command {
         if (trackData.info.sourceName === 'spotify' && trackData.info.isrc) {
             console.log('🔄 Converting Spotify to YouTube via ISRC:', trackData.info.isrc);
             const node = this.client.shoukaku.options.nodeResolver(this.client.shoukaku.nodes);
-            const ytSearch = await node.rest.resolve(`ytsearch:"${trackData.info.isrc}"`);
+            
+            // Try ISRC search without quotes first
+            let ytSearch = await node.rest.resolve(`ytsearch:${trackData.info.isrc}`);
+            console.log('   - ISRC search result:', ytSearch.loadType, 'tracks:', ytSearch.data?.length || 0);
             
             if (ytSearch.loadType === LoadType.SEARCH && ytSearch.data.length > 0) {
                 trackData = ytSearch.data[0];
-                console.log('✅ Converted to YouTube:', trackData.info.title, 'by', trackData.info.author);
+                console.log('✅ Converted to YouTube via ISRC:', trackData.info.title, 'by', trackData.info.author);
                 console.log('   - Source:', trackData.info.sourceName);
             } else {
                 console.log('⚠️ ISRC search failed, trying title search...');

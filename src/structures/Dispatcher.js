@@ -31,10 +31,17 @@ class Dispatcher {
         this.player
           .on('start', () => {
                 console.log('🎵 Player event: START - Track started playing');
+                console.log('   - Track:', this.current?.info?.title);
+                console.log('   - Duration:', this.current?.info?.length, 'ms');
+                console.log('   - Position:', this.player.position, 'ms');
                 this.client.shoukaku.emit('trackStart', this.player, this.current, this);
             })
-            .on('end', () => {
+            .on('end', (reason) => {
                 console.log('⏹️ Player event: END - Track ended');
+                console.log('   - Reason:', reason?.reason || 'unknown');
+                console.log('   - Track:', this.current?.info?.title);
+                console.log('   - Position at end:', this.player.position, 'ms');
+                console.log('   - Duration:', this.current?.info?.length, 'ms');
                 if (!this.queue.length) this.client.shoukaku.emit('queueEnd', this.player, this.current, this);
                 this.client.shoukaku.emit('trackEnd', this.player, this.current, this);
             })
