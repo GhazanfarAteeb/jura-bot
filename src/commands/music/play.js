@@ -62,43 +62,44 @@ export default {
             
             console.log(`🔍 Searching Lavalink: ${searchQuery}`);
             
-            // Search for the track using Lavalink
-            const result = await node.rest.resolve(searchQuery);
-            
-            console.log(`📊 Result loadType: ${result?.loadType}, hasData: ${!!result?.data}, hasTracks: ${!!result?.tracks}`);
-            
-            // Handle Lavalink v4 response format
-            let tracks = [];
-            if (result.loadType === 'track') {
-                // Single track (e.g., Spotify URL)
-                console.log(`✅ Single track found: ${result.data?.info?.title}`);
-                tracks = [result.data];
-            } else if (result.loadType === 'search') {
-                // Search results
-                console.log(`✅ Search results: ${result.data?.length || 0} tracks`);
-                tracks = result.data || [];
-            } else if (result.loadType === 'playlist') {
-                // Playlist
-                console.log(`✅ Playlist found with ${result.data?.tracks?.length || 0} tracks`);
-                tracks = result.data?.tracks || [];
-            } else if (result.tracks) {
-                // Fallback for older format
-                console.log(`✅ Fallback format: ${result.tracks?.length || 0} tracks`);
-                tracks = result.tracks;
-            } else {
-                console.log(`❌ Unknown format:`, result);
-            }
-            
-            console.log(`📋 Total tracks extracted: ${tracks?.length || 0}`);
-            
-            if (!tracks || tracks.length === 0) {
-                return message.reply({
-                    embeds: [await errorEmbed(guildId, 'No Results', `No results found for: **${query}**`)]
-                });
-            }
-            
-            // Get the first track
-            const track = tracks[0];
+            try {
+                // Search for the track using Lavalink
+                const result = await node.rest.resolve(searchQuery);
+                
+                console.log(`📊 Result received:`, JSON.stringify(result, null, 2));
+                
+                // Handle Lavalink v4 response format
+                let tracks = [];
+                if (result.loadType === 'track') {
+                    // Single track (e.g., Spotify URL)
+                    console.log(`✅ Single track found: ${result.data?.info?.title}`);
+                    tracks = [result.data];
+                } else if (result.loadType === 'search') {
+                    // Search results
+                    console.log(`✅ Search results: ${result.data?.length || 0} tracks`);
+                    tracks = result.data || [];
+                } else if (result.loadType === 'playlist') {
+                    // Playlist
+                    console.log(`✅ Playlist found with ${result.data?.tracks?.length || 0} tracks`);
+                    tracks = result.data?.tracks || [];
+                } else if (result.tracks) {
+                    // Fallback for older format
+                    console.log(`✅ Fallback format: ${result.tracks?.length || 0} tracks`);
+                    tracks = result.tracks;
+                } else {
+                    console.log(`❌ Unknown format:`, result);
+                }
+                
+                console.log(`📋 Total tracks extracted: ${tracks?.length || 0}`);
+                
+                if (!tracks || tracks.length === 0) {
+                    return message.reply({
+                        embeds: [await errorEmbed(guildId, 'No Results', `No results found for: **${query}**`)]
+                    });
+                }
+                
+                // Get the first track
+                const track = tracks[0];
             
             // Get or create player
             let player = players.get(guildId);
