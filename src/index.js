@@ -171,7 +171,7 @@ async function loadCommands() {
 
 // Load events
 async function loadEvents() {
-    const eventsPath = fs.readdirSync(path.join(__dirname, "../events"));
+    const eventsPath = readdirSync(path.join(__dirname, "../events"));
     eventsPath.forEach((dir) => {
       try {
         const events = readdirSync(path.join(__dirname, `../events/${dir}`))
