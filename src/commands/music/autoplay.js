@@ -1,16 +1,16 @@
 import Command from "../../structures/Command.js";
 
-export default class Stop extends Command {
+export default class Autoplay extends Command {
   constructor(client) {
     super(client, {
-      name: "stop",
+      name: "autoplay",
       description: {
-        content: "Stops the music and clears the queue",
-        examples: ["stop"],
-        usage: "stop",
+        content: "Toggles autoplay",
+        examples: ["autoplay"],
+        usage: "autoplay",
       },
       category: "music",
-      aliases: ["sp"],
+      aliases: ["ap"],
       cooldown: 3,
       args: false,
       player: {
@@ -31,14 +31,18 @@ export default class Stop extends Command {
   async run(client, ctx) {
     const player = client.queue.get(ctx.guild.id);
     const embed = this.client.embed();
-    player.queue = [];
-    player.stop();
-    return await ctx.sendMessage({
-      embeds: [
-        embed
-          .setColor(this.client.color.main)
-          .setDescription(`Stopped the music and cleared the queue`),
-      ],
-    });
+    const autoplay = player.autoplay;
+    if (!autoplay) {
+      embed
+        .setDescription(`Autoplay has been enabled`)
+        .setColor(client.color.main);
+      player.setAutoplay(true);
+    } else {
+      embed
+        .setDescription(`Autoplay has been disabled`)
+        .setColor(client.color.main);
+      player.setAutoplay(false);
+    }
+    ctx.sendMessage({ embeds: [embed] });
   }
 };

@@ -1,42 +1,84 @@
-import { checkSameVoiceChannel } from '../../utils/musicPlayer.js';
-import { errorEmbed, successEmbed } from '../../utils/embeds.js';
+import Command from "../../structures/Command.js";
 
-export default {
-    name: 'remove',
-    description: 'Remove a song from the queue',
-    usage: 'remove <position>',
-    category: 'music',
-    aliases: ['rm', 'delete'],
-    execute: async (message, args) => {
-        const guildId = message.guild.id;
-        
-        // Check if user is in same voice channel
-        const check = checkSameVoiceChannel(message);
-        if (check.error) {
-            return message.reply({ embeds: [await errorEmbed(guildId, 'Error', check.message)] });
-        }
-        
-        const queue = check.queue;
-        
-        if (queue.tracks.data.length === 0) {
-            return message.reply({
-                embeds: [await errorEmbed(guildId, 'The queue is empty!')]
-            });
-        }
-        
-        const position = parseInt(args[0]);
-        
-        if (!position || position < 1 || position > queue.tracks.data.length) {
-            return message.reply({
-                embeds: [await errorEmbed(guildId, `Please provide a valid position between 1 and ${queue.tracks.data.length}!`)]
-            });
-        }
-        
-        const track = queue.tracks.data[position - 1];
-        queue.node.remove(track);
-        
-        message.reply({
-            embeds: [await successEmbed(guildId, '🗑️ Song Removed', `Removed **${track.title}** by **${track.author}** from the queue!`)]
-        });
-    }
+export default class Remove extends Command {
+  constructor(client) {
+    super(client, {
+      name: "remove",
+      description: {
+        content: "Removes a song from the queue",
+        examples: ["remove 1"],
+        usage: "remove <song number>",
+      },
+      category: "music",
+      aliases: ["rm"],
+      cooldown: 3,
+      args: true,
+      player: {
+        voice: true,
+        dj: true,
+        active: true,
+        djPerm: null,
+      },
+      permissions: {
+        dev: false,
+        client: ["SendMessages", "ViewChannel", "EmbedLinks"],
+        user: [],
+      },
+      slashCommand: true,
+      options: [
+        {
+          name: "song",
+          description: "The song number",
+          type: 4,
+          required: true,
+        },
+      ],
+    });
+  }
+  async run(client, ctx, args) {
+    const player = client.queue.get(ctx.guild.id);
+    const embed = this.client.embed();
+    if (!player.queue.length)
+      return await ctx.sendMessage({
+        embeds: [
+          embed
+            .setColor(this.client.color.red)
+            .setDescription("There are no songs in the queue."),
+        ],
+      });
+    if (isNaN(Number(args[0])))
+      return await ctx.sendMessage({
+        embeds: [
+          embed
+            .setColor(this.client.color.red)
+            .setDescription("That is not a valid number."),
+        ],
+      });
+    if (Number(args[0]) > player.queue.length)
+      return await ctx.sendMessage({
+        embeds: [
+          embed
+            .setColor(this.client.color.red)
+            .setDescription("That is not a valid number."),
+        ],
+      });
+    if (Number(args[0]) < 1)
+      return await ctx.sendMessage({
+        embeds: [
+          embed
+            .setColor(this.client.color.red)
+            .setDescription("That is not a valid number."),
+        ],
+      });
+    player.remove(Number(args[0]) - 1);
+    return await ctx.sendMessage({
+      embeds: [
+        embed
+          .setColor(this.client.color.main)
+          .setDescription(
+            `Removed song number ${Number(args[0])} from the queue`
+          ),
+      ],
+    });
+  }
 };

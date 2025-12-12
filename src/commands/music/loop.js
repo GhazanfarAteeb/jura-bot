@@ -1,94 +1,64 @@
-import { QueueRepeatMode } from 'discord-player';
-import { checkSameVoiceChannel } from '../../utils/musicPlayer.js';
-import { errorEmbed, successEmbed } from '../../utils/embeds.js';
+import Command from "../../structures/Command.js";
 
-export default {
-    name: 'loop',
-    description: 'Set loop mode for the queue',
-    usage: 'loop [off/track/queue]',
-    category: 'music',
-    aliases: ['repeat', 'l'],
-    execute: async (message, args) => {
-        const guildId = message.guild.id;
-        
-        // Check if user is in same voice channel
-        const check = checkSameVoiceChannel(message);
-        if (check.error) {
-            return message.reply({ embeds: [await errorEmbed(guildId, 'Error', check.message)] });
-        }
-        
-        const queue = check.queue;
-        const mode = args[0]?.toLowerCase();
-        
-        // If no mode provided, show current mode
-        if (!mode) {
-            const currentMode = queue.repeatMode;
-            let modeText;
-            switch (currentMode) {
-                case QueueRepeatMode.OFF:
-                    modeText = 'Off';
-                    break;
-                case QueueRepeatMode.TRACK:
-                    modeText = 'Track';
-                    break;
-                case QueueRepeatMode.QUEUE:
-                    modeText = 'Queue';
-                    break;
-                case QueueRepeatMode.AUTOPLAY:
-                    modeText = 'Autoplay';
-                    break;
-                default:
-                    modeText = 'Off';
-            }
-            
-            return message.reply({
-                embeds: [await successEmbed(guildId, '🔁 Loop Mode', `Current loop mode: **${modeText}**\n\nAvailable modes:\n\`off\` - No loop\n\`track\` - Loop current track\n\`queue\` - Loop entire queue`)]
-            });
-        }
-        
-        let newMode;
-        let modeEmoji;
-        let modeText;
-        
-        switch (mode) {
-            case 'off':
-            case 'disable':
-            case '0':
-                newMode = QueueRepeatMode.OFF;
-                modeEmoji = '▶️';
-                modeText = 'Off';
-                break;
-            case 'track':
-            case 'song':
-            case 'current':
-            case '1':
-                newMode = QueueRepeatMode.TRACK;
-                modeEmoji = '🔂';
-                modeText = 'Track';
-                break;
-            case 'queue':
-            case 'all':
-            case '2':
-                newMode = QueueRepeatMode.QUEUE;
-                modeEmoji = '🔁';
-                modeText = 'Queue';
-                break;
-            case 'autoplay':
-            case '3':
-                newMode = QueueRepeatMode.AUTOPLAY;
-                modeEmoji = '🔀';
-                modeText = 'Autoplay';
-                break;
-            default:
-                return message.reply({
-                    embeds: [await errorEmbed(guildId, 'Invalid loop mode! Use: `off`, `track`, or `queue`')]
-                });
-        }
-        
-        queue.setRepeatMode(newMode);
-        
-        message.reply({
-            embeds: [await successEmbed(guildId, `${modeEmoji} Loop Mode Changed`, `Loop mode set to: **${modeText}**`)]
+export default class Loop extends Command {
+  constructor(client) {
+    super(client, {
+      name: "loop",
+      description: {
+        content: "loop the current song or the queue",
+        examples: ["loop", "loop queue", "loop song"],
+        usage: "loop",
+      },
+      category: "general",
+      aliases: ["loop"],
+      cooldown: 3,
+      args: false,
+      player: {
+        voice: true,
+        dj: false,
+        active: true,
+        djPerm: null,
+      },
+      permissions: {
+        dev: false,
+        client: ["SendMessages", "ViewChannel", "EmbedLinks"],
+        user: [],
+      },
+      slashCommand: true,
+      options: [],
+    });
+  }
+  async run(client, ctx) {
+    const embed = client.embed().setColor(client.color.main);
+    const player = client.queue.get(ctx.guild.id);
+    switch (player.loop) {
+      case "off":
+        player.loop = "repeat";
+        return await ctx.sendMessage({
+          embeds: [
+            embed
+              .setDescription(`**Looping the song**`)
+              .setColor(client.color.main),
+          ],
+        });
+      case "repeat":
+        player.loop = "queue";
+        return await ctx.sendMessage({
+          embeds: [
+            embed
+              .setDescription(`**Looping the queue**`)
+              .setColor(client.color.main),
+          ],
+        });
+      case "queue":
+        player.loop = "off";
+        return await ctx.sendMessage({
+          embeds: [
+            embed
+              .setDescription(`**Looping is now off**`)
+              .setColor(client.color.main),
+          ],
         });
     }
+  }
 };

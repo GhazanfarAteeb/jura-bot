@@ -1,22 +1,22 @@
 import Command from "../../structures/Command.js";
 
-export default class Skip extends Command {
+export default class Leave extends Command {
   constructor(client) {
     super(client, {
-      name: "skip",
+      name: "leave",
       description: {
-        content: "Skips the current song",
-        examples: ["skip"],
-        usage: "skip",
+        content: "Leaves the voice channel",
+        examples: ["leave"],
+        usage: "leave",
       },
       category: "music",
-      aliases: ["sk"],
+      aliases: ["dc"],
       cooldown: 3,
       args: false,
       player: {
         voice: true,
         dj: true,
-        active: true,
+        active: false,
         djPerm: null,
       },
       permissions: {
@@ -31,25 +31,25 @@ export default class Skip extends Command {
   async run(client, ctx) {
     const player = client.queue.get(ctx.guild.id);
     const embed = this.client.embed();
-    if (player.queue.length === 0)
-      return await ctx.sendMessage({
-        embeds: [
-          embed
-            .setColor(this.client.color.red)
-            .setDescription("There are no songs in the queue."),
-        ],
-      });
-    player.skip();
-    if (!ctx.isInteraction) {
-      ctx.message?.react("👍");
-    } else {
-      return await ctx.sendMessage({
+    if (player) {
+      ctx.sendMessage({
         embeds: [
           embed
             .setColor(this.client.color.main)
             .setDescription(
-              `Skipped [${player.current.info.title}](${player.current.info.uri})`
+              `Left <#${
+                player.node.manager.connections.get(ctx.guild.id).channelId
+              }>`
             ),
+        ],
+      });
+      player.destroy();
+    } else {
+      ctx.sendMessage({
+        embeds: [
+          embed
+            .setColor(this.client.color.red)
+            .setDescription(`I'm not in a voice channel`),
         ],
       });
     }

@@ -1,21 +1,21 @@
 import Command from "../../structures/Command.js";
 
-export default class Seek extends Command {
+export default class ClearQueue extends Command {
   constructor(client) {
     super(client, {
-      name: "seek",
+      name: "clearqueue",
       description: {
-        content: "Seeks to a certain time in the song",
-        examples: ["seek 1m, seek 1h 30m"],
-        usage: "seek <time>",
+        content: "Clears the queue",
+        examples: ["clearqueue"],
+        usage: "clearqueue",
       },
       category: "music",
-      aliases: ["se"],
+      aliases: ["cq"],
       cooldown: 3,
-      args: true,
+      args: false,
       player: {
         voice: true,
-        dj: false,
+        dj: true,
         active: true,
         djPerm: null,
       },
@@ -25,34 +25,26 @@ export default class Seek extends Command {
         user: [],
       },
       slashCommand: true,
-      options: [
-        {
-          name: "time",
-          description: "The time to seek to",
-          type: 3,
-          required: true,
-        },
-      ],
+      options: [],
     });
   }
-  async run(client, ctx, args) {
+  async run(client, ctx) {
     const player = client.queue.get(ctx.guild.id);
     const embed = this.client.embed();
-    const time = client.utils.parseTime(args[0]);
-    if (!time)
+    if (!player.queue.length)
       return await ctx.sendMessage({
         embeds: [
           embed
             .setColor(this.client.color.red)
-            .setDescription("Invalid time format."),
+            .setDescription("There are no songs in the queue."),
         ],
       });
-    player.seek(time);
+    player.queue = [];
     return await ctx.sendMessage({
       embeds: [
         embed
           .setColor(this.client.color.main)
-          .setDescription(`Seeked to ${args[0]}`),
+          .setDescription(`Cleared the queue`),
       ],
     });
   }

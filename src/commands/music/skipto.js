@@ -1,44 +1,82 @@
-import { checkSameVoiceChannel } from '../../utils/musicPlayer.js';
-import { errorEmbed, successEmbed } from '../../utils/embeds.js';
+import Command from "../../structures/Command.js";
 
-export default {
-    name: 'skipto',
-    description: 'Skip to a specific song in the queue',
-    usage: 'skipto <position>',
-    category: 'music',
-    aliases: ['jumpto', 'goto'],
-    execute: async (message, args) => {
-        const guildId = message.guild.id;
-        
-        // Check if user is in same voice channel
-        const check = checkSameVoiceChannel(message);
-        if (check.error) {
-            return message.reply({ embeds: [await errorEmbed(guildId, 'Error', check.message)] });
-        }
-        
-        const queue = check.queue;
-        
-        if (queue.tracks.data.length === 0) {
-            return message.reply({
-                embeds: [await errorEmbed(guildId, 'The queue is empty!')]
-            });
-        }
-        
-        const position = parseInt(args[0]);
-        
-        if (!position || position < 1 || position > queue.tracks.data.length) {
-            return message.reply({
-                embeds: [await errorEmbed(guildId, `Please provide a valid position between 1 and ${queue.tracks.data.length}!`)]
-            });
-        }
-        
-        const track = queue.tracks.data[position - 1];
-        
-        // Skip to the track by removing all tracks before it and then skipping current
-        queue.node.skipTo(track);
-        
-        message.reply({
-            embeds: [await successEmbed(guildId, '⏭️ Skipped To Song', `Now playing: **${track.title}** by **${track.author}**`)]
-        });
-    }
+export default class Skipto extends Command {
+  constructor(client) {
+    super(client, {
+      name: "skipto",
+      description: {
+        content: "Skips to a specific song in the queue",
+        examples: ["skipto 3"],
+        usage: "skipto <number>",
+      },
+      category: "music",
+      aliases: ["st"],
+      cooldown: 3,
+      args: true,
+      player: {
+        voice: true,
+        dj: true,
+        active: true,
+        djPerm: null,
+      },
+      permissions: {
+        dev: false,
+        client: ["SendMessages", "ViewChannel", "EmbedLinks"],
+        user: [],
+      },
+      slashCommand: true,
+      options: [
+        {
+          name: "number",
+          description: "The number of the song you want to skip to",
+          type: 4,
+          required: true,
+        },
+      ],
+    });
+  }
+  async run(client, ctx, args) {
+    const player = client.queue.get(ctx.guild.id);
+    const embed = this.client.embed();
+    if (!player.queue.length)
+      return await ctx.sendMessage({
+        embeds: [
+          embed
+            .setColor(this.client.color.red)
+            .setDescription("There are no songs in the queue."),
+        ],
+      });
+    if (isNaN(Number(args[0])))
+      return await ctx.sendMessage({
+        embeds: [
+          embed
+            .setColor(this.client.color.red)
+            .setDescription("Please provide a valid number."),
+        ],
+      });
+    if (Number(args[0]) > player.queue.length)
+      return await ctx.sendMessage({
+        embeds: [
+          embed
+            .setColor(this.client.color.red)
+            .setDescription("Please provide a valid number."),
+        ],
+      });
+    if (Number(args[0]) < 1)
+      return await ctx.sendMessage({
+        embeds: [
+          embed
+            .setColor(this.client.color.red)
+            .setDescription("Please provide a valid number."),
+        ],
+      });
+    player.skip(Number(args[0]));
+    return await ctx.sendMessage({
+      embeds: [
+        embed
+          .setColor(this.client.color.main)
+          .setDescription(`Skipped to song number ${args[0]}`),
+      ],
+    });
+  }
 };

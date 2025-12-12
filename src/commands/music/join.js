@@ -1,72 +1,67 @@
-import { player, checkVoiceChannel } from '../../utils/musicPlayer.js';
-import { errorEmbed, successEmbed } from '../../utils/embeds.js';
+import Command from "../../structures/Command.js";
 
-export default {
-    name: 'join',
-    aliases: ['connect'],
-    description: 'Make the bot join your voice channel',
-    usage: 'join',
-    category: 'music',
-    cooldown: 3,
-    execute: async (message, args) => {
-        const guildId = message.guild.id;
-        
-        // Check if user is in voice channel
-        const voiceCheck = checkVoiceChannel(message);
-        if (voiceCheck.error) {
-            return message.reply({ embeds: [await errorEmbed(guildId, 'Voice Channel Error', voiceCheck.message)] });
-        }
-        
-        const channel = message.member.voice.channel;
-        
-        // Check if bot is already in a voice channel
-        const queue = player.nodes.get(message.guild.id);
-        if (queue && queue.connection) {
-            if (queue.connection.channel.id === channel.id) {
-                return message.reply({
-                    embeds: [await errorEmbed(guildId, 'Already Connected', `I'm already in **${channel.name}**!`)]
-                });
-            } else {
-                return message.reply({
-                    embeds: [await errorEmbed(guildId, 'Already Connected', `I'm already in **${queue.connection.channel.name}**! Use \`disconnect\` first.`)]
-                });
-            }
-        }
-        
-        try {
-            // Create a queue without playing anything
-            const newQueue = player.nodes.create(message.guild, {
-                metadata: {
-                    channel: message.channel,
-                    client: message.guild.members.me,
-                    requestedBy: message.author
-                },
-                selfDeaf: true,
-                volume: 80,
-                leaveOnEmpty: true,
-                leaveOnEmptyCooldown: 300000, // 5 minutes
-                leaveOnEnd: false,
-                leaveOnEndCooldown: 300000
-            });
-            
-            // Connect to voice channel
-            await newQueue.connect(channel, {
-                deaf: true
-            });
-            
-            const embed = await successEmbed(
-                guildId,
-                '🎵 Connected!',
-                `Successfully joined **${channel.name}**!\n\nUse \`play\` to start playing music.`
-            );
-            
-            return message.reply({ embeds: [embed] });
-            
-        } catch (error) {
-            console.error('Error joining voice channel:', error);
-            return message.reply({
-                embeds: [await errorEmbed(guildId, 'Connection Failed', `Could not join your voice channel!\n\n**Error:** ${error.message}`)]
-            });
-        }
+export default class Join extends Command {
+  constructor(client) {
+    super(client, {
+      name: "join",
+      description: {
+        content: "Joins the voice channel",
+        examples: ["join"],
+        usage: "join",
+      },
+      category: "music",
+      aliases: ["j"],
+      cooldown: 3,
+      args: false,
+      player: {
+        voice: true,
+        dj: false,
+        active: false,
+        djPerm: null,
+      },
+      permissions: {
+        dev: false,
+        client: ["SendMessages", "ViewChannel", "EmbedLinks"],
+        user: [],
+      },
+      slashCommand: true,
+      options: [],
+    });
+  }
+  async run(client, ctx) {
+    let player = client.queue.get(ctx.guild.id);
+    const embed = this.client.embed();
+    if (!player) {
+      const vc = ctx.member;
+      player = await client.queue.create(
+        ctx.guild,
+        vc.voice.channel,
+        ctx.channel,
+        client.shoukaku.options.nodeResolver(client.shoukaku.nodes)
+      );
+      return await ctx.sendMessage({
+        embeds: [
+          embed
+            .setColor(this.client.color.main)
+            .setDescription(
+              `Joined <#${
+                player.node.manager.connections.get(ctx.guild.id).channelId
+              }>`
+            ),
+        ],
+      });
+    } else {
+      return await ctx.sendMessage({
+        embeds: [
+          embed
+            .setColor(this.client.color.main)
+            .setDescription(
+              `I'm already connected to <#${
+                player.node.manager.connections.get(ctx.guild.id).channelId
+              }>`
+            ),
+        ],
+      });
     }
+  }
 };

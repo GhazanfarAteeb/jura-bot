@@ -1,40 +1,51 @@
-import { players } from '../../utils/shoukaku.js';
-import { checkVoiceChannel } from '../../utils/musicPlayer.js';
-import { errorEmbed, successEmbed } from '../../utils/embeds.js';
+import Command from "../../structures/Command.js";
 
-export default {
-    name: 'resume',
-    description: 'Resume the paused song',
-    usage: 'resume',
-    category: 'music',
-    aliases: ['unpause'],
-    execute: async (message, args) => {
-        const guildId = message.guild.id;
-        
-        // Check if user is in voice channel
-        const voiceCheck = checkVoiceChannel(message);
-        if (voiceCheck.error) {
-            return message.reply({ embeds: [await errorEmbed(guildId, 'Voice Channel Error', voiceCheck.message)] });
-        }
-        
-        const playerData = players.get(guildId);
-        
-        if (!playerData || !playerData.nowPlaying) {
-            return message.reply({
-                embeds: [await errorEmbed(guildId, 'Not Playing', 'There is no song currently playing!')]
-            });
-        }
-        
-        if (!playerData.player.paused) {
-            return message.reply({
-                embeds: [await errorEmbed(guildId, 'Not Paused', 'The music is not paused!')]
-            });
-        }
-        
-        playerData.player.setPaused(false);
-        
-        message.reply({
-            embeds: [await successEmbed(guildId, '▶️ Resumed', 'Music has been resumed.')]
-        });
-    }
+export default class Resume extends Command {
+  constructor(client) {
+    super(client, {
+      name: "resume",
+      description: {
+        content: "Resumes the current song",
+        examples: ["resume"],
+        usage: "resume",
+      },
+      category: "music",
+      aliases: ["r"],
+      cooldown: 3,
+      args: false,
+      player: {
+        voice: true,
+        dj: false,
+        active: true,
+        djPerm: null,
+      },
+      permissions: {
+        dev: false,
+        client: ["SendMessages", "ViewChannel", "EmbedLinks"],
+        user: [],
+      },
+      slashCommand: true,
+      options: [],
+    });
+  }
+  async run(client, ctx) {
+    const player = client.queue.get(ctx.guild.id);
+    const embed = this.client.embed();
+    if (!player.paused)
+      return await ctx.sendMessage({
+        embeds: [
+          embed
+            .setColor(this.client.color.red)
+            .setDescription("The player is not paused."),
+        ],
+      });
+    player.pause();
+    return await ctx.sendMessage({
+      embeds: [
+        embed
+          .setColor(this.client.color.main)
+          .setDescription(`Resumed the player`),
+      ],
+    });
+  }
 };

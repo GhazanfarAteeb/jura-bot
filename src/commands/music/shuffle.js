@@ -1,32 +1,51 @@
-import { checkSameVoiceChannel } from '../../utils/musicPlayer.js';
-import { errorEmbed, successEmbed } from '../../utils/embeds.js';
+import Command from "../../structures/Command.js";
 
-export default {
-    name: 'shuffle',
-    description: 'Shuffle the queue',
-    usage: 'shuffle',
-    category: 'music',
-    execute: async (message, args) => {
-        const guildId = message.guild.id;
-        
-        // Check if user is in same voice channel
-        const check = checkSameVoiceChannel(message);
-        if (check.error) {
-            return message.reply({ embeds: [await errorEmbed(guildId, 'Error', check.message)] });
-        }
-        
-        const queue = check.queue;
-        
-        if (queue.tracks.data.length === 0) {
-            return message.reply({
-                embeds: [await errorEmbed(guildId, 'There are no songs in the queue to shuffle!')]
-            });
-        }
-        
-        queue.tracks.shuffle();
-        
-        message.reply({
-            embeds: [await successEmbed(guildId, '🔀 Queue Shuffled', `Shuffled **${queue.tracks.data.length}** songs in the queue!`)]
-        });
-    }
+export default class Shuffle extends Command {
+  constructor(client) {
+    super(client, {
+      name: "shuffle",
+      description: {
+        content: "Shuffles the queue",
+        examples: ["shuffle"],
+        usage: "shuffle",
+      },
+      category: "music",
+      aliases: ["sh"],
+      cooldown: 3,
+      args: false,
+      player: {
+        voice: true,
+        dj: true,
+        active: true,
+        djPerm: null,
+      },
+      permissions: {
+        dev: false,
+        client: ["SendMessages", "ViewChannel", "EmbedLinks"],
+        user: [],
+      },
+      slashCommand: true,
+      options: [],
+    });
+  }
+  async run(client, ctx) {
+    const player = client.queue.get(ctx.guild.id);
+    const embed = this.client.embed();
+    if (!player.queue.length)
+      return await ctx.sendMessage({
+        embeds: [
+          embed
+            .setColor(this.client.color.red)
+            .setDescription("There are no songs in the queue."),
+        ],
+      });
+    player.setShuffle(true);
+    return await ctx.sendMessage({
+      embeds: [
+        embed
+          .setColor(this.client.color.main)
+          .setDescription(`Shuffled the queue`),
+      ],
+    });
+  }
 };
