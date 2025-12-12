@@ -91,7 +91,7 @@ class Dispatcher {
             // Shoukaku v4 API: playTrack with encoded track string
           console.log('📡 Calling player.playTrack()...');
           console.log('   - Encoded track:', this.current.encoded?.substring(0, 50) + '...');
-          await this.player.playTrack({ track: this.current.encoded });
+          await this.player.playTrack({ track: {encoded: this.current.encoded }});
           console.log("player", this.player)
             console.log('✅ playTrack() called successfully');
             
