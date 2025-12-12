@@ -1,6 +1,6 @@
-const Event = require("../../structures/Event.js");
+import Event from "../../structures/Event.js";
 
-module.exports = class TrackEnd extends Event {
+export default class TrackEnd extends Event {
   constructor(client, file) {
     super(client, file, {
       name: "trackEnd",

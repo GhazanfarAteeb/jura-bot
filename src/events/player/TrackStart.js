@@ -1,11 +1,11 @@
-const Event = require("../../structures/Event.js");
-const {
+import Event from "../../structures/Event.js";
+import {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
   PermissionFlagsBits,
-} = require("discord.js");
-const { trackStart } = require("../../utils/SetupSystem.js");
+} from "discord.js";
+import { trackStart } from "../../utils/SetupSystem.js";
 
 class TrackStart extends Event {
   constructor(client, file) {
@@ -258,6 +258,5 @@ async function checkDj(client, interaction) {
   return true;
 }
 
-module.exports = { checkDj };
-
-module.exports = TrackStart;
+export { checkDj };
+export default TrackStart;

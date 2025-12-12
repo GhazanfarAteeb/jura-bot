@@ -1,7 +1,7 @@
-const Event = require("../../structures/Event.js");
-const BotLog = require("../../utils/BotLog.js");
+import Event from "../../structures/Event.js";
+import BotLog from "../../utils/BotLog.js";
 
-module.exports = class NodeDestroy extends Event {
+export default class NodeDestroy extends Event {
   constructor(client, file) {
     super(client, file, {
       name: "nodeDestroy",

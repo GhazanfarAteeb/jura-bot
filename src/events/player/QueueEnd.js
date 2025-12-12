@@ -1,7 +1,7 @@
-const Event = require("../../structures/Event.js");
-const { updateSetup } = require("../../utils/SetupSystem.js");
+import Event from "../../structures/Event.js";
+import { updateSetup } from "../../utils/SetupSystem.js";
 
-module.exports = class QueueEnd extends Event {
+export default class QueueEnd extends Event {
   constructor(client, file) {
     super(client, file, {
       name: "queueEnd",

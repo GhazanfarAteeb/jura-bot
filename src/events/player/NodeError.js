@@ -1,7 +1,7 @@
-const Event = require("../../structures/Event.js");
-const BotLog = require("../../utils/BotLog.js");
+import Event from "../../structures/Event.js";
+import BotLog from "../../utils/BotLog.js";
 
-module.exports = class NodeError extends Event {
+export default class NodeError extends Event {
   constructor(client, file) {
     super(client, file, {
       name: "nodeError",

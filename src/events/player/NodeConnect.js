@@ -1,7 +1,7 @@
-const Event = require('../../structures/Event.js');
-const BotLog = require('../../utils/BotLog.js');
+import Event from '../../structures/Event.js';
+import BotLog from '../../utils/BotLog.js';
 
-module.exports = class NodeConnect extends Event {
+export default class NodeConnect extends Event {
   constructor(client, file) {
     super(client, file, {
       name: "nodeConnect",
@@ -10,7 +10,8 @@ module.exports = class NodeConnect extends Event {
 
   async run(node) {
     this.client.logger.success(`Node ${node} is ready!`);
-    const data = this.client.db.get_247();
+    const data = null; // Placeholder - database not yet configured
+    // const data = this.client.db.get_247();
     if (!data) return;
     for (const main of data) {
       const index = data.indexOf(main);

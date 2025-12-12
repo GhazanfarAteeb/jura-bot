@@ -1,7 +1,7 @@
-const Event = require('../../structures/Event.js');
-const { updateSetup } = require('../../utils/SetupSystem.js');
+import Event from '../../structures/Event.js';
+import { updateSetup } from '../../utils/SetupSystem.js';
 
-class PlayerDestroy extends Event {
+export default class PlayerDestroy extends Event {
     constructor(client, file) {
         super(client, file, {
             name: 'playerDestroy',
@@ -15,5 +15,3 @@ class PlayerDestroy extends Event {
         await updateSetup(this.client, guild);
     }
 }
-
-module.exports = PlayerDestroy;
