@@ -164,7 +164,7 @@ class Dispatcher {
     }
 
     async isPlaying() {
-        if (this.queue.length && !this.current && !this.player.paused) {
+        if (this.queue.length && !this.current) {
             await this.play();
         }
     }
