@@ -109,7 +109,18 @@ client.invites = new Collection();
 client.config = {
     searchEngine: 'ytmsearch',
     maxQueueSize: 1000,
-    maxPlaylistSize: 100
+    maxPlaylistSize: 100,
+    icons: {
+        youtube: 'https://cdn.discordapp.com/attachments/983711842708811827/1065938236589654096/youtube.png',
+        spotify: 'https://cdn.discordapp.com/attachments/983711842708811827/1065938236811714601/spotify.png',
+        soundcloud: 'https://cdn.discordapp.com/attachments/983711842708811827/1065938237063569428/soundcloud.png',
+        applemusic: 'https://cdn.discordapp.com/attachments/983711842708811827/1065938236052029460/applemusic.png',
+        deezer: 'https://cdn.discordapp.com/attachments/983711842708811827/1065938236320464896/deezer.png'
+    },
+    links: {
+        img: 'https://cdn.discordapp.com/attachments/983711842708811827/1065938236589654096/music.png'
+    },
+    logChannelId: process.env.LOG_CHANNEL_ID || null
 };
 
 // Wave-Music compatibility: Add embed builder and colors
