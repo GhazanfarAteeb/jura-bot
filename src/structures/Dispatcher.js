@@ -90,9 +90,12 @@ class Dispatcher {
             await this.player.playTrack({ track: { encoded: this.current?.encoded } });
             console.log('✅ playTrack() called successfully');
             
-            // console.log('🔊 Setting volume to 80...');
-            // await this.player.setGlobalVolume(80);
-            // console.log('✅ Volume set successfully');
+            // Set default volume if not already set
+            if (this.player.volume === 0 || this.player.volume === undefined) {
+                console.log('🔊 Setting volume to 100 (default)...');
+                await this.player.setGlobalVolume(100);
+                console.log('✅ Volume set successfully');
+            }
             
             console.log('✅ Track setup complete');
             if (this.current) {
