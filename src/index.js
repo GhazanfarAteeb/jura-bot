@@ -113,9 +113,6 @@ client.invites = new Collection();
 // Initialize Shoukaku BEFORE client.login()
 // This is critical - Shoukaku's connector must be attached before the client connects
 // to properly intercept VOICE_STATE_UPDATE and VOICE_SERVER_UPDATE events
-console.log('🎵 Pre-initializing Shoukaku connector...');
-initializeShoukaku(client);
-console.log('✅ Shoukaku connector initialized (will fully connect when client is ready)');
 
 // Configuration
 client.config = {
@@ -272,7 +269,10 @@ async function initialize() {
     const duration = Date.now() - startTime;
     logger.performance('Bot initialization', duration);
     logger.startup(`Bot started successfully in ${duration}ms`);
-    
+    console.log('🎵 Pre-initializing Shoukaku connector...');
+    initializeShoukaku(client);
+    console.log('✅ Shoukaku connector initialized (will fully connect when client is ready)');
+
     // Initialize Shoukaku and events after client is ready
     client.once('ready', async () => {
         console.log('🤖 Client is ready!');
