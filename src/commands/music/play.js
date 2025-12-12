@@ -1,6 +1,7 @@
 import { player, checkVoiceChannel } from '../../utils/musicPlayer.js';
 import { QueryType } from 'discord-player';
 import { errorEmbed, successEmbed } from '../../utils/embeds.js';
+import { searchYouTube, getVideoInfo, isYouTubeURL, extractVideoID } from '../../utils/youtube.js';
 
 export default {
     name: 'play',
@@ -208,28 +209,17 @@ export default {
                     try {
                         console.log(`   [${i+1}/${searchQueries.length}] "${searchQuery}"`);
                         
-                        // Use discord-player's YouTube search
-                        const youtubeResults = await player.search(searchQuery, {
-                            requestedBy: message.author,
-                            searchEngine: QueryType.YOUTUBE_SEARCH
-                        });
+                        // Use our custom YouTube search (yt-search)
+                        const youtubeResults = await searchYouTube(searchQuery, 10);
                         
-                        if (youtubeResults && youtubeResults.tracks && youtubeResults.tracks.length > 0) {
-                            console.log(`      Found ${youtubeResults.tracks.length} results`);
+                        if (youtubeResults && youtubeResults.length > 0) {
+                            console.log(`      Found ${youtubeResults.length} results`);
                             
                             // Score each result based on multiple factors
-                            for (const track of youtubeResults.tracks) {
-                                const title = track.title?.toLowerCase() || '';
-                                const author = track.author?.toLowerCase() || '';
-                                
-                                // Parse duration string (format: "MM:SS" or "HH:MM:SS")
-                                let trackDurationSec = 0;
-                                const durationParts = track.duration.split(':').map(p => parseInt(p));
-                                if (durationParts.length === 2) {
-                                    trackDurationSec = durationParts[0] * 60 + durationParts[1];
-                                } else if (durationParts.length === 3) {
-                                    trackDurationSec = durationParts[0] * 3600 + durationParts[1] * 60 + durationParts[2];
-                                }
+                            for (const video of youtubeResults) {
+                                const title = video.title?.toLowerCase() || '';
+                                const author = video.author?.toLowerCase() || '';
+                                const trackDurationSec = video.durationSeconds || 0;
                                 
                                 const durationDiff = Math.abs(trackDurationSec - targetDurationSec);
                                 
@@ -238,12 +228,12 @@ export default {
                                 // Duration match is CRITICAL (within 15 seconds = high score)
                                 if (durationDiff <= 15) {
                                     score += 100;
-                                    console.log(`      → ${track.title} [${track.author}] (${track.duration}) - Duration match! +100`);
+                                    console.log(`      → ${video.title} [${video.author}] (${video.duration}) - Duration match! +100`);
                                 } else if (durationDiff <= 45) {
                                     score += 50;
-                                    console.log(`      → ${track.title} [${track.author}] (${track.duration}) - Close duration +50`);
+                                    console.log(`      → ${video.title} [${video.author}] (${video.duration}) - Close duration +50`);
                                 } else {
-                                    console.log(`      → ${track.title} [${track.author}] (${track.duration}) - Duration off by ${durationDiff}s, skipping`);
+                                    console.log(`      → ${video.title} [${video.author}] (${video.duration}) - Duration off by ${durationDiff}s, skipping`);
                                     continue; // Skip tracks with very different duration
                                 }
                                 
@@ -276,10 +266,11 @@ export default {
                                 // Update best match if this is better
                                 if (score > bestScore) {
                                     bestScore = score;
-                                    bestYouTubeUrl = track.url;
-                                    bestYouTubeTitle = track.title;
+                                    bestYouTubeUrl = video.url;
+                                    bestYouTubeTitle = video.title;
                                     console.log(`         ✅ NEW BEST MATCH!`);
                                 }
+                            }
                             }
                             
                             // If we found a great match (score >= 100), stop searching
