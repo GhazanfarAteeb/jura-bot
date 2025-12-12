@@ -178,6 +178,7 @@ async function loadEvents() {
           .filter((file) => file.endsWith(".js"));
         events.forEach((file) => {
           try {
+            console.log("📂 Loading event:", file);
             const EventClass = require(`../events/${dir}/${file}`);
             const evt = new EventClass(this, file);
             switch (dir) {
