@@ -1,7 +1,7 @@
 import { TextChannel, PermissionsBitField } from "discord.js";
 import Event from "../../structures/Event.js";
-import { oops } from "../../utils/Utils.js";
-import { setupStart } from "../../utils/SetupSystem.js";
+// import { oops } from "../../utils/Utils.js";
+import { setupStart, oops } from "../../utils/SetupSystem.js";
 
 
 class SetupSystem extends Event {
