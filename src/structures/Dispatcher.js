@@ -30,9 +30,6 @@ class Dispatcher {
         this.nowPlayingMessage = null;
         this.player
           .on('start', () => {
-            console.log("player", JSON.stringify(this.player));
-            console.log("current", JSON.stringify(this.current));
-
                 console.log('🎵 Player event: START - Track started playing');
                 this.client.shoukaku.emit('trackStart', this.player, this.current, this);
             })
