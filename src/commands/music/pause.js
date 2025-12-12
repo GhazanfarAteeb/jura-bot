@@ -1,4 +1,5 @@
-import { checkSameVoiceChannel } from '../../utils/musicPlayer.js';
+import { players } from '../../utils/shoukaku.js';
+import { checkVoiceChannel } from '../../utils/musicPlayer.js';
 import { errorEmbed, successEmbed } from '../../utils/embeds.js';
 
 export default {
@@ -9,24 +10,30 @@ export default {
     execute: async (message, args) => {
         const guildId = message.guild.id;
         
-        // Check if user is in same voice channel
-        const check = checkSameVoiceChannel(message);
-        if (check.error) {
-            return message.reply({ embeds: [await errorEmbed(guildId, 'Error', check.message)] });
+        // Check if user is in voice channel
+        const voiceCheck = checkVoiceChannel(message);
+        if (voiceCheck.error) {
+            return message.reply({ embeds: [await errorEmbed(guildId, 'Voice Channel Error', voiceCheck.message)] });
         }
         
-        const queue = check.queue;
+        const playerData = players.get(guildId);
         
-        if (queue.node.isPaused()) {
+        if (!playerData || !playerData.nowPlaying) {
             return message.reply({
-                embeds: [await errorEmbed(guildId, 'The music is already paused!')]
+                embeds: [await errorEmbed(guildId, 'Not Playing', 'There is no song currently playing!')]
             });
         }
         
-        queue.node.setPaused(true);
+        if (playerData.player.paused) {
+            return message.reply({
+                embeds: [await errorEmbed(guildId, 'Already Paused', 'The music is already paused!')]
+            });
+        }
+        
+        playerData.player.setPaused(true);
         
         message.reply({
-            embeds: [await successEmbed(guildId, '⏸️ Paused', 'Music has been paused. Use `!resume` to continue.')]
+            embeds: [await successEmbed(guildId, '⏸️ Paused', 'Music has been paused. Use `R!resume` to continue.')]
         });
     }
 };

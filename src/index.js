@@ -8,6 +8,7 @@ import { initializeSchedulers } from './utils/schedulers.js';
 import express from 'express';
 import Guild from './models/Guild.js';
 import logger from './utils/logger.js';
+import './utils/shoukaku.js'; // Initialize Shoukaku
 
 // Load encryption libraries for voice (discord-voip compatibility)
 // discord-voip looks for methods object with open/close methods
