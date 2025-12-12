@@ -1,8 +1,10 @@
 import 'dotenv/config';
 import { Client, GatewayIntentBits, Partials, Collection, EmbedBuilder } from 'discord.js';
 import mongoose from 'mongoose';
+// import { fileURLToPath } from 'url';
+// import { dirname, join } from 'path';
+import path from 'path';
 import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
 import { readdirSync } from 'fs';
 import { initializeSchedulers } from './utils/schedulers.js';
 import { initializeShoukaku } from './utils/shoukaku.js';
@@ -65,7 +67,7 @@ if (encryptionLoaded) {
 }
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const __dirname = path.dirname(__filename);
 
 // Express app for health checks
 const app = express();
