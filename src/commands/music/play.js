@@ -79,6 +79,7 @@ export default class Play extends Command {
         break;
       case LoadType.TRACK: {
         let trackData = res.data;
+        console.log(`🔍 Single track loaded: ${trackData}`);
         // Convert Spotify to YouTube using ISRC
         // if (trackData.info.sourceName === 'spotify' && trackData.info.isrc) {
         //     console.log('🔄 Converting Spotify to YouTube via ISRC:', trackData.info.isrc);
