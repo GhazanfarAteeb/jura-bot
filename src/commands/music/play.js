@@ -97,7 +97,7 @@ export default class Play extends Command {
 
                 const search = `ytsearch:${spData.name} ${spData.artists[0].name}`.trim();
                 const res = await node.rest.resolve(search);
-                
+                console.log("res data ", res);
                 if (!res || !res.tracks || !res.tracks.length) return message.reply(`Could not find "**${spData.name}**" on YouTube.`);
                 
                 const track = res.tracks[0];
