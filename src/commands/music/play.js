@@ -1,4 +1,5 @@
 import Command from '../../structures/Command.js';
+import play from 'play-dl';
 
 export default class Play extends Command {
     constructor(client) {
@@ -27,6 +28,27 @@ export default class Play extends Command {
         if (!node) return message.reply('Music node is not ready yet, please try again later.');
 
         try {
+            // Check for Spotify URL
+            if (play.sp_validate(query) === 'track') {
+                const spData = await play.spotify(query);
+                const search = `ytsearch:${spData.name} ${spData.artists[0].name}`;
+                const res = await node.rest.resolve(search);
+                
+                if (!res || !res.tracks || !res.tracks.length) return message.reply('Could not find that Spotify track on YouTube.');
+                
+                const track = res.tracks[0];
+                const queue = this.client.music.createQueue(message.guild, channel, message.channel);
+                queue.queue.push({
+                    track: track.encoded,
+                    info: track.info,
+                    requester: message.author
+                });
+                
+                message.reply(`Added **${spData.name}** (from Spotify) to the queue!`);
+                if (!queue.player.playing && !queue.player.paused) await queue.play();
+                return;
+            }
+
             const res = await node.rest.resolve(query);
             
             if (!res || !res.tracks || !res.tracks.length) return message.reply('No results found for your query.');
