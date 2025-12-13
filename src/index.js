@@ -7,66 +7,11 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { readdirSync } from 'fs';
 import { initializeSchedulers } from './utils/schedulers.js';
-import { initializeShoukaku } from './utils/shoukaku.js';
 import express from 'express';
 import Guild from './models/Guild.js';
 import logger from './utils/logger.js';
 import ServerData from './database/server.js';
 import Utils from './structures/Utils.js';
-
-// Load encryption libraries for voice (discord-voip compatibility)
-// discord-voip looks for methods object with open/close methods
-console.log('🔐 Loading encryption libraries for voice...');
-
-let encryptionLoaded = false;
-
-// Try libsodium-wrappers first (best compatibility with discord-voip)
-try {
-    const libsodium = await import('libsodium-wrappers');
-    await libsodium.ready;
-    
-    // Expose for @discordjs/voice
-    global.sodium = libsodium;
-    
-    // Also expose methods for discord-voip compatibility
-    if (!global.sodium.methods) {
-        global.sodium.methods = libsodium;
-    }
-    
-    console.log('✅ Loaded libsodium-wrappers for voice encryption');
-    console.log('   Available methods:', Object.keys(libsodium).filter(k => k.includes('crypto')).slice(0, 5).join(', '), '...');
-    encryptionLoaded = true;
-} catch (err) {
-    console.log(`⚠️  libsodium-wrappers not available: ${err.message}`);
-}
-
-// Fallback to other libraries if needed
-if (!encryptionLoaded) {
-    const fallbacks = [
-        '@stablelib/xchacha20poly1305',
-        '@noble/ciphers/chacha',
-        'tweetnacl'
-    ];
-    
-    for (const lib of fallbacks) {
-        try {
-            const module = await import(lib);
-            global.sodium = module;
-            console.log(`✅ Loaded ${lib} for voice encryption`);
-            encryptionLoaded = true;
-            break;
-        } catch (err) {
-            console.log(`⚠️  ${lib} not available`);
-        }
-    }
-}
-
-if (encryptionLoaded) {
-    console.log('✅ Encryption library exposed globally for voice');
-    console.log('   global.sodium available:', !!global.sodium);
-} else {
-    console.error('❌ No encryption library could be loaded - voice will not work');
-}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -86,8 +31,7 @@ const client = new Client({
         GatewayIntentBits.GuildInvites,
         GatewayIntentBits.MessageContent,
         GatewayIntentBits.GuildModeration,
-        GatewayIntentBits.GuildPresences,
-        GatewayIntentBits.GuildVoiceStates
+        GatewayIntentBits.GuildPresences
     ],
     partials: [
         Partials.Message,
@@ -110,29 +54,12 @@ client.utils = Utils;
 client.cooldowns = new Collection();
 client.invites = new Collection();
 
-// Initialize Shoukaku BEFORE client.login()
-// This is critical - Shoukaku's connector must be attached before the client connects
-// to properly intercept VOICE_STATE_UPDATE and VOICE_SERVER_UPDATE events
-
 // Configuration
 client.config = {
-    searchEngine: 'ytsearch', // YouTube Music search via LavaSrc plugin
-    maxQueueSize: 1000,
-    maxPlaylistSize: 100,
-    icons: {
-        youtube: 'https://cdn.discordapp.com/attachments/983711842708811827/1065938236589654096/youtube.png',
-        spotify: 'https://cdn.discordapp.com/attachments/983711842708811827/1065938236811714601/spotify.png',
-        soundcloud: 'https://cdn.discordapp.com/attachments/983711842708811827/1065938237063569428/soundcloud.png',
-        applemusic: 'https://cdn.discordapp.com/attachments/983711842708811827/1065938236052029460/applemusic.png',
-        deezer: 'https://cdn.discordapp.com/attachments/983711842708811827/1065938236320464896/deezer.png'
-    },
-    links: {
-        img: 'https://cdn.discordapp.com/attachments/983711842708811827/1065938236589654096/music.png'
-    },
     logChannelId: process.env.LOG_CHANNEL_ID || null
 };
 
-// Wave-Music compatibility: Add embed builder and colors
+// Add embed builder and colors
 client.embed = () => new EmbedBuilder();
 client.color = {
     main: '#0099ff',
@@ -227,14 +154,8 @@ async function loadEvents() {
                         throw new Error(`Invalid event format in ${file}`);
                     }
                     
-                    switch (dir) {
-                        case "player":
-                            client.shoukaku.on(eventName, eventHandler);
-                            break;
-                        default:
-                            client.on(eventName, eventHandler);
-                            break;
-                    }
+                    // Register event with client
+                    client.on(eventName, eventHandler);
                     
                     totalEvents++;
                 } catch (error) {
@@ -269,23 +190,15 @@ async function initialize() {
     const duration = Date.now() - startTime;
     logger.performance('Bot initialization', duration);
     logger.startup(`Bot started successfully in ${duration}ms`);
-    console.log('🎵 Pre-initializing Shoukaku connector...');
-    initializeShoukaku(client);
-    console.log('✅ Shoukaku connector initialized (will fully connect when client is ready)');
 
-    // Initialize Shoukaku and events after client is ready
+    // Initialize events after client is ready
     client.once('ready', async () => {
         console.log('🤖 Client is ready!');
         console.log(`   Logged in as: ${client.user.tag}`);
         console.log(`   Guilds: ${client.guilds.cache.size}`);
         console.log(`   WS Status: ${client.ws.status}, Ping: ${client.ws.ping}ms`);
         
-        // Wait for Shoukaku to connect to Lavalink
-        console.log('⏳ Waiting for Lavalink connection...');
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        // Load custom event handlers AFTER Shoukaku is ready
-        // Shoukaku connector was already initialized before client login
+        // Load event handlers
         await loadEvents();
         
         // Initialize schedulers
