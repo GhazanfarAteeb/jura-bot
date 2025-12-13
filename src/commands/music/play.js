@@ -98,9 +98,9 @@ export default class Play extends Command {
                 const search = `ytmsearch:${spData.name} ${spData.artists[0].name}`.trim();
                 const res = await node.rest.resolve(search);
                 console.log("res data ", res);
-                if (!res || !res.tracks || !res.tracks.length) return message.reply(`Could not find "**${spData.name}**" on YouTube.`);
+                if (!res || !res.data || !res.data.length) return message.reply(`Could not find "**${spData.name}**" on YouTube.`);
                 
-                const track = res.tracks[0];
+                const track = res.data[0];
                 const queue = this.client.music.createQueue(message.guild, channel, message.channel);
                 queue.queue.push({
                     track: {encoded: track.encoded},
