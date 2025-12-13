@@ -10,7 +10,7 @@ class VoiceStateUpdate extends Event {
   async run(oldState, newState) {
     const guildId = newState.guild.id;
     if (!guildId) return;
-    const player = this.client.queue.get(guildId);
+    const player = this.client.music?.queues?.get(guildId);
     if (!player) return;
     if (
       newState.guild.members.cache.get(this.client.user.id) &&
