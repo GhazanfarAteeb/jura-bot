@@ -21,7 +21,8 @@ export default class Dispatcher {
     }
 
     isPlaying() {
-        return this.player && (this.player.playing || this.player.paused);
+        // Shoukaku v4: Check if player exists and has a track loaded
+        return this.player && this.player.track !== null;
     }
 
     async initializePlayer() {
