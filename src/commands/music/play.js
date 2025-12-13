@@ -41,8 +41,29 @@ export default class Play extends Command {
         try {
             // Check for Spotify URL
             if (play.sp_validate(query) === 'track') {
-                const spData = await play.spotify(query);
-                const search = `ytsearch:${spData.name} ${spData.artists[0].name}`;
+                let spData;
+                try {
+                    spData = await play.spotify(query);
+                } catch (e) {
+                    console.error('[Spotify Auth Fail] Falling back to scraping:', e.message);
+                    // Fallback: Scrape title
+                    try {
+                        const response = await fetch(query);
+                        const text = await response.text();
+                        const titleMatch = text.match(/<title>(.*?)<\/title>/i);
+                        if (titleMatch && titleMatch[1]) {
+                            let title = titleMatch[1].replace('| Spotify', '').replace('- song and lyrics by', '').trim();
+                            // Clean up "Song - Artist" format
+                            spData = { name: title, artists: [{ name: '' }] };
+                        }
+                    } catch (scrapeErr) {
+                        console.error('Scraping failed:', scrapeErr);
+                    }
+                }
+
+                if (!spData) return message.reply('Could not resolve Spotify URL. Please check your link or try a YouTube link.');
+
+                const search = `ytsearch:${spData.name} ${spData.artists[0].name}`.trim();
                 const res = await node.rest.resolve(search);
                 
                 if (!res || !res.tracks || !res.tracks.length) return message.reply('Could not find that Spotify track on YouTube.');
