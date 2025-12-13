@@ -103,7 +103,7 @@ export default class Dispatcher {
 
     destroy() {
         this.exists = false;
-        this.player?.connection.disconnect();
+        this.player?.connection?.disconnect();
         this.client.music.queues.delete(this.guild.id);
         
         const embed = this.client.embed()
