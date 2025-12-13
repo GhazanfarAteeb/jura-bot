@@ -14,6 +14,16 @@ export default class Play extends Command {
 
     async run(client, ctx, args) {
         const message = ctx.message;
+        
+        // Authorize play-dl
+        play.setToken({
+            spotify: {
+                client_id: process.env.SPOTIFY_CLIENT_ID,
+                client_secret: process.env.SPOTIFY_CLIENT_SECRET,
+                market: 'US'
+            }
+        });
+
         if (!args.length) return message.reply('Please provide a song to play!');
 
         const { channel } = message.member.voice;
