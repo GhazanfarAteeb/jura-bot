@@ -20,6 +20,10 @@ export default class Skip extends Command {
             return message.reply('You need to be in the same voice channel as the bot!');
         }
 
+        if (!queue.player) {
+            return message.reply('Player is not ready yet. Please try again.');
+        }
+        
         queue.player.stopTrack();
         message.reply('Skipped the current track.');
     }

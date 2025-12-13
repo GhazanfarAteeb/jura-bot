@@ -15,8 +15,13 @@ export default class Dispatcher {
         this.matchedTracks = [];
         this.player = null;
         this.exists = true;
+        this.ready = false;
 
         this.initializePlayer();
+    }
+
+    isPlaying() {
+        return this.player && (this.player.playing || this.player.paused);
     }
 
     async initializePlayer() {
@@ -36,6 +41,8 @@ export default class Dispatcher {
                 .on('closed', (data) => this.onClosed(data))
                 .on('error', (data) => this.onError(data));
 
+            this.ready = true;
+
         } catch (error) {
             logger.error('Failed to initialize player', error);
             this.destroy();
@@ -44,6 +51,16 @@ export default class Dispatcher {
 
     async play() {
         if (!this.exists || !this.queue.length) return this.destroy();
+        
+        // Wait for player to be ready
+        if (!this.player) {
+            // Player not initialized yet, wait a bit
+            await new Promise(resolve => setTimeout(resolve, 100));
+            if (!this.player) {
+                logger.error('Player not ready after waiting');
+                return this.destroy();
+            }
+        }
         
         this.current = this.queue.shift();
         
@@ -91,7 +108,11 @@ export default class Dispatcher {
 
     onStuck(data) {
         logger.warn(`Track stuck in guild ${this.guild.id}`, data);
-        this.player.stopTrack(); // Force skip
+        if (this.player) {
+            this.player.stopTrack(); // Force skip
+        } else {
+            this.destroy();
+        }
     }
 
     onClosed(data) {

@@ -52,7 +52,7 @@ export default class Play extends Command {
                         queue.queue.push({ track: track.encoded, info: track.info, requester: message.author });
                         message.reply(`Added **${track.info.title}** to the queue!`);
                     }
-                    if (!queue.player.playing && !queue.player.paused) await queue.play();
+                    if (!queue.isPlaying()) await queue.play();
                     return;
                 }
             } catch (err) {
@@ -109,7 +109,7 @@ export default class Play extends Command {
                 });
                 
                 message.reply(`Added **${spData.name}** (from Spotify) to the queue!`);
-                if (!queue.player.playing && !queue.player.paused) await queue.play();
+                if (!queue.isPlaying()) await queue.play();
                 return;
             }
 
@@ -139,7 +139,7 @@ export default class Play extends Command {
                  message.reply(`Added **${track.info.title}** to the queue!`);
             }
 
-            if (!queue.player.playing && !queue.player.paused) await queue.play();
+            if (!queue.isPlaying()) await queue.play();
 
         } catch (error) {
             console.error(error);

@@ -40,7 +40,11 @@ export default class MusicManager extends Shoukaku {
 
     getQueue(guildId) {
         return this.queues.get(guildId);
-    }
+  }
+  
+  isPlaying() {
+    return this.queues.some(queue => queue.isPlaying());
+  }
 
     createQueue(guild, channel, messageChannel) {
         const existingQueue = this.getQueue(guild.id);
