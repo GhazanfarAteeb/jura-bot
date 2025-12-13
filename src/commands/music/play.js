@@ -123,7 +123,7 @@ export default class Play extends Command {
             if (res.loadType === 'playlist' || res.loadType === 'PLAYLIST_LOADED') { 
                  for (const track of res.tracks) {
                     queue.queue.push({
-                        track: track.encoded,
+                        track: {encoded: track.encoded},
                         info: track.info,
                         requester: message.author
                     });
@@ -132,7 +132,7 @@ export default class Play extends Command {
             } else {
                  const track = res.tracks[0];
                  queue.queue.push({
-                     track: track.encoded,
+                     track: {encoded: track.encoded},
                      info: track.info,
                      requester: message.author
                  });
