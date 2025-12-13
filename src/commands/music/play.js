@@ -103,7 +103,7 @@ export default class Play extends Command {
                 const track = res.data[0];
                 const queue = this.client.music.createQueue(message.guild, channel, message.channel);
                 queue.queue.push({
-                    track: {encoded: track.encoded},
+                    track: track.encoded,
                     info: track.info,
                     requester: message.author
                 });
@@ -123,7 +123,7 @@ export default class Play extends Command {
             if (res.loadType === 'playlist' || res.loadType === 'PLAYLIST_LOADED') { 
                  for (const track of res.tracks) {
                     queue.queue.push({
-                        track: {encoded: track.encoded},
+                        track: track.encoded,
                         info: track.info,
                         requester: message.author
                     });
@@ -132,7 +132,7 @@ export default class Play extends Command {
             } else {
                  const track = res.tracks[0];
                  queue.queue.push({
-                     track: {encoded: track.encoded},
+                     track: track.encoded,
                      info: track.info,
                      requester: message.author
                  });

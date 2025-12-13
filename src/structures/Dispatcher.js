@@ -65,7 +65,9 @@ export default class Dispatcher {
         this.current = this.queue.shift();
         
         try {
-          await this.player.playTrack({ track: this.current.track?.encoded });
+          console.log('[Dispatcher] Attempting to play track:', this.current.info.title);
+          console.log('[Dispatcher] Track encoded:', this.current.track ? 'Yes' : 'No');
+          await this.player.playTrack({ track: this.current.track });
           await this.player.setGlobalVolume(80);
         } catch (error) {
             logger.error('Failed to play track', error);
