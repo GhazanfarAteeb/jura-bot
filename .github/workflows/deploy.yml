@@ -26,4 +26,11 @@ jobs:
           npm install --production
           pm2 restart jura-bot || pm2 start src/index.js --name jura-bot
           pm2 save
+          cd ..
+          cd Wave-Music
+          rm -rf node_modules
+          npm install --production
+          pm2 restart Wave-Music || pm2 start src/index.js --name Wave-Music
+          pm2 save
           echo "Deployment completed at $(date)"
+
