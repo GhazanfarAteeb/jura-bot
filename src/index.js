@@ -63,6 +63,9 @@ client.config = {
     logChannelId: process.env.LOG_CHANNEL_ID || null
 };
 
+// Logger setup
+client.logger = logger;
+
 // Add embed builder and colors
 client.embed = () => new EmbedBuilder();
 client.color = {

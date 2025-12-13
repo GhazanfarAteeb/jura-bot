@@ -11,7 +11,8 @@ export default class Queue extends Command {
         });
     }
 
-    async run(message) {
+    async run(client, ctx, args) {
+        const message = ctx.message;
         const queue = this.client.music.getQueue(message.guild.id);
         if (!queue || (!queue.current && !queue.queue.length)) return message.reply('There is no music playing right now.');
 

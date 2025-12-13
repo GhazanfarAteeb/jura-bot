@@ -11,7 +11,8 @@ export default class Play extends Command {
         });
     }
 
-    async run(message, args) {
+    async run(client, ctx, args) {
+        const message = ctx.message;
         if (!args.length) return message.reply('Please provide a song to play!');
 
         const { channel } = message.member.voice;

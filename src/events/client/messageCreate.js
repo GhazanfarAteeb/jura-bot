@@ -214,7 +214,11 @@ class MessageCreate extends Event {
         content: "You can't use this command with everyone or here.",
       });
     try {
-      return command.run(this.client, ctx, ctx.args);
+      if (command.run) {
+        return command.run(this.client, ctx, ctx.args);
+      } else if (command.execute) {
+        return command.execute(message, args, this.client);
+      }
     } catch (error) {
       this.client.logger.error(error);
       await message.reply({ content: `An error occurred: \`${error}\`` });
