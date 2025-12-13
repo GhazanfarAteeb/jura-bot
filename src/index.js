@@ -56,7 +56,9 @@ client.utils = Utils;
 client.music = new MusicManager(client);
 
 client.cooldowns = new Collection();
+client.cooldowns = new Collection();
 client.invites = new Collection();
+client.aliases = new Collection();
 
 // Configuration
 client.config = {
@@ -110,6 +112,9 @@ async function loadCommands() {
                     const commandInstance = new CommandClass(client);
                     if (commandInstance.name) {
                         client.commands.set(commandInstance.name, commandInstance);
+                        if (commandInstance.aliases && Array.isArray(commandInstance.aliases)) {
+                            commandInstance.aliases.forEach(alias => client.aliases.set(alias, commandInstance.name));
+                        }
                         console.log(`📝 Loaded command: ${commandInstance.name}`);
                         totalCommands++;
                     }
@@ -117,6 +122,9 @@ async function loadCommands() {
                 // Legacy command object format (plain object with execute method)
                 else if (CommandClass && CommandClass.name && CommandClass.execute) {
                     client.commands.set(CommandClass.name, CommandClass);
+                    if (CommandClass.aliases && Array.isArray(CommandClass.aliases)) {
+                        CommandClass.aliases.forEach(alias => client.aliases.set(alias, CommandClass.name));
+                    }
                     console.log(`📝 Loaded command: ${CommandClass.name}`);
                     totalCommands++;
                 }
