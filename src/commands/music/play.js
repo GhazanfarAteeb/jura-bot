@@ -95,7 +95,7 @@ export default class Play extends Command {
 
                 if (!spData) return message.reply('Could not resolve Spotify URL. Please check your link or try a YouTube link.');
 
-                const search = `${spData.name} ${spData.artists[0].name}`.trim();
+                const search = `ytmsearch:${spData.name} ${spData.artists[0].name}`.trim();
                 const res = await node.rest.resolve(search);
                 console.log("res data ", res);
                 if (!res || !res.tracks || !res.tracks.length) return message.reply(`Could not find "**${spData.name}**" on YouTube.`);
