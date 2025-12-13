@@ -24,7 +24,7 @@ jobs:
           cd ~/jura-bot
           git pull origin master
           npm install --production
-          pm2 restart jura-bot || pm2 start src/index.js --name jura-bot
+          pm2 restart raphael || pm2 start src/index.js --name raphael
           pm2 save
           echo "Deployment completed at $(date)"
 
