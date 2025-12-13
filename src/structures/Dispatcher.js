@@ -24,7 +24,9 @@ export default class Dispatcher {
             this.player = await this.client.music.joinVoiceChannel({
                 guildId: this.guild.id,
                 channelId: this.channelId,
-                shardId: this.guild.shardId
+              shardId: this.guild.shardId,
+              deaf: true,
+                mute: false
             });
 
             this.player
@@ -46,7 +48,8 @@ export default class Dispatcher {
         this.current = this.queue.shift();
         
         try {
-            await this.player.playTrack({ track: this.current.track?.encoded });
+          await this.player.playTrack({ track: this.current.track?.encoded });
+          await this.player.setGlobalVolume(80);
         } catch (error) {
             logger.error('Failed to play track', error);
             this.queue.unshift(this.current);
