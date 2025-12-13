@@ -29,7 +29,7 @@ export default class Play extends Command {
         try {
             const res = await node.rest.resolve(query);
             
-            if (!res || !res.tracks.length) return message.reply('No results found for your query.');
+            if (!res || !res.tracks || !res.tracks.length) return message.reply('No results found for your query.');
 
             const queue = this.client.music.createQueue(message.guild, channel, message.channel);
             
