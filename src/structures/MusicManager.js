@@ -29,6 +29,11 @@ export default class MusicManager extends Shoukaku {
             players.map(player => player.connection.disconnect());
             logger.debug(`Lavalink Node: ${name} disconnected`);
         });
+        });
+    }
+
+    getNode() {
+        return this.getIdealNode();
     }
 
     getQueue(guildId) {
