@@ -129,7 +129,20 @@ export default class Dispatcher {
 
     destroy() {
         this.exists = false;
-        this.player?.connection?.disconnect();
+        
+        // Properly disconnect the Shoukaku player
+        if (this.player) {
+            try {
+                this.player.connection?.disconnect();
+                // Also destroy the player on Shoukaku side
+                if (this.client.music.players && this.client.music.players.get(this.guild.id)) {
+                    this.client.music.players.get(this.guild.id).connection.disconnect();
+                }
+            } catch (e) {
+                logger.error('Error disconnecting player:', e.message);
+            }
+        }
+        
         this.client.music.queues.delete(this.guild.id);
         
         const embed = this.client.embed()
