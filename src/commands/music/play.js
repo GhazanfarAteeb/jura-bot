@@ -39,25 +39,65 @@ export default class Play extends Command {
         if (!node) return message.reply('Music node is not ready yet, please try again later.');
 
         try {
-            // Check for Spotify URL
-            if (play.sp_validate(query) === 'track') {
+            // 1. Try resolving with Lavalink Direct (Lavasrc plugin support)
+            try {
+                const directRes = await node.rest.resolve(query);
+                if (directRes && directRes.tracks && directRes.tracks.length > 0) {
+                    console.log('[Direct Resolve] Successfully resolved via Lavalink directly.');
+                    // Reuse the existing playlist handling logic below by continuing
+                    // or just handle it here. Best to refactor or just let it fall through if I structure it right.
+                    // But to keep it simple, I'll return here if it works.
+                    
+                    const queue = this.client.music.createQueue(message.guild, channel, message.channel);
+                    
+                    if (directRes.loadType === 'playlist' || directRes.loadType === 'PLAYLIST_LOADED') {
+                        for (const track of directRes.tracks) {
+                            queue.queue.push({ track: track.encoded, info: track.info, requester: message.author });
+                        }
+                        message.reply(`Loaded playlist **${directRes.playlistInfo.name}** with ${directRes.tracks.length} tracks!`);
+                    } else {
+                        const track = directRes.tracks[0];
+                        queue.queue.push({ track: track.encoded, info: track.info, requester: message.author });
+                        message.reply(`Added **${track.info.title}** to the queue!`);
+                    }
+                    if (!queue.player.playing && !queue.player.paused) await queue.play();
+                    return;
+                }
+            } catch (err) {
+                // Ignore and continue to fallbacks
+            }
+
+
+            // 2. Client-side Spotify Resolution (play-dl / scraping)
+            // Validates track, album, or playlist
+            const spType = play.sp_validate(query);
+            if (spType === 'track') {
                 let spData;
                 try {
                     spData = await play.spotify(query);
                 } catch (e) {
-                    console.error('[Spotify Auth Fail] Falling back to scraping:', e.message);
+                    console.error('[Spotify Auth Fail] Falling back to scraping. Error:', e.message);
                     // Fallback: Scrape title
                     try {
-                        const response = await fetch(query);
+                        const response = await fetch(query, {
+                            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' }
+                        });
+                        if (!response.ok) throw new Error(`HTTP ${response.status}`);
                         const text = await response.text();
                         const titleMatch = text.match(/<title>(.*?)<\/title>/i);
                         if (titleMatch && titleMatch[1]) {
-                            let title = titleMatch[1].replace('| Spotify', '').replace('- song and lyrics by', '').trim();
-                            // Clean up "Song - Artist" format
-                            spData = { name: title, artists: [{ name: '' }] };
+                            let title = titleMatch[1]
+                                .replace('| Spotify', '')
+                                .replace('- song and lyrics by', '')
+                                .replace(/on Spotify/i, '')
+                                .trim();
+                            console.log(`[Scrape] Found title: ${title}`);
+                            if (title && title !== 'Spotify') {
+                                spData = { name: title, artists: [{ name: '' }] };
+                            }
                         }
                     } catch (scrapeErr) {
-                        console.error('Scraping failed:', scrapeErr);
+                        console.error('Scraping failed:', scrapeErr.message);
                     }
                 }
 
@@ -66,7 +106,7 @@ export default class Play extends Command {
                 const search = `ytsearch:${spData.name} ${spData.artists[0].name}`.trim();
                 const res = await node.rest.resolve(search);
                 
-                if (!res || !res.tracks || !res.tracks.length) return message.reply('Could not find that Spotify track on YouTube.');
+                if (!res || !res.tracks || !res.tracks.length) return message.reply(`Could not find "**${spData.name}**" on YouTube.`);
                 
                 const track = res.tracks[0];
                 const queue = this.client.music.createQueue(message.guild, channel, message.channel);
@@ -88,7 +128,7 @@ export default class Play extends Command {
             const queue = this.client.music.createQueue(message.guild, channel, message.channel);
             
             // Handle playlists
-            if (res.loadType === 'playlist') { // Updated for newer Shoukaku/Lavalink response structure checks
+            if (res.loadType === 'playlist' || res.loadType === 'PLAYLIST_LOADED') { 
                  for (const track of res.tracks) {
                     queue.queue.push({
                         track: track.encoded,
