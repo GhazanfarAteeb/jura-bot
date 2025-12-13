@@ -46,7 +46,7 @@ export default class Dispatcher {
         this.current = this.queue.shift();
         
         try {
-            await this.player.playTrack({ track: this.current.track });
+            await this.player.playTrack({ track: this.current.track?.encoded });
         } catch (error) {
             logger.error('Failed to play track', error);
             this.queue.unshift(this.current);
