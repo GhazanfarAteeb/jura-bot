@@ -33,7 +33,9 @@ export default class MusicManager extends Shoukaku {
 
 
     getNode() {
-        return this.getIdealNode();
+        // Shoukaku v4: manually select the best node (least players)
+        const nodes = [...this.nodes.values()];
+        return nodes.filter(n => n.state === 2).sort((a, b) => a.stats.players - b.stats.players)[0];
     }
 
     getQueue(guildId) {
