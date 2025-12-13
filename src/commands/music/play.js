@@ -1,14 +1,6 @@
 import Command from '../../structures/Command.js';
 import play from 'play-dl';
 
-play.setToken({
-    spotify: {
-        client_id: process.env.SPOTIFY_CLIENT_ID,
-        client_secret: process.env.SPOTIFY_CLIENT_SECRET,
-        market: 'US'
-    }
-});
-
 export default class Play extends Command {
     constructor(client) {
         super(client, {
