@@ -12,6 +12,7 @@ import Guild from './models/Guild.js';
 import logger from './utils/logger.js';
 import ServerData from './database/server.js';
 import Utils from './structures/Utils.js';
+import MusicManager from './structures/MusicManager.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -50,6 +51,9 @@ client.db = new ServerData();
 
 // Initialize utils for Wave-Music
 client.utils = Utils;
+
+// Initialize MusicManager
+client.music = new MusicManager(client);
 
 client.cooldowns = new Collection();
 client.invites = new Collection();
