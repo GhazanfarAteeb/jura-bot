@@ -21,7 +21,7 @@ export default class Dispatcher {
 
     async initializePlayer() {
         try {
-            this.player = await this.node.joinChannel({
+            this.player = await this.client.music.joinVoiceChannel({
                 guildId: this.guild.id,
                 channelId: this.channelId,
                 shardId: this.guild.shardId
