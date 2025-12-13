@@ -19,7 +19,7 @@ const __dirname = path.dirname(__filename);
 
 // Express app for health checks
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 
 // Create Discord client with necessary intents
 const client = new Client({
