@@ -28,8 +28,69 @@ export default class Dispatcher {
   }
 
   isPlaying() {
-    // Shoukaku v4: Check if player exists and has a track loaded
-    return this.player && this.player.track !== null;
+    // Check if dispatcher is actively playing or has a current track
+    // This handles both active playback and idle-but-ready state
+    const result = this.playing || (this.current !== null && this.current !== undefined);
+    logger.info(`[Dispatcher] isPlaying() check for guild ${this.guild.id}: ${result} (playing: ${this.playing}, hasCurrent: ${!!this.current})`);
+    return result;
+  }
+
+  /**
+   * Find best matching track from search results
+   * Prefers full tracks over previews and better title/artist matches
+   */
+  static findBestMatch(tracks, targetTitle, targetArtist, targetDuration = null) {
+    if (!tracks || tracks.length === 0) return null;
+    if (tracks.length === 1) return tracks[0];
+
+    logger.info(`[Dispatcher] Finding best match for "${targetTitle}" by "${targetArtist}" from ${tracks.length} results`);
+
+    // Score each track
+    const scoredTracks = tracks.map(track => {
+      let score = 0;
+      const trackTitle = track.info.title.toLowerCase();
+      const trackArtist = track.info.author.toLowerCase();
+      const targetTitleLower = targetTitle.toLowerCase();
+      const targetArtistLower = targetArtist.toLowerCase();
+
+      // Title match scoring
+      if (trackTitle === targetTitleLower) score += 50;
+      else if (trackTitle.includes(targetTitleLower)) score += 30;
+      else if (targetTitleLower.includes(trackTitle)) score += 20;
+
+      // Artist match scoring
+      if (trackArtist === targetArtistLower) score += 30;
+      else if (trackArtist.includes(targetArtistLower)) score += 20;
+      else if (targetArtistLower.includes(trackArtist)) score += 10;
+
+      // Duration scoring (prefer full tracks)
+      const trackDuration = track.info.length;
+      if (trackDuration > 60000) { // Longer than 1 minute
+        score += 20; // Prefer full tracks
+      }
+      if (trackDuration < 45000) { // Shorter than 45 seconds (likely preview)
+        score -= 30; // Penalize previews
+      }
+
+      // If target duration is known, prefer tracks with similar duration
+      if (targetDuration && trackDuration) {
+        const durationDiff = Math.abs(trackDuration - targetDuration);
+        if (durationDiff < 5000) score += 15; // Within 5 seconds
+        else if (durationDiff < 15000) score += 10; // Within 15 seconds
+        else if (durationDiff < 30000) score += 5; // Within 30 seconds
+      }
+
+      logger.info(`[Dispatcher] Track "${track.info.title}" by "${track.info.author}" - Duration: ${trackDuration}ms, Score: ${score}`);
+      return { track, score };
+    });
+
+    // Sort by score (highest first)
+    scoredTracks.sort((a, b) => b.score - a.score);
+
+    const bestMatch = scoredTracks[0].track;
+    logger.info(`[Dispatcher] Best match: "${bestMatch.info.title}" by "${bestMatch.info.author}" with score ${scoredTracks[0].score}`);
+
+    return bestMatch;
   }
 
   async initializePlayer() {
@@ -170,6 +231,10 @@ export default class Dispatcher {
     logger.info(`[Dispatcher] onStart event fired for guild ${this.guild.id}`);
     logger.info(`[Dispatcher] Player state at start - paused: ${this.paused}, volume: ${this.volume}%`);
 
+    // Track when the song actually starts playing (for duration tracking)
+    this.trackStartTime = Date.now();
+    logger.info(`[Dispatcher] Track start timestamp recorded: ${this.trackStartTime}`);
+
     // Kazagumo pattern: Mark as playing when track starts
     this.playing = true;
     this.paused = false;
@@ -203,6 +268,22 @@ export default class Dispatcher {
     logger.info(`[Dispatcher] onEnd event fired for guild ${this.guild.id}, reason: ${data.reason}`);
     logger.info(`[Dispatcher] Track that ended: "${this.current?.info?.title || 'unknown'}"`);
     logger.info(`[Dispatcher] Current queue size: ${this.queue.length}`);
+    
+    // Log track duration info to detect preview/snippet tracks
+    if (this.current && this.trackStartTime) {
+      const playedDuration = Date.now() - this.trackStartTime;
+      const expectedDuration = this.current.info.length;
+      const percentagePlayed = ((playedDuration / expectedDuration) * 100).toFixed(1);
+      
+      logger.info(`[Dispatcher] Track playback stats - Expected: ${expectedDuration}ms, Actual: ${playedDuration}ms, Percentage: ${percentagePlayed}%`);
+      
+      // Warn if track ended prematurely (less than 90% played)
+      if (percentagePlayed < 90 && data.reason === 'finished') {
+        logger.warn(`[Dispatcher] Track ended prematurely! This might be a preview/snippet. Source: ${this.current.info.sourceName}, URI: ${this.current.info.uri}`);
+      }
+    } else if (this.current) {
+      logger.warn(`[Dispatcher] trackStartTime was not set for guild ${this.guild.id}`);
+    }
 
     // Kazagumo pattern: Handle different end reasons
     if (data.reason === 'replaced') {

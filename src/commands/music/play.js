@@ -162,15 +162,29 @@ export default class Play extends Command {
 
           // Use player.node.rest.resolve() as per Shoukaku v4
           const res = await queue.player.node.rest.resolve(search);
-          logger.info(`[Play Command] SoundCloud search response:`, res);
+          logger.info(`[Play Command] SoundCloud search returned ${res.data?.length || 0} results`);
 
           if (!res || !res.data || !res.data.length) {
             logger.error(`[Play Command] No SoundCloud results for "${spData.name}"`);
             return message.reply(`Could not find "**${spData.name}**" on SoundCloud.`);
           }
 
-          const track = res.data[0];
-          logger.info(`[Play Command] Spotify track resolved to: ${track.info.title}`);
+          // Use smart matching to find best track (avoid previews)
+          const Dispatcher = (await import('../../structures/Dispatcher.js')).default;
+          const targetDuration = spData.durationInMs || null; // Use Spotify duration if available
+          const track = Dispatcher.findBestMatch(
+            res.data, 
+            spData.name, 
+            spData.artists[0].name,
+            targetDuration
+          );
+          
+          logger.info(`[Play Command] Selected best match: "${track.info.title}" by "${track.info.author}" (${track.info.length}ms)`);
+          
+          // Warn if track seems like a preview
+          if (track.info.length < 60000) {
+            logger.warn(`[Play Command] WARNING: Selected track is ${track.info.length}ms - might be a preview/snippet!`);
+          }
 
           queue.queue.push({
             track: track.encoded,
