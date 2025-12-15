@@ -379,4 +379,88 @@ export default class Dispatcher {
      * @param {string} mode - 'none', 'track', or 'queue'
      */
     setLoop(mode) {
-        if (!['none', 'track', 'queue'].includes(mode)) {\n            throw new Error(\"loop must be one of 'none', 'track', 'queue'\");\n        }\n        this.loop = mode;\n        return this;\n    }\n    \n    /**\n     * Get the size of the queue (Kazagumo pattern)\n     */\n    get size() {\n        return this.queue.length;\n    }\n    \n    /**\n     * Get total size including current track (Kazagumo pattern)\n     */\n    get totalSize() {\n        return this.queue.length + (this.current ? 1 : 0);\n    }\n    \n    /**\n     * Check if queue is empty (Kazagumo pattern)\n     */\n    get isEmpty() {\n        return this.queue.length === 0 && !this.current;\n    }\n    \n    /**\n     * Get the previous track (Kazagumo pattern)\n     * @param {boolean} remove - Remove from previous array\n     */\n    getPrevious(remove = false) {\n        if (remove) return this.previous.shift();\n        return this.previous[0];\n    }\n    \n    /**\n     * Clear the queue (Kazagumo pattern)\n     */\n    clear() {\n        this.queue = [];\n        return this;\n    }\n    \n    /**\n     * Shuffle the queue (Kazagumo pattern)\n     */\n    shuffle() {\n        for (let i = this.queue.length - 1; i > 0; i--) {\n            const j = Math.floor(Math.random() * (i + 1));\n            [this.queue[i], this.queue[j]] = [this.queue[j], this.queue[i]];\n        }\n        return this;\n    }\n}
+        logger.info(`[Dispatcher] setLoop(${mode}) called for guild ${this.guild.id}`);
+        if (!['none', 'track', 'queue'].includes(mode)) {
+            logger.error(`[Dispatcher] Invalid loop mode "${mode}" for guild ${this.guild.id}`);
+            throw new Error("loop must be one of 'none', 'track', 'queue'");
+        }
+        const oldMode = this.loop;
+        this.loop = mode;
+        logger.info(`[Dispatcher] Loop mode changed from "${oldMode}" to "${mode}" for guild ${this.guild.id}`);
+        return this;
+    }
+    
+    /**
+     * Get the size of the queue (Kazagumo pattern)
+     */
+    get size() {
+        const size = this.queue.length;
+        logger.debug(`[Dispatcher] Queue size requested: ${size} for guild ${this.guild.id}`);
+        return size;
+    }
+    
+    /**
+     * Get total size including current track (Kazagumo pattern)
+     */
+    get totalSize() {
+        const total = this.queue.length + (this.current ? 1 : 0);
+        logger.debug(`[Dispatcher] Total size requested: ${total} (queue: ${this.queue.length}, current: ${this.current ? 1 : 0}) for guild ${this.guild.id}`);
+        return total;
+    }
+    
+    /**
+     * Check if queue is empty (Kazagumo pattern)
+     */
+    get isEmpty() {
+        const empty = this.queue.length === 0 && !this.current;
+        logger.debug(`[Dispatcher] isEmpty check: ${empty} (queue: ${this.queue.length}, current: ${!!this.current}) for guild ${this.guild.id}`);
+        return empty;
+    }
+    
+    /**
+     * Get the previous track (Kazagumo pattern)
+     * @param {boolean} remove - Remove from previous array
+     */
+    getPrevious(remove = false) {
+        logger.info(`[Dispatcher] getPrevious(${remove}) called for guild ${this.guild.id}`);
+        logger.debug(`[Dispatcher] Previous tracks count: ${this.previous.length}`);
+        
+        if (remove) {
+            const track = this.previous.shift();
+            logger.info(`[Dispatcher] Removed and returned previous track: ${track?.info?.title || 'none'} for guild ${this.guild.id}`);
+            return track;
+        }
+        
+        const track = this.previous[0];
+        logger.debug(`[Dispatcher] Returning previous track (not removed): ${track?.info?.title || 'none'} for guild ${this.guild.id}`);
+        return track;
+    }
+    
+    /**
+     * Clear the queue (Kazagumo pattern)
+     */
+    clear() {
+        const oldSize = this.queue.length;
+        logger.info(`[Dispatcher] clear() called for guild ${this.guild.id}`);
+        logger.debug(`[Dispatcher] Clearing ${oldSize} tracks from queue`);
+        this.queue = [];
+        logger.info(`[Dispatcher] Queue cleared (was ${oldSize} tracks) for guild ${this.guild.id}`);
+        return this;
+    }
+    
+    /**
+     * Shuffle the queue (Kazagumo pattern)
+     */
+    shuffle() {
+        logger.info(`[Dispatcher] shuffle() called for guild ${this.guild.id}`);
+        logger.debug(`[Dispatcher] Shuffling ${this.queue.length} tracks`);
+        
+        for (let i = this.queue.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [this.queue[i], this.queue[j]] = [this.queue[j], this.queue[i]];
+        }
+        
+        logger.info(`[Dispatcher] Queue shuffled (${this.queue.length} tracks) for guild ${this.guild.id}`);
+        return this;
+    }
+}
