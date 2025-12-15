@@ -101,7 +101,7 @@ export default class Play extends Command {
                 if (!res || !res.data || !res.data.length) return message.reply(`Could not find "**${spData.name}**" on YouTube.`);
                 
                 const track = res.data[0];
-                const queue = this.client.music.createQueue(message.guild, channel, message.channel);
+              const queue = this.client.music.createQueue(message.guild, channel, message.channel);
                 queue.queue.push({
                     track: track.encoded,
                     info: track.info,

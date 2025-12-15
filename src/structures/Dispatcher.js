@@ -66,7 +66,8 @@ export default class Dispatcher {
         
         try {
           // Shoukaku v4: playTrack expects { track: { encoded: ... } }
-          await this.player.playTrack({ track: { encoded: this.current.track } });
+          // await this.player.playTrack({ track: { encoded: this.current.track } });
+          await this.player.playTrack({ track: this.current.track  });
           await this.player.setGlobalVolume(80);
         } catch (error) {
             logger.error('Failed to play track', error);
