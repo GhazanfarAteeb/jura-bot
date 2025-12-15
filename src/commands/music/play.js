@@ -64,7 +64,7 @@ export default class Play extends Command {
                     if (directRes.loadType === 'playlist' || directRes.loadType === 'PLAYLIST_LOADED') {
                         logger.info(`[Play Command] Playlist detected: ${directRes.playlistInfo.name} with ${directRes.tracks.length} tracks`);
                         for (const track of directRes.tracks) {
-                            queue.queue.push({ track: track.encoded || track.track, info: track.info, requester: message.author });
+                            queue.queue.push({ track: track.encoded, info: track.info, requester: message.author });
                             logger.debug(`[Play Command] Added track to queue: ${track.info.title}`);
                         }
                         logger.info(`[Play Command] Playlist added. Queue size now: ${queue.queue.length}`);
@@ -72,7 +72,7 @@ export default class Play extends Command {
                     } else {
                         const track = directRes.tracks[0];
                         logger.info(`[Play Command] Single track resolved: ${track.info.title}`);
-                        queue.queue.push({ track: track.encoded || track.track, info: track.info, requester: message.author });
+                        queue.queue.push({ track: track.encoded, info: track.info, requester: message.author });
                         logger.debug(`[Play Command] Track added. Queue size now: ${queue.queue.length}`);
                         message.reply(`Added **${track.info.title}** to the queue!`);
                     }
@@ -152,7 +152,7 @@ export default class Play extends Command {
                 logger.debug(`[Play Command] Queue obtained for Spotify track`);
                 
                 queue.queue.push({
-                    track: track.encoded || track.track,
+                    track: track.encoded,
                     info: track.info,
                     requester: message.author
                 });
@@ -188,7 +188,7 @@ export default class Play extends Command {
                 logger.info(`[Play Command] Playlist detected: ${res.playlistInfo?.name || 'Unknown'} with ${tracks.length} tracks`);
                 for (const track of tracks) {
                     queue.queue.push({
-                        track: track.encoded || track.track,
+                        track: track.encoded,
                         info: track.info,
                         requester: message.author
                     });
@@ -200,7 +200,7 @@ export default class Play extends Command {
                 const track = tracks[0];
                 logger.info(`[Play Command] Single track found: ${track.info.title}`);
                 queue.queue.push({
-                    track: track.encoded || track.track,
+                    track: track.encoded,
                     info: track.info,
                     requester: message.author
                 });
