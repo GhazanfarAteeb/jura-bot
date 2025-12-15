@@ -47,9 +47,16 @@ export default class MusicManager extends Shoukaku {
   }
 
     createQueue(guild, channel, messageChannel) {
+        logger.debug(`[MusicManager] createQueue called for guild ${guild.id}`);
+        
         const existingQueue = this.getQueue(guild.id);
-        if (existingQueue) return existingQueue;
+        if (existingQueue) {
+            logger.debug(`[MusicManager] Returning existing queue for guild ${guild.id}`);
+            return existingQueue;
+        }
 
+        logger.info(`[MusicManager] Creating new queue for guild ${guild.id} in channel ${channel.id}`);
+        
         const dispatcher = new Dispatcher({
             client: this.client,
             guild: guild,
@@ -59,6 +66,7 @@ export default class MusicManager extends Shoukaku {
         });
 
         this.queues.set(guild.id, dispatcher);
+        logger.info(`[MusicManager] Queue created and stored for guild ${guild.id}. Total queues: ${this.queues.size}`);
         return dispatcher;
     }
 }

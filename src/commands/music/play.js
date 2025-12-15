@@ -41,17 +41,23 @@ export default class Play extends Command {
                     // But to keep it simple, I'll return here if it works.
                     
                     const queue = this.client.music.createQueue(message.guild, channel, message.channel);
+                    console.log(`[Play] Queue created/retrieved for guild ${message.guild.id}`);
                     
                     if (directRes.loadType === 'playlist' || directRes.loadType === 'PLAYLIST_LOADED') {
+                        console.log(`[Play] Adding ${directRes.tracks.length} playlist tracks to queue`);
                         for (const track of directRes.tracks) {
                             queue.queue.push({ track: track.encoded, info: track.info, requester: message.author });
                         }
+                        console.log(`[Play] Playlist added. Queue size: ${queue.queue.length}`);
                         message.reply(`Loaded playlist **${directRes.playlistInfo.name}** with ${directRes.tracks.length} tracks!`);
                     } else {
                         const track = directRes.tracks[0];
+                        console.log(`[Play] Adding single track "${track.info.title}" to queue`);
                         queue.queue.push({ track: track.encoded, info: track.info, requester: message.author });
+                        console.log(`[Play] Track added. Queue size: ${queue.queue.length}`);
                         message.reply(`Added **${track.info.title}** to the queue!`);
                     }
+                    console.log(`[Play] Queue isPlaying: ${queue.isPlaying()}, will ${queue.isPlaying() ? 'NOT' : ''} call play()`);
                     if (!queue.isPlaying()) await queue.play();
                     return;
                 }
@@ -101,44 +107,56 @@ export default class Play extends Command {
                 if (!res || !res.data || !res.data.length) return message.reply(`Could not find "**${spData.name}**" on YouTube.`);
                 
                 const track = res.data[0];
-              const queue = this.client.music.createQueue(message.guild, channel, message.channel);
+                console.log(`[Play] Spotify track resolved: "${spData.name}"`);
+                const queue = this.client.music.createQueue(message.guild, channel, message.channel);
+                console.log(`[Play] Queue created/retrieved for Spotify track`);
+                
                 queue.queue.push({
                     track: track.encoded,
                     info: track.info,
                     requester: message.author
                 });
+                console.log(`[Play] Spotify track added to queue. Queue size: ${queue.queue.length}`);
                 
                 message.reply(`Added **${spData.name}** (from Spotify) to the queue!`);
+                console.log(`[Play] Queue isPlaying: ${queue.isPlaying()}, will ${queue.isPlaying() ? 'NOT' : ''} call play()`);
                 if (!queue.isPlaying()) await queue.play();
                 return;
             }
 
             const res = await node.rest.resolve(query);
+            console.log(`[Play] Regular query resolved: ${query}`);
             
             if (!res || !res.tracks || !res.tracks.length) return message.reply('No results found for your query.');
 
             const queue = this.client.music.createQueue(message.guild, channel, message.channel);
+            console.log(`[Play] Queue created/retrieved for guild ${message.guild.id}`);
             
             // Handle playlists
             if (res.loadType === 'playlist' || res.loadType === 'PLAYLIST_LOADED') { 
-                 for (const track of res.tracks) {
+                console.log(`[Play] Adding ${res.tracks.length} playlist tracks to queue`);
+                for (const track of res.tracks) {
                     queue.queue.push({
                         track: track.encoded,
                         info: track.info,
                         requester: message.author
                     });
                 }
-                 message.reply(`Loaded playlist **${res.playlistInfo.name}** with ${res.tracks.length} tracks!`);
+                console.log(`[Play] Playlist added. Queue size: ${queue.queue.length}`);
+                message.reply(`Loaded playlist **${res.playlistInfo.name}** with ${res.tracks.length} tracks!`);
             } else {
-                 const track = res.tracks[0];
-                 queue.queue.push({
-                     track: track.encoded,
-                     info: track.info,
-                     requester: message.author
-                 });
-                 message.reply(`Added **${track.info.title}** to the queue!`);
+                const track = res.tracks[0];
+                console.log(`[Play] Adding single track "${track.info.title}" to queue`);
+                queue.queue.push({
+                    track: track.encoded,
+                    info: track.info,
+                    requester: message.author
+                });
+                console.log(`[Play] Track added. Queue size: ${queue.queue.length}`);
+                message.reply(`Added **${track.info.title}** to the queue!`);
             }
 
+            console.log(`[Play] Queue isPlaying: ${queue.isPlaying()}, will ${queue.isPlaying() ? 'NOT' : ''} call play()`);
             if (!queue.isPlaying()) await queue.play();
 
         } catch (error) {
