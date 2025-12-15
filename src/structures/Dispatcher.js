@@ -132,20 +132,17 @@ export default class Dispatcher {
 
     try {
       logger.info(`[Dispatcher] Calling playTrack() for guild ${this.guild.id}`);
-      // Shoukaku v4: playTrack accepts { track: encodedString }
-      // Shoukaku v4: playTrack accepts { track: encodedString }
-      logger.info(`[Dispatcher] Playing track with string  ${this.current.track}`);
-      logger.info(`[Dispatcher] Playing track with encoded string of length ${this.current.track.encoded}`);
+      logger.info(`[Dispatcher] Track data - encoded: ${typeof this.current.track}, length: ${this.current.track?.length}`);
+      logger.info(`[Dispatcher] Track info - title: "${this.current.info.title}", artist: "${this.current.info.author}", duration: ${this.current.info.length}ms`);
+      // Shoukaku v4: playTrack accepts { track: { encoded: string } }
       await this.player.playTrack({ track: { encoded: this.current.track } });
-      logger.info(`[Dispatcher] playTrack() succeeded, setting volume for guild ${this.guild.id}`);
+      logger.info(`[Dispatcher] playTrack() API call succeeded for guild ${this.guild.id}`);
       await this.player.setGlobalVolume(80);
-      // Shoukaku v4: Use setFilterVolume instead of setGlobalVolume
-      // await this.player.setFilterVolume(0.8); // 0.8 = 80%
-      logger.info(`[Dispatcher] Volume set to 80% for guild ${this.guild.id}`);
+      logger.info(`[Dispatcher] Volume set to 80 for guild ${this.guild.id}`);
 
       this.playing = true;
       this.paused = false;
-      logger.info(`[Dispatcher] Track started successfully for guild ${this.guild.id}`);
+      logger.info(`[Dispatcher] Player state updated - playing: true, paused: false for guild ${this.guild.id}`);
     } catch (error) {
       logger.info(`[Dispatcher] Failed to play track for guild ${this.guild.id}:`, error);
       logger.info(`[Dispatcher] Error details - name: ${error.name}, message: ${error.message}`);
@@ -171,10 +168,12 @@ export default class Dispatcher {
 
   onStart() {
     logger.info(`[Dispatcher] onStart event fired for guild ${this.guild.id}`);
+    logger.info(`[Dispatcher] Player state at start - paused: ${this.paused}, volume: ${this.volume}%`);\
 
     // Kazagumo pattern: Mark as playing when track starts
     this.playing = true;
     this.paused = false;
+    logger.info(`[Dispatcher] Updated player state - playing: true, paused: false`);\
 
     if (!this.current) {
       logger.warn(`[Dispatcher] onStart fired but no current track for guild ${this.guild.id}`);
@@ -182,6 +181,8 @@ export default class Dispatcher {
     }
 
     logger.info(`[Dispatcher] Now playing "${this.current.info.title}" in guild ${this.guild.id}`);
+    logger.info(`[Dispatcher] Track details - artist: "${this.current.info.author}", duration: ${this.current.info.length}ms, source: ${this.current.info.sourceName}`);\
+    logger.info(`[Dispatcher] Queue status - remaining: ${this.queue.length} tracks, loop mode: "${this.loop}"`);
 
     const embed = this.client.embed()
       .setTitle('Now Playing')
@@ -242,13 +243,15 @@ export default class Dispatcher {
 
     // Kazagumo pattern: Handle loop modes
     if (this.loop === 'track' && this.current) {
-      logger.debug(`[Dispatcher] Loop mode: track - re-queuing current track for guild ${this.guild.id}`);
+      logger.info(`[Dispatcher] Loop mode: track - re-queuing "${this.current.info.title}" to front for guild ${this.guild.id}`);
       // Re-add current track to front of queue for repeat
       this.queue.unshift(this.current);
+      logger.info(`[Dispatcher] Track looped, queue size now: ${this.queue.length}`);
     } else if (this.loop === 'queue' && this.current) {
-      logger.debug(`[Dispatcher] Loop mode: queue - adding track to end for guild ${this.guild.id}`);
+      logger.info(`[Dispatcher] Loop mode: queue - adding "${this.current.info.title}" to end for guild ${this.guild.id}`);
       // Add current track to end of queue for queue loop
       this.queue.push(this.current);
+      logger.info(`[Dispatcher] Track moved to end, queue size now: ${this.queue.length}`);
     }
 
     // Add to previous history (Kazagumo pattern)
@@ -267,10 +270,13 @@ export default class Dispatcher {
 
     // Kazagumo pattern: Auto-play next track or stay idle
     if (this.queue.length > 0) {
+      const nextTrack = this.queue[0];
       logger.info(`[Dispatcher] ${this.queue.length} tracks in queue, auto-playing next for guild ${this.guild.id}`);
+      logger.info(`[Dispatcher] Next track will be: "${nextTrack.info.title}" by ${nextTrack.info.author}`);
       return this.play();
     } else {
       logger.info(`[Dispatcher] Queue empty, staying connected and waiting for more tracks for guild ${this.guild.id}`);
+      logger.info(`[Dispatcher] Player idle - current state: playing: ${this.playing}, paused: ${this.paused}`);
       // Queue is empty, but stay connected for more songs
       // Don't destroy - let users add more songs
     }
@@ -376,13 +382,19 @@ export default class Dispatcher {
    */
   skip() {
     logger.info(`[Dispatcher] skip() called for guild ${this.guild.id}`);
+    logger.info(`[Dispatcher] Current track: "${this.current?.info?.title || 'none'}", queue size: ${this.queue.length}`);
     if (!this.player) {
       logger.warn(`[Dispatcher] No player to skip for guild ${this.guild.id}`);
       return false;
     }
-    logger.debug(`[Dispatcher] Calling stopTrack() for guild ${this.guild.id}`);
+    if (this.queue.length > 0) {
+      logger.info(`[Dispatcher] Next track will be: "${this.queue[0].info.title}"`);
+    } else {
+      logger.info(`[Dispatcher] No more tracks in queue after skip`);
+    }
+    logger.debug(`[Dispatcher] Calling stopTrack() to trigger onEnd event for guild ${this.guild.id}`);
     this.player.stopTrack();
-    logger.info(`[Dispatcher] Track skipped for guild ${this.guild.id}`);
+    logger.info(`[Dispatcher] Track skipped successfully, onEnd will handle next track for guild ${this.guild.id}`);
     return true;
   }
 
@@ -392,15 +404,18 @@ export default class Dispatcher {
    */
   pause(state) {
     logger.info(`[Dispatcher] pause(${state}) called for guild ${this.guild.id}`);
+    logger.info(`[Dispatcher] Current state - paused: ${this.paused}, playing: ${this.playing}, track: "${this.current?.info?.title || 'none'}"`);
     if (!this.player) {
       logger.warn(`[Dispatcher] No player to pause for guild ${this.guild.id}`);
       return false;
     }
+    const previousPaused = this.paused;
     this.paused = state;
     this.playing = !state;
-    logger.debug(`[Dispatcher] Setting player pause state to ${state} for guild ${this.guild.id}`);
+    logger.info(`[Dispatcher] State change - paused: ${previousPaused} → ${state}, playing: ${!previousPaused} → ${!state}`);
+    logger.debug(`[Dispatcher] Calling player.setPaused(${state}) for guild ${this.guild.id}`);
     this.player.setPaused(state);
-    logger.info(`[Dispatcher] Player ${state ? 'paused' : 'resumed'} for guild ${this.guild.id}`);
+    logger.info(`[Dispatcher] Player ${state ? 'paused' : 'resumed'} successfully for guild ${this.guild.id}`);
     return true;
   }
 
@@ -410,13 +425,18 @@ export default class Dispatcher {
    */
   setLoop(mode) {
     logger.info(`[Dispatcher] setLoop(${mode}) called for guild ${this.guild.id}`);
+    logger.info(`[Dispatcher] Current loop mode: "${this.loop}", requested: "${mode}"`);
     if (!['none', 'track', 'queue'].includes(mode)) {
-      logger.error(`[Dispatcher] Invalid loop mode "${mode}" for guild ${this.guild.id}`);
+      logger.error(`[Dispatcher] Invalid loop mode "${mode}" (must be 'none', 'track', or 'queue') for guild ${this.guild.id}`);
       throw new Error("loop must be one of 'none', 'track', 'queue'");
     }
     const oldMode = this.loop;
     this.loop = mode;
-    logger.info(`[Dispatcher] Loop mode changed from "${oldMode}" to "${mode}" for guild ${this.guild.id}`);
+    let description = '';
+    if (mode === 'none') description = 'No looping - tracks play once';
+    else if (mode === 'track') description = 'Current track will repeat';
+    else if (mode === 'queue') description = 'Queue will loop continuously';
+    logger.info(`[Dispatcher] Loop mode changed from "${oldMode}" to "${mode}" - ${description} for guild ${this.guild.id}`);
     return this;
   }
 
@@ -472,9 +492,15 @@ export default class Dispatcher {
   clear() {
     const oldSize = this.queue.length;
     logger.info(`[Dispatcher] clear() called for guild ${this.guild.id}`);
-    logger.debug(`[Dispatcher] Clearing ${oldSize} tracks from queue`);
+    logger.info(`[Dispatcher] Current queue size: ${oldSize} tracks`);
+    if (oldSize > 0) {
+      const preview = this.queue.slice(0, 3).map(t => t.info.title);
+      logger.info(`[Dispatcher] Removing tracks: ${preview.join(', ')}${oldSize > 3 ? ` and ${oldSize - 3} more` : ''}`);
+    } else {
+      logger.info(`[Dispatcher] Queue is already empty`);
+    }
     this.queue = [];
-    logger.info(`[Dispatcher] Queue cleared (was ${oldSize} tracks) for guild ${this.guild.id}`);
+    logger.info(`[Dispatcher] Queue cleared successfully - removed ${oldSize} tracks for guild ${this.guild.id}`);
     return this;
   }
 
@@ -483,14 +509,23 @@ export default class Dispatcher {
    */
   shuffle() {
     logger.info(`[Dispatcher] shuffle() called for guild ${this.guild.id}`);
-    logger.debug(`[Dispatcher] Shuffling ${this.queue.length} tracks`);
+    logger.info(`[Dispatcher] Queue size: ${this.queue.length} tracks`);
+    if (this.queue.length <= 1) {
+      logger.warn(`[Dispatcher] Cannot shuffle - queue has ${this.queue.length} tracks (need at least 2)`);
+      return this;
+    }
+
+    const before = this.queue.slice(0, 3).map(t => t.info.title);
+    logger.info(`[Dispatcher] First 3 tracks before shuffle: ${before.join(', ')}`);
 
     for (let i = this.queue.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [this.queue[i], this.queue[j]] = [this.queue[j], this.queue[i]];
     }
 
-    logger.info(`[Dispatcher] Queue shuffled (${this.queue.length} tracks) for guild ${this.guild.id}`);
+    const after = this.queue.slice(0, 3).map(t => t.info.title);
+    logger.info(`[Dispatcher] First 3 tracks after shuffle: ${after.join(', ')}`);
+    logger.info(`[Dispatcher] Queue shuffled successfully (${this.queue.length} tracks) for guild ${this.guild.id}`);
     return this;
   }
 }
