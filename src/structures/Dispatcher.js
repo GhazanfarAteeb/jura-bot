@@ -138,9 +138,9 @@ export default class Dispatcher {
             logger.debug(`[Dispatcher] Playing track with encoded string of length ${this.current.track.encoded}`);
             await this.player.playTrack({ track: {encoded: this.current.track.encoded} });
             logger.debug(`[Dispatcher] playTrack() succeeded, setting volume for guild ${this.guild.id}`);
-            
+            await this.player.setGlobalVolume(80);
             // Shoukaku v4: Use setFilterVolume instead of setGlobalVolume
-            await this.player.setFilterVolume(0.8); // 0.8 = 80%
+            // await this.player.setFilterVolume(0.8); // 0.8 = 80%
             logger.debug(`[Dispatcher] Volume set to 80% for guild ${this.guild.id}`);
             
             this.playing = true;
