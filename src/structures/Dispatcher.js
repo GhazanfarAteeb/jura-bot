@@ -46,6 +46,28 @@ export default class Dispatcher {
 
             logger.info(`[Dispatcher] Player created successfully for guild ${this.guild.id}`);
             logger.debug(`[Dispatcher] Player node: ${this.player?.node?.name || 'unknown'}`);
+            
+            // Wait for connection to be established
+            if (this.player.connection) {
+                logger.debug(`[Dispatcher] Waiting for connection to establish for guild ${this.guild.id}`);
+                let attempts = 0;
+                const maxAttempts = 30; // 3 seconds max
+                
+                while (attempts < maxAttempts && (!this.player.connection.state || this.player.connection.state === 4)) {
+                    // State 4 is CONNECTING, wait for it to become ready
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    attempts++;
+                    logger.debug(`[Dispatcher] Connection state: ${this.player.connection.state} (attempt ${attempts}/${maxAttempts})`);
+                }
+                
+                if (this.player.connection.state && this.player.connection.state !== 4) {
+                    logger.info(`[Dispatcher] Connection established - state: ${this.player.connection.state} for guild ${this.guild.id}`);
+                } else {
+                    logger.warn(`[Dispatcher] Connection state still not ready after waiting: ${this.player.connection.state} for guild ${this.guild.id}`);
+                }
+            } else {
+                logger.warn(`[Dispatcher] Player has no connection object for guild ${this.guild.id}`);
+            }
 
             logger.debug(`[Dispatcher] Attaching event listeners for guild ${this.guild.id}`);
             this.player
@@ -128,12 +150,13 @@ export default class Dispatcher {
         
         try {
             logger.debug(`[Dispatcher] Calling playTrack() for guild ${this.guild.id}`);
-            // Shoukaku v4: playTrack - this.current.track is already the encoded string from play.js
+            // Shoukaku v4: playTrack accepts { track: encodedString }
             await this.player.playTrack({ track: this.current.track });
             logger.debug(`[Dispatcher] playTrack() succeeded, setting volume for guild ${this.guild.id}`);
             
-            await this.player.setGlobalVolume(80);
-            logger.debug(`[Dispatcher] Volume set to 80 for guild ${this.guild.id}`);
+            // Shoukaku v4: Use setFilterVolume instead of setGlobalVolume
+            await this.player.setFilterVolume(0.8); // 0.8 = 80%
+            logger.debug(`[Dispatcher] Volume set to 80% for guild ${this.guild.id}`);
             
             this.playing = true;
             this.paused = false;

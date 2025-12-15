@@ -1,4 +1,5 @@
 import Command from '../../structures/Command.js';
+import logger from '../../utils/logger.js';
 
 export default class NowPlaying extends Command {
     constructor(client) {
@@ -13,8 +14,15 @@ export default class NowPlaying extends Command {
 
     async run(client, ctx, args) {
         const message = ctx.message;
+        logger.info(`[NowPlaying Command] Executed by ${message.author.tag} in guild ${message.guild.id}`);
+        
         const queue = this.client.music.getQueue(message.guild.id);
-        if (!queue || !queue.current) return message.reply('There is no music playing right now.');
+        if (!queue || !queue.current) {
+            logger.warn(`[NowPlaying Command] No queue or current track for guild ${message.guild.id}`);
+            return message.reply('There is no music playing right now.');
+        }
+        
+        logger.debug(`[NowPlaying Command] Current track: ${queue.current.info.title}`);
 
         const embed = this.client.embed()
             .setTitle('Now Playing')
@@ -26,6 +34,7 @@ export default class NowPlaying extends Command {
             )
             .setColor(this.client.color.main);
 
+        logger.info(`[NowPlaying Command] Sending now playing embed for: ${queue.current.info.title}`);
         message.reply({ embeds: [embed] });
     }
 }
