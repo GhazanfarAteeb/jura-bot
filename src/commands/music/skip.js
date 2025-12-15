@@ -24,7 +24,12 @@ export default class Skip extends Command {
             return message.reply('Player is not ready yet. Please try again.');
         }
         
-        queue.player.stopTrack();
-        message.reply('Skipped the current track.');
+        // Kazagumo-style skip method
+        const skipped = queue.skip();
+        if (skipped) {
+            message.reply('⏭️ Skipped the current track.');
+        } else {
+            message.reply('Failed to skip the track.');
+        }
     }
 }
