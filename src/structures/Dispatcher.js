@@ -134,9 +134,9 @@ export default class Dispatcher {
       logger.info(`[Dispatcher] Calling playTrack() for guild ${this.guild.id}`);
       // Shoukaku v4: playTrack accepts { track: encodedString }
       // Shoukaku v4: playTrack accepts { track: encodedString }
-      logger.info(`[Dispatcher] Playing track with encoded string of length ${this.current.track}`);
+      logger.info(`[Dispatcher] Playing track with string  ${this.current.track}`);
       logger.info(`[Dispatcher] Playing track with encoded string of length ${this.current.track.encoded}`);
-      await this.player.playTrack({ track: { encoded: this.current.track.encoded } });
+      await this.player.playTrack({ track: { encoded: this.current.track } });
       logger.info(`[Dispatcher] playTrack() succeeded, setting volume for guild ${this.guild.id}`);
       await this.player.setGlobalVolume(80);
       // Shoukaku v4: Use setFilterVolume instead of setGlobalVolume
@@ -147,8 +147,8 @@ export default class Dispatcher {
       this.paused = false;
       logger.info(`[Dispatcher] Track started successfully for guild ${this.guild.id}`);
     } catch (error) {
-      logger.error(`[Dispatcher] Failed to play track for guild ${this.guild.id}:`, error);
-      logger.debug(`[Dispatcher] Error details - name: ${error.name}, message: ${error.message}`);
+      logger.info(`[Dispatcher] Failed to play track for guild ${this.guild.id}:`, error);
+      logger.info(`[Dispatcher] Error details - name: ${error.name}, message: ${error.message}`);
 
       // On error, skip the failed track (don't re-queue it to prevent infinite loops)
       if (this.current) {
