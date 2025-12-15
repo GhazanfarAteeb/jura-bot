@@ -114,10 +114,11 @@ export default class Dispatcher {
             logger.error(`[Dispatcher] Failed to play track for guild ${this.guild.id}:`, error);
             logger.debug(`[Dispatcher] Error details - name: ${error.name}, message: ${error.message}`);
             
-            // On error, put current back to front of queue and try next
+            // On error, skip the failed track (don't re-queue it to prevent infinite loops)
             if (this.current) {
-                logger.debug(`[Dispatcher] Re-queuing failed track for guild ${this.guild.id}`);
-                this.queue.unshift(this.current);
+                logger.warn(`[Dispatcher] Skipping failed track "${this.current.info.title}" for guild ${this.guild.id}`);
+                // Add to previous array so it's tracked as skipped
+                this.previous.push(this.current);
             }
             this.current = null;
             this.playing = false;
