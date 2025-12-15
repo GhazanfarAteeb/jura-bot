@@ -101,7 +101,7 @@ export default class Dispatcher {
         try {
             logger.debug(`[Dispatcher] Calling playTrack() for guild ${this.guild.id}`);
             // Shoukaku v4: playTrack with { track: { encoded: ... } }
-            await this.player.playTrack({ track: { encoded: this.current.track } });
+            await this.player.playTrack({ track: this.current.track  });
             logger.debug(`[Dispatcher] playTrack() succeeded, setting volume for guild ${this.guild.id}`);
             
             await this.player.setGlobalVolume(80);
