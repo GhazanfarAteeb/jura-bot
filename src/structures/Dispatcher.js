@@ -19,12 +19,30 @@ export default class Dispatcher {
     this.player = null;
     this.playing = false;         // Track playing state
     this.paused = false;          // Pause state
+    this.volume = 80;             // Default volume
     this.exists = true;
     this.ready = false;
 
     logger.info(`[Dispatcher] State initialized for guild ${this.guild.id}`);
     // Don't await here - initialization happens async, play() will wait
     this.initializePlayer();
+  }
+
+  /**
+   * Get current playback position in milliseconds
+   */
+  get position() {
+    if (!this.player || !this.trackStartTime || !this.playing) return 0;
+    
+    // Calculate how long the track has been playing
+    const elapsed = Date.now() - this.trackStartTime;
+    
+    // Don't exceed track duration
+    if (this.current) {
+      return Math.min(elapsed, this.current.info.length);
+    }
+    
+    return elapsed;
   }
 
   isPlaying() {
@@ -198,8 +216,8 @@ export default class Dispatcher {
       // Shoukaku v4: playTrack accepts { track: { encoded: string } }
       await this.player.playTrack({ track: { encoded: this.current.track } });
       logger.info(`[Dispatcher] playTrack() API call succeeded for guild ${this.guild.id}`);
-      await this.player.setGlobalVolume(80);
-      logger.info(`[Dispatcher] Volume set to 80 for guild ${this.guild.id}`);
+      await this.player.setGlobalVolume(this.volume);
+      logger.info(`[Dispatcher] Volume set to ${this.volume} for guild ${this.guild.id}`);
 
       this.playing = true;
       this.paused = false;

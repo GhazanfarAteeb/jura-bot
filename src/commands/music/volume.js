@@ -47,9 +47,10 @@ export default class Volume extends Command {
     }
 
     try {
-      logger.info(`[Volume Command] Setting volume to ${volume / 100} (${volume}%)`);
-      // Shoukaku v4: setFilterVolume accepts 0.0 to 1.0
-      await queue.player.setFilterVolume(volume / 100);
+      logger.info(`[Volume Command] Setting volume to ${volume}%`);
+      // Shoukaku v4: Use setGlobalVolume which accepts 0-100 directly
+      await queue.player.setGlobalVolume(volume);
+      queue.volume = volume; // Update queue volume property
       logger.info(`[Volume Command] Successfully set volume to ${volume}% in guild ${message.guild.id}`);
       message.reply(`🔊 Volume set to **${volume}%**`);
     } catch (error) {
