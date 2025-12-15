@@ -23,6 +23,7 @@ export default class Dispatcher {
         this.ready = false;
 
         logger.debug(`[Dispatcher] State initialized for guild ${this.guild.id}`);
+        // Don't await here - initialization happens async, play() will wait
         this.initializePlayer();
     }
 
@@ -73,15 +74,28 @@ export default class Dispatcher {
             return this.destroy();
         }
         
-        // Wait for player to be ready
-        if (!this.player) {
-            logger.warn(`[Dispatcher] Player not initialized for guild ${this.guild.id}, waiting 100ms...`);
+        // Wait for player to be ready with better retry logic
+        let retries = 0;
+        const maxRetries = 20; // 2 seconds max wait
+        while (!this.player && retries < maxRetries) {
+            logger.warn(`[Dispatcher] Player not initialized for guild ${this.guild.id}, waiting... (attempt ${retries + 1}/${maxRetries})`);
             await new Promise(resolve => setTimeout(resolve, 100));
-            if (!this.player) {
-                logger.error(`[Dispatcher] Player still not ready after waiting for guild ${this.guild.id}`);
-                return this.destroy();
-            }
+            retries++;
         }
+        
+        if (!this.player) {
+            logger.error(`[Dispatcher] Player still not ready after ${maxRetries * 100}ms for guild ${this.guild.id}`);
+            return this.destroy();
+        }
+        
+        // Verify player has a connection before playing
+        if (!this.player.connection || !this.player.connection.state) {
+            logger.error(`[Dispatcher] Player exists but has no valid connection for guild ${this.guild.id}`);
+            logger.debug(`[Dispatcher] Player.connection: ${!!this.player.connection}, state: ${this.player.connection?.state}`);
+            return this.destroy();
+        }
+        
+        logger.debug(`[Dispatcher] Player ready - connection state: ${this.player.connection.state} for guild ${this.guild.id}`);
         
         // Kazagumo pattern: If no current track, shift from queue
         if (!this.current) {
@@ -98,6 +112,19 @@ export default class Dispatcher {
         logger.info(`[Dispatcher] Playing track: "${this.current.info.title}" (${this.current.info.length}ms) for guild ${this.guild.id}`);
         logger.debug(`[Dispatcher] Track URI: ${this.current.info.uri}`);
         logger.debug(`[Dispatcher] Track encoded: ${typeof this.current.track} - ${this.current.track ? 'exists' : 'missing'}`);
+        
+        // Validate track data
+        if (!this.current.track || typeof this.current.track !== 'string') {
+            logger.error(`[Dispatcher] Invalid track encoding for guild ${this.guild.id} - type: ${typeof this.current.track}`);
+            logger.warn(`[Dispatcher] Skipping invalid track "${this.current.info.title}"`);
+            this.previous.push(this.current);
+            this.current = null;
+            this.playing = false;
+            if (this.queue.length > 0) {
+                return this.play();
+            }
+            return this.destroy();
+        }
         
         try {
             logger.debug(`[Dispatcher] Calling playTrack() for guild ${this.guild.id}`);
