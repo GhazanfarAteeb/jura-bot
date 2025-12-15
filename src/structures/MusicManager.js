@@ -44,11 +44,11 @@ export default class MusicManager extends Shoukaku {
             logger.debug(`[MusicManager] Node "${node.name}" - State: ${node.state} (type: ${typeof node.state}), Stats: ${JSON.stringify(node.stats)}`);
         });
         
-        // Shoukaku v4.2 might use state 3 for CONNECTED (0=DISCONNECTED, 1=CONNECTING, 2=NEARLY, 3=CONNECTED)
-        // Also check stats to ensure node is actually ready
+        // Shoukaku states: 0=DISCONNECTED, 1=CONNECTED, 2=CONNECTING, 3=RECONNECTING
+        // Check if node has stats to ensure it's actually ready
         const connectedNodes = nodes.filter(n => {
             const hasStats = n.stats && typeof n.stats.players !== 'undefined';
-            const isConnected = n.state === 3 || n.state === 2; // Try both states
+            const isConnected = n.state === 1; // 1 = CONNECTED in current Shoukaku version
             return hasStats && isConnected;
         });
         
