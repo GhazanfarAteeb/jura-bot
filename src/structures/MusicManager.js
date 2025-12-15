@@ -35,7 +35,29 @@ export default class MusicManager extends Shoukaku {
     getNode() {
         // Shoukaku v4: manually select the best node (least players)
         const nodes = [...this.nodes.values()];
-        return nodes.filter(n => n.state === 2).sort((a, b) => a.stats.players - b.stats.players)[0];
+        logger.debug(`[MusicManager] getNode() - Total nodes: ${nodes.length}`);
+        
+        nodes.forEach(node => {
+            logger.debug(`[MusicManager] Node "${node.name}" - State: ${node.state}, Stats: ${JSON.stringify(node.stats)}`);
+        });
+        
+        const connectedNodes = nodes.filter(n => n.state === 2);
+        logger.debug(`[MusicManager] Connected nodes: ${connectedNodes.length}`);
+        
+        if (connectedNodes.length === 0) {
+            logger.warn(`[MusicManager] No connected nodes found (state === 2)`);
+            // Fallback: try to get any node with state 1 (CONNECTING) or any node at all
+            const anyNode = nodes[0];
+            if (anyNode) {
+                logger.warn(`[MusicManager] Using fallback node "${anyNode.name}" with state ${anyNode.state}`);
+                return anyNode;
+            }
+            return null;
+        }
+        
+        const selectedNode = connectedNodes.sort((a, b) => a.stats.players - b.stats.players)[0];
+        logger.debug(`[MusicManager] Selected node: "${selectedNode.name}"`);
+        return selectedNode;
     }
 
     getQueue(guildId) {
