@@ -173,14 +173,14 @@ export default class Play extends Command {
           const Dispatcher = (await import('../../structures/Dispatcher.js')).default;
           const targetDuration = spData.durationInMs || null; // Use Spotify duration if available
           const track = Dispatcher.findBestMatch(
-            res.data, 
-            spData.name, 
+            res.data,
+            spData.name,
             spData.artists[0].name,
             targetDuration
           );
-          
+
           logger.info(`[Play Command] Selected best match: "${track.info.title}" by "${track.info.author}" (${track.info.length}ms)`);
-          
+
           // Warn if track seems like a preview
           if (track.info.length < 60000) {
             logger.warn(`[Play Command] WARNING: Selected track is ${track.info.length}ms - might be a preview/snippet!`);

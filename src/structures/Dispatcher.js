@@ -268,15 +268,15 @@ export default class Dispatcher {
     logger.info(`[Dispatcher] onEnd event fired for guild ${this.guild.id}, reason: ${data.reason}`);
     logger.info(`[Dispatcher] Track that ended: "${this.current?.info?.title || 'unknown'}"`);
     logger.info(`[Dispatcher] Current queue size: ${this.queue.length}`);
-    
+
     // Log track duration info to detect preview/snippet tracks
     if (this.current && this.trackStartTime) {
       const playedDuration = Date.now() - this.trackStartTime;
       const expectedDuration = this.current.info.length;
       const percentagePlayed = ((playedDuration / expectedDuration) * 100).toFixed(1);
-      
+
       logger.info(`[Dispatcher] Track playback stats - Expected: ${expectedDuration}ms, Actual: ${playedDuration}ms, Percentage: ${percentagePlayed}%`);
-      
+
       // Warn if track ended prematurely (less than 90% played)
       if (percentagePlayed < 90 && data.reason === 'finished') {
         logger.warn(`[Dispatcher] Track ended prematurely! This might be a preview/snippet. Source: ${this.current.info.sourceName}, URI: ${this.current.info.uri}`);
