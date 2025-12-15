@@ -112,7 +112,7 @@ export default class Player extends Command {
         });
         return newRow;
       });
-      playerMessage.edit({ components: disabledComponents }).catch(() => {});
+      playerMessage.edit({ components: disabledComponents }).catch(() => { });
     });
   }
 
@@ -129,9 +129,9 @@ export default class Player extends Command {
 
     // Create embed
     const embed = this.client.embed()
-      .setAuthor({ 
+      .setAuthor({
         name: paused ? '⏸️ Paused' : '▶️ Now Playing',
-        iconURL: this.client.user.displayAvatarURL() 
+        iconURL: this.client.user.displayAvatarURL()
       })
       .setTitle(current.info.title)
       .setURL(current.info.uri)

@@ -33,15 +33,15 @@ export default class Dispatcher {
    */
   get position() {
     if (!this.player || !this.trackStartTime || !this.playing) return 0;
-    
+
     // Calculate how long the track has been playing
     const elapsed = Date.now() - this.trackStartTime;
-    
+
     // Don't exceed track duration
     if (this.current) {
       return Math.min(elapsed, this.current.info.length);
     }
-    
+
     return elapsed;
   }
 
