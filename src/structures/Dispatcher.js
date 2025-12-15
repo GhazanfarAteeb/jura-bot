@@ -168,12 +168,12 @@ export default class Dispatcher {
 
   onStart() {
     logger.info(`[Dispatcher] onStart event fired for guild ${this.guild.id}`);
-    logger.info(`[Dispatcher] Player state at start - paused: ${this.paused}, volume: ${this.volume}%`);\
+    logger.info(`[Dispatcher] Player state at start - paused: ${this.paused}, volume: ${this.volume}%`); \
 
     // Kazagumo pattern: Mark as playing when track starts
     this.playing = true;
     this.paused = false;
-    logger.info(`[Dispatcher] Updated player state - playing: true, paused: false`);\
+    logger.info(`[Dispatcher] Updated player state - playing: true, paused: false`); \
 
     if (!this.current) {
       logger.warn(`[Dispatcher] onStart fired but no current track for guild ${this.guild.id}`);
@@ -181,7 +181,7 @@ export default class Dispatcher {
     }
 
     logger.info(`[Dispatcher] Now playing "${this.current.info.title}" in guild ${this.guild.id}`);
-    logger.info(`[Dispatcher] Track details - artist: "${this.current.info.author}", duration: ${this.current.info.length}ms, source: ${this.current.info.sourceName}`);\
+    logger.info(`[Dispatcher] Track details - artist: "${this.current.info.author}", duration: ${this.current.info.length}ms, source: ${this.current.info.sourceName}`); \
     logger.info(`[Dispatcher] Queue status - remaining: ${this.queue.length} tracks, loop mode: "${this.loop}"`);
 
     const embed = this.client.embed()
