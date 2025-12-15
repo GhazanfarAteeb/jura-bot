@@ -53,13 +53,16 @@ export default class Play extends Command {
         try {
             // 1. Try resolving with Lavalink Direct (Lavasrc plugin support)
             logger.debug(`[Play Command] Attempting direct Lavalink resolution for query: "${query}"`);
+            
+            // Create queue first to get player
+            const queue = this.client.music.createQueue(message.guild, channel, message.channel);
+            logger.debug(`[Play Command] Queue obtained for guild ${message.guild.id}`);
+            
             try {
-                const directRes = await node.rest.resolve(query);
+                // Use player.node.rest.resolve() as per Shoukaku v4
+                const directRes = await queue.player.node.rest.resolve(query);
                 if (directRes && directRes.tracks && directRes.tracks.length > 0) {
                     logger.info(`[Play Command] Direct resolve successful - loadType: ${directRes.loadType}, tracks: ${directRes.tracks.length}`);
-                    
-                    const queue = this.client.music.createQueue(message.guild, channel, message.channel);
-                    logger.debug(`[Play Command] Queue obtained for guild ${message.guild.id}, existing queue: ${!!queue}`);
                     
                     if (directRes.loadType === 'playlist' || directRes.loadType === 'PLAYLIST_LOADED') {
                         logger.info(`[Play Command] Playlist detected: ${directRes.playlistInfo.name} with ${directRes.tracks.length} tracks`);
@@ -87,7 +90,7 @@ export default class Play extends Command {
                 }
             } catch (err) {
                 logger.debug(`[Play Command] Direct resolve failed: ${err.message}, falling back to other methods`);
-                // Ignore and continue to fallbacks
+                // Continue to fallbacks
             }
 
 
@@ -138,7 +141,9 @@ export default class Play extends Command {
 
                 const search = `scsearch:${spData.name} ${spData.artists[0].name}`.trim();
                 logger.info(`[Play Command] Searching SoundCloud for: ${search}`);
-                const res = await node.rest.resolve(search);
+                
+                // Use player.node.rest.resolve() as per Shoukaku v4
+                const res = await queue.player.node.rest.resolve(search);
                 logger.debug(`[Play Command] SoundCloud search response:`, res);
                 
                 if (!res || !res.data || !res.data.length) {
@@ -148,8 +153,7 @@ export default class Play extends Command {
                 
                 const track = res.data[0];
                 logger.info(`[Play Command] Spotify track resolved to: ${track.info.title}`);
-                const queue = this.client.music.createQueue(message.guild, channel, message.channel);
-                logger.debug(`[Play Command] Queue obtained for Spotify track`);
+                logger.debug(`[Play Command] Using existing queue for Spotify track`);
                 
                 queue.queue.push({
                     track: track.encoded,
@@ -168,7 +172,8 @@ export default class Play extends Command {
             }
 
             logger.info(`[Play Command] Attempting standard resolution for query: "${query}"`);
-            const res = await node.rest.resolve(query);
+            // Use player.node.rest.resolve() as per Shoukaku v4
+            const res = await queue.player.node.rest.resolve(query);
             logger.debug(`[Play Command] Resolution response - loadType: ${res.loadType}`);
             
             // Shoukaku v4 uses res.data instead of res.tracks
@@ -180,8 +185,7 @@ export default class Play extends Command {
             
             logger.info(`[Play Command] Found ${tracks.length} track(s) for query`);
 
-            const queue = this.client.music.createQueue(message.guild, channel, message.channel);
-            logger.debug(`[Play Command] Queue obtained for guild ${message.guild.id}`);
+            logger.debug(`[Play Command] Using existing queue for guild ${message.guild.id}`);
             
             // Handle playlists
             if (res.loadType === 'playlist' || res.loadType === 'PLAYLIST_LOADED') { 
