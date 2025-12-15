@@ -60,9 +60,58 @@ export default class Play extends Command {
       logger.debug(`[Play Command] Queue obtained for guild ${message.guild.id}`);
 
       if (isURL) {
-        // It's a link - check if it's Spotify
+        // It's a link - check if it's Spotify or SoundCloud
         logger.info(`[Play Command] Detected URL, checking platform...`);
-        logger.debug(`[Play Command] Checking if query is a Spotify URL`);
+        
+        // Check for SoundCloud link
+        if (query.includes('soundcloud.com')) {
+          logger.info(`[Play Command] Detected SoundCloud URL`);
+          
+          // Resolve SoundCloud link directly via Lavalink
+          const res = await queue.player.node.rest.resolve(query);
+          logger.debug(`[Play Command] SoundCloud direct resolve response:`, res);
+          
+          if (!res || !res.data || !res.data.length) {
+            logger.error(`[Play Command] Failed to resolve SoundCloud URL`);
+            return message.reply('Could not resolve this SoundCloud link.');
+          }
+          
+          const tracks = res.data;
+          
+          // Handle SoundCloud playlists
+          if (res.loadType === 'playlist' || res.loadType === 'PLAYLIST_LOADED') {
+            logger.info(`[Play Command] SoundCloud playlist detected: ${res.playlistInfo?.name || 'Unknown'} with ${tracks.length} tracks`);
+            for (const track of tracks) {
+              queue.queue.push({
+                track: track.encoded,
+                info: track.info,
+                requester: message.author
+              });
+              logger.debug(`[Play Command] Added SoundCloud playlist track: ${track.info.title}`);
+            }
+            logger.info(`[Play Command] SoundCloud playlist added. Queue size now: ${queue.queue.length}`);
+            message.reply(`Loaded SoundCloud playlist **${res.playlistInfo?.name || 'Unknown'}** with ${tracks.length} tracks!`);
+          } else {
+            const track = tracks[0];
+            logger.info(`[Play Command] SoundCloud track resolved: ${track.info.title}`);
+            queue.queue.push({
+              track: track.encoded,
+              info: track.info,
+              requester: message.author
+            });
+            logger.info(`[Play Command] SoundCloud track added to queue. Queue size: ${queue.queue.length}`);
+            message.reply(`Added **${track.info.title}** (from SoundCloud) to the queue!`);
+          }
+          
+          logger.debug(`[Play Command] Queue isPlaying: ${queue.isPlaying()}`);
+          if (!queue.isPlaying()) {
+            logger.info(`[Play Command] Starting playback for SoundCloud track`);
+            await queue.play();
+          }
+          return;
+        }
+        
+        // Check for Spotify link
         logger.debug(`[Play Command] Checking if query is a Spotify URL`);
         const spType = play.sp_validate(query);
 
@@ -138,11 +187,11 @@ export default class Play extends Command {
           }
           return;
         } else {
-          // Not a Spotify link - unsupported platform
+          // Not a Spotify or SoundCloud link - unsupported platform
           logger.warn(`[Play Command] Unsupported platform URL detected: ${query}`);
           const embed = this.client.embed()
-            .setTitle('❌ Platform Not Supported')
-            .setDescription('This platform is not supported. Please use one of the following:\n\n✅ **Supported:**\n• Spotify links\n• Search queries (song name, artist, etc.)\n\n❌ **Not Supported:**\n• YouTube links\n• SoundCloud links\n• Other platform links')
+            .setTitle('Platform Not Supported')
+            .setDescription('This platform is not supported. Please use one of the following:\n\nSupported:\n- Spotify links\n- SoundCloud links\n- Search queries (song name, artist, etc.)\n\nNot Supported:\n- YouTube links\n- Other platform links')
             .setColor(this.client.color.red)
             .setFooter({ text: 'Tip: Just search by song name instead!' });
 
@@ -163,8 +212,6 @@ export default class Play extends Command {
         const res = await queue.player.node.rest.resolve(searchQuery);
         logger.debug(`[Play Command] Search response - loadType: ${res.loadType}`);
 
-        // Shoukaku v4 uses res.data instead of res.tracks
-        const tracks = res.tracks || res.data;
         // Shoukaku v4 uses res.data instead of res.tracks
         const tracks = res.tracks || res.data;
         if (!res || !tracks || !tracks.length) {
