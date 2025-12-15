@@ -27,12 +27,11 @@ export default class Dispatcher {
 
     async initializePlayer() {
         try {
+            // Shoukaku v4: Use shoukaku.joinVoiceChannel() instead of node.joinChannel()
             this.player = await this.client.music.joinVoiceChannel({
                 guildId: this.guild.id,
                 channelId: this.channelId,
-              shardId: this.guild.shardId,
-              deaf: true,
-                mute: false
+                shardId: this.guild.shardId
             });
 
             this.player
@@ -67,15 +66,18 @@ export default class Dispatcher {
         
         try {
           console.log('[Dispatcher] Attempting to play track:', this.current.info.title);
-          console.log('[Dispatcher] Track encoded:', this.current.track ? 'Yes' : 'No');
-          console.log('[Dispatcher] Track length:', this.current.track?.length || 'N/A');
+          console.log('[Dispatcher] Current track object:', this.current);
+          console.log('[Dispatcher] Track encoded string:', this.current.track);
           console.log('[Dispatcher] Player state before play:', {
               playing: this.player.playing,
               paused: this.player.paused,
               track: this.player.track
           });
           
-          const result = await this.player.playTrack({ track: this.current.track });
+          // Shoukaku v4: playTrack expects { track: { encoded: ... } }
+          const playOptions = { track: { encoded: this.current.track } };
+          console.log('[Dispatcher] Calling playTrack with:', JSON.stringify(playOptions));
+          const result = await this.player.playTrack(playOptions);
           console.log('[Dispatcher] playTrack result:', result);
           
           await this.player.setGlobalVolume(80);
