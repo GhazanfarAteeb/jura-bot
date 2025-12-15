@@ -17,7 +17,7 @@ export default class Play extends Command {
     const message = ctx.message;
     logger.info(`[Play Command] Executed by ${message.author.tag} in guild ${message.guild.id}`);
 
-    logger.debug(`[Play Command] Spotify Credentials: ID=${process.env.SPOTIFY_CLIENT_ID ? 'Yes' : 'No'}, Secret=${process.env.SPOTIFY_CLIENT_SECRET ? 'Yes' : 'No'}`);
+    logger.info(`[Play Command] Spotify Credentials: ID=${process.env.SPOTIFY_CLIENT_ID ? 'Yes' : 'No'}, Secret=${process.env.SPOTIFY_CLIENT_SECRET ? 'Yes' : 'No'}`);
 
     if (!args.length) {
       logger.warn(`[Play Command] No query provided by ${message.author.tag}`);
@@ -30,7 +30,7 @@ export default class Play extends Command {
       return message.reply('You need to be in a voice channel to play music!');
     }
 
-    logger.debug(`[Play Command] Voice channel: ${channel.name} (${channel.id})`);
+    logger.info(`[Play Command] Voice channel: ${channel.name} (${channel.id})`);
 
     const permissions = channel.permissionsFor(this.client.user);
     if (!permissions.has(['Connect', 'Speak'])) {
@@ -48,7 +48,7 @@ export default class Play extends Command {
       return message.reply('Music node is not ready yet, please try again later.');
     }
 
-    logger.debug(`[Play Command] Using node: ${node.name}`);
+    logger.info(`[Play Command] Using node: ${node.name}`);
 
     try {
       // Check if query is a URL/link
@@ -57,7 +57,7 @@ export default class Play extends Command {
 
       // Create queue first to get player
       const queue = this.client.music.createQueue(message.guild, channel, message.channel);
-      logger.debug(`[Play Command] Queue obtained for guild ${message.guild.id}`);
+      logger.info(`[Play Command] Queue obtained for guild ${message.guild.id}`);
 
       if (isURL) {
         // It's a link - check if it's Spotify or SoundCloud
@@ -69,7 +69,7 @@ export default class Play extends Command {
 
           // Resolve SoundCloud link directly via Lavalink
           const res = await queue.player.node.rest.resolve(query);
-          logger.debug(`[Play Command] SoundCloud direct resolve response:`, res);
+          logger.info(`[Play Command] SoundCloud direct resolve response:`, res);
 
           if (!res || !res.data || !res.data.length) {
             logger.error(`[Play Command] Failed to resolve SoundCloud URL`);
@@ -87,7 +87,7 @@ export default class Play extends Command {
                 info: track.info,
                 requester: message.author
               });
-              logger.debug(`[Play Command] Added SoundCloud playlist track: ${track.info.title}`);
+              logger.info(`[Play Command] Added SoundCloud playlist track: ${track.info.title}`);
             }
             logger.info(`[Play Command] SoundCloud playlist added. Queue size now: ${queue.queue.length}`);
             message.reply(`Loaded SoundCloud playlist **${res.playlistInfo?.name || 'Unknown'}** with ${tracks.length} tracks!`);
@@ -103,7 +103,7 @@ export default class Play extends Command {
             message.reply(`Added **${track.info.title}** (from SoundCloud) to the queue!`);
           }
 
-          logger.debug(`[Play Command] Queue isPlaying: ${queue.isPlaying()}`);
+          logger.info(`[Play Command] Queue isPlaying: ${queue.isPlaying()}`);
           if (!queue.isPlaying()) {
             logger.info(`[Play Command] Starting playback for SoundCloud track`);
             await queue.play();
@@ -112,7 +112,7 @@ export default class Play extends Command {
         }
 
         // Check for Spotify link
-        logger.debug(`[Play Command] Checking if query is a Spotify URL`);
+        logger.info(`[Play Command] Checking if query is a Spotify URL`);
         const spType = play.sp_validate(query);
 
         if (spType === 'track') {
@@ -120,14 +120,14 @@ export default class Play extends Command {
           logger.info(`[Play Command] Detected Spotify track URL`);
           let spData;
           try {
-            logger.debug(`[Play Command] Attempting Spotify API resolution`);
+            logger.info(`[Play Command] Attempting Spotify API resolution`);
             spData = await play.spotify(query);
             logger.info(`[Play Command] Spotify API resolved: ${spData.name} by ${spData.artists[0].name}`);
           } catch (e) {
             logger.warn(`[Play Command] Spotify API failed: ${e.message}, falling back to scraping`);
             // Fallback: Scrape title
             try {
-              logger.debug(`[Play Command] Scraping Spotify page for metadata`);
+              logger.info(`[Play Command] Scraping Spotify page for metadata`);
               const response = await fetch(query, {
                 headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' }
               });
@@ -162,7 +162,7 @@ export default class Play extends Command {
 
           // Use player.node.rest.resolve() as per Shoukaku v4
           const res = await queue.player.node.rest.resolve(search);
-          logger.debug(`[Play Command] SoundCloud search response:`, res);
+          logger.info(`[Play Command] SoundCloud search response:`, res);
 
           if (!res || !res.data || !res.data.length) {
             logger.error(`[Play Command] No SoundCloud results for "${spData.name}"`);
@@ -180,7 +180,7 @@ export default class Play extends Command {
           logger.info(`[Play Command] Spotify track added to queue. Queue size: ${queue.queue.length}`);
 
           message.reply(`Added **${spData.name}** (from Spotify) to the queue!`);
-          logger.debug(`[Play Command] Queue isPlaying: ${queue.isPlaying()}`);
+          logger.info(`[Play Command] Queue isPlaying: ${queue.isPlaying()}`);
           if (!queue.isPlaying()) {
             logger.info(`[Play Command] Starting playback for Spotify track`);
             await queue.play();
@@ -210,7 +210,7 @@ export default class Play extends Command {
 
         // Use player.node.rest.resolve() as per Shoukaku v4
         const res = await queue.player.node.rest.resolve(searchQuery);
-        logger.debug(`[Play Command] Search response - loadType: ${res.loadType}`);
+        logger.info(`[Play Command] Search response - loadType: ${res.loadType}`);
 
         // Shoukaku v4 uses res.data instead of res.tracks
         const tracks = res.tracks || res.data;
@@ -230,7 +230,7 @@ export default class Play extends Command {
               info: track.info,
               requester: message.author
             });
-            logger.debug(`[Play Command] Added playlist track: ${track.info.title}`);
+            logger.info(`[Play Command] Added playlist track: ${track.info.title}`);
           }
           logger.info(`[Play Command] Playlist added. Queue size now: ${queue.queue.length}`);
           message.reply(`Loaded playlist **${res.playlistInfo?.name || 'Unknown'}** with ${tracks.length} tracks!`);
@@ -242,11 +242,11 @@ export default class Play extends Command {
             info: track.info,
             requester: message.author
           });
-          logger.debug(`[Play Command] Track added. Queue size now: ${queue.queue.length}`);
+          logger.info(`[Play Command] Track added. Queue size now: ${queue.queue.length}`);
           message.reply(`Added **${track.info.title}** to the queue!`);
         }
 
-        logger.debug(`[Play Command] Queue isPlaying: ${queue.isPlaying()}`);
+        logger.info(`[Play Command] Queue isPlaying: ${queue.isPlaying()}`);
         if (!queue.isPlaying()) {
           logger.info(`[Play Command] Starting playback for search query`);
           await queue.play();
@@ -255,7 +255,7 @@ export default class Play extends Command {
 
     } catch (error) {
       logger.error(`[Play Command] Error occurred in guild ${message.guild.id}:`, error);
-      logger.debug(`[Play Command] Error stack:`, error.stack);
+      logger.info(`[Play Command] Error stack:`, error.stack);
       message.reply('There was an error while searching: ' + error.message);
     }
   }

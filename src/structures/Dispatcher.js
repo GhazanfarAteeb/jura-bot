@@ -22,7 +22,7 @@ export default class Dispatcher {
     this.exists = true;
     this.ready = false;
 
-    logger.debug(`[Dispatcher] State initialized for guild ${this.guild.id}`);
+    logger.info(`[Dispatcher] State initialized for guild ${this.guild.id}`);
     // Don't await here - initialization happens async, play() will wait
     this.initializePlayer();
   }
@@ -35,7 +35,7 @@ export default class Dispatcher {
   async initializePlayer() {
     logger.info(`[Dispatcher] Initializing player for guild ${this.guild.id}`);
     try {
-      logger.debug(`[Dispatcher] Joining voice channel ${this.channelId} in guild ${this.guild.id}`);
+      logger.info(`[Dispatcher] Joining voice channel ${this.channelId} in guild ${this.guild.id}`);
 
       // Shoukaku v4: Use shoukaku.joinVoiceChannel() instead of node.joinChannel()
       this.player = await this.client.music.joinVoiceChannel({
@@ -45,17 +45,17 @@ export default class Dispatcher {
       });
 
       logger.info(`[Dispatcher] Player created successfully for guild ${this.guild.id}`);
-      logger.debug(`[Dispatcher] Player details - node: ${this.player?.node?.name}, track: ${this.player?.track}`);
+      logger.info(`[Dispatcher] Player details - node: ${this.player?.node?.name}, track: ${this.player?.track}`);
 
       // Shoukaku v4: Connection is established through Discord.js voice system
       // The player is ready to use immediately after joinVoiceChannel resolves
       // No need to check connection.state as it's handled internally
-      logger.debug(`[Dispatcher] Player object keys: ${Object.keys(this.player).join(', ')}`);
+      logger.info(`[Dispatcher] Player object keys: ${Object.keys(this.player).join(', ')}`);
 
       // Give Discord a moment to establish the voice connection
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      logger.debug(`[Dispatcher] Attaching event listeners for guild ${this.guild.id}`);
+      logger.info(`[Dispatcher] Attaching event listeners for guild ${this.guild.id}`);
       this.player
         .on('start', (data) => this.onStart(data))
         .on('end', (data) => this.onEnd(data))
@@ -68,14 +68,14 @@ export default class Dispatcher {
 
     } catch (error) {
       logger.error(`[Dispatcher] Failed to initialize player for guild ${this.guild.id}:`, error);
-      logger.debug(`[Dispatcher] Error stack:`, error.stack);
+      logger.info(`[Dispatcher] Error stack:`, error.stack);
       this.destroy();
     }
   }
 
   async play() {
     logger.info(`[Dispatcher] play() called for guild ${this.guild.id}`);
-    logger.debug(`[Dispatcher] State - exists: ${this.exists}, queueLength: ${this.queue.length}, current: ${!!this.current}`);
+    logger.info(`[Dispatcher] State - exists: ${this.exists}, queueLength: ${this.queue.length}, current: ${!!this.current}`);
 
     // Kazagumo pattern: Check if there's a current track or queue has items
     if (!this.exists) {
@@ -99,11 +99,11 @@ export default class Dispatcher {
 
     // Shoukaku v4: Player is ready after joinVoiceChannel resolves
     // No need to check connection state - it's managed internally by Shoukaku
-    logger.debug(`[Dispatcher] Player exists and ready for guild ${this.guild.id}`);
+    logger.info(`[Dispatcher] Player exists and ready for guild ${this.guild.id}`);
 
     // Kazagumo pattern: If no current track, shift from queue
     if (!this.current) {
-      logger.debug(`[Dispatcher] No current track, shifting from queue for guild ${this.guild.id}`);
+      logger.info(`[Dispatcher] No current track, shifting from queue for guild ${this.guild.id}`);
       this.current = this.queue.shift();
     }
 
@@ -114,8 +114,8 @@ export default class Dispatcher {
     }
 
     logger.info(`[Dispatcher] Playing track: "${this.current.info.title}" (${this.current.info.length}ms) for guild ${this.guild.id}`);
-    logger.debug(`[Dispatcher] Track URI: ${this.current.info.uri}`);
-    logger.debug(`[Dispatcher] Track encoded: ${typeof this.current.track} - ${this.current.track ? 'exists' : 'missing'}`);
+    logger.info(`[Dispatcher] Track URI: ${this.current.info.uri}`);
+    logger.info(`[Dispatcher] Track encoded: ${typeof this.current.track} - ${this.current.track ? 'exists' : 'missing'}`);
 
     // Validate track data
     if (!this.current.track || typeof this.current.track !== 'string') {
@@ -201,18 +201,18 @@ export default class Dispatcher {
 
   onEnd(data) {
     logger.info(`[Dispatcher] onEnd event fired for guild ${this.guild.id}, reason: ${data.reason}`);
-    logger.debug(`[Dispatcher] Track that ended: "${this.current?.info?.title || 'unknown'}"`);
-    logger.debug(`[Dispatcher] Current queue size: ${this.queue.length}`);
+    logger.info(`[Dispatcher] Track that ended: "${this.current?.info?.title || 'unknown'}"`);
+    logger.info(`[Dispatcher] Current queue size: ${this.queue.length}`);
 
     // Kazagumo pattern: Handle different end reasons
     if (data.reason === 'replaced') {
-      logger.debug(`[Dispatcher] Track replaced, ignoring onEnd for guild ${this.guild.id}`);
+      logger.info(`[Dispatcher] Track replaced, ignoring onEnd for guild ${this.guild.id}`);
       return;
     }
 
     // Don't process if player is being destroyed
     if (!this.exists) {
-      logger.debug(`[Dispatcher] Dispatcher no longer exists, ignoring onEnd for guild ${this.guild.id}`);
+      logger.info(`[Dispatcher] Dispatcher no longer exists, ignoring onEnd for guild ${this.guild.id}`);
       return;
     }
 
@@ -225,7 +225,7 @@ export default class Dispatcher {
         t.info.identifier === this.current.info.identifier &&
         t.info.title === this.current.info.title
       )) {
-        logger.debug(`[Dispatcher] Adding failed track to history for guild ${this.guild.id}`);
+        logger.info(`[Dispatcher] Adding failed track to history for guild ${this.guild.id}`);
         this.previous.unshift(this.current);
       }
 
@@ -259,14 +259,14 @@ export default class Dispatcher {
       t.info.identifier === this.current.info.identifier &&
       t.info.title === this.current.info.title
     )) {
-      logger.debug(`[Dispatcher] Adding completed track "${this.current.info.title}" to history for guild ${this.guild.id}`);
+      logger.info(`[Dispatcher] Adding completed track "${this.current.info.title}" to history for guild ${this.guild.id}`);
       this.previous.unshift(this.current);
     }
 
     const completedTrack = this.current;
     this.current = null;
     this.playing = false;
-    logger.debug(`[Dispatcher] Track completed, cleared current for guild ${this.guild.id}`);
+    logger.info(`[Dispatcher] Track completed, cleared current for guild ${this.guild.id}`);
 
     // Kazagumo pattern: Auto-play next track or stay idle
     if (this.queue.length > 0) {
@@ -284,7 +284,7 @@ export default class Dispatcher {
 
   onStuck(data) {
     logger.warn(`[Dispatcher] onStuck event fired for guild ${this.guild.id}`);
-    logger.debug(`[Dispatcher] Stuck data:`, data);
+    logger.info(`[Dispatcher] Stuck data:`, data);
     this.playing = false;
 
     // Kazagumo pattern: Skip stuck track by stopping it
@@ -299,13 +299,13 @@ export default class Dispatcher {
 
   onClosed(data) {
     logger.warn(`[Dispatcher] onClosed event fired for guild ${this.guild.id}`);
-    logger.debug(`[Dispatcher] Close data - code: ${data.code}, reason: ${data.reason}, byRemote: ${data.byRemote}`);
+    logger.info(`[Dispatcher] Close data - code: ${data.code}, reason: ${data.reason}, byRemote: ${data.byRemote}`);
     this.destroy();
   }
 
   onError(error) {
     logger.error(`[Dispatcher] onError event fired for guild ${this.guild.id}:`, error);
-    logger.debug(`[Dispatcher] Error type: ${error.type || 'unknown'}, severity: ${error.severity || 'unknown'}`);
+    logger.info(`[Dispatcher] Error type: ${error.type || 'unknown'}, severity: ${error.severity || 'unknown'}`);
     this.playing = false;
 
     // Try next track if available, otherwise destroy
@@ -321,23 +321,23 @@ export default class Dispatcher {
 
   destroy() {
     logger.info(`[Dispatcher] destroy() called for guild ${this.guild.id}`);
-    logger.debug(`[Dispatcher] Current state - exists: ${this.exists}, playing: ${this.playing}, queueSize: ${this.queue.length}`);
+    logger.info(`[Dispatcher] Current state - exists: ${this.exists}, playing: ${this.playing}, queueSize: ${this.queue.length}`);
 
     this.exists = false;
 
     // Properly disconnect the Shoukaku v4 player
     if (this.player) {
-      logger.debug(`[Dispatcher] Player exists, attempting to leave voice channel for guild ${this.guild.id}`);
+      logger.info(`[Dispatcher] Player exists, attempting to leave voice channel for guild ${this.guild.id}`);
 
       try {
         // Shoukaku v4: Use leaveVoiceChannel to properly disconnect
         if (this.client.music.leaveVoiceChannel) {
-          logger.debug(`[Dispatcher] Calling leaveVoiceChannel for guild ${this.guild.id}`);
+          logger.info(`[Dispatcher] Calling leaveVoiceChannel for guild ${this.guild.id}`);
           this.client.music.leaveVoiceChannel(this.guild.id);
           logger.info(`[Dispatcher] Left voice channel for guild ${this.guild.id}`);
         } else {
           // Fallback: Try to disconnect via player if leaveVoiceChannel doesn't exist
-          logger.debug(`[Dispatcher] Using player.connection.disconnect() as fallback`);
+          logger.info(`[Dispatcher] Using player.connection.disconnect() as fallback`);
           if (this.player.connection && typeof this.player.connection.disconnect === 'function') {
             this.player.connection.disconnect();
             logger.info(`[Dispatcher] Player connection disconnected for guild ${this.guild.id}`);
@@ -347,13 +347,13 @@ export default class Dispatcher {
         }
       } catch (e) {
         logger.error(`[Dispatcher] Error disconnecting player for guild ${this.guild.id}:`, e);
-        logger.debug(`[Dispatcher] Disconnect error stack:`, e.stack);
+        logger.info(`[Dispatcher] Disconnect error stack:`, e.stack);
       }
     } else {
       logger.warn(`[Dispatcher] No player to disconnect for guild ${this.guild.id}`);
     }
 
-    logger.debug(`[Dispatcher] Removing queue from music.queues map for guild ${this.guild.id}`);
+    logger.info(`[Dispatcher] Removing queue from music.queues map for guild ${this.guild.id}`);
     this.client.music.queues.delete(this.guild.id);
     logger.info(`[Dispatcher] Queue removed from map for guild ${this.guild.id}`);
 
@@ -362,7 +362,7 @@ export default class Dispatcher {
       .setColor(this.client.color.red);
 
     this.channel.send({ embeds: [embed] }).catch(err => {
-      logger.debug(`[Dispatcher] Failed to send disconnect message for guild ${this.guild.id}:`, err.message);
+      logger.info(`[Dispatcher] Failed to send disconnect message for guild ${this.guild.id}:`, err.message);
     });
 
     logger.info(`[Dispatcher] Destroy completed for guild ${this.guild.id}`);
@@ -392,7 +392,7 @@ export default class Dispatcher {
     } else {
       logger.info(`[Dispatcher] No more tracks in queue after skip`);
     }
-    logger.debug(`[Dispatcher] Calling stopTrack() to trigger onEnd event for guild ${this.guild.id}`);
+    logger.info(`[Dispatcher] Calling stopTrack() to trigger onEnd event for guild ${this.guild.id}`);
     this.player.stopTrack();
     logger.info(`[Dispatcher] Track skipped successfully, onEnd will handle next track for guild ${this.guild.id}`);
     return true;
@@ -413,7 +413,7 @@ export default class Dispatcher {
     this.paused = state;
     this.playing = !state;
     logger.info(`[Dispatcher] State change - paused: ${previousPaused} → ${state}, playing: ${!previousPaused} → ${!state}`);
-    logger.debug(`[Dispatcher] Calling player.setPaused(${state}) for guild ${this.guild.id}`);
+    logger.info(`[Dispatcher] Calling player.setPaused(${state}) for guild ${this.guild.id}`);
     this.player.setPaused(state);
     logger.info(`[Dispatcher] Player ${state ? 'paused' : 'resumed'} successfully for guild ${this.guild.id}`);
     return true;
@@ -445,7 +445,7 @@ export default class Dispatcher {
    */
   get size() {
     const size = this.queue.length;
-    logger.debug(`[Dispatcher] Queue size requested: ${size} for guild ${this.guild.id}`);
+    logger.info(`[Dispatcher] Queue size requested: ${size} for guild ${this.guild.id}`);
     return size;
   }
 
@@ -454,7 +454,7 @@ export default class Dispatcher {
    */
   get totalSize() {
     const total = this.queue.length + (this.current ? 1 : 0);
-    logger.debug(`[Dispatcher] Total size requested: ${total} (queue: ${this.queue.length}, current: ${this.current ? 1 : 0}) for guild ${this.guild.id}`);
+    logger.info(`[Dispatcher] Total size requested: ${total} (queue: ${this.queue.length}, current: ${this.current ? 1 : 0}) for guild ${this.guild.id}`);
     return total;
   }
 
@@ -463,7 +463,7 @@ export default class Dispatcher {
    */
   get isEmpty() {
     const empty = this.queue.length === 0 && !this.current;
-    logger.debug(`[Dispatcher] isEmpty check: ${empty} (queue: ${this.queue.length}, current: ${!!this.current}) for guild ${this.guild.id}`);
+    logger.info(`[Dispatcher] isEmpty check: ${empty} (queue: ${this.queue.length}, current: ${!!this.current}) for guild ${this.guild.id}`);
     return empty;
   }
 
@@ -473,7 +473,7 @@ export default class Dispatcher {
    */
   getPrevious(remove = false) {
     logger.info(`[Dispatcher] getPrevious(${remove}) called for guild ${this.guild.id}`);
-    logger.debug(`[Dispatcher] Previous tracks count: ${this.previous.length}`);
+    logger.info(`[Dispatcher] Previous tracks count: ${this.previous.length}`);
 
     if (remove) {
       const track = this.previous.shift();
@@ -482,7 +482,7 @@ export default class Dispatcher {
     }
 
     const track = this.previous[0];
-    logger.debug(`[Dispatcher] Returning previous track (not removed): ${track?.info?.title || 'none'} for guild ${this.guild.id}`);
+    logger.info(`[Dispatcher] Returning previous track (not removed): ${track?.info?.title || 'none'} for guild ${this.guild.id}`);
     return track;
   }
 

@@ -82,7 +82,7 @@ import logger from './src/utils/logger.js';
 logger.info('Application started');
 logger.warn('Memory usage high');
 logger.error('Database connection failed', error);
-logger.debug('Debug information', data);
+logger.info('Debug information', data);
 
 // Deployment logging
 logger.deployment('Deploying version 2.1.0', {
