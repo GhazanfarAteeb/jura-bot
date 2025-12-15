@@ -45,30 +45,16 @@ export default class Dispatcher {
             });
 
             logger.info(`[Dispatcher] Player created successfully for guild ${this.guild.id}`);
-            logger.debug(`[Dispatcher] Player node: ${this.player?.node?.name || 'unknown'}`);
+            logger.debug(`[Dispatcher] Player details - node: ${this.player?.node?.name}, track: ${this.player?.track}`);
             
-            // Wait for connection to be established
-            if (this.player.connection) {
-                logger.debug(`[Dispatcher] Waiting for connection to establish for guild ${this.guild.id}`);
-                let attempts = 0;
-                const maxAttempts = 30; // 3 seconds max
-                
-                while (attempts < maxAttempts && (!this.player.connection.state || this.player.connection.state === 4)) {
-                    // State 4 is CONNECTING, wait for it to become ready
-                    await new Promise(resolve => setTimeout(resolve, 100));
-                    attempts++;
-                    logger.debug(`[Dispatcher] Connection state: ${this.player.connection.state} (attempt ${attempts}/${maxAttempts})`);
-                }
-                
-                if (this.player.connection.state && this.player.connection.state !== 4) {
-                    logger.info(`[Dispatcher] Connection established - state: ${this.player.connection.state} for guild ${this.guild.id}`);
-                } else {
-                    logger.warn(`[Dispatcher] Connection state still not ready after waiting: ${this.player.connection.state} for guild ${this.guild.id}`);
-                }
-            } else {
-                logger.warn(`[Dispatcher] Player has no connection object for guild ${this.guild.id}`);
-            }
-
+            // Shoukaku v4: Connection is established through Discord.js voice system
+            // The player is ready to use immediately after joinVoiceChannel resolves
+            // No need to check connection.state as it's handled internally
+            logger.debug(`[Dispatcher] Player object keys: ${Object.keys(this.player).join(', ')}`);
+            
+            // Give Discord a moment to establish the voice connection
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
             logger.debug(`[Dispatcher] Attaching event listeners for guild ${this.guild.id}`);
             this.player
                 .on('start', (data) => this.onStart(data))
@@ -82,6 +68,7 @@ export default class Dispatcher {
 
         } catch (error) {
             logger.error(`[Dispatcher] Failed to initialize player for guild ${this.guild.id}:`, error);
+            logger.debug(`[Dispatcher] Error stack:`, error.stack);
             this.destroy();
         }
     }
@@ -110,14 +97,9 @@ export default class Dispatcher {
             return this.destroy();
         }
         
-        // Verify player has a connection before playing
-        if (!this.player.connection || !this.player.connection.state) {
-            logger.error(`[Dispatcher] Player exists but has no valid connection for guild ${this.guild.id}`);
-            logger.debug(`[Dispatcher] Player.connection: ${!!this.player.connection}, state: ${this.player.connection?.state}`);
-            return this.destroy();
-        }
-        
-        logger.debug(`[Dispatcher] Player ready - connection state: ${this.player.connection.state} for guild ${this.guild.id}`);
+        // Shoukaku v4: Player is ready after joinVoiceChannel resolves
+        // No need to check connection state - it's managed internally by Shoukaku
+        logger.debug(`[Dispatcher] Player exists and ready for guild ${this.guild.id}`);
         
         // Kazagumo pattern: If no current track, shift from queue
         if (!this.current) {
@@ -334,34 +316,25 @@ export default class Dispatcher {
         
         this.exists = false;
         
-        // Properly disconnect the Shoukaku player
+        // Properly disconnect the Shoukaku v4 player
         if (this.player) {
-            logger.debug(`[Dispatcher] Player exists, attempting disconnect for guild ${this.guild.id}`);
-            logger.debug(`[Dispatcher] Player connection state: ${this.player.connection ? 'connected' : 'no connection'}`);
+            logger.debug(`[Dispatcher] Player exists, attempting to leave voice channel for guild ${this.guild.id}`);
             
             try {
-                if (this.player.connection) {
-                    logger.debug(`[Dispatcher] Disconnecting player.connection for guild ${this.guild.id}`);
-                    this.player.connection.disconnect();
-                    logger.info(`[Dispatcher] Player connection disconnected for guild ${this.guild.id}`);
+                // Shoukaku v4: Use leaveVoiceChannel to properly disconnect
+                if (this.client.music.leaveVoiceChannel) {
+                    logger.debug(`[Dispatcher] Calling leaveVoiceChannel for guild ${this.guild.id}`);
+                    this.client.music.leaveVoiceChannel(this.guild.id);
+                    logger.info(`[Dispatcher] Left voice channel for guild ${this.guild.id}`);
                 } else {
-                    logger.warn(`[Dispatcher] No player.connection to disconnect for guild ${this.guild.id}`);
-                }
-                
-                // Also destroy the player on Shoukaku side
-                if (this.client.music.players && this.client.music.players.get(this.guild.id)) {
-                    logger.debug(`[Dispatcher] Found player in music.players map, disconnecting for guild ${this.guild.id}`);
-                    const shoukakuPlayer = this.client.music.players.get(this.guild.id);
-                    
-                    if (shoukakuPlayer.connection) {
-                        logger.debug(`[Dispatcher] Disconnecting Shoukaku player connection for guild ${this.guild.id}`);
-                        shoukakuPlayer.connection.disconnect();
-                        logger.info(`[Dispatcher] Shoukaku player disconnected for guild ${this.guild.id}`);
+                    // Fallback: Try to disconnect via player if leaveVoiceChannel doesn't exist
+                    logger.debug(`[Dispatcher] Using player.connection.disconnect() as fallback`);
+                    if (this.player.connection && typeof this.player.connection.disconnect === 'function') {
+                        this.player.connection.disconnect();
+                        logger.info(`[Dispatcher] Player connection disconnected for guild ${this.guild.id}`);
                     } else {
-                        logger.warn(`[Dispatcher] Shoukaku player has no connection for guild ${this.guild.id}`);
+                        logger.warn(`[Dispatcher] No connection.disconnect method available for guild ${this.guild.id}`);
                     }
-                } else {
-                    logger.debug(`[Dispatcher] No player found in music.players map for guild ${this.guild.id}`);
                 }
             } catch (e) {
                 logger.error(`[Dispatcher] Error disconnecting player for guild ${this.guild.id}:`, e);
