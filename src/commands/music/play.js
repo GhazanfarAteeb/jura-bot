@@ -62,22 +62,22 @@ export default class Play extends Command {
       if (isURL) {
         // It's a link - check if it's Spotify or SoundCloud
         logger.info(`[Play Command] Detected URL, checking platform...`);
-        
+
         // Check for SoundCloud link
         if (query.includes('soundcloud.com')) {
           logger.info(`[Play Command] Detected SoundCloud URL`);
-          
+
           // Resolve SoundCloud link directly via Lavalink
           const res = await queue.player.node.rest.resolve(query);
           logger.debug(`[Play Command] SoundCloud direct resolve response:`, res);
-          
+
           if (!res || !res.data || !res.data.length) {
             logger.error(`[Play Command] Failed to resolve SoundCloud URL`);
             return message.reply('Could not resolve this SoundCloud link.');
           }
-          
+
           const tracks = res.data;
-          
+
           // Handle SoundCloud playlists
           if (res.loadType === 'playlist' || res.loadType === 'PLAYLIST_LOADED') {
             logger.info(`[Play Command] SoundCloud playlist detected: ${res.playlistInfo?.name || 'Unknown'} with ${tracks.length} tracks`);
@@ -102,7 +102,7 @@ export default class Play extends Command {
             logger.info(`[Play Command] SoundCloud track added to queue. Queue size: ${queue.queue.length}`);
             message.reply(`Added **${track.info.title}** (from SoundCloud) to the queue!`);
           }
-          
+
           logger.debug(`[Play Command] Queue isPlaying: ${queue.isPlaying()}`);
           if (!queue.isPlaying()) {
             logger.info(`[Play Command] Starting playback for SoundCloud track`);
@@ -110,7 +110,7 @@ export default class Play extends Command {
           }
           return;
         }
-        
+
         // Check for Spotify link
         logger.debug(`[Play Command] Checking if query is a Spotify URL`);
         const spType = play.sp_validate(query);
