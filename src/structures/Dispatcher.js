@@ -132,8 +132,11 @@ export default class Dispatcher {
         
         try {
             logger.debug(`[Dispatcher] Calling playTrack() for guild ${this.guild.id}`);
-            // Shoukaku v4: playTrack accepts { track: encodedString }
-            await this.player.playTrack({ track: this.current.track });
+          // Shoukaku v4: playTrack accepts { track: encodedString }
+          // Shoukaku v4: playTrack accepts { track: encodedString }
+            logger.debug(`[Dispatcher] Playing track with encoded string of length ${this.current.track}`);
+            logger.debug(`[Dispatcher] Playing track with encoded string of length ${this.current.track.encoded}`);
+            await this.player.playTrack({ track: {encoded: this.current.track.encoded} });
             logger.debug(`[Dispatcher] playTrack() succeeded, setting volume for guild ${this.guild.id}`);
             
             // Shoukaku v4: Use setFilterVolume instead of setGlobalVolume
