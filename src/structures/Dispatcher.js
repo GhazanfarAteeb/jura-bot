@@ -95,13 +95,14 @@ export default class Dispatcher {
             return this.destroy();
         }
         
-        logger.info(`[Dispatcher] Playing track: "${this.current.info.title}" for guild ${this.guild.id}`);
-        logger.debug(`[Dispatcher] Track encoded length: ${this.current.track?.length || 'unknown'}`);
+        logger.info(`[Dispatcher] Playing track: "${this.current.info.title}" (${this.current.info.length}ms) for guild ${this.guild.id}`);
+        logger.debug(`[Dispatcher] Track URI: ${this.current.info.uri}`);
+        logger.debug(`[Dispatcher] Track encoded: ${typeof this.current.track} - ${this.current.track ? 'exists' : 'missing'}`);
         
         try {
             logger.debug(`[Dispatcher] Calling playTrack() for guild ${this.guild.id}`);
-            // Shoukaku v4: playTrack with { track: { encoded: ... } }
-            await this.player.playTrack({ track: this.current.track  });
+            // Shoukaku v4: playTrack - this.current.track is already the encoded string from play.js
+            await this.player.playTrack({ track: this.current.track });
             logger.debug(`[Dispatcher] playTrack() succeeded, setting volume for guild ${this.guild.id}`);
             
             await this.player.setGlobalVolume(80);
@@ -164,6 +165,8 @@ export default class Dispatcher {
 
     onEnd(data) {
         logger.info(`[Dispatcher] onEnd event fired for guild ${this.guild.id}, reason: ${data.reason}`);
+        logger.debug(`[Dispatcher] Track that ended: "${this.current?.info?.title || 'unknown'}"`);
+        logger.debug(`[Dispatcher] Current queue size: ${this.queue.length}`);
         
         // Kazagumo pattern: Handle different end reasons
         if (data.reason === 'replaced') {
@@ -227,14 +230,14 @@ export default class Dispatcher {
         this.playing = false;
         logger.debug(`[Dispatcher] Track completed, cleared current for guild ${this.guild.id}`);
         
-        // Kazagumo pattern: Auto-play next track or emit empty event
+        // Kazagumo pattern: Auto-play next track or stay idle
         if (this.queue.length > 0) {
             logger.info(`[Dispatcher] ${this.queue.length} tracks in queue, auto-playing next for guild ${this.guild.id}`);
             return this.play();
         } else {
-            logger.info(`[Dispatcher] Queue empty, destroying player for guild ${this.guild.id}`);
-            // No more tracks, destroy player
-            this.destroy();
+            logger.info(`[Dispatcher] Queue empty, staying connected and waiting for more tracks for guild ${this.guild.id}`);
+            // Queue is empty, but stay connected for more songs
+            // Don't destroy - let users add more songs
         }
     }
 

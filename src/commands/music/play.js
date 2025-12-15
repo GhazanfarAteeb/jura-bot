@@ -125,17 +125,19 @@ export default class Play extends Command {
             }
 
             const res = await node.rest.resolve(query);
-            console.log(`[Play] Regular query resolved: ${query}`);
+            console.log(`[Play] Regular query resolved: ${query}`, res);
             
-            if (!res || !res.tracks || !res.tracks.length) return message.reply('No results found for your query.');
+            // Shoukaku v4 uses res.data instead of res.tracks
+            const tracks = res.tracks || res.data;
+            if (!res || !tracks || !tracks.length) return message.reply('No results found for your query.');
 
             const queue = this.client.music.createQueue(message.guild, channel, message.channel);
             console.log(`[Play] Queue created/retrieved for guild ${message.guild.id}`);
             
             // Handle playlists
             if (res.loadType === 'playlist' || res.loadType === 'PLAYLIST_LOADED') { 
-                console.log(`[Play] Adding ${res.tracks.length} playlist tracks to queue`);
-                for (const track of res.tracks) {
+                console.log(`[Play] Adding ${tracks.length} playlist tracks to queue`);
+                for (const track of tracks) {
                     queue.queue.push({
                         track: track.encoded,
                         info: track.info,
@@ -143,9 +145,9 @@ export default class Play extends Command {
                     });
                 }
                 console.log(`[Play] Playlist added. Queue size: ${queue.queue.length}`);
-                message.reply(`Loaded playlist **${res.playlistInfo.name}** with ${res.tracks.length} tracks!`);
+                message.reply(`Loaded playlist **${res.playlistInfo?.name || 'Unknown'}** with ${tracks.length} tracks!`);
             } else {
-                const track = res.tracks[0];
+                const track = tracks[0];
                 console.log(`[Play] Adding single track "${track.info.title}" to queue`);
                 queue.queue.push({
                     track: track.encoded,
