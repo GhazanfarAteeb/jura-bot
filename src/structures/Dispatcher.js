@@ -65,29 +65,9 @@ export default class Dispatcher {
         this.current = this.queue.shift();
         
         try {
-          console.log('[Dispatcher] Attempting to play track:', this.current.info.title);
-          console.log('[Dispatcher] Current track object:', this.current);
-          console.log('[Dispatcher] Track encoded string:', this.current.track);
-          console.log('[Dispatcher] Player state before play:', {
-              playing: this.player.playing,
-              paused: this.player.paused,
-              track: this.player.track
-          });
-          
           // Shoukaku v4: playTrack expects { track: { encoded: ... } }
-          const playOptions = { track: { encoded: this.current.track } };
-          console.log('[Dispatcher] Calling playTrack with:', JSON.stringify(playOptions));
-          const result = await this.player.playTrack(playOptions);
-          console.log('[Dispatcher] playTrack result:', result);
-          
+          await this.player.playTrack({ track: { encoded: this.current.track } });
           await this.player.setGlobalVolume(80);
-          console.log('[Dispatcher] Volume set to 80');
-          
-          console.log('[Dispatcher] Player state after play:', {
-              playing: this.player.playing,
-              paused: this.player.paused,
-              track: this.player.track
-          });
         } catch (error) {
             logger.error('Failed to play track', error);
             this.queue.unshift(this.current);
