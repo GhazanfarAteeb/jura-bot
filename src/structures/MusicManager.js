@@ -21,13 +21,16 @@ export default class MusicManager extends Shoukaku {
         this.client = client;
         this.queues = new Map();
 
-        this.on('ready', (name) => logger.debug(`Lavalink Node: ${name} is now connected`));
-        this.on('error', (name, error) => logger.error(`Lavalink Node: ${name} emitted an error`, error));
-        this.on('close', (name, code, reason) => logger.debug(`Lavalink Node: ${name} closed with code ${code}. Reason: ${reason || 'No reason'}`));
+        this.on('ready', (name) => {
+            const node = this.nodes.get(name);
+            logger.info(`[MusicManager] Lavalink Node: ${name} is now READY - State: ${node?.state}`);
+        });
+        this.on('error', (name, error) => logger.error(`[MusicManager] Lavalink Node: ${name} emitted an error`, error));
+        this.on('close', (name, code, reason) => logger.warn(`[MusicManager] Lavalink Node: ${name} closed with code ${code}. Reason: ${reason || 'No reason'}`));
         this.on('disconnect', (name, players, moved) => {
             if (moved) return;
             players.map(player => player.connection.disconnect());
-            logger.debug(`Lavalink Node: ${name} disconnected`);
+            logger.warn(`[MusicManager] Lavalink Node: ${name} disconnected`);
         });
     }
 
@@ -38,25 +41,27 @@ export default class MusicManager extends Shoukaku {
         logger.debug(`[MusicManager] getNode() - Total nodes: ${nodes.length}`);
         
         nodes.forEach(node => {
-            logger.debug(`[MusicManager] Node "${node.name}" - State: ${node.state}, Stats: ${JSON.stringify(node.stats)}`);
+            logger.debug(`[MusicManager] Node "${node.name}" - State: ${node.state} (type: ${typeof node.state}), Stats: ${JSON.stringify(node.stats)}`);
         });
         
-        const connectedNodes = nodes.filter(n => n.state === 2);
-        logger.debug(`[MusicManager] Connected nodes: ${connectedNodes.length}`);
+        // Shoukaku v4.2 might use state 3 for CONNECTED (0=DISCONNECTED, 1=CONNECTING, 2=NEARLY, 3=CONNECTED)
+        // Also check stats to ensure node is actually ready
+        const connectedNodes = nodes.filter(n => {
+            const hasStats = n.stats && typeof n.stats.players !== 'undefined';
+            const isConnected = n.state === 3 || n.state === 2; // Try both states
+            return hasStats && isConnected;
+        });
+        
+        logger.debug(`[MusicManager] Connected nodes with stats: ${connectedNodes.length}`);
         
         if (connectedNodes.length === 0) {
-            logger.warn(`[MusicManager] No connected nodes found (state === 2)`);
-            // Fallback: try to get any node with state 1 (CONNECTING) or any node at all
-            const anyNode = nodes[0];
-            if (anyNode) {
-                logger.warn(`[MusicManager] Using fallback node "${anyNode.name}" with state ${anyNode.state}`);
-                return anyNode;
-            }
+            logger.warn(`[MusicManager] No fully connected nodes found`);
+            // Return null instead of fallback - let the calling code handle it
             return null;
         }
         
         const selectedNode = connectedNodes.sort((a, b) => a.stats.players - b.stats.players)[0];
-        logger.debug(`[MusicManager] Selected node: "${selectedNode.name}"`);
+        logger.info(`[MusicManager] Selected node: "${selectedNode.name}" with ${selectedNode.stats.players} active players`);
         return selectedNode;
     }
 
