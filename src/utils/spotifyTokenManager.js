@@ -1,5 +1,11 @@
 import play from 'play-dl';
 import logger from './logger.js';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 class SpotifyTokenManager {
   constructor() {
@@ -8,9 +14,69 @@ class SpotifyTokenManager {
     this.refreshIntervalMs = 30 * 60 * 1000; // 30 minutes
   }
 
+  ensureDataDirectory() {
+    const dataDir = path.join(__dirname, '../../.data');
+    
+    try {
+      if (!fs.existsSync(dataDir)) {
+        logger.info('Creating .data directory for Spotify credentials...');
+        fs.mkdirSync(dataDir, { recursive: true, mode: 0o755 });
+      }
+      
+      // Check if we have write permissions
+      fs.accessSync(dataDir, fs.constants.W_OK);
+      return true;
+    } catch (error) {
+      if (error.code === 'EACCES') {
+        logger.error('❌ Permission denied: Cannot access .data directory');
+        logger.error('Please ensure the .data directory has write permissions');
+        logger.error(`Directory: ${dataDir}`);
+        
+        // Try to fix permissions based on platform
+        if (process.platform === 'win32') {
+          logger.info('Attempting to fix permissions on Windows...');
+          try {
+            const { execSync } = require('child_process');
+            execSync(`icacls "${dataDir}" /grant Users:F /T`, { stdio: 'ignore' });
+            logger.info('✅ Permissions updated successfully');
+            return true;
+          } catch (fixError) {
+            logger.error('Failed to fix permissions automatically');
+            logger.warn('Please run as administrator or manually fix permissions');
+          }
+        } else {
+          // Linux/Unix fix
+          logger.info('Attempting to fix permissions on Linux...');
+          logger.warn('Run this command to fix permissions:');
+          logger.warn(`  sudo chmod -R 755 ${dataDir}`);
+          logger.warn(`  sudo chown -R $USER:$USER ${dataDir}`);
+          
+          // Try to fix without sudo (might work if user owns parent dir)
+          try {
+            fs.chmodSync(dataDir, 0o755);
+            logger.info('✅ Permissions updated successfully');
+            return true;
+          } catch (fixError) {
+            logger.error('Failed to fix permissions automatically (run the commands above)');
+          }
+        }
+      } else {
+        logger.error('Error checking .data directory:', error);
+      }
+      return false;
+    }
+  }
+
   async initialize() {
     try {
       logger.info('🎵 Initializing Spotify token manager...');
+
+      // Ensure .data directory exists and is writable
+      if (!this.ensureDataDirectory()) {
+        logger.warn('⚠️ Skipping Spotify token initialization due to permission issues');
+        logger.warn('Spotify features may not work until permissions are fixed');
+        return;
+      }
 
       // Initial token check/refresh
       const isValid = await play.refreshToken();
@@ -26,7 +92,12 @@ class SpotifyTokenManager {
         logger.warn('Run "npm run setup:spotify" to authorize');
       }
     } catch (error) {
-      logger.error('❌ Failed to initialize Spotify token', error);
+      if (error.code === 'EACCES') {
+        logger.error('❌ Permission denied accessing Spotify credentials');
+        logger.error('Please check .data directory permissions');
+      } else {
+        logger.error('❌ Failed to initialize Spotify token', error);
+      }
       logger.warn('Spotify features may not work. Run "npm run setup:spotify" to authorize');
     }
   }
@@ -48,8 +119,14 @@ class SpotifyTokenManager {
           logger.warn('⚠️ Spotify token refresh returned invalid - may need re-authorization');
         }
       } catch (error) {
-        logger.error('❌ Failed to refresh Spotify token', error);
-        logger.warn('Spotify playback may be affected');
+        if (error.code === 'EACCES') {
+          logger.error('❌ Permission denied accessing Spotify credentials during refresh');
+          logger.warn('Stopping auto-refresh until permissions are fixed');
+          this.stop();
+        } else {
+          logger.error('❌ Failed to refresh Spotify token', error);
+          logger.warn('Spotify playback may be affected');
+        }
       }
     }, this.refreshIntervalMs);
   }
@@ -62,6 +139,10 @@ class SpotifyTokenManager {
       }
       return isValid;
     } catch (error) {
+      if (error.code === 'EACCES') {
+        logger.error('Permission denied: Cannot validate Spotify token');
+        return false;
+      }
       logger.error('Error validating Spotify token', error);
       return false;
     }
