@@ -2,18 +2,47 @@ server:
   port: 2333
   address: 0.0.0.0
 
+plugins:
+  lavasrc:
+    providers:
+      - "spsearch:%QUERY%"  # Spotify search only
+      - "scsearch:%QUERY%"
+    sources:
+      spotify: true
+      applemusic: false
+      deezer: false
+      youtube: false
+      soundcloud: true
+      bandcamp: false
+      twitch: false
+      vimeo: false
+      nico: false
+    spotify:
+      clientId: "723cb39cfe904b7080b109effd050dfb"
+      clientSecret: "6bd3eefcae1f452184a077ba414295ac"
+      countryCode: "US"
+      preferAnonymousToken: true
+    # deezer:
+    #   masterDecryptionKey: "g4el58wc0zvf9na1"
+    #   arl: "12d69759dd22f17c30528d746da5b1ad710f622e48d15101868b4ed8f4540a1970389fee69751067bc8a041e953389eeacc4b7a62966699cf4494643fbd939918545ed9d0a383ab5482e9798ae5a3af85d4f1c5c1668119c0efe15beeffb0b7c"
+  lyrics-sources:
+    spotify: true
+    deezer: false
+    youtube: false
+    yandexMusic: false
+
 lavalink:
   plugins:
-    - dependency: "com.github.topi314.lavasrc:lavasrc-plugin:4.1.1"
-      repository: "https://maven.lavalink.dev/releases"
-    - dependency: "com.github.topi314.lavasearch:lavasearch-plugin:1.0.0"
-      repository: "https://maven.lavalink.dev/releases"
+    # dependency: "com.github.topi314.lavasrc:lavasrc-plugin:4.1.1"
+    # repository: "https://maven.lavalink.dev/releases"
+    # dependency: "com.github.topi314.lavasearch:lavasearch-plugin:1.0.0"
+    # repository: "https://maven.lavalink.dev/releases"
   server:
     password: "youshallnotpass"
     sources:
       youtube: false
       bandcamp: false
-      soundcloud: false
+      soundcloud: true
       twitch: false
       vimeo: false
       http: true
@@ -38,7 +67,7 @@ lavalink:
     youtubePlaylistLoadLimit: 6
     playerUpdateInterval: 5
     youtubeSearchEnabled: false
-    soundcloudSearchEnabled: false
+    soundcloudSearchEnabled: true
     gc-warnings: true
 
 metrics:
@@ -56,30 +85,3 @@ logging:
   level:
     root: INFO
     lavalink: INFO
-
-plugins:
-  lavasrc:
-    providers:
-      - "spsearch:%QUERY%"  # Spotify search only
-    sources:
-      spotify: true
-      applemusic: false
-      deezer: false
-      youtube: false
-      soundcloud: false
-      bandcamp: false
-      twitch: false
-      vimeo: false
-      nico: false
-    spotify:
-      clientId: "723cb39cfe904b7080b109effd050dfb"
-      clientSecret: "6bd3eefcae1f452184a077ba414295ac"
-      countryCode: "US"
-    # deezer:
-    #   masterDecryptionKey: "g4el58wc0zvf9na1"
-    #   arl: "12d69759dd22f17c30528d746da5b1ad710f622e48d15101868b4ed8f4540a1970389fee69751067bc8a041e953389eeacc4b7a62966699cf4494643fbd939918545ed9d0a383ab5482e9798ae5a3af85d4f1c5c1668119c0efe15beeffb0b7c"
-  lyrics-sources:
-    spotify: true
-    deezer: false
-    youtube: false
-    yandexMusic: false

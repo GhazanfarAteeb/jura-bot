@@ -79,7 +79,7 @@ export default class Play extends Command {
           const res = await queue.player.node.rest.resolve(query);
           logger.info(`[Play Command] Spotify ${spType} resolution completed`);
           logger.info(`[Play Command] Load type: ${res.loadType}`);
-          logger.info(`[Play Command] Tracks data: ${res.data}`);
+          logger.info(`[Play Command] Tracks data: ${JSON.stringify(res.data)}`);
           logger.info(`[Play Command] Spotify ${spType} resolution returned ${res.data?.length || 0} results`);
 
           if (!res || !res.data) {
