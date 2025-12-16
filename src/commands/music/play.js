@@ -120,7 +120,7 @@ export default class Play extends Command {
           // Ensure Spotify token is valid before attempting to resolve
           logger.info(`[Play Command] Validating Spotify token before track resolution`);
           await spotifyTokenManager.ensureTokenValid();
-          
+
           // Handle Spotify track
           logger.info(`[Play Command] Detected Spotify track URL`);
           let spData;
