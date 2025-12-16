@@ -64,49 +64,78 @@ export default class Play extends Command {
         // It's a link - check if it's Spotify or SoundCloud
         logger.info(`[Play Command] Detected URL, checking platform...`);
 
-        // Check for SoundCloud link
-        if (query.includes('soundcloud.com')) {
-          logger.info(`[Play Command] Detected SoundCloud URL`);
+        // Check for SoundCloud link or other platform links
+        if (query.includes('soundcloud.com') || !query.includes('spotify.com')) {
+          logger.info(`[Play Command] Detected non-Spotify URL: extracting metadata`);
 
-          // Resolve SoundCloud link directly via Lavalink
-          const res = await queue.player.node.rest.resolve(query);
-          logger.info(`[Play Command] SoundCloud direct resolve response:`, res);
+          // Resolve link to get metadata
+          const metaRes = await queue.player.node.rest.resolve(query);
+          logger.info(`[Play Command] Metadata resolution response:`, metaRes);
 
-          if (!res || !res.data || !res.data.length) {
-            logger.error(`[Play Command] Failed to resolve SoundCloud URL`);
-            return message.reply('Could not resolve this SoundCloud link.');
+          if (!metaRes || !metaRes.data || !metaRes.data.length) {
+            logger.error(`[Play Command] Failed to resolve URL for metadata`);
+            return message.reply('Could not resolve this link.');
           }
 
-          const tracks = res.data;
+          const tracks = metaRes.data;
 
-          // Handle SoundCloud playlists
-          if (res.loadType === 'playlist' || res.loadType === 'PLAYLIST_LOADED') {
-            logger.info(`[Play Command] SoundCloud playlist detected: ${res.playlistInfo?.name || 'Unknown'} with ${tracks.length} tracks`);
-            for (const track of tracks) {
-              queue.queue.push({
-                track: track.encoded,
-                info: track.info,
-                requester: message.author
-              });
-              logger.info(`[Play Command] Added SoundCloud playlist track: ${track.info.title}`);
+          // Handle playlists
+          if (metaRes.loadType === 'playlist' || metaRes.loadType === 'PLAYLIST_LOADED') {
+            logger.info(`[Play Command] Playlist detected: ${metaRes.playlistInfo?.name || 'Unknown'} with ${tracks.length} tracks`);
+            
+            let addedCount = 0;
+            for (const metaTrack of tracks) {
+              try {
+                // Search on Spotify using metadata
+                const spotifySearch = `spsearch:${metaTrack.info.title} ${metaTrack.info.author}`.trim();
+                logger.info(`[Play Command] Searching Spotify for playlist track: ${spotifySearch}`);
+                
+                const spotifyRes = await queue.player.node.rest.resolve(spotifySearch);
+                if (spotifyRes && spotifyRes.data && spotifyRes.data.length > 0) {
+                  const track = spotifyRes.data[0];
+                  queue.queue.push({
+                    track: track.encoded,
+                    info: track.info,
+                    requester: message.author
+                  });
+                  addedCount++;
+                  logger.info(`[Play Command] Added playlist track via Spotify: ${track.info.title}`);
+                }
+              } catch (err) {
+                logger.warn(`[Play Command] Failed to find Spotify match for: ${metaTrack.info.title}`);
+              }
             }
-            logger.info(`[Play Command] SoundCloud playlist added. Queue size now: ${queue.queue.length}`);
-            message.reply(`Loaded SoundCloud playlist **${res.playlistInfo?.name || 'Unknown'}** with ${tracks.length} tracks!`);
+            
+            logger.info(`[Play Command] Playlist added. ${addedCount} tracks found on Spotify. Queue size: ${queue.queue.length}`);
+            message.reply(`Loaded playlist **${metaRes.playlistInfo?.name || 'Unknown'}** - found ${addedCount}/${tracks.length} tracks on Spotify!`);
           } else {
-            const track = tracks[0];
-            logger.info(`[Play Command] SoundCloud track resolved: ${track.info.title}`);
+            // Single track - extract metadata and search on Spotify
+            const metaTrack = tracks[0];
+            logger.info(`[Play Command] Extracted metadata: ${metaTrack.info.title} by ${metaTrack.info.author}`);
+            
+            const spotifySearch = `spsearch:${metaTrack.info.title} ${metaTrack.info.author}`.trim();
+            logger.info(`[Play Command] Searching Spotify with metadata: ${spotifySearch}`);
+            
+            const spotifyRes = await queue.player.node.rest.resolve(spotifySearch);
+            
+            if (!spotifyRes || !spotifyRes.data || !spotifyRes.data.length) {
+              logger.error(`[Play Command] No Spotify results for metadata: ${metaTrack.info.title}`);
+              return message.reply(`Could not find "**${metaTrack.info.title}**" on Spotify.`);
+            }
+            
+            const track = spotifyRes.data[0];
             queue.queue.push({
               track: track.encoded,
               info: track.info,
               requester: message.author
             });
-            logger.info(`[Play Command] SoundCloud track added to queue. Queue size: ${queue.queue.length}`);
-            message.reply(`Added **${track.info.title}** (from SoundCloud) to the queue!`);
+            logger.info(`[Play Command] Track added via Spotify search. Queue size: ${queue.queue.length}`);
+            message.reply(`Added **${track.info.title}** (found on Spotify) to the queue!`);
           }
 
           logger.info(`[Play Command] Queue isPlaying: ${queue.isPlaying()}`);
           if (!queue.isPlaying()) {
-            logger.info(`[Play Command] Starting playback for SoundCloud track`);
+            logger.info(`[Play Command] Starting playback`);
             await queue.play();
           }
           return;
@@ -116,18 +145,85 @@ export default class Play extends Command {
         logger.info(`[Play Command] Checking if query is a Spotify URL`);
         const spType = play.sp_validate(query);
 
-        if (spType === 'track') {
+        if (spType === 'track' || spType === 'album' || spType === 'artist' || spType === 'playlist') {
           // Ensure Spotify token is valid before attempting to resolve
-          logger.info(`[Play Command] Validating Spotify token before track resolution`);
+          logger.info(`[Play Command] Validating Spotify token before ${spType} resolution`);
           await spotifyTokenManager.ensureTokenValid();
 
-          // Handle Spotify track
-          logger.info(`[Play Command] Detected Spotify track URL`);
+          // Extract Spotify ID from URL
+          const urlMatch = query.match(/\/(track|album|artist|playlist)\/([a-zA-Z0-9]+)/);
+          
+          if (urlMatch) {
+            const [, type, id] = urlMatch;
+            const search = `sprec:mix:${type}:${id}`;
+            logger.info(`[Play Command] Detected Spotify ${type} - using direct ID: ${search}`);
+
+            // Resolve using sprec format
+            const res = await queue.player.node.rest.resolve(search);
+            logger.info(`[Play Command] Spotify ${type} resolution returned ${res.data?.length || 0} results`);
+
+            if (!res || !res.data || !res.data.length) {
+              logger.error(`[Play Command] Failed to resolve Spotify ${type}`);
+              return message.reply(`Could not resolve this Spotify ${type}.`);
+            }
+
+            const tracks = res.data;
+
+            // Handle playlists and albums (multiple tracks)
+            if (spType === 'playlist' || spType === 'album' || res.loadType === 'playlist' || res.loadType === 'PLAYLIST_LOADED') {
+              logger.info(`[Play Command] Spotify ${spType} detected with ${tracks.length} tracks`);
+              for (const track of tracks) {
+                queue.queue.push({
+                  track: track.encoded,
+                  info: track.info,
+                  requester: message.author
+                });
+              }
+              logger.info(`[Play Command] Spotify ${spType} added. Queue size now: ${queue.queue.length}`);
+              message.reply(`Loaded Spotify ${spType} with ${tracks.length} tracks!`);
+            } else if (spType === 'artist') {
+              // Artist - load top tracks
+              logger.info(`[Play Command] Spotify artist - loading ${tracks.length} top tracks`);
+              for (const track of tracks) {
+                queue.queue.push({
+                  track: track.encoded,
+                  info: track.info,
+                  requester: message.author
+                });
+              }
+              logger.info(`[Play Command] Artist top tracks added. Queue size now: ${queue.queue.length}`);
+              message.reply(`Loaded ${tracks.length} top tracks from this artist!`);
+            } else {
+              // Single track
+              const track = tracks[0];
+              logger.info(`[Play Command] Spotify track resolved: ${track.info.title}`);
+              queue.queue.push({
+                track: track.encoded,
+                info: track.info,
+                requester: message.author
+              });
+              logger.info(`[Play Command] Spotify track added to queue. Queue size: ${queue.queue.length}`);
+              message.reply(`Added **${track.info.title}** (from Spotify) to the queue!`);
+            }
+
+            logger.info(`[Play Command] Queue isPlaying: ${queue.isPlaying()}`);
+            if (!queue.isPlaying()) {
+              logger.info(`[Play Command] Starting playback for Spotify ${spType}`);
+              await queue.play();
+            }
+            return;
+          }
+
+          // Fallback to API resolution if URL parsing fails
+          logger.info(`[Play Command] URL parsing failed, falling back to API resolution`);
+          
+          // Handle Spotify track via API fallback
+          logger.info(`[Play Command] Detected Spotify ${spType} URL`);
           let spData;
           try {
             logger.info(`[Play Command] Attempting Spotify API resolution`);
             spData = await play.spotify(query);
-            logger.info(`[Play Command] Spotify API resolved: ${spData.name} by ${spData.artists[0].name}`);
+            logger.info(`[Play Command] Spotify API resolved: ${spData.name} by ${spData.artists?.[0]?.name || 'Unknown'}`);
           } catch (e) {
             logger.warn(`[Play Command] Spotify API failed: ${e.message}, falling back to scraping`);
             // Fallback: Scrape title
@@ -162,16 +258,24 @@ export default class Play extends Command {
             return message.reply('Could not resolve Spotify URL. Please check your link or try a different search query.');
           }
 
-          const search = `spsearch:${spData.name} ${spData.artists[0].name}`.trim();
-          logger.info(`[Play Command] Searching SoundCloud for: ${search}`);
+          // Use Spotify track ID for exact matching
+          let search;
+          if (spData.id) {
+            // Use sprec:mix:track format with track ID
+            search = `sprec:mix:track:${spData.id}`;
+            logger.info(`[Play Command] Searching Spotify via track ID: ${spData.id}`);
+          } else {
+            search = `spsearch:${spData.name} ${spData.artists[0].name}`.trim();
+            logger.info(`[Play Command] Searching Spotify via query (no track ID): ${search}`);
+          }
 
           // Use player.node.rest.resolve() as per Shoukaku v4
           const res = await queue.player.node.rest.resolve(search);
-          logger.info(`[Play Command] SoundCloud search returned ${res.data?.length || 0} results`);
+          logger.info(`[Play Command] Spotify search returned ${res.data?.length || 0} results`);
 
           if (!res || !res.data || !res.data.length) {
-            logger.error(`[Play Command] No SoundCloud results for "${spData.name}"`);
-            return message.reply(`Could not find "**${spData.name}**" on SoundCloud.`);
+            logger.error(`[Play Command] No Spotify results for "${spData.name}"`);
+            return message.reply(`Could not find "**${spData.name}**" on Spotify.`);
           }
 
           // Use smart matching to find best track (avoid previews)
@@ -220,10 +324,10 @@ export default class Play extends Command {
         // Not a URL - treat as search query
         logger.info(`[Play Command] Treating as search query: "${query}"`);
 
-        // Use SoundCloud search for non-URL queries
-        const searchQuery = query.startsWith('scsearch:') || query.startsWith('ytsearch:')
+        // Use Spotify search for non-URL queries
+        const searchQuery = query.startsWith('spsearch:') || query.startsWith('scsearch:') || query.startsWith('ytsearch:')
           ? query
-          : `scsearch:${query}`;
+          : `spsearch:${query}`;
 
         logger.info(`[Play Command] Searching with: ${searchQuery}`);
 
