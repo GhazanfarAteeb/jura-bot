@@ -90,7 +90,7 @@ export default class Play extends Command {
           const tracks = res.data;
 
           // Handle playlists and albums (multiple tracks)
-          if (spType === 'playlist' || spType === 'album' || res.loadType === 'playlist' || res.loadType === 'PLAYLIST_LOADED') {
+          if (spType === 'playlist' || spType === 'album' || spType === 'search' || res.loadType === 'playlist' || res.loadType === 'PLAYLIST_LOADED') {
             logger.info(`[Play Command] Spotify ${spType} detected with ${tracks.length} tracks`);
             for (const track of tracks) {
               queue.queue.push({
@@ -101,7 +101,7 @@ export default class Play extends Command {
             }
             logger.info(`[Play Command] Spotify ${spType} added. Queue size now: ${queue.queue.length}`);
             message.reply(`Loaded Spotify ${spType} with ${tracks.length} tracks!`);
-          } else if (spType === 'track' || res.loadType === 'track') {
+          } else if (spType === 'track') {
             // Single track
             const track = tracks;
             logger.info(`[Play Command] Spotify track resolved: ${track.info.title}`);
