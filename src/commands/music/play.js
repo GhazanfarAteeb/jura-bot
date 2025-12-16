@@ -59,7 +59,7 @@ export default class Play extends Command {
       // Create queue first to get player
       const queue = this.client.music.createQueue(message.guild, channel, message.channel);
       logger.info(`[Play Command] Queue obtained for guild ${message.guild.id}`);
-
+      await spotifyTokenManager.ensureTokenValid();
       if (isURL) {
         // It's a link - check if it's Spotify
         logger.info(`[Play Command] Detected URL, checking platform...`);
@@ -71,13 +71,15 @@ export default class Play extends Command {
         if (spType === 'track' || spType === 'album' || spType === 'artist' || spType === 'playlist') {
           // Ensure Spotify token is valid before attempting to resolve
           logger.info(`[Play Command] Validating Spotify token before ${spType} resolution`);
-          await spotifyTokenManager.ensureTokenValid();
 
           // Pass the Spotify URL directly to Lavalink
           logger.info(`[Play Command] Detected Spotify ${spType} - resolving URL directly: ${query}`);
-
+          logger.info(`[Play Command] Resolving Spotify ${spType}...`);
           // Resolve using the direct Spotify URL
           const res = await queue.player.node.rest.resolve(query);
+          logger.info(`[Play Command] Spotify ${spType} resolution completed`);
+          logger.info(`[Play Command] Load type: ${res.loadType}`);
+          logger.info(`[Play Command] Tracks data: ${res.data}`);
           logger.info(`[Play Command] Spotify ${spType} resolution returned ${res.data?.length || 0} results`);
 
           if (!res || !res.data || !res.data.length) {
