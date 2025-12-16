@@ -82,7 +82,7 @@ export default class Play extends Command {
           logger.info(`[Play Command] Tracks data: ${res.data}`);
           logger.info(`[Play Command] Spotify ${spType} resolution returned ${res.data?.length || 0} results`);
 
-          if (!res || !res.data || !res.data.length) {
+          if (!res || !res.data) {
             logger.error(`[Play Command] Failed to resolve Spotify ${spType}`);
             return message.reply(`Could not resolve this Spotify ${spType}.`);
           }
@@ -101,25 +101,26 @@ export default class Play extends Command {
             }
             logger.info(`[Play Command] Spotify ${spType} added. Queue size now: ${queue.queue.length}`);
             message.reply(`Loaded Spotify ${spType} with ${tracks.length} tracks!`);
-          } else if (spType === 'artist') {
-            // Artist - load top tracks
-            logger.info(`[Play Command] Spotify artist - loading ${tracks.length} top tracks`);
-            for (const track of tracks) {
-              queue.queue.push({
-                track: track.encoded,
-                info: track.info,
-                requester: message.author
-              });
-            }
-            logger.info(`[Play Command] Artist top tracks added. Queue size now: ${queue.queue.length}`);
-            message.reply(`Loaded ${tracks.length} top tracks from this artist!`);
-          } else {
+          } else if (spType === 'track' || res.loadType === 'track') {
             // Single track
-            const track = tracks[0];
+            const track = tracks;
             logger.info(`[Play Command] Spotify track resolved: ${track.info.title}`);
             queue.queue.push({
               track: track.encoded,
               info: track.info,
+              requester: message.author
+            });
+            logger.info(`[Play Command] Spotify track added to queue. Queue size: ${queue.queue.length}`);
+            message.reply(`Added **${track.info.title}** (from Spotify) to the queue!`);
+          }
+          else if (spType === 'search') {
+            const track = tracks;
+            logger.info(`[Play Command] Spotify track resolved: ${track.info.title}`);
+            const res = await queue.player.node.rest.resolve(track.info.uri);
+            const resolvedTrack = res.data;
+            queue.queue.push({
+              track: resolvedTrack.encoded,
+              info: resolvedTrack.info,
               requester: message.author
             });
             logger.info(`[Play Command] Spotify track added to queue. Queue size: ${queue.queue.length}`);
@@ -132,6 +133,9 @@ export default class Play extends Command {
             await queue.play();
           }
           return;
+        }
+        else {
+
         }
 
         // Not a Spotify link - unsupported platform
