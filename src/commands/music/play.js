@@ -61,37 +61,51 @@ export default class Play extends Command {
       logger.info(`[Play Command] Queue obtained for guild ${message.guild.id}`);
       await spotifyTokenManager.ensureTokenValid();
       if (isURL) {
-        // It's a link - check if it's Spotify
+        // ==================== URL HANDLING ====================
+        // Handle Spotify URLs directly
         logger.info(`[Play Command] Detected URL, checking platform...`);
-
-        // Check for Spotify link
-        logger.info(`[Play Command] Checking if query is a Spotify URL`);
         const spType = play.sp_validate(query);
 
         if (spType === 'track' || spType === 'album' || spType === 'artist' || spType === 'playlist') {
-          // Ensure Spotify token is valid before attempting to resolve
-          logger.info(`[Play Command] Validating Spotify token before ${spType} resolution`);
+          logger.info(`[Play Command] Detected Spotify ${spType} URL`);
 
-          // Pass the Spotify URL directly to Lavalink
-          logger.info(`[Play Command] Detected Spotify ${spType} - resolving URL directly: ${query}`);
-          logger.info(`[Play Command] Resolving Spotify ${spType}...`);
           // Resolve using the direct Spotify URL
           const res = await queue.player.node.rest.resolve(query);
-          logger.info(`[Play Command] Spotify ${spType} resolution completed`);
-          logger.info(`[Play Command] Load type: ${res.loadType}`);
-          logger.info(`[Play Command] Tracks data: ${JSON.stringify(res.data)}`);
-          logger.info(`[Play Command] Spotify ${spType} resolution returned ${res.data?.length || 0} results`);
+          logger.info(`[Play Command] Response loadType: ${res.loadType}`);
 
-          if (!res || !res.data) {
+          if (!res) {
             logger.error(`[Play Command] Failed to resolve Spotify ${spType}`);
             return message.reply(`Could not resolve this Spotify ${spType}.`);
           }
 
-          const tracks = res.data;
+          // URL responses use different structures based on loadType
+          let tracks;
 
-          // Handle playlists and albums (multiple tracks)
-          if (spType === 'playlist' || spType === 'album' || res.loadType === 'playlist' || res.loadType === 'PLAYLIST_LOADED') {
-            logger.info(`[Play Command] Spotify ${spType} detected with ${tracks.length} tracks`);
+          if (res.loadType === 'track') {
+            // Single track: res.data is the track object
+            tracks = [res.data];
+            logger.info(`[Play Command] Single track loaded`);
+          } else if (res.loadType === 'playlist' || res.loadType === 'album') {
+            // Playlist/Album: res.tracks is the array of tracks
+            tracks = res.tracks;
+            logger.info(`[Play Command] ${res.loadType} loaded with ${tracks.length} tracks`);
+          } else if (res.loadType === 'search') {
+            // Search results: res.data is array
+            tracks = res.data;
+            logger.info(`[Play Command] Search results with ${tracks.length} tracks`);
+          } else {
+            logger.error(`[Play Command] Unknown loadType: ${res.loadType}`);
+            return message.reply(`Could not resolve this Spotify ${spType}.`);
+          }
+
+          if (!tracks || tracks.length === 0) {
+            logger.error(`[Play Command] No tracks found`);
+            return message.reply(`Could not find any tracks for this Spotify ${spType}.`);
+          }
+
+          // Add tracks to queue based on type
+          if (tracks.length > 1) {
+            // Multiple tracks (playlist/album/artist)
             for (const track of tracks) {
               queue.queue.push({
                 track: track.encoded,
@@ -99,36 +113,23 @@ export default class Play extends Command {
                 requester: message.author
               });
             }
-            logger.info(`[Play Command] Spotify ${spType} added. Queue size now: ${queue.queue.length}`);
+            logger.info(`[Play Command] Added ${tracks.length} tracks. Queue size: ${queue.queue.length}`);
             message.reply(`Loaded Spotify ${spType} with ${tracks.length} tracks!`);
-          } else if (spType === 'artist') {
-            // Artist - load top tracks
-            logger.info(`[Play Command] Spotify artist - loading ${tracks.length} top tracks`);
-            for (const track of tracks) {
-              queue.queue.push({
-                track: track.encoded,
-                info: track.info,
-                requester: message.author
-              });
-            }
-            logger.info(`[Play Command] Artist top tracks added. Queue size now: ${queue.queue.length}`);
-            message.reply(`Loaded ${tracks.length} top tracks from this artist!`);
           } else {
             // Single track
             const track = tracks[0];
-            logger.info(`[Play Command] Spotify track resolved: ${track.info.title}`);
             queue.queue.push({
               track: track.encoded,
               info: track.info,
               requester: message.author
             });
-            logger.info(`[Play Command] Spotify track added to queue. Queue size: ${queue.queue.length}`);
+            logger.info(`[Play Command] Added track: ${track.info.title}`);
             message.reply(`Added **${track.info.title}** (from Spotify) to the queue!`);
           }
 
           logger.info(`[Play Command] Queue isPlaying: ${queue.isPlaying()}`);
           if (!queue.isPlaying()) {
-            logger.info(`[Play Command] Starting playback for Spotify ${spType}`);
+            logger.info(`[Play Command] Starting playback`);
             await queue.play();
           }
           return;
@@ -144,7 +145,8 @@ export default class Play extends Command {
 
         return message.reply({ embeds: [embed] });
       } else {
-        // Not a URL - treat as search query
+        // ==================== SEARCH HANDLING ====================
+        // Handle search queries (non-URL)
         logger.info(`[Play Command] Treating as search query: "${query}"`);
 
         // Use Spotify search for non-URL queries
@@ -158,8 +160,8 @@ export default class Play extends Command {
         const res = await queue.player.node.rest.resolve(searchQuery);
         logger.info(`[Play Command] Search response - loadType: ${res.loadType}`);
 
-        // Shoukaku v4 uses res.data instead of res.tracks
-        const tracks = res.tracks || res.data;
+        // Search responses use res.data for tracks
+        const tracks = res.data || res.tracks;
         if (!res || !tracks || !tracks.length) {
           logger.warn(`[Play Command] No results found for search query: "${query}"`);
           return message.reply('No results found for your search query.');
