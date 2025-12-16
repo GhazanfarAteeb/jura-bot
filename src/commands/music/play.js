@@ -82,7 +82,7 @@ export default class Play extends Command {
           logger.info(`[Play Command] Tracks data: ${JSON.stringify(res.data)}`);
           logger.info(`[Play Command] Spotify ${spType} resolution returned ${res.data?.length || 0} results`);
 
-          if (!res || !res.data || !res.data.length) {
+          if (!res || !res.data) {
             logger.error(`[Play Command] Failed to resolve Spotify ${spType}`);
             return message.reply(`Could not resolve this Spotify ${spType}.`);
           }
