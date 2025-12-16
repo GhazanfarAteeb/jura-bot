@@ -12,10 +12,10 @@ lavalink:
     password: "youshallnotpass"
     sources:
       youtube: false
-      bandcamp: true
-      soundcloud: true
-      twitch: true
-      vimeo: true
+      bandcamp: false
+      soundcloud: false
+      twitch: false
+      vimeo: false
       http: true
       local: false
     filters:
@@ -38,7 +38,7 @@ lavalink:
     youtubePlaylistLoadLimit: 6
     playerUpdateInterval: 5
     youtubeSearchEnabled: false
-    soundcloudSearchEnabled: true
+    soundcloudSearchEnabled: false
     gc-warnings: true
 
 metrics:
@@ -60,27 +60,26 @@ logging:
 plugins:
   lavasrc:
     providers:
-      - "scsearch:%QUERY%"  # SoundCloud as primary search
-      - "dzsearch:%QUERY%"  # Deezer as fallback
+      - "spsearch:%QUERY%"  # Spotify search only
     sources:
       spotify: true
       applemusic: false
-      deezer: true
+      deezer: false
       youtube: false
-      soundcloud: true
-      bandcamp: true
-      twitch: true
-      vimeo: true
-      nico: true
+      soundcloud: false
+      bandcamp: false
+      twitch: false
+      vimeo: false
+      nico: false
     spotify:
       clientId: "723cb39cfe904b7080b109effd050dfb"
       clientSecret: "6bd3eefcae1f452184a077ba414295ac"
       countryCode: "US"
-    deezer:
-      masterDecryptionKey: "g4el58wc0zvf9na1"
-      arl: "12d69759dd22f17c30528d746da5b1ad710f622e48d15101868b4ed8f4540a1970389fee69751067bc8a041e953389eeacc4b7a62966699cf4494643fbd939918545ed9d0a383ab5482e9798ae5a3af85d4f1c5c1668119c0efe15beeffb0b7c"
+    # deezer:
+    #   masterDecryptionKey: "g4el58wc0zvf9na1"
+    #   arl: "12d69759dd22f17c30528d746da5b1ad710f622e48d15101868b4ed8f4540a1970389fee69751067bc8a041e953389eeacc4b7a62966699cf4494643fbd939918545ed9d0a383ab5482e9798ae5a3af85d4f1c5c1668119c0efe15beeffb0b7c"
   lyrics-sources:
-    spotify: false
-    deezer: true
+    spotify: true
+    deezer: false
     youtube: false
     yandexMusic: false

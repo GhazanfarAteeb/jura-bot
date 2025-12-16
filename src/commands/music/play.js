@@ -154,59 +154,132 @@ export default class Play extends Command {
       } else {
         // ==================== SEARCH HANDLING ====================
         // Handle search queries (non-URL)
-        logger.info(`[Play Command] Treating as search query: "${query}"`);
+        logger.info(`[Play Command - SEARCH STEP 1] Treating as search query: "${query}"`);
 
         // Use Spotify search for non-URL queries
         const searchQuery = query.startsWith('spsearch:')
           ? query
           : `spsearch:${query}`;
 
-        logger.info(`[Play Command] Searching with: ${searchQuery}`);
+        logger.info(`[Play Command - SEARCH STEP 2] Prepared search query: ${searchQuery}`);
+        logger.info(`[Play Command - SEARCH STEP 3] Calling player.node.rest.resolve()...`);
 
         // Use player.node.rest.resolve() as per Shoukaku v4
         const res = await queue.player.node.rest.resolve(searchQuery);
-        logger.info(`[Play Command] Search response - loadType: ${res.loadType}`);
+        
+        logger.info(`[Play Command - SEARCH STEP 4] Received search response`);
+        logger.info(`[Play Command - SEARCH STEP 4a] Response loadType: ${res.loadType}`);
+        logger.info(`[Play Command - SEARCH STEP 4b] Response keys: ${JSON.stringify(Object.keys(res))}`);
+        logger.info(`[Play Command - SEARCH STEP 4c] Full response structure: ${JSON.stringify(res, null, 2)}`);
 
         // Search responses use res.data for tracks
+        logger.info(`[Play Command - SEARCH STEP 5] Extracting tracks from response...`);
+        logger.info(`[Play Command - SEARCH STEP 5a] res.data exists: ${!!res.data}`);
+        logger.info(`[Play Command - SEARCH STEP 5b] res.tracks exists: ${!!res.tracks}`);
+        
         const tracks = res.data || res.tracks;
+        
         if (!res || !tracks || !tracks.length) {
-          logger.warn(`[Play Command] No results found for search query: "${query}"`);
+          logger.warn(`[Play Command - SEARCH STEP 5c] No results found for search query: "${query}"`);
           return message.reply('No results found for your search query.');
         }
 
-        logger.info(`[Play Command] Found ${tracks.length} track(s) for search query`);
+        logger.info(`[Play Command - SEARCH STEP 6] Found ${tracks.length} track(s) for search query`);
+        logger.info(`[Play Command - SEARCH STEP 6a] First track structure: ${JSON.stringify(tracks[0], null, 2)}`);
 
-        // Get the first track from search and extract its Spotify URL
+        // Get the first track from search
         const firstTrack = tracks[0];
-        const spotifyUrl = firstTrack.info?.uri;
+        logger.info(`[Play Command - SEARCH STEP 7] Extracted first track`);
+        logger.info(`[Play Command - SEARCH STEP 7a] First track encoded: ${firstTrack.encoded ? 'present' : 'missing'}`);
+        logger.info(`[Play Command - SEARCH STEP 7b] First track info: ${firstTrack.info ? JSON.stringify(firstTrack.info) : 'missing'}`);
+        
+        // Extract Spotify URL and convert if needed
+        logger.info(`[Play Command - SEARCH STEP 8] Extracting Spotify URL from track...`);
+        let spotifyUrl = firstTrack.info?.uri;
+        logger.info(`[Play Command - SEARCH STEP 8a] Raw URI from track: ${spotifyUrl}`);
+        
+        // If uri is a spotify: protocol, convert to HTTP URL
+        if (spotifyUrl && spotifyUrl.startsWith('spotify:')) {
+          logger.info(`[Play Command - SEARCH STEP 8b] URI is Spotify protocol, converting to HTTP URL...`);
+          const parts = spotifyUrl.split(':');
+          logger.info(`[Play Command - SEARCH STEP 8c] Split URI parts: ${JSON.stringify(parts)}`);
+          
+          if (parts.length === 3) {
+            // spotify:track:id -> https://open.spotify.com/track/id
+            spotifyUrl = `https://open.spotify.com/${parts[1]}/${parts[2]}`;
+            logger.info(`[Play Command - SEARCH STEP 8d] Converted Spotify URI to URL: ${spotifyUrl}`);
+          } else {
+            logger.warn(`[Play Command - SEARCH STEP 8e] Unexpected URI format, parts length: ${parts.length}`);
+          }
+        } else {
+          logger.info(`[Play Command - SEARCH STEP 8f] URI is already HTTP or missing: ${spotifyUrl}`);
+        }
 
         if (!spotifyUrl) {
-          logger.warn(`[Play Command] No Spotify URL found in search result`);
-          return message.reply('Could not get track information from search.');
+          logger.warn(`[Play Command - SEARCH STEP 9] No Spotify URL found, using search result directly`);
+          logger.info(`[Play Command - SEARCH STEP 9a] Adding track to queue with encoded: ${firstTrack.encoded?.substring(0, 20)}...`);
+          
+          queue.queue.push({
+            track: firstTrack.encoded,
+            info: firstTrack.info,
+            requester: message.author
+          });
+          
+          logger.info(`[Play Command - SEARCH STEP 9b] Track added from search. Queue size now: ${queue.queue.length}`);
+          message.reply(`Added **${firstTrack.info.title}** by **${firstTrack.info.author}** to the queue!`);
+        } else {
+          logger.info(`[Play Command - SEARCH STEP 10] Starting re-resolution with URL: ${spotifyUrl}`);
+          logger.info(`[Play Command - SEARCH STEP 10a] Calling player.node.rest.resolve() for URL...`);
+
+          // Re-resolve the Spotify URL to get the full track
+          const trackRes = await queue.player.node.rest.resolve(spotifyUrl);
+          
+          logger.info(`[Play Command - SEARCH STEP 11] Received track resolution response`);
+          logger.info(`[Play Command - SEARCH STEP 11a] Track resolution loadType: ${trackRes.loadType}`);
+          logger.info(`[Play Command - SEARCH STEP 11b] Track resolution response keys: ${JSON.stringify(Object.keys(trackRes))}`);
+          logger.info(`[Play Command - SEARCH STEP 11c] Full track resolution response: ${JSON.stringify(trackRes, null, 2)}`);
+          
+          if (trackRes.data) {
+            logger.info(`[Play Command - SEARCH STEP 11d] Track data exists, keys: ${JSON.stringify(Object.keys(trackRes.data))}`);
+          } else {
+            logger.warn(`[Play Command - SEARCH STEP 11e] No data in trackRes`);
+          }
+
+          if (!trackRes || !trackRes.data) {
+            logger.warn(`[Play Command - SEARCH STEP 12] No data in response, falling back to search result`);
+            logger.info(`[Play Command - SEARCH STEP 12a] Adding original search track to queue`);
+            
+            queue.queue.push({
+              track: firstTrack.encoded,
+              info: firstTrack.info,
+              requester: message.author
+            });
+            
+            logger.info(`[Play Command - SEARCH STEP 12b] Track added (fallback). Queue size now: ${queue.queue.length}`);
+            message.reply(`Added **${firstTrack.info.title}** by **${firstTrack.info.author}** to the queue!`);
+          } else {
+            // Add the resolved track to queue
+            logger.info(`[Play Command - SEARCH STEP 13] Processing resolved track data`);
+            const resolvedTrack = trackRes.data;
+            
+            logger.info(`[Play Command - SEARCH STEP 13a] Resolved track encoded: ${resolvedTrack.encoded ? 'present (' + resolvedTrack.encoded.substring(0, 20) + '...)' : 'missing'}`);
+            logger.info(`[Play Command - SEARCH STEP 13b] Resolved track info exists: ${resolvedTrack.info ? 'yes' : 'no'}`);
+            
+            if (resolvedTrack.info) {
+              logger.info(`[Play Command - SEARCH STEP 13c] Resolved track info: ${JSON.stringify(resolvedTrack.info)}`);
+            }
+            
+            logger.info(`[Play Command - SEARCH STEP 14] Adding resolved track to queue`);
+            queue.queue.push({
+              track: resolvedTrack.encoded,
+              info: resolvedTrack.info,
+              requester: message.author
+            });
+            
+            logger.info(`[Play Command - SEARCH STEP 15] Resolved track added. Queue size now: ${queue.queue.length}`);
+            message.reply(`Added **${resolvedTrack.info.title}** by **${resolvedTrack.info.author}** to the queue!`);
+          }
         }
-
-        logger.info(`[Play Command] Extracted Spotify URL from search: ${spotifyUrl}`);
-        logger.info(`[Play Command] Re-resolving as direct URL to get full track...`);
-
-        // Re-resolve the Spotify URL to get the full track (not preview)
-        const trackRes = await queue.player.node.rest.resolve(spotifyUrl);
-        logger.info(`[Play Command] Track resolution - loadType: ${trackRes.loadType}`);
-
-        if (!trackRes || !trackRes.data) {
-          logger.warn(`[Play Command] Failed to resolve track from URL: ${spotifyUrl}`);
-          return message.reply('Could not load the full track.');
-        }
-
-        // Add the resolved track to queue
-        const resolvedTrack = trackRes.data;
-        logger.info(`[Play Command] Resolved track: ${resolvedTrack.info.title}`);
-        queue.queue.push({
-          track: resolvedTrack.encoded,
-          info: resolvedTrack.info,
-          requester: message.author
-        });
-        logger.info(`[Play Command] Track added. Queue size now: ${queue.queue.length}`);
-        message.reply(`Added **${resolvedTrack.info.title}** by **${resolvedTrack.info.author}** to the queue!`);
 
         logger.info(`[Play Command] Queue isPlaying: ${queue.isPlaying()}`);
         if (!queue.isPlaying()) {
