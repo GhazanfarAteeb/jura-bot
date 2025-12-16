@@ -72,6 +72,7 @@ export default class Play extends Command {
           // Resolve using the direct Spotify URL
           const res = await queue.player.node.rest.resolve(query);
           logger.info(`[Play Command] Response loadType: ${res.loadType}`);
+          logger.info(`[Play Command] Response structure: ${JSON.stringify(Object.keys(res))}`);
 
           if (!res) {
             logger.error(`[Play Command] Failed to resolve Spotify ${spType}`);
@@ -87,7 +88,13 @@ export default class Play extends Command {
             logger.info(`[Play Command] Single track loaded`);
           } else if (res.loadType === 'playlist' || res.loadType === 'album') {
             // Playlist/Album: res.tracks is the array of tracks
-            tracks = res.tracks;
+            tracks = res.tracks || res.data?.tracks;
+            if (!tracks) {
+              logger.error(`[Play Command] No tracks found in response for ${res.loadType}`);
+              logger.error(`[Play Command] Response keys: ${JSON.stringify(Object.keys(res))}`);
+              if (res.data) logger.error(`[Play Command] res.data keys: ${JSON.stringify(Object.keys(res.data))}`);
+              return message.reply(`Could not load tracks from this Spotify ${spType}.`);
+            }
             logger.info(`[Play Command] ${res.loadType} loaded with ${tracks.length} tracks`);
           } else if (res.loadType === 'search') {
             // Search results: res.data is array
@@ -169,30 +176,37 @@ export default class Play extends Command {
 
         logger.info(`[Play Command] Found ${tracks.length} track(s) for search query`);
 
-        // Handle playlists (in case search returns playlist)
-        if (res.loadType === 'playlist' || res.loadType === 'PLAYLIST_LOADED') {
-          logger.info(`[Play Command] Playlist detected: ${res.playlistInfo?.name || 'Unknown'} with ${tracks.length} tracks`);
-          for (const track of tracks) {
-            queue.queue.push({
-              track: track.encoded,
-              info: track.info,
-              requester: message.author
-            });
-            logger.info(`[Play Command] Added playlist track: ${track.info.title}`);
-          }
-          logger.info(`[Play Command] Playlist added. Queue size now: ${queue.queue.length}`);
-          message.reply(`Loaded playlist **${res.playlistInfo?.name || 'Unknown'}** with ${tracks.length} tracks!`);
-        } else {
-          const track = tracks[0];
-          logger.info(`[Play Command] Single track found: ${track.info.title}`);
-          queue.queue.push({
-            track: track.encoded,
-            info: track.info,
-            requester: message.author
-          });
-          logger.info(`[Play Command] Track added. Queue size now: ${queue.queue.length}`);
-          message.reply(`Added **${track.info.title}** to the queue!`);
+        // Get the first track from search and extract its Spotify URL
+        const firstTrack = tracks[0];
+        const spotifyUrl = firstTrack.info?.uri;
+
+        if (!spotifyUrl) {
+          logger.warn(`[Play Command] No Spotify URL found in search result`);
+          return message.reply('Could not get track information from search.');
         }
+
+        logger.info(`[Play Command] Extracted Spotify URL from search: ${spotifyUrl}`);
+        logger.info(`[Play Command] Re-resolving as direct URL to get full track...`);
+
+        // Re-resolve the Spotify URL to get the full track (not preview)
+        const trackRes = await queue.player.node.rest.resolve(spotifyUrl);
+        logger.info(`[Play Command] Track resolution - loadType: ${trackRes.loadType}`);
+
+        if (!trackRes || !trackRes.data) {
+          logger.warn(`[Play Command] Failed to resolve track from URL: ${spotifyUrl}`);
+          return message.reply('Could not load the full track.');
+        }
+
+        // Add the resolved track to queue
+        const resolvedTrack = trackRes.data;
+        logger.info(`[Play Command] Resolved track: ${resolvedTrack.info.title}`);
+        queue.queue.push({
+          track: resolvedTrack.encoded,
+          info: resolvedTrack.info,
+          requester: message.author
+        });
+        logger.info(`[Play Command] Track added. Queue size now: ${queue.queue.length}`);
+        message.reply(`Added **${resolvedTrack.info.title}** by **${resolvedTrack.info.author}** to the queue!`);
 
         logger.info(`[Play Command] Queue isPlaying: ${queue.isPlaying()}`);
         if (!queue.isPlaying()) {
