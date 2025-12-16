@@ -187,6 +187,7 @@ export default class Play extends Command {
           message.reply(`Loaded playlist **${res.playlistInfo?.name || 'Unknown'}** with ${tracks.length} tracks!`);
         } else {
           const track = tracks[0];
+          logger.info(`[Play Command] Single track found from search: ${JSON.stringify(track)}`);
           logger.info(`[Play Command] Single track found: ${track.info.title}`);
           queue.queue.push({
             track: track.encoded,
