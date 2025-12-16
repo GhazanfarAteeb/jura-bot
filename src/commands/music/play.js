@@ -1,6 +1,7 @@
 import Command from '../../structures/Command.js';
 import play from 'play-dl';
 import logger from '../../utils/logger.js';
+import spotifyTokenManager from '../../utils/spotifyTokenManager.js';
 
 export default class Play extends Command {
   constructor(client) {
@@ -116,6 +117,10 @@ export default class Play extends Command {
         const spType = play.sp_validate(query);
 
         if (spType === 'track') {
+          // Ensure Spotify token is valid before attempting to resolve
+          logger.info(`[Play Command] Validating Spotify token before track resolution`);
+          await spotifyTokenManager.ensureTokenValid();
+          
           // Handle Spotify track
           logger.info(`[Play Command] Detected Spotify track URL`);
           let spData;

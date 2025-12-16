@@ -13,6 +13,7 @@ import logger from './utils/logger.js';
 import ServerData from './database/server.js';
 import Utils from './structures/Utils.js';
 import MusicManager from './structures/MusicManager.js';
+import spotifyTokenManager from './utils/spotifyTokenManager.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -217,6 +218,9 @@ async function initialize() {
         // Load event handlers
         await loadEvents();
         
+        // Initialize Spotify token manager
+        await spotifyTokenManager.initialize();
+        
         // Initialize schedulers
         initializeSchedulers(client);
         
@@ -234,6 +238,41 @@ process.on('uncaughtException', error => {
     logger.error('Uncaught exception', error);
     console.error('Uncaught exception:', error);
     process.exit(1);
+});
+
+// Graceful shutdown
+process.on('SIGINT', async () => {
+    console.log('\n🛑 Shutting down gracefully...');
+    logger.info('Bot shutting down (SIGINT)');
+    
+    // Stop Spotify token refresh
+    spotifyTokenManager.stop();
+    
+    // Disconnect from Discord
+    client.destroy();
+    
+    // Close database connection
+    await mongoose.connection.close();
+    
+    console.log('✅ Shutdown complete');
+    process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
+    console.log('\n🛑 Shutting down gracefully...');
+    logger.info('Bot shutting down (SIGTERM)');
+    
+    // Stop Spotify token refresh
+    spotifyTokenManager.stop();
+    
+    // Disconnect from Discord
+    client.destroy();
+    
+    // Close database connection
+    await mongoose.connection.close();
+    
+    console.log('✅ Shutdown complete');
+    process.exit(0);
 });
 
 // Health check endpoint
