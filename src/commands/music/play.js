@@ -114,7 +114,7 @@ export default class Play extends Command {
             message.reply(`Added **${track.info.title}** (from Spotify) to the queue!`);
           }
           else if (spType === 'search') {
-            const track = tracks;
+            const track = tracks[0];
             logger.info(`[Play Command] Spotify track resolved: ${track.info.title}`);
             const res = await queue.player.node.rest.resolve(track.info.uri);
             const resolvedTrack = res.data;
