@@ -162,7 +162,7 @@ export default class Play extends Command {
             return message.reply('Could not resolve Spotify URL. Please check your link or try a different search query.');
           }
 
-          const search = `scsearch:${spData.name} ${spData.artists[0].name}`.trim();
+          const search = `spsearch:${spData.name} ${spData.artists[0].name}`.trim();
           logger.info(`[Play Command] Searching SoundCloud for: ${search}`);
 
           // Use player.node.rest.resolve() as per Shoukaku v4
