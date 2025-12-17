@@ -147,6 +147,14 @@ const guildSchema = new mongoose.Schema({
 
 // Method to get or create guild configuration
 guildSchema.statics.getGuild = async function(guildId, guildName = null) {
+    // Check cache first (if client.db exists)
+    if (global.guildCache) {
+        const cached = global.guildCache.get(guildId);
+        if (cached && Date.now() - cached.timestamp < 15 * 60 * 1000) {
+            return cached.data;
+        }
+    }
+    
     let guild = await this.findOne({ guildId });
     
     if (!guild) {
@@ -158,6 +166,13 @@ guildSchema.statics.getGuild = async function(guildId, guildName = null) {
         guild.guildName = guildName;
         await guild.save();
     }
+    
+    // Cache the result
+    if (!global.guildCache) global.guildCache = new Map();
+    global.guildCache.set(guildId, {
+        data: guild,
+        timestamp: Date.now()
+    });
     
     return guild;
 };

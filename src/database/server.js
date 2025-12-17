@@ -6,14 +6,10 @@ export default class ServerData {
     this.Music = Music;
     this.Guild = Guild;
 
-    // LRU Cache with 5 minute TTL for frequently accessed data
+    // LRU Cache with 15 minute TTL for frequently accessed data
     this.cache = new Map();
-    this.cacheTTL = 5 * 60 * 1000; // 5 minutes
-    this.maxCacheSize = 500; // Prevent memory bloat
-
-    // Clear expired cache entries every minute
-    setInterval(() => this.clearExpiredCache(), 60000);
-  }
+    this.cacheTTL = 15 * 60 * 1000; // 15 minutes (increased from 5)
+    this.maxCacheSize = 1000; // Increased from 500 for better caching
 
   clearExpiredCache() {
     const now = Date.now();

@@ -40,6 +40,11 @@ const client = new Client({
     Partials.User,
     Partials.GuildMember
   ],
+  // WebSocket optimizations
+  ws: {
+    compress: true, // Enable compression for reduced bandwidth
+    large_threshold: 50 // Only request offline members for servers < 50 members
+  },
   sweepers: {
     // Sweep messages every 5 minutes to free memory
     messages: {
