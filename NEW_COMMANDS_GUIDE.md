@@ -75,29 +75,6 @@ Send anime reaction GIFs to express yourself!
 
 ---
 
-### !meme - Random Memes
-Get random memes from Reddit!
-
-**Usage:**
-```
-!meme                     # Random from popular subreddits
-!meme <subreddit>         # From specific subreddit
-!reddit <subreddit>
-```
-
-**Popular Subreddits:**
-```
-!meme dankmemes
-!meme wholesomememes
-!meme me_irl
-!meme memes
-!meme funny
-!meme AnimeMemes
-!meme programmerhumor
-```
-
----
-
 ## 🔨 Fixed Moderation Commands
 
 All moderation commands now work correctly!
@@ -153,11 +130,6 @@ All moderation commands now work correctly!
 - Can react to yourself (e.g., `!react dance`)
 - All reactions are SFW anime GIFs
 
-### Meme Command
-- May need to retry if it finds a text post
-- All NSFW content is automatically skipped
-- Shows upvotes and comment count
-
 ### Moderation Commands
 - You need proper permissions
 - Bot needs matching permissions
@@ -187,8 +159,7 @@ All commands have 3-second cooldowns to prevent spam:
 
 **Utility (New!):**
 - !gif
-- !react  
-- !meme
+- !react
 
 **Moderation (Fixed!):**
 - !ban

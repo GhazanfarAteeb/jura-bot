@@ -121,35 +121,6 @@ Send anime reaction GIFs!
 
 ---
 
-### 3. Meme Command
-**File:** [src/commands/utility/meme.js](src/commands/utility/meme.js)
-
-Get random memes from Reddit!
-
-**Usage:**
-```bash
-!meme                     # Random meme from popular subreddits
-!meme dankmemes          # Meme from specific subreddit
-!meme wholesomememes     # Wholesome memes
-```
-
-**Aliases:** `!reddit`, `!randommeme`
-
-**Features:**
-- 📱 Fetches from Reddit
-- 🎲 Random meme selection
-- 🔒 Auto-skips NSFW content
-- 📊 Shows upvotes and comments
-- 🔗 Link to original post
-
-**Default Subreddits:**
-- r/memes
-- r/dankmemes
-- r/wholesomememes
-- r/me_irl
-
----
-
 ## 🔑 API Configuration
 
 ### Tenor API Key (Optional)
@@ -210,16 +181,6 @@ If not provided, uses default public key (limited but functional).
 - Rate limit: ~50 requests/minute
 - Should be fine for most bots
 
-### Reddit API
-- No authentication required
-- May occasionally fail (Reddit API instability)
-- Auto-skips NSFW and text posts
-
-### Meme Command
-- Sometimes needs retry if text post found
-- Works best with image-focused subreddits
-- Skips NSFW content automatically
-
 ---
 
 ## 📝 Files Modified
@@ -234,10 +195,9 @@ If not provided, uses default public key (limited but functional).
 2. **Client Configuration**
    - [src/index.js](src/index.js) - Re-enabled reactions
 
-3. **New Commands (3 files)**
+3. **New Commands (2 files)**
    - [src/commands/utility/gif.js](src/commands/utility/gif.js)
    - [src/commands/utility/react.js](src/commands/utility/react.js)
-   - [src/commands/utility/meme.js](src/commands/utility/meme.js)
 
 ---
 
@@ -249,7 +209,6 @@ If not provided, uses default public key (limited but functional).
 |---------|-------------|-------|
 | `!gif` | Search GIFs | `!gif <query>` |
 | `!react` | Anime reactions | `!react <action> [@user]` |
-| `!meme` | Random memes | `!meme [subreddit]` |
 
 ### Fixed Commands:
 
@@ -288,17 +247,6 @@ If not provided, uses default public key (limited but functional).
 !gif dancing
 ```
 
-### Memes
-```bash
-# Random meme
-!meme
-
-# Specific subreddit
-!meme dankmemes
-!meme wholesomememes
-!meme me_irl
-```
-
 ---
 
 ## 🔄 Update Summary
@@ -306,9 +254,9 @@ If not provided, uses default public key (limited but functional).
 **Total Changes:**
 - ✅ Fixed 5 moderation commands
 - ✅ Re-enabled reaction features  
-- ✅ Added 3 new GIF/meme commands
+- ✅ Added 2 new GIF/reaction commands
 - ✅ Zero performance impact
-- ✅ All free APIs (no costs)
+- ✅ Free Tenor API (no costs)
 
 **Impact:**
 - 🔧 Moderation commands now work properly

@@ -180,10 +180,9 @@ Fixed permission format in all moderation commands - they now work correctly!
 - Small bandwidth increase but worth it for features
 
 ### New GIF Commands Added 🎬
-**3 new commands using free APIs:**
+**2 new commands using free APIs:**
 1. **`!gif`** - Search and send GIFs from Tenor
 2. **`!react`** - 25+ anime reaction GIFs (hug, pat, dance, etc.)
-3. **`!meme`** - Random memes from Reddit
 
 **See [MODERATION_GIF_UPDATE.md](MODERATION_GIF_UPDATE.md) for details.**
 
