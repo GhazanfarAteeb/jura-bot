@@ -12,18 +12,18 @@ class MessageCreate extends Event {
   async run(message) {
     // Early returns for performance
     if (message.author.bot || !message.guild) return;
-    
+
     // Quick content check - don't fetch anything if no prefix/mention
     const mention = new RegExp(`^<@!?${this.client.user.id}>( |)$`);
-    const hasPrefix = message.content.startsWith('!') || 
-                     message.content.startsWith('<@') || 
-                     message.content.match(mention);
-    
+    const hasPrefix = message.content.startsWith('!') ||
+      message.content.startsWith('<@') ||
+      message.content.match(mention);
+
     if (!hasPrefix) return; // Exit early - no database call needed!
 
     // Get prefix (cached)
     const currentPrefix = await this.client.db.getPrefix(message.guildId);
-    
+
     // Check setup (don't await unless needed)
     const setupPromise = this.client.db.getSetup(message.guildId);
 
@@ -33,19 +33,19 @@ class MessageCreate extends Event {
       });
       return;
     }
-    
+
     const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const prefixRegex = new RegExp(
       `^(<@!?${this.client.user.id}>|${escapeRegex(currentPrefix)})\\s*`
     );
     if (!prefixRegex.test(message.content)) return;
-    
+
     // Check setup now
     const setup = await setupPromise;
     if (setup && setup.textId && setup.textId === message.channelId) {
       return this.client.emit("setupSystem", message);
     }
-    
+
     const [matchedPrefix] = message.content.match(prefixRegex);
     const args = message.content
       .slice(matchedPrefix.length)
