@@ -380,19 +380,52 @@ export default {
 
   execute: async (message, args) => {
     if (!args.length) {
-      // Create organized reaction categories
+      // Create organized reaction categories with descriptions
       const categories = {
-        '💕 Affectionate': ['hug', 'kiss', 'pat', 'headpat', 'pats', 'cuddle', 'snuggle', 'nuzzle', 'love', 'hold', 'handholding', 'carry'],
-        '😊 Positive': ['highfive', 'wave', 'greet', 'smile', 'blush', 'happy', 'wink', 'thumbsup', 'thumbs', 'salute', 'nod'],
-        '🎉 Fun & Playful': ['dance', 'celebrate', 'laugh', 'excited', 'spin', 'wag', 'poke', 'boop', 'lick', 'blep', 'tickle', 'bonk', 'nom', 'feed', 'teehee', 'grin', 'flirt'],
-        '😠 Aggressive': ['slap', 'punch', 'kick', 'push', 'throw', 'tackle', 'grab', 'headbutt', 'stab', 'bite', 'kill', 'angry', 'rage', 'triggered', 'bully'],
-        '💦 Physical': ['splash', 'spray', 'run', 'chase', 'piggyback', 'trip', 'faint'],
-        '😴 Sleepy': ['sleep', 'sleepy', 'yawn'],
-        '😢 Emotional': ['cry', 'pout', 'nervous'],
-        '🤔 Thinking': ['think', 'thonking', 'confused', 'shrug', 'facepalm', 'scoff'],
-        '👁️ Observing': ['stare', 'peek', 'lurk'],
-        '💕 Dere Types': ['tsundere', 'deredere', 'yandere', 'kuudere', 'dandere'],
-        '😳 Special': ['lewd', 'nosebleed', 'shocked', 'smug', 'smirk']
+        '💕 Affectionate': {
+          subtitle: 'Show your love and care',
+          reactions: ['hug', 'kiss', 'pat', 'headpat', 'pats', 'cuddle', 'snuggle', 'nuzzle', 'love', 'hold', 'handholding', 'carry']
+        },
+        '😊 Positive Vibes': {
+          subtitle: 'Spread positivity and encouragement',
+          reactions: ['highfive', 'wave', 'greet', 'smile', 'blush', 'happy', 'wink', 'thumbsup', 'thumbs', 'salute', 'nod']
+        },
+        '🎉 Fun & Playful': {
+          subtitle: 'Have fun and mess around',
+          reactions: ['dance', 'celebrate', 'laugh', 'excited', 'spin', 'wag', 'poke', 'boop', 'lick', 'blep', 'tickle', 'bonk', 'nom', 'feed', 'teehee', 'grin', 'flirt']
+        },
+        '😠 Aggressive': {
+          subtitle: 'Express your anger (playfully!)',
+          reactions: ['slap', 'punch', 'kick', 'push', 'throw', 'tackle', 'grab', 'headbutt', 'stab', 'bite', 'kill', 'angry', 'rage', 'triggered', 'bully']
+        },
+        '💦 Physical Actions': {
+          subtitle: 'Get physical with these moves',
+          reactions: ['splash', 'spray', 'run', 'chase', 'piggyback', 'trip', 'faint']
+        },
+        '😴 Sleepy Time': {
+          subtitle: 'When you\'re feeling tired',
+          reactions: ['sleep', 'sleepy', 'yawn']
+        },
+        '😢 Emotional': {
+          subtitle: 'Express your feelings',
+          reactions: ['cry', 'pout', 'nervous']
+        },
+        '🤔 Thoughtful': {
+          subtitle: 'When you need to think or react',
+          reactions: ['think', 'thonking', 'confused', 'shrug', 'facepalm', 'scoff']
+        },
+        '👁️ Observing': {
+          subtitle: 'Watch from the shadows',
+          reactions: ['stare', 'peek', 'lurk']
+        },
+        '💖 Anime Dere Types': {
+          subtitle: 'Show your personality type',
+          reactions: ['tsundere', 'deredere', 'yandere', 'kuudere', 'dandere']
+        },
+        '😳 Special Reactions': {
+          subtitle: 'Unique and special moments',
+          reactions: ['lewd', 'nosebleed', 'shocked', 'smug', 'smirk']
+        }
       };
 
       // Create embed with organized layout
@@ -404,10 +437,10 @@ export default {
         .setTimestamp();
 
       // Add each category as a field
-      for (const [category, reacts] of Object.entries(categories)) {
+      for (const [category, data] of Object.entries(categories)) {
         embed.addFields({
           name: category,
-          value: reacts.join(' '),
+          value: `*${data.subtitle}*\n${data.reactions.join(', ')}`,
           inline: false
         });
       }
