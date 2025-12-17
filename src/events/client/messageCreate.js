@@ -13,15 +13,9 @@ class MessageCreate extends Event {
     // Early returns for performance
     if (message.author.bot || !message.guild) return;
 
-    // Quick content check - don't fetch anything if no prefix/mention
     const mention = new RegExp(`^<@!?${this.client.user.id}>( |)$`);
-    const hasPrefix = message.content.startsWith('!') ||
-      message.content.startsWith('<@') ||
-      message.content.match(mention);
 
-    if (!hasPrefix) return; // Exit early - no database call needed!
-
-    // Get prefix (cached)
+    // Get prefix (cached) - removed hardcoded check to support custom prefixes
     const currentPrefix = await this.client.db.getPrefix(message.guildId);
 
     // Check setup (don't await unless needed)
@@ -36,7 +30,8 @@ class MessageCreate extends Event {
 
     const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const prefixRegex = new RegExp(
-      `^(<@!?${this.client.user.id}>|${escapeRegex(currentPrefix)})\\s*`
+      `^(<@!?${this.client.user.id}>|${escapeRegex(currentPrefix)})\\s*`,
+      'i' // Case insensitive flag
     );
     if (!prefixRegex.test(message.content)) return;
 
