@@ -395,21 +395,37 @@ export default {
         '😳 Special': ['lewd', 'nosebleed', 'shocked', 'smug', 'smirk']
       };
 
-      let reactionList = '🎭 **Available Reactions** (90+ reactions!)\n\n';
-      
+      // Create embed with organized layout
+      const embed = new EmbedBuilder()
+        .setColor('#FF69B4')
+        .setTitle('🎭 Reaction Commands')
+        .setDescription('Here is the list of available reactions!\nFor more info on a specific reaction, use `react <action> [@user]`')
+        .setFooter({ text: `Requested by ${message.author.tag}`, iconURL: message.author.displayAvatarURL({ dynamic: true }) })
+        .setTimestamp();
+
+      // Add each category as a field
       for (const [category, reacts] of Object.entries(categories)) {
-        reactionList += `**${category}**\n\`${reacts.join('`, `')}\`\n\n`;
+        embed.addFields({
+          name: category,
+          value: reacts.join(' '),
+          inline: false
+        });
       }
 
-      reactionList += `📖 **Usage:** \`!react <action> [@user]\`\n`;
-      reactionList += `💡 **Examples:**\n`;
-      reactionList += `• \`!react hug @user\` - Hug someone\n`;
-      reactionList += `• \`!react dance\` - Dance by yourself\n`;
-      reactionList += `• \`!react tsundere @user\` - B-Baka! >///<\n\n`;
-      reactionList += `✨ Each reaction has 4 random funny titles!\n`;
-      reactionList += `📋 Full list: Check REACTIONS_LIST.md`;
+      // Add usage examples
+      embed.addFields({
+        name: '📖 Usage',
+        value: '`react <action> [@user]`',
+        inline: false
+      });
 
-      return message.reply(reactionList);
+      embed.addFields({
+        name: '💡 Examples',
+        value: '• `react hug @user` - Hug someone\n• `react dance` - Dance by yourself\n• `react tsundere @user` - B-Baka! >///<',
+        inline: false
+      });
+
+      return message.reply({ embeds: [embed] });
     }
 
     const action = args[0].toLowerCase();
