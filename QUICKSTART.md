@@ -1,6 +1,6 @@
 # 🎯 Quick Start Guide
 
-Get JURA BOT up and running in 5 minutes!
+Get RAPHAEL up and running in 5 minutes!
 
 ## 1️⃣ Prerequisites Check
 
@@ -46,7 +46,7 @@ MONGODB_URI=mongodb://localhost:27017/jura_bot
 npm start
 ```
 
-You should see: `✅ Logged in as JURA BOT#1234` and `🚀 Bot is ready!`
+You should see: `✅ Logged in as RAPHAEL#1234` and `🚀 Bot is ready!`
 
 ## 5️⃣ Setup Your Server
 

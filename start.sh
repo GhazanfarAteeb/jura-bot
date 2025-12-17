@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "========================================"
-echo " JURA BOT - Discord Bot Launcher"
+echo " RAPHAEL - Discord Bot Launcher"
 echo "========================================"
 echo ""
 
@@ -64,7 +64,7 @@ fi
 
 # Start the bot
 echo "========================================"
-echo " Starting JURA BOT..."
+echo " Starting RAPHAEL..."
 echo "========================================"
 echo ""
 echo "Press Ctrl+C to stop the bot"

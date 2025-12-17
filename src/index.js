@@ -227,11 +227,11 @@ async function loadEvents() {
 // Initialize bot
 async function initialize() {
   const startTime = Date.now();
-  logger.startup('Starting JURA BOT...');
+  logger.startup('Starting RAPHAEL...');
   logger.build('Bot version: 2.1.0');
   logger.build('Node version: ' + process.version);
   logger.build('Environment: ' + (process.env.NODE_ENV || 'production'));
-  console.log('🚀 Starting JURA BOT...');
+  console.log('🚀 Starting RAPHAEL...');
 
   await connectDatabase();
   await loadCommands();
@@ -341,7 +341,7 @@ app.get('/health', (req, res) => {
 // Root endpoint
 app.get('/', (req, res) => {
   res.json({
-    name: 'JURA BOT',
+    name: 'RAPHAEL',
     version: '2.1.0',
     status: 'running',
     message: 'Bot is online and operational',

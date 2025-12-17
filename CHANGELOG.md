@@ -1,6 +1,6 @@
 # 📝 Changelog
 
-All notable changes to JURA BOT will be documented in this file.
+All notable changes to RAPHAEL will be documented in this file.
 
 ---
 

@@ -1,6 +1,6 @@
 # 🚀 Installation Guide
 
-This guide will help you set up JURA BOT for your Discord server.
+This guide will help you set up RAPHAEL for your Discord server.
 
 ## Prerequisites
 
@@ -15,7 +15,7 @@ Before you begin, make sure you have:
 ## Step 1: Create Discord Bot
 
 1. Go to [Discord Developer Portal](https://discord.com/developers/applications)
-2. Click **"New Application"** and give it a name (e.g., "JURA BOT")
+2. Click **"New Application"** and give it a name (e.g., "RAPHAEL")
 3. Go to the **"Bot"** section in the left sidebar
 4. Click **"Add Bot"** and confirm
 5. Under **"Token"**, click **"Copy"** to copy your bot token (keep this secret!)
@@ -37,7 +37,7 @@ Before you begin, make sure you have:
 5. Open the URL in your browser and select your server
 6. Click **"Authorize"**
 
-## Step 3: Install JURA BOT
+## Step 3: Install RAPHAEL
 
 ### 3.1 Download/Clone the Repository
 
@@ -108,7 +108,7 @@ You should see:
 🎯 Loaded event: ready
 🎯 Loaded event: guildMemberAdd
 ... (more events)
-✅ Logged in as JURA BOT#1234
+✅ Logged in as RAPHAEL#1234
 📊 Serving X servers
 👥 Serving X users
 🚀 Bot is ready!
@@ -225,4 +225,4 @@ pm2 startup
 
 ---
 
-Congratulations! Your JURA BOT should now be running. Use `!help` in Discord to see all available commands.
+Congratulations! Your RAPHAEL should now be running. Use `!help` in Discord to see all available commands.

@@ -1,4 +1,4 @@
-# 🎉 JURA BOT v2.0.0 - Release Summary
+# 🎉 RAPHAEL v2.0.0 - Release Summary
 
 ## ✨ What's New
 
@@ -339,7 +339,7 @@ See DEPLOYMENT.md for detailed guides.
 
 ---
 
-## 🎊 Enjoy JURA BOT v2.0.0!
+## 🎊 Enjoy RAPHAEL v2.0.0!
 
 **Ready to deploy?** See DEPLOYMENT.md
 
@@ -347,4 +347,4 @@ See DEPLOYMENT.md for detailed guides.
 
 **Found a bug?** Open an issue on GitHub
 
-Thank you for using JURA BOT! 🚀
+Thank you for using RAPHAEL! 🚀

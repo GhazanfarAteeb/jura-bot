@@ -1,4 +1,4 @@
-# 🎮 JURA BOT - Multi-Purpose Discord Bot
+# 🎮 RAPHAEL - Multi-Purpose Discord Bot
 
 A powerful, feature-rich Discord bot with advanced moderation, customization, and security features. Combines the best features of Carl-bot, Ciel, and Dyno with additional unique capabilities including a full economy system, visual rank cards, and comprehensive monitoring.
 
@@ -378,7 +378,7 @@ See [CHANGELOG.md](CHANGELOG.md) for detailed updates and [FEATURES.md](FEATURES
 - **[CHANGELOG.md](CHANGELOG.md)** - Version history
 - **[VISUAL_GUIDE.md](VISUAL_GUIDE.md)** - Visual examples
 
-## 🎯 Why Choose JURA BOT?
+## 🎯 Why Choose RAPHAEL?
 
 ### Open Source & Self-Hosted
 - ✅ **Free Forever** - No premium tiers or paywalls

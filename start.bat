@@ -1,6 +1,6 @@
 @echo off
 echo ========================================
-echo  JURA BOT - Discord Bot Launcher
+echo  RAPHAEL - Discord Bot Launcher
 echo ========================================
 echo.
 
@@ -65,7 +65,7 @@ if not exist node_modules (
 
 REM Start the bot
 echo ========================================
-echo  Starting JURA BOT...
+echo  Starting RAPHAEL...
 echo ========================================
 echo.
 echo Press Ctrl+C to stop the bot

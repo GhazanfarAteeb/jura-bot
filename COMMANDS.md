@@ -1,6 +1,6 @@
 # 📖 Complete Command Reference
 
-Quick reference guide for all JURA BOT commands.
+Quick reference guide for all RAPHAEL commands.
 
 ---
 

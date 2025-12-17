@@ -1,6 +1,6 @@
 # 🚀 Deployment Guide
 
-Complete guide for deploying JURA BOT to production.
+Complete guide for deploying RAPHAEL to production.
 
 ---
 
@@ -304,7 +304,7 @@ systemctl restart nginx
 2. Create free account
 3. Add new monitor:
    - **Monitor Type**: HTTP(s)
-   - **Friendly Name**: JURA BOT
+   - **Friendly Name**: RAPHAEL
    - **URL**: `https://your-bot-url/health`
    - **Monitoring Interval**: 5 minutes
 4. Set up alerts:

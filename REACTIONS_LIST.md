@@ -180,4 +180,4 @@ All available reactions for the `!react` command. Each reaction comes with rando
 
 ---
 
-**Powered by Jura Bot** • More reactions coming soon! 🎉
+**Powered by RAPHAEL** • More reactions coming soon! 🎉

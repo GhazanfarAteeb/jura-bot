@@ -1,4 +1,4 @@
-# 🎉 JURA BOT - Complete Setup Summary
+# 🎉 RAPHAEL - Complete Setup Summary
 
 **Your multi-purpose Discord bot with advanced moderation and security features is ready!**
 

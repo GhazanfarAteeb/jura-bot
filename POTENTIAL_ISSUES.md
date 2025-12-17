@@ -7,7 +7,7 @@
 
 ## 🔍 Analysis Summary
 
-This document outlines potential issues, conflicts, and recommendations for JURA BOT.
+This document outlines potential issues, conflicts, and recommendations for RAPHAEL.
 
 ---
 

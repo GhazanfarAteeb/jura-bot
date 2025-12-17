@@ -1,6 +1,6 @@
 # 📋 Features Documentation
 
-Complete guide to all JURA BOT features and capabilities.
+Complete guide to all RAPHAEL features and capabilities.
 
 ---
 
@@ -1653,7 +1653,7 @@ Timestamp: <Discord timestamp>
 
 ## 📊 Feature Comparison
 
-| Feature | JURA BOT | Carl-bot | MEE6 | Dyno |
+| Feature | RAPHAEL | Carl-bot | MEE6 | Dyno |
 |---------|----------|----------|------|------|
 | Invite Verification | ✅ | ✅ | ❌ | ✅ |
 | Sus Detection | ✅ | ❌ | ❌ | ❌ |
