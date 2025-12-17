@@ -40,16 +40,6 @@ const client = new Client({
     Partials.User,
     Partials.GuildMember
   ],
-  // Optimize performance
-  makeCache: (manager) => {
-    // Only cache what we need
-    if (manager.name === 'GuildBanManager') return null;
-    if (manager.name === 'GuildInviteManager') return null;
-    if (manager.name === 'ReactionUserManager') return null;
-    if (manager.name === 'StageInstanceManager') return null;
-    if (manager.name === 'ThreadMemberManager') return null;
-    return manager.options?.cache || manager.cache;
-  },
   sweepers: {
     // Sweep messages every 5 minutes to free memory
     messages: {
