@@ -5,6 +5,57 @@ export default class ServerData {
   constructor() {
     this.Music = Music;
     this.Guild = Guild;
+    
+    // LRU Cache with 5 minute TTL for frequently accessed data
+    this.cache = new Map();
+    this.cacheTTL = 5 * 60 * 1000; // 5 minutes
+    this.maxCacheSize = 500; // Prevent memory bloat
+    
+    // Clear expired cache entries every minute
+    setInterval(() => this.clearExpiredCache(), 60000);
+  }
+  
+  clearExpiredCache() {
+    const now = Date.now();
+    for (const [key, value] of this.cache.entries()) {
+      if (now - value.timestamp > this.cacheTTL) {
+        this.cache.delete(key);
+      }
+    }
+  }
+  
+  getCached(key) {
+    const cached = this.cache.get(key);
+    if (!cached) return null;
+    
+    const now = Date.now();
+    if (now - cached.timestamp > this.cacheTTL) {
+      this.cache.delete(key);
+      return null;
+    }
+    
+    return cached.data;
+  }
+  
+  setCache(key, data) {
+    // Implement simple LRU by removing oldest if size limit reached
+    if (this.cache.size >= this.maxCacheSize) {
+      const firstKey = this.cache.keys().next().value;
+      this.cache.delete(firstKey);
+    }
+    
+    this.cache.set(key, {
+      data,
+      timestamp: Date.now()
+    });
+  }
+  
+  invalidateCache(pattern) {
+    for (const key of this.cache.keys()) {
+      if (key.startsWith(pattern)) {
+        this.cache.delete(key);
+      }
+    }
   }
 
   async get(guildId) {
@@ -24,11 +75,20 @@ export default class ServerData {
     const guild = await this.Guild.getGuild(guildId);
     guild.prefix = prefix;
     await guild.save();
+    
+    // Invalidate cache
+    this.cache.delete(`prefix:${guildId}`);
   }
 
   async getPrefix(guildId) {
+    const cacheKey = `prefix:${guildId}`;
+    const cached = this.getCached(cacheKey);
+    if (cached !== null) return cached;
+    
     const guild = await this.Guild.getGuild(guildId);
     const prefix = guild?.prefix || process.env.DEFAULT_PREFIX || '!';
+    
+    this.setCache(cacheKey, prefix);
     return prefix;
   }
 
@@ -60,11 +120,21 @@ export default class ServerData {
       { $set: { mode: Boolean(mode) } },
       { upsert: true }
     );
+    
+    // Invalidate cache
+    this.cache.delete(`dj:${guildId}`);
   }
 
   async getDj(guildId) {
+    const cacheKey = `dj:${guildId}`;
+    const cached = this.getCached(cacheKey);
+    if (cached !== null) return cached;
+    
     const data = await this.Music.findOne({ guildId, type: 'dj' });
-    return data || false;
+    const result = data || false;
+    
+    this.setCache(cacheKey, result);
+    return result;
   }
 
   async getRoles(guildId) {

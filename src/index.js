@@ -22,18 +22,15 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Create Discord client with necessary intents
+// Create Discord client with necessary intents (optimized)
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMembers,
-    GatewayIntentBits.GuildBans,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.GuildMessageReactions,
     GatewayIntentBits.GuildInvites,
     GatewayIntentBits.MessageContent,
-    GatewayIntentBits.GuildModeration,
-    GatewayIntentBits.GuildPresences,
     GatewayIntentBits.GuildVoiceStates
   ],
   partials: [
@@ -42,11 +39,42 @@ const client = new Client({
     Partials.Reaction,
     Partials.User,
     Partials.GuildMember
-  ]
+  ],
+  // Optimize performance
+  makeCache: (manager) => {
+    // Only cache what we need
+    if (manager.name === 'GuildBanManager') return null;
+    if (manager.name === 'GuildInviteManager') return null;
+    if (manager.name === 'ReactionUserManager') return null;
+    if (manager.name === 'StageInstanceManager') return null;
+    if (manager.name === 'ThreadMemberManager') return null;
+    return manager.options?.cache || manager.cache;
+  },
+  sweepers: {
+    // Sweep messages every 5 minutes to free memory
+    messages: {
+      interval: 300,
+      lifetime: 900
+    },
+    // Sweep users not in voice channels
+    users: {
+      interval: 3600,
+      filter: () => user => {
+        // Keep bot users and users in voice channels
+        if (user.bot) return false;
+        return !client.guilds.cache.some(guild => 
+          guild.members.cache.get(user.id)?.voice?.channel
+        );
+      }
+    }
+  }
 });
 
 // Collections for commands and events
 client.commands = new Collection();
+client.cooldowns = new Collection();
+client.invites = new Collection();
+client.aliases = new Collection();
 
 // Initialize database
 client.db = new ServerData();
@@ -56,11 +84,6 @@ client.utils = Utils;
 
 // Initialize MusicManager
 client.music = new MusicManager(client);
-
-client.cooldowns = new Collection();
-client.cooldowns = new Collection();
-client.invites = new Collection();
-client.aliases = new Collection();
 
 // Configuration
 client.config = {
@@ -79,11 +102,17 @@ client.color = {
   yellow: '#ffff00'
 };
 
-// Connect to MongoDB
+// Connect to MongoDB with optimized settings
 async function connectDatabase() {
   try {
     const startTime = Date.now();
-    await mongoose.connect(process.env.MONGODB_URI);
+    await mongoose.connect(process.env.MONGODB_URI, {
+      maxPoolSize: 10,
+      minPoolSize: 2,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+      family: 4 // Use IPv4, skip trying IPv6
+    });
     const duration = Date.now() - startTime;
     logger.database('MongoDB connection established', true);
     logger.performance('Database connection', duration);
@@ -96,45 +125,56 @@ async function connectDatabase() {
   }
 }
 
-// Load commands
+// Load commands in parallel for faster startup
 async function loadCommands() {
   const commandFolders = readdirSync(path.join(__dirname, 'commands'));
   let totalCommands = 0;
+
+  // Load all commands in parallel
+  const commandPromises = [];
 
   for (const folder of commandFolders) {
     const commandFiles = readdirSync(path.join(__dirname, 'commands', folder))
       .filter(file => file.endsWith('.js'));
 
     for (const file of commandFiles) {
-      try {
-        const { default: CommandClass } = await import(`./commands/${folder}/${file}`);
-
-        // Check if it's a Wave-Music Command class (needs instantiation)
-        if (typeof CommandClass === 'function' && CommandClass.prototype.run) {
-          const commandInstance = new CommandClass(client);
-          if (commandInstance.name) {
-            client.commands.set(commandInstance.name, commandInstance);
-            if (commandInstance.aliases && Array.isArray(commandInstance.aliases)) {
-              commandInstance.aliases.forEach(alias => client.aliases.set(alias, commandInstance.name));
+      commandPromises.push(
+        import(`./commands/${folder}/${file}`)
+          .then(({ default: CommandClass }) => {
+            // Check if it's a Wave-Music Command class (needs instantiation)
+            if (typeof CommandClass === 'function' && CommandClass.prototype.run) {
+              const commandInstance = new CommandClass(client);
+              if (commandInstance.name) {
+                client.commands.set(commandInstance.name, commandInstance);
+                if (commandInstance.aliases && Array.isArray(commandInstance.aliases)) {
+                  commandInstance.aliases.forEach(alias => client.aliases.set(alias, commandInstance.name));
+                }
+                console.log(`📝 Loaded command: ${commandInstance.name}`);
+                return 1;
+              }
             }
-            console.log(`📝 Loaded command: ${commandInstance.name}`);
-            totalCommands++;
-          }
-        }
-        // Legacy command object format (plain object with execute method)
-        else if (CommandClass && CommandClass.name && CommandClass.execute) {
-          client.commands.set(CommandClass.name, CommandClass);
-          if (CommandClass.aliases && Array.isArray(CommandClass.aliases)) {
-            CommandClass.aliases.forEach(alias => client.aliases.set(alias, CommandClass.name));
-          }
-          console.log(`📝 Loaded command: ${CommandClass.name}`);
-          totalCommands++;
-        }
-      } catch (error) {
-        logger.error(`Failed to load command ${file}`, error);
-      }
+            // Legacy command object format (plain object with execute method)
+            else if (CommandClass && CommandClass.name && CommandClass.execute) {
+              client.commands.set(CommandClass.name, CommandClass);
+              if (CommandClass.aliases && Array.isArray(CommandClass.aliases)) {
+                CommandClass.aliases.forEach(alias => client.aliases.set(alias, CommandClass.name));
+              }
+              console.log(`📝 Loaded command: ${CommandClass.name}`);
+              return 1;
+            }
+            return 0;
+          })
+          .catch(error => {
+            logger.error(`Failed to load command ${file}`, error);
+            return 0;
+          })
+      );
     }
   }
+
+  // Wait for all commands to load
+  const results = await Promise.all(commandPromises);
+  totalCommands = results.reduce((sum, count) => sum + count, 0);
 
   logger.startup(`Loaded ${totalCommands} commands`);
 }

@@ -7,7 +7,9 @@ export default {
     description: 'View user tracking history (username changes, joins, etc.)',
     usage: 'userhistory [@user|user_id]',
     category: 'moderation',
-    permissions: [PermissionFlagsBits.ModerateMembers],
+    permissions: {
+        user: PermissionFlagsBits.ModerateMembers
+    },
     aliases: ['history', 'trackuser', 'userlookup'],
     
     execute: async (message, args) => {

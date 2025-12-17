@@ -20,12 +20,7 @@ export default {
         try {
             const startTime = Date.now();
             
-            // Defer reply FIRST before doing anything else
-            await interaction.deferReply().catch(err => {
-                console.error('Failed to defer reply:', err);
-            });
-            
-            // Parse slash command options into args array
+            // Parse slash command options into args array (do this before deferring)
             const args = [];
             
             // Handle different option types
@@ -60,6 +55,9 @@ export default {
                     }
                 }
             };
+            
+            // Defer reply now, before heavy operations
+            await interaction.deferReply().catch(() => {});
             
             // Add mentioned users to fake message
             for (const option of interaction.options.data) {

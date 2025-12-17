@@ -6,7 +6,10 @@ export default {
     description: 'Delete multiple messages',
     usage: '<amount> [@user]',
     aliases: ['clear', 'clean', 'delete'],
-    permissions: [PermissionFlagsBits.ManageMessages],
+    permissions: {
+        user: PermissionFlagsBits.ManageMessages,
+        client: PermissionFlagsBits.ManageMessages
+    },
     cooldown: 3,
     
     async execute(message, args) {

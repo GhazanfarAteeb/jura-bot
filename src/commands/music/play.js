@@ -187,15 +187,17 @@ export default class Play extends Command {
           message.reply(`Loaded playlist **${res.playlistInfo?.name || 'Unknown'}** with ${tracks.length} tracks!`);
         } else {
           const track = tracks[0];
-          logger.info(`[Play Command] Single track found from search: ${JSON.stringify(track)}`);
-          logger.info(`[Play Command] Single track found: ${track.info.title}`);
+          logger.info(`[Play Command] Spotify search track resolved: ${JSON.stringify(track)}`);
+          logger.info(`[Play Command] Spotify track resolved: ${track.info.title}`);
+          const res = await queue.player.node.rest.resolve(track.info.uri);
+          const resolvedTrack = res.data;
           queue.queue.push({
-            track: track.encoded,
-            info: track.info,
+            track: resolvedTrack.encoded,
+            info: resolvedTrack.info,
             requester: message.author
           });
-          logger.info(`[Play Command] Track added. Queue size now: ${queue.queue.length}`);
-          message.reply(`Added **${track.info.title}** to the queue!`);
+          logger.info(`[Play Command] Spotify track added to queue. Queue size: ${queue.queue.length}`);
+          message.reply(`Added **${track.info.title}** (from Spotify) to the queue!`);
         }
 
         logger.info(`[Play Command] Queue isPlaying: ${queue.isPlaying()}`);

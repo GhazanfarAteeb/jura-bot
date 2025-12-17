@@ -9,7 +9,10 @@ export default {
     description: 'Ban a member from the server',
     usage: '<@user|user_id> [reason]',
     aliases: ['hammer'],
-    permissions: [PermissionFlagsBits.BanMembers],
+    permissions: {
+        user: PermissionFlagsBits.BanMembers,
+        client: PermissionFlagsBits.BanMembers
+    },
     cooldown: 3,
     
     async execute(message, args) {

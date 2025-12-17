@@ -9,7 +9,10 @@ export default {
     description: 'Warn a member',
     usage: '<@user|user_id> [reason]',
     aliases: ['warning'],
-    permissions: [PermissionFlagsBits.ModerateMembers],
+    permissions: {
+        user: PermissionFlagsBits.ModerateMembers,
+        client: PermissionFlagsBits.ModerateMembers
+    },
     cooldown: 2,
     
     async execute(message, args) {

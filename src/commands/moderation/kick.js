@@ -9,7 +9,10 @@ export default {
     description: 'Kick a member from the server',
     usage: '<@user|user_id> [reason]',
     aliases: ['boot'],
-    permissions: [PermissionFlagsBits.KickMembers],
+    permissions: {
+        user: PermissionFlagsBits.KickMembers,
+        client: PermissionFlagsBits.KickMembers
+    },
     cooldown: 3,
     
     async execute(message, args) {

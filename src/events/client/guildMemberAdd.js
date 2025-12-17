@@ -10,15 +10,17 @@ export default {
         const guildId = member.guild.id;
         
         try {
-            // Get guild configuration
-            const guildConfig = await Guild.getGuild(guildId, member.guild.name);
+            // Run independent operations in parallel for better performance
+            const [guildConfig, newInvites] = await Promise.all([
+                Guild.getGuild(guildId, member.guild.name),
+                member.guild.invites.fetch().catch(() => new Collection())
+            ]);
             
             // Determine which invite was used
             let inviteCode = null;
             let inviterId = null;
             
             try {
-                const newInvites = await member.guild.invites.fetch();
                 const oldInvites = client.invites.get(guildId);
                 
                 if (oldInvites) {

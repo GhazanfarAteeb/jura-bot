@@ -10,14 +10,19 @@ class MessageCreate extends Event {
     });
   }
   async run(message) {
-    if (message.author.bot) return;
+    // Early returns for performance
+    if (message.author.bot || !message.guild) return;
+    
+    // Check setup first (async but don't await unnecessarily)
     const setup = this.client.db.getSetup(message.guildId);
-    if (setup && setup.textId) {
-      if (setup.textId === message.channelId) {
-        return this.client.emit("setupSystem", message);
-      }
-    }
+    
+    // Get prefix (cached)
     const currentPrefix = await this.client.db.getPrefix(message.guildId);
+    
+    // Now check setup
+    if (setup && setup.textId && setup.textId === message.channelId) {
+      return this.client.emit("setupSystem", message);
+    }
     
     const mention = new RegExp(`^<@!?${this.client.user.id}>( |)$`);
     if (message.content.match(mention)) {
@@ -41,33 +46,18 @@ class MessageCreate extends Event {
       this.client.commands.get(cmd) ||
       this.client.commands.get(this.client.aliases.get(cmd));
     if (!command) return;
+    // Cache bot member for permission checks
+    const botMember = message.guild.members.me;
+    const botPerms = botMember.permissions;
+    
+    // Quick permission checks - exit early if missing critical permissions
+    if (!botPerms.has(PermissionFlagsBits.SendMessages)) return;
+    if (!botPerms.has(PermissionFlagsBits.EmbedLinks)) {
+      return message.reply({ content: "I don't have **`EmbedLinks`** permission." }).catch(() => {});
+    }
+    
     const ctx = new Context(message, args);
     ctx.setArgs(args);
-    let dm = message.author.dmChannel;
-    if (typeof dm === "undefined") dm = await message.author.createDM();
-    if (
-      !message.inGuild() ||
-      !message.channel
-        .permissionsFor(message.guild.members.me)
-        .has(PermissionFlagsBits.ViewChannel)
-    )
-      return;
-    if (
-      !message.guild.members.me.permissions.has(
-        PermissionFlagsBits.SendMessages
-      )
-    )
-      return await message.author
-        .send({
-          content: `I don't have **\`SendMessage\`** permission in \`${message.guild.name}\`\nchannel: <#${message.channelId}>`,
-        })
-        .catch(() => {});
-    if (
-      !message.guild.members.me.permissions.has(PermissionFlagsBits.EmbedLinks)
-    )
-      return await message.reply({
-        content: "I don't have **`EmbedLinks`** permission.",
-      });
     if (command.permissions) {
       if (command.permissions.client) {
         if (

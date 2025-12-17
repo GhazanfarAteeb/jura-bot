@@ -18,16 +18,18 @@ export default {
             status: 'online'
         });
         
-        // Cache invites for all guilds
+        // Cache invites for all guilds (async, don't block)
         console.log('📋 Caching invites...');
-        for (const guild of client.guilds.cache.values()) {
-            try {
-                const invites = await guild.invites.fetch();
-                client.invites.set(guild.id, new Map(invites.map(invite => [invite.code, invite.uses])));
-            } catch (error) {
-                console.error(`Failed to cache invites for ${guild.name}:`, error.message);
-            }
-        }
+        Promise.all(
+            Array.from(client.guilds.cache.values()).map(async guild => {
+                try {
+                    const invites = await guild.invites.fetch();
+                    client.invites.set(guild.id, new Map(invites.map(invite => [invite.code, invite.uses])));
+                } catch (error) {
+                    console.error(`Failed to cache invites for ${guild.name}:`, error.message);
+                }
+            })
+        ).then(() => console.log('✅ Invites cached'));
         
         console.log('🚀 Bot is ready!');
     }
