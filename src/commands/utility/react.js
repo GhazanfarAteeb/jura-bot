@@ -160,7 +160,7 @@ const reactions = {
   // More owo-style reactions
   lick: {
     queries: ['anime lick gif', 'anime licking', 'anime tongue lick'],
-    titles: ['*lick* 👅', 'Sloppy Kiss! 😛', 'Blep! 👅', 'Taste Test! 😋']
+    titles: ['*lick* 👅', 'Sloppy Kiss! 😛', 'bleh! 👅', 'Taste Test! 😋']
   },
   boop: {
     queries: ['anime boop gif', 'anime nose boop', 'anime booping nose'],
@@ -360,9 +360,9 @@ const reactions = {
     queries: ['anime nuzzle gif', 'anime nuzzling', 'anime nose nuzzle'],
     titles: ['*nuzzles* 🥰', 'Snuggle Snuggle! 😊', 'Cute! 💕', 'Rubbing Noses! 👃']
   },
-  blep: {
-    queries: ['anime blep gif', 'anime tongue out', 'anime tongue stick'],
-    titles: ['Blep! 😛', 'Tongue Out! 👅', 'Derp! 🤪', 'Silly Face! 😜']
+  bleh: {
+    queries: ['anime bleh gif', 'anime tongue out', 'anime tongue stick'],
+    titles: ['bleh! 😛', 'Tongue Out! 👅', 'Derp! 🤪', 'Silly Face! 😜']
   },
   carry: {
     queries: ['anime carry gif', 'anime princess carry', 'anime bridal carry'],
@@ -392,7 +392,7 @@ export default {
         },
         '🎉 Fun & Playful': {
           subtitle: 'Have fun and mess around',
-          reactions: ['dance', 'celebrate', 'laugh', 'excited', 'spin', 'wag', 'poke', 'boop', 'lick', 'blep', 'tickle', 'bonk', 'nom', 'feed', 'teehee', 'grin', 'flirt']
+          reactions: ['dance', 'celebrate', 'laugh', 'excited', 'spin', 'wag', 'poke', 'boop', 'lick', 'bleh', 'tickle', 'bonk', 'nom', 'feed', 'teehee', 'grin', 'flirt']
         },
         '😠 Aggressive': {
           subtitle: 'Express your anger (playfully!)',
@@ -478,7 +478,7 @@ export default {
     try {
       // Improved search with better parameters for quality GIFs
       const response = await fetch(
-        `https://tenor.googleapis.com/v2/search?q=${encodeURIComponent(randomQuery)}&key=${apiKey}&client_key=jura_bot&limit=50&media_filter=gif&contentfilter=medium&ar_range=standard&locale=en_US`
+        `https://tenor.googleapis.com/v2/search?q=${encodeURIComponent(randomQuery)}&key=${apiKey}&client_key=raphael&limit=50&media_filter=gif&contentfilter=low`
       );
 
       if (!response.ok) {
@@ -495,24 +495,24 @@ export default {
       const qualityGifs = data.results.filter(gif => {
         const gifFormat = gif.media_formats?.gif;
         if (!gifFormat) return false;
-        
+
         // Filter: Dimensions should be reasonable (not too small, not too huge)
         const width = gifFormat.dims?.[0] || 0;
         const height = gifFormat.dims?.[1] || 0;
         const size = gifFormat.size || 0;
-        
-        return width >= 200 && width <= 600 && 
-               height >= 200 && height <= 600 && 
-               size < 10000000; // Less than 10MB
+
+        return width >= 200 && width <= 600 &&
+          height >= 200 && height <= 600 &&
+          size < 10000000; // Less than 10MB
       });
 
       // Use filtered list if available, otherwise fall back to all results
       const gifPool = qualityGifs.length > 0 ? qualityGifs : data.results;
-      
+
       // Pick from top results for better quality (first 20 are usually more relevant)
       const topResults = gifPool.slice(0, Math.min(20, gifPool.length));
       const randomGif = topResults[Math.floor(Math.random() * topResults.length)];
-      
+
       // Prefer tinygif format for faster loading, fallback to gif
       const gifUrl = randomGif.media_formats.tinygif?.url || randomGif.media_formats.gif.url;
 
