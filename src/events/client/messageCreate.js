@@ -223,6 +223,6 @@ class MessageCreate extends Event {
       return;
     }
   }
-};
+}
 
 export default MessageCreate;
