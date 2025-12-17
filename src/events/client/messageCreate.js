@@ -12,18 +12,18 @@ class MessageCreate extends Event {
   async run(message) {
     // Early returns for performance
     if (message.author.bot || !message.guild) return;
-    
+
     // Check setup first (async but don't await unnecessarily)
     const setup = this.client.db.getSetup(message.guildId);
-    
+
     // Get prefix (cached)
     const currentPrefix = await this.client.db.getPrefix(message.guildId);
-    
+
     // Now check setup
     if (setup && setup.textId && setup.textId === message.channelId) {
       return this.client.emit("setupSystem", message);
     }
-    
+
     const mention = new RegExp(`^<@!?${this.client.user.id}>( |)$`);
     if (message.content.match(mention)) {
       await message.reply({
@@ -49,13 +49,13 @@ class MessageCreate extends Event {
     // Cache bot member for permission checks
     const botMember = message.guild.members.me;
     const botPerms = botMember.permissions;
-    
+
     // Quick permission checks - exit early if missing critical permissions
     if (!botPerms.has(PermissionFlagsBits.SendMessages)) return;
     if (!botPerms.has(PermissionFlagsBits.EmbedLinks)) {
-      return message.reply({ content: "I don't have **`EmbedLinks`** permission." }).catch(() => {});
+      return message.reply({ content: "I don't have **`EmbedLinks`** permission." }).catch(() => { });
     }
-    
+
     const ctx = new Context(message, args);
     ctx.setArgs(args);
     if (command.permissions) {
@@ -165,12 +165,10 @@ class MessageCreate extends Event {
           .setColor(this.client.color.red)
           .setTitle("Missing Arguments")
           .setDescription(
-            `Please provide the required arguments for the \`${
-              command.name
-            }\` command.\n\nExamples:\n${
-              command.description.examples
-                ? command.description.examples.join("\n")
-                : "None"
+            `Please provide the required arguments for the \`${command.name
+            }\` command.\n\nExamples:\n${command.description.examples
+              ? command.description.examples.join("\n")
+              : "None"
             }`
           )
           .setFooter({ text: "Syntax: [] = optional, <> = required" });

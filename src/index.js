@@ -62,7 +62,7 @@ const client = new Client({
       filter: () => user => {
         // Keep bot users and users in voice channels
         if (user.bot) return false;
-        return !client.guilds.cache.some(guild => 
+        return !client.guilds.cache.some(guild =>
           guild.members.cache.get(user.id)?.voice?.channel
         );
       }

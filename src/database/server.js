@@ -5,16 +5,16 @@ export default class ServerData {
   constructor() {
     this.Music = Music;
     this.Guild = Guild;
-    
+
     // LRU Cache with 5 minute TTL for frequently accessed data
     this.cache = new Map();
     this.cacheTTL = 5 * 60 * 1000; // 5 minutes
     this.maxCacheSize = 500; // Prevent memory bloat
-    
+
     // Clear expired cache entries every minute
     setInterval(() => this.clearExpiredCache(), 60000);
   }
-  
+
   clearExpiredCache() {
     const now = Date.now();
     for (const [key, value] of this.cache.entries()) {
@@ -23,33 +23,33 @@ export default class ServerData {
       }
     }
   }
-  
+
   getCached(key) {
     const cached = this.cache.get(key);
     if (!cached) return null;
-    
+
     const now = Date.now();
     if (now - cached.timestamp > this.cacheTTL) {
       this.cache.delete(key);
       return null;
     }
-    
+
     return cached.data;
   }
-  
+
   setCache(key, data) {
     // Implement simple LRU by removing oldest if size limit reached
     if (this.cache.size >= this.maxCacheSize) {
       const firstKey = this.cache.keys().next().value;
       this.cache.delete(firstKey);
     }
-    
+
     this.cache.set(key, {
       data,
       timestamp: Date.now()
     });
   }
-  
+
   invalidateCache(pattern) {
     for (const key of this.cache.keys()) {
       if (key.startsWith(pattern)) {
@@ -60,12 +60,12 @@ export default class ServerData {
 
   async get(guildId) {
     let data = await this.Music.findOne({ guildId, type: 'guild' });
-    
+
     if (!data) {
-      data = await this.Music.create({ 
-        guildId, 
+      data = await this.Music.create({
+        guildId,
         type: 'guild',
-        prefix: null 
+        prefix: null
       });
     }
     return data;
@@ -75,7 +75,7 @@ export default class ServerData {
     const guild = await this.Guild.getGuild(guildId);
     guild.prefix = prefix;
     await guild.save();
-    
+
     // Invalidate cache
     this.cache.delete(`prefix:${guildId}`);
   }
@@ -84,10 +84,10 @@ export default class ServerData {
     const cacheKey = `prefix:${guildId}`;
     const cached = this.getCached(cacheKey);
     if (cached !== null) return cached;
-    
+
     const guild = await this.Guild.getGuild(guildId);
     const prefix = guild?.prefix || process.env.DEFAULT_PREFIX || '!';
-    
+
     this.setCache(cacheKey, prefix);
     return prefix;
   }
@@ -120,7 +120,7 @@ export default class ServerData {
       { $set: { mode: Boolean(mode) } },
       { upsert: true }
     );
-    
+
     // Invalidate cache
     this.cache.delete(`dj:${guildId}`);
   }
@@ -129,10 +129,10 @@ export default class ServerData {
     const cacheKey = `dj:${guildId}`;
     const cached = this.getCached(cacheKey);
     if (cached !== null) return cached;
-    
+
     const data = await this.Music.findOne({ guildId, type: 'dj' });
     const result = data || false;
-    
+
     this.setCache(cacheKey, result);
     return result;
   }
@@ -144,7 +144,7 @@ export default class ServerData {
 
   async addRole(guildId, roleId) {
     const existing = await this.Music.findOne({ guildId, roleId, type: 'role' });
-    
+
     if (!existing) {
       await this.Music.create({ guildId, roleId, type: 'role' });
     }
@@ -190,7 +190,7 @@ export default class ServerData {
 
   async getUser(userId) {
     const data = await this.Music.findOne({ userId, type: 'user' });
-    
+
     if (!data) {
       await this.Music.create({ userId, type: 'user' });
       return false;
@@ -199,25 +199,25 @@ export default class ServerData {
   }
 
   async getPLaylist(userId, name) {
-    const data = await this.Music.findOne({ 
-      userId, 
+    const data = await this.Music.findOne({
+      userId,
       type: 'playlist',
-      'playlist.name': name 
+      'playlist.name': name
     });
     return data || false;
   }
 
   async createPlaylist(userId, name) {
-    const existing = await this.Music.findOne({ 
-      userId, 
+    const existing = await this.Music.findOne({
+      userId,
       type: 'playlist',
-      'playlist.name': name 
+      'playlist.name': name
     });
-    
+
     if (existing) {
       throw new Error('Playlist already exists');
     }
-    
+
     await this.Music.create({
       userId,
       type: 'playlist',
@@ -229,12 +229,12 @@ export default class ServerData {
   }
 
   async deletePlaylist(userId, name) {
-    const result = await this.Music.deleteOne({ 
-      userId, 
+    const result = await this.Music.deleteOne({
+      userId,
       type: 'playlist',
-      'playlist.name': name 
+      'playlist.name': name
     });
-    
+
     if (result.deletedCount === 0) {
       throw new Error('Playlist does not exist');
     }
@@ -242,14 +242,14 @@ export default class ServerData {
 
   async addSong(userId, name, song) {
     const result = await this.Music.updateOne(
-      { 
-        userId, 
+      {
+        userId,
         type: 'playlist',
-        'playlist.name': name 
+        'playlist.name': name
       },
       { $push: { 'playlist.songs': song } }
     );
-    
+
     if (result.matchedCount === 0) {
       throw new Error('Playlist does not exist');
     }
@@ -257,14 +257,14 @@ export default class ServerData {
 
   async removeSong(userId, name, song) {
     const result = await this.Music.updateOne(
-      { 
-        userId, 
+      {
+        userId,
         type: 'playlist',
-        'playlist.name': name 
+        'playlist.name': name
       },
       { $pull: { 'playlist.songs': song } }
     );
-    
+
     if (result.matchedCount === 0) {
       throw new Error('Playlist does not exist');
     }
