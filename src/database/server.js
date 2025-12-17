@@ -10,49 +10,50 @@ export default class ServerData {
     this.cache = new Map();
     this.cacheTTL = 15 * 60 * 1000; // 15 minutes (increased from 5)
     this.maxCacheSize = 1000; // Increased from 500 for better caching
+  }
 
-    clearExpiredCache() {
-      const now = Date.now();
-      for (const [key, value] of this.cache.entries()) {
-        if (now - value.timestamp > this.cacheTTL) {
-          this.cache.delete(key);
-        }
-      }
-    }
-
-    getCached(key) {
-      const cached = this.cache.get(key);
-      if (!cached) return null;
-
-      const now = Date.now();
-      if (now - cached.timestamp > this.cacheTTL) {
+  clearExpiredCache() {
+    const now = Date.now();
+    for (const [key, value] of this.cache.entries()) {
+      if (now - value.timestamp > this.cacheTTL) {
         this.cache.delete(key);
-        return null;
-      }
-
-      return cached.data;
-    }
-
-    setCache(key, data) {
-      // Implement simple LRU by removing oldest if size limit reached
-      if (this.cache.size >= this.maxCacheSize) {
-        const firstKey = this.cache.keys().next().value;
-        this.cache.delete(firstKey);
-      }
-
-      this.cache.set(key, {
-        data,
-        timestamp: Date.now()
-      });
-    }
-
-    invalidateCache(pattern) {
-      for (const key of this.cache.keys()) {
-        if (key.startsWith(pattern)) {
-          this.cache.delete(key);
-        }
       }
     }
+  }
+
+  getCached(key) {
+    const cached = this.cache.get(key);
+    if (!cached) return null;
+
+    const now = Date.now();
+    if (now - cached.timestamp > this.cacheTTL) {
+      this.cache.delete(key);
+      return null;
+    }
+
+    return cached.data;
+  }
+
+  setCache(key, data) {
+    // Implement simple LRU by removing oldest if size limit reached
+    if (this.cache.size >= this.maxCacheSize) {
+      const firstKey = this.cache.keys().next().value;
+      this.cache.delete(firstKey);
+    }
+
+    this.cache.set(key, {
+      data,
+      timestamp: Date.now()
+    });
+  }
+
+  invalidateCache(pattern) {
+    for (const key of this.cache.keys()) {
+      if (key.startsWith(pattern)) {
+        this.cache.delete(key);
+      }
+    }
+  }
 
   async get(guildId) {
       let data = await this.Music.findOne({ guildId, type: 'guild' });
