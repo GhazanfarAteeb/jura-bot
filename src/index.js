@@ -201,7 +201,7 @@ async function loadEvents() {
           } else if (typeof EventClass === 'object' && EventClass.execute) {
             // Plain object format (client events)
             eventName = EventClass.name;
-            eventHandler = (...args) => EventClass.execute(...args);
+            eventHandler = (...args) => EventClass.execute(...args, client);
           } else {
             throw new Error(`Invalid event format in ${file}`);
           }
@@ -258,6 +258,12 @@ async function initialize() {
 
     // Initialize schedulers
     initializeSchedulers(client);
+
+    // Start status monitoring
+    startStatusMonitoring();
+
+    // Send initial online message
+    notifyStatusChange('online');
 
     console.log('✅ All systems initialized and ready!');
   });
@@ -424,13 +430,5 @@ async function notifyStatusChange(status) {
 
 // Start the bot
 initialize().catch(console.error);
-
-// Start status monitoring when bot is ready
-client.once('ready', () => {
-  startStatusMonitoring();
-
-  // Send initial online message
-  notifyStatusChange('online');
-});
 
 export default client;
