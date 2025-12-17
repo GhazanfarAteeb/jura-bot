@@ -3,369 +3,369 @@ import { EmbedBuilder } from 'discord.js';
 const reactions = {
   // Positive reactions
   hug: {
-    queries: ['hug anime', 'anime hug', 'wholesome hug'],
-    titles: ['Warm Hugs Incoming! 🤗', 'Hug Attack! 💕', 'Spreading the Love! ❤️', 'Cuddle Mode: Activated! 🫂']
+    queries: ['anime hug gif', 'anime hugging someone', 'wholesome anime hug'],
+    titles: ['Warm Hugs Incoming! 🤗', 'Hug Attack! 💕', 'Spreading the Love! ❤️', 'Cuddle Mode: Activated! 🫂', 'Virtual Hugs! 🥰', 'Bear Hug Time! 🐻', 'Group Hug Energy! 👥', 'Sending Warm Vibes! ✨']
   },
   kiss: {
-    queries: ['anime kiss', 'kiss anime', 'romantic kiss'],
-    titles: ['Smooch Alert! 💋', 'Kiss Kiss! 😘', 'Love is in the Air! 💕', 'Mwah! 😚']
+    queries: ['anime kiss gif', 'anime kissing', 'romantic anime kiss'],
+    titles: ['Smooch Alert! 💋', 'Kiss Kiss! 😘', 'Love is in the Air! 💕', 'Mwah! 😚', 'Kissing Spree! 💏', 'Sweet Kiss! 😗', 'Blown Kisses! 😙', 'Romantic Moment! 💖']
   },
   pat: {
-    queries: ['head pat anime', 'anime pat', 'pat head'],
-    titles: ['Good Job! *pat pat* 👋', 'Head Pats for Days! 😊', 'You Deserve This! *pat*', 'Pat Pat Time! 🥰']
+    queries: ['anime head pat gif', 'anime pat head', 'anime patting head'],
+    titles: ['Good Job! *pat pat* 👋', 'Head Pats for Days! 😊', 'You Deserve This! *pat*', 'Pat Pat Time! 🥰', 'Gentle Pats! 🌸', 'Encouraging Pats! ⭐', '*pats gently* 💫', 'Proud of You! *pats* 🎊']
   },
   cuddle: {
-    queries: ['cuddle anime', 'anime cuddle', 'snuggle'],
-    titles: ['Cuddle Puddle Time! 🥺', 'Maximum Comfy Mode! 💗', 'Snuggle Party! 🤗', 'Warm & Fuzzy! 💝']
+    queries: ['anime cuddle gif', 'anime cuddling', 'anime snuggle'],
+    titles: ['Cuddle Puddle Time! 🥺', 'Maximum Comfy Mode! 💗', 'Snuggle Party! 🤗', 'Warm & Fuzzy! 💝', 'Cozy Cuddles! 🛋️', 'Comfort Zone Activated! 🌟', 'Snug Life! 😌', 'Ultimate Cuddle Session! 💞']
   },
   highfive: {
-    queries: ['high five anime', 'anime high five', 'hi5'],
-    titles: ['Up Top! ✋', 'High Five Energy! 🙌', 'Slap Hands! 👏', 'Yeah! *high five*']
+    queries: ['anime high five gif', 'anime high five', 'anime hand slap'],
+    titles: ['Up Top! ✋', 'High Five Energy! 🙌', 'Slap Hands! 👏', 'Yeah! *high five*', 'Epic High Five! 🌟', 'Hand Slap Success! ✨', 'Celebration High Five! 🎉', 'Perfect Sync! 👌']
   },
   wave: {
-    queries: ['wave anime', 'anime wave', 'hello wave'],
-    titles: ['Hellooo! 👋', 'Wave Squad! 🌊', '*waves enthusiastically*', 'Greetings! 😄']
+    queries: ['anime wave gif', 'anime waving hello', 'anime hello wave'],
+    titles: ['Hellooo! 👋', 'Wave Squad! 🌊', '*waves enthusiastically*', 'Greetings! 😄', 'Friendly Wave! 🙋', 'Hey There! 👋✨', 'Big Wave Energy! 🌊', 'Waving Back! 😊']
   },
   smile: {
-    queries: ['smile anime', 'anime smile', 'happy smile'],
-    titles: ['Smile Time! 😊', 'Happiness Overload! 😁', 'Grinning! ☺️', 'Wholesome Vibes! 😌']
+    queries: ['anime smile gif', 'anime happy smile', 'anime smiling'],
+    titles: ['Smile Time! 😊', 'Happiness Overload! 😁', 'Grinning! ☺️', 'Wholesome Vibes! 😌', 'Beaming with Joy! ✨', 'Radiant Smile! 🌟', 'Smiling Ear to Ear! 😄', 'Pure Happiness! 💛']
   },
   blush: {
-    queries: ['blush anime', 'anime blush', 'shy blush'],
-    titles: ['So Flustered! 😳', 'Blushing Hard! >///<', 'Aww Shucks! 😊', 'Getting All Red! 😚']
+    queries: ['anime blush gif', 'anime blushing', 'anime shy blush'],
+    titles: ['So Flustered! 😳', 'Blushing Hard! >///<', 'Aww Shucks! 😊', 'Getting All Red! 😚', 'Shy Mode Activated! 🙈', 'Blushing Intensifies! 💗', 'Face Red Alert! 🔴', 'Embarrassed Cuteness! 💝']
   },
   love: {
-    queries: ['anime love', 'hearts anime', 'love eyes'],
-    titles: ['Love Struck! 😍', 'Heart Eyes! 💖', 'Falling Hard! 💘', 'Cupid Strikes! 💝']
+    queries: ['anime love gif', 'anime heart eyes', 'anime love struck'],
+    titles: ['Love Struck! 😍', 'Heart Eyes! 💖', 'Falling Hard! 💘', 'Cupid Strikes! 💝', 'Love Overload! 💕', 'Smitten! 😻', 'Hearts Everywhere! 💗💗', 'Love at First Sight! ✨']
   },
   headpat: {
-    queries: ['head pat anime', 'anime headpat', 'pat head'],
-    titles: ['*pat pat pat* 🥰', 'You\'re Doing Great! 👍', 'Good Human! *pats*', 'Headpat Combo! ✨']
+    queries: ['anime headpat gif', 'anime head pat', 'anime patting head'],
+    titles: ['*pat pat pat* 🥰', 'You\'re Doing Great! 👍', 'Good Human! *pats*', 'Headpat Combo! ✨', 'Infinite Headpats! 🌟', 'Supreme Headpat! 👑', 'Legendary Pats! ⚡', 'Headpat Heaven! ☁️']
   },
 
   // Fun reactions
   dance: {
-    queries: ['anime dance', 'dance gif', 'dancing'],
-    titles: ['Dance Party! 💃', 'Busting Moves! 🕺', 'Groove Time! 🎵', 'Dance Like Nobody\'s Watching! 🎶']
+    queries: ['anime dance gif', 'anime dancing', 'anime dance party'],
+    titles: ['Dance Party! 💃', 'Busting Moves! 🕺', 'Groove Time! 🎵', 'Dance Like Nobody\'s Watching! 🎶', 'Dancing Queen! 👑', 'Rhythm Master! 🎼', 'Dance Floor Domination! ⚡', 'Let\'s Boogie! 🪩']
   },
   celebrate: {
-    queries: ['celebrate anime', 'party anime', 'celebration'],
-    titles: ['Party Time! 🎉', 'Let\'s Celebrate! 🥳', 'Woohoo! 🎊', 'Victory Dance! 🎈']
+    queries: ['anime celebrate gif', 'anime party celebration', 'anime celebrating'],
+    titles: ['Party Time! 🎉', 'Let\'s Celebrate! 🥳', 'Woohoo! 🎊', 'Victory Dance! 🎈', 'Celebration Mode! 🎆', 'Time to Party! 🥂', 'Winner Winner! 🏆', 'Festive Vibes! 🎪']
   },
   laugh: {
-    queries: ['laugh anime', 'anime laugh', 'laughing'],
-    titles: ['HAHAHA! 😂', 'Can\'t Stop Laughing! 🤣', 'Too Funny! 😆', 'LOL Moment! 😹']
+    queries: ['anime laugh gif', 'anime laughing', 'anime laughter'],
+    titles: ['HAHAHA! 😂', 'Can\'t Stop Laughing! 🤣', 'Too Funny! 😆', 'LOL Moment! 😹', 'Dying of Laughter! 💀', 'Cracking Up! 🤪', 'Giggle Fest! 😄', 'Comedy Gold! 🥇']
   },
   cry: {
-    queries: ['cry anime', 'anime cry', 'crying'],
-    titles: ['The Tears! 😭', 'Waterworks! 💧', 'Big Sad Energy... 😢', 'Need Tissues! 🥺']
+    queries: ['anime cry gif', 'anime crying', 'anime tears'],
+    titles: ['The Tears! 😭', 'Waterworks! 💧', 'Big Sad Energy... 😢', 'Need Tissues! 🥺', 'Crying Rivers! 🌊', 'Emotional Breakdown! 💔', 'Tear Fountain! ⛲', 'Sad Hours... 😿']
   },
   poke: {
-    queries: ['poke anime', 'anime poke', 'poking'],
-    titles: ['Poke! *boop* 👉', 'Poke Poke! 🫵', 'Gotcha! *pokes*', 'Boop the Snoot! 👆']
+    queries: ['anime poke gif', 'anime poking someone', 'anime poke face'],
+    titles: ['Poke! *boop* 👉', 'Poke Poke! 🫵', 'Gotcha! *pokes*', 'Boop the Snoot! 👆', 'Poke War! ☝️', 'Annoying Pokes! 😝', 'Poke Combo! 👇', 'Surprise Poke! ✨']
   },
   bonk: {
-    queries: ['bonk meme', 'bonk anime', 'bonk head'],
-    titles: ['BONK! 🔨', 'Go to Horny Jail! 😤', '*bonks* No! 🚫', 'Bonk Attack! 💥']
+    queries: ['anime bonk gif', 'bonk horny jail', 'anime bonk head'],
+    titles: ['BONK! 🔨', 'Go to Horny Jail! 😤', '*bonks* No! 🚫', 'Bonk Attack! 💥', 'Critical Bonk! ⚠️', 'Bonk Incoming! 🪃', 'Mega Bonk! 🔨💢', 'Bonked to Oblivion! 💫']
   },
   nom: {
-    queries: ['nom anime', 'eating anime', 'nom nom'],
-    titles: ['Nom Nom Nom! 😋', 'Munch Time! 🍔', 'Tasty! 🤤', 'Food Coma Incoming! 🍕']
+    queries: ['anime nom gif', 'anime eating', 'anime nom nom'],
+    titles: ['Nom Nom Nom! 😋', 'Munch Time! 🍔', 'Tasty! 🤤', 'Food Coma Incoming! 🍕', 'Delicious! 🍰', 'Eating Everything! 🍱', 'Foodie Mode! 🍜', 'Can\'t Stop Eating! 🌮']
   },
   wink: {
-    queries: ['wink anime', 'anime wink', 'winking'],
-    titles: ['*wink wink* 😉', 'Smooth! 😎', 'Wink Attack! ✨', 'You Know It! 😏']
+    queries: ['anime wink gif', 'anime winking', 'anime cute wink'],
+    titles: ['*wink wink* 😉', 'Smooth! 😎', 'Wink Attack! ✨', 'You Know It! 😏', 'Sly Wink! 🦊', 'Charming Wink! 💫', 'Sneaky Wink! 👀', 'Flirty Wink! 😘']
   },
   thumbsup: {
-    queries: ['thumbs up anime', 'anime thumbs up', 'good job'],
-    titles: ['Nicely Done! 👍', 'Approved! ✅', 'You Got This! 💪', 'Great Work! 🌟']
+    queries: ['anime thumbs up gif', 'anime approval', 'anime good job'],
+    titles: ['Nicely Done! 👍', 'Approved! ✅', 'You Got This! 💪', 'Great Work! 🌟', 'Excellent! 🎯', 'Perfect Score! 💯', 'Amazing Job! 🏅', 'You\'re the Best! 👏']
   },
   salute: {
-    queries: ['salute anime', 'anime salute', 'military salute'],
-    titles: ['Yes Sir! o7', 'Salute! 🫡', 'Respect! 🎖️', 'Roger That! 🪖']
+    queries: ['anime salute gif', 'anime military salute', 'anime saluting'],
+    titles: ['Yes Sir! o7', 'Salute! 🫡', 'Respect! 🎖️', 'Roger That! 🪖', 'At Your Service! 🎗️', 'Honored! 🪬', 'Reporting for Duty! ⚔️', 'Soldier On! 🛡️']
   },
 
   // Negative reactions
   slap: {
-    queries: ['slap anime', 'anime slap', 'face slap'],
-    titles: ['*SLAP!* 😠', 'Ouch! That Hurts! 🤚', 'Take That! 💢', 'Slap Delivered! ✋']
+    queries: ['anime slap gif', 'anime slapping face', 'anime face slap'],
+    titles: ['*SLAP!* 😠', 'Ouch! That Hurts! 🤚', 'Take That! 💢', 'Slap Delivered! ✋', 'Face Slap! 👋💥', 'Reality Check! 😤', 'Slap of Justice! ⚖️', 'Wake Up Call! 🔔']
   },
   punch: {
-    queries: ['punch anime', 'anime punch', 'fighting'],
-    titles: ['POW! Right in the Kisser! 👊', 'Falcon PUNCH! 💥', 'Taste My Fist! 🥊', 'K.O.! 💪']
+    queries: ['anime punch gif', 'anime punching', 'anime fight punch'],
+    titles: ['POW! Right in the Kisser! 👊', 'Falcon PUNCH! 💥', 'Taste My Fist! 🥊', 'K.O.! 💪', 'One Punch! 🔥', 'Critical Hit! 💫', 'Knockout Blow! ⚡', 'Fist of Fury! 👊💢']
   },
   kick: {
-    queries: ['kick anime', 'anime kick', 'kicking'],
-    titles: ['YEET! 🦵', 'Kicked to the Curb! 👢', 'Sparta Kick! ⚔️', 'Boot to the Head! 🥾']
+    queries: ['anime kick gif', 'anime kicking', 'anime kick attack'],
+    titles: ['YEET! 🦵', 'Kicked to the Curb! 👢', 'Sparta Kick! ⚔️', 'Boot to the Head! 🥾', 'Flying Kick! 🦅', 'Roundhouse! 🌪️', 'Kick Attack! 💥', 'Sent Flying! 🚀']
   },
   angry: {
-    queries: ['angry anime', 'anime angry', 'mad'],
+    queries: ['anime angry gif', 'anime mad face', 'anime anger'],
     titles: ['Big Mad! 😡', 'Rage Mode! 💢', 'Not Happy! 😤', 'Fuming! 🔥']
   },
   rage: {
-    queries: ['rage anime', 'anime rage', 'furious'],
+    queries: ['anime rage gif', 'anime furious', 'anime extreme anger'],
     titles: ['MAXIMUM RAGE! 🤬', 'Seeing Red! 💥', 'AAAARGH! 😡', 'Anger Levels: MAX! 🌋']
   },
   stab: {
-    queries: ['stab anime', 'anime knife', 'yandere'],
+    queries: ['anime yandere knife gif', 'anime knife stab', 'yandere anime'],
     titles: ['Stabby Stabby! 🔪', 'Yandere Mode! 😈', 'Dangerous! ⚠️', 'Knife-kun Says Hi! 🗡️']
   },
   bite: {
-    queries: ['bite anime', 'anime bite', 'nom bite'],
+    queries: ['anime bite gif', 'anime biting', 'anime vampire bite'],
     titles: ['Chomp! 😬', 'Bite Attack! 🦷', 'Nom... Wait, OW! 😤', 'Vampire Mode! 🧛']
   },
 
   // Misc
   think: {
-    queries: ['thinking anime', 'anime think', 'hmm'],
+    queries: ['anime thinking gif', 'anime think hmm', 'anime pondering'],
     titles: ['Hmm... 🤔', 'Big Brain Time! 🧠', 'Thinking Hard! 💭', 'Processing... ⚙️']
   },
   shrug: {
-    queries: ['shrug anime', 'anime shrug', 'idk'],
+    queries: ['anime shrug gif', 'anime shrugging', 'anime idk shrug'],
     titles: ['¯\\_(ツ)_/¯', 'I Dunno! 🤷', 'Not My Problem! 😐', 'Whatever! 🙄']
   },
   sleep: {
-    queries: ['sleep anime', 'anime sleep', 'sleeping'],
+    queries: ['anime sleep gif', 'anime sleeping', 'anime asleep'],
     titles: ['Zzz... 😴', 'Nap Time! 💤', 'Gone to Dreamland! 🌙', 'Sleep Mode: ON ⏰']
   },
   yawn: {
-    queries: ['yawn anime', 'anime yawn', 'tired yawn'],
+    queries: ['anime yawn gif', 'anime yawning', 'anime tired yawn'],
     titles: ['*yawns* So Tired... 🥱', 'Need Coffee! ☕', 'Sleepy Vibes! 😪', 'Big Yawn Energy! 💤']
   },
   confused: {
-    queries: ['confused anime', 'anime confused', 'question marks'],
+    queries: ['anime confused gif', 'anime confusion', 'anime question marks'],
     titles: ['So Confused! 😵', 'What? 🤨', 'Brain.exe Stopped! ❓', 'Confused Screaming! 😖']
   },
   facepalm: {
-    queries: ['facepalm anime', 'anime facepalm', 'picard facepalm'],
+    queries: ['anime facepalm gif', 'anime face palm', 'anime disappointed'],
     titles: ['*facepalm* 🤦', 'Seriously? 😑', 'I Can\'t Even... 🫠', 'Done with This! 😩']
   },
   nervous: {
-    queries: ['nervous anime', 'anime nervous', 'sweating'],
+    queries: ['anime nervous gif', 'anime sweating nervous', 'anime anxious'],
     titles: ['Nervous Sweating! 😅', 'Uh Oh... 😰', 'Anxious Vibes! 😬', 'Help! 😥']
   },
   excited: {
-    queries: ['excited anime', 'anime excited', 'happy bounce'],
+    queries: ['anime excited gif', 'anime excitement', 'anime happy bounce'],
     titles: ['SO EXCITED! 🤩', 'Hype! 🎉', 'Can\'t Contain It! ✨', 'Bouncing Off Walls! 🌟']
   },
   shocked: {
-    queries: ['shocked anime', 'anime shocked', 'surprised'],
+    queries: ['anime shocked gif', 'anime shock surprised', 'anime jaw drop'],
     titles: ['WHAT?! 😱', 'Mind Blown! 🤯', 'No Way! 😲', 'Jaw Drop! 😦']
   },
   smug: {
-    queries: ['smug anime', 'anime smug', 'smirk'],
+    queries: ['anime smug gif', 'anime smug face', 'anime smirk'],
     titles: ['Feeling Smug! 😏', 'I Told You So! 😎', 'Smugness Overload! 😼', 'Too Cool! 🕶️']
   },
   
   // More owo-style reactions
   lick: {
-    queries: ['lick anime', 'anime lick', 'licking'],
+    queries: ['anime lick gif', 'anime licking', 'anime tongue lick'],
     titles: ['*lick* 👅', 'Sloppy Kiss! 😛', 'Blep! 👅', 'Taste Test! 😋']
   },
   boop: {
-    queries: ['boop anime', 'anime boop', 'nose boop'],
+    queries: ['anime boop gif', 'anime nose boop', 'anime booping nose'],
     titles: ['Boop! *boops nose* 👉', 'Boop the Snoot! 👃', 'Beep Boop! 🤖', '*boops* Gotcha! 😊']
   },
   greet: {
-    queries: ['greet anime', 'anime hello', 'greeting'],
+    queries: ['anime greet gif', 'anime hello greeting', 'anime waving hello'],
     titles: ['Hey There! 👋', 'Greetings Friend! 🙋', 'What\'s Up! 😄', 'Hello Hello! 🌟']
   },
   handholding: {
-    queries: ['hand holding anime', 'holding hands anime', 'anime handhold'],
+    queries: ['anime hand holding gif', 'anime holding hands', 'anime handhold'],
     titles: ['Hand Holding! 🤝', 'So Lewd! 😳', 'Holding Hands! 💕', 'Together! 👫']
   },
   tickle: {
-    queries: ['tickle anime', 'anime tickle', 'tickling'],
+    queries: ['anime tickle gif', 'anime tickling someone', 'anime tickle fight'],
     titles: ['Tickle Attack! ✋😆', 'Tickle Tickle! 🤣', 'Can\'t Stop Laughing! 😂', 'Tickle Monster! 👹']
   },
   kill: {
-    queries: ['kill anime meme', 'omae wa mou', 'anime fight'],
+    queries: ['omae wa mou shindeiru', 'anime you are already dead', 'anime kill gif'],
     titles: ['Omae Wa Mou... 😈', 'Nothing Personal Kid! 😎', 'Fatality! 💀', 'You\'re Already Dead! ☠️']
   },
   hold: {
-    queries: ['hold anime', 'anime hold', 'holding'],
+    queries: ['anime hold gif', 'anime holding someone', 'anime embrace hold'],
     titles: ['Holding You! 🤗', 'Safe in My Arms! 💕', 'Got You! 🫂', 'Hold Tight! 💪']
   },
   pats: {
-    queries: ['pat pat anime', 'multiple pats', 'anime pat pat'],
+    queries: ['anime pat pat gif', 'anime multiple pats', 'anime patting'],
     titles: ['Pat Pat Pat! 👋👋👋', 'All the Pats! 🥰', 'Unlimited Pats! ✨', 'Pat Overload! 😊']
   },
   snuggle: {
-    queries: ['snuggle anime', 'anime snuggle', 'cuddle close'],
+    queries: ['anime snuggle gif', 'anime snuggling', 'anime cuddle close'],
     titles: ['Snuggle Time! 🥺', 'So Cozy! 🛋️', 'Snug as a Bug! 🐛', 'Maximum Snuggles! 💗']
   },
   bully: {
-    queries: ['bully anime', 'anime bully', 'teasing'],
+    queries: ['anime bully teasing', 'anime mean teasing gif', 'anime teasing bullying'],
     titles: ['Bully Mode! 😈', 'Get Rekt! 😏', 'Gottem! 😂', 'Too Easy! 🎯']
   },
   stare: {
-    queries: ['stare anime', 'anime stare', 'intense stare'],
+    queries: ['anime stare gif', 'anime intense stare', 'anime staring eyes'],
     titles: ['Staring Intensely! 👁️👁️', '*stares*', 'The Stare Down! 😐', 'What You Looking At? 🤨']
   },
   pout: {
-    queries: ['pout anime', 'anime pout', 'pouting'],
+    queries: ['anime pout gif', 'anime pouting', 'anime angry pout'],
     titles: ['*pouts* 😤', 'Hmph! 💢', 'Not Fair! 😾', 'Pouting Face! 😠']
   },
   lewd: {
-    queries: ['lewd anime meme', 'anime embarrassed', 'flustered anime'],
+    queries: ['lewd anime gif', 'anime embarrassed flustered', 'anime scandalous'],
     titles: ['Too Lewd! 😳', 'How Scandalous! 😱', 'Inappropriate! >///<', 'NSFW Alert! 🔞']
   },
   triggered: {
-    queries: ['triggered meme', 'triggered anime', 'rage anime'],
+    queries: ['triggered anime gif', 'anime triggered rage', 'anime angry triggered'],
     titles: ['TRIGGERED! 😡', 'Activating Rage! 💢', 'Mad Mad Mad! 🤬', 'Triggering Intensifies! 🌋']
   },
   smirk: {
-    queries: ['smirk anime', 'anime smirk', 'sly smile'],
+    queries: ['anime smirk gif', 'anime smirking', 'anime sly smile'],
     titles: ['*smirks* 😏', 'Sly Fox! 🦊', 'Clever Girl! 😎', 'Up to Something! 😼']
   },
   happy: {
-    queries: ['happy anime', 'anime happy', 'joy'],
+    queries: ['anime happy gif', 'anime joy', 'anime cheerful'],
     titles: ['So Happy! 😊', 'Pure Joy! ✨', 'Happiness! 🌈', 'Feeling Great! 🎉']
   },
   thumbs: {
-    queries: ['thumbs up anime', 'anime approve', 'good job anime'],
+    queries: ['anime thumbs up gif', 'anime double thumbs', 'anime approval'],
     titles: ['Thumbs Up! 👍👍', 'Double Approval! ✌️', 'You Rock! 🤘', 'Awesome! 🌟']
   },
   wag: {
-    queries: ['wag tail anime', 'happy dog anime', 'tail wagging'],
+    queries: ['anime tail wag gif', 'anime wagging tail', 'anime happy tail'],
     titles: ['*wags tail* 🐕', 'Happy Puppy! 🐶', 'Tail Wag! 🐾', 'So Excited! 🦴']
   },
   teehee: {
-    queries: ['giggle anime', 'anime giggle', 'cute laugh'],
+    queries: ['anime giggle gif', 'anime teehee', 'anime cute laugh'],
     titles: ['Teehee! 🤭', 'Giggling! ☺️', 'Hehe! 😊', 'Cute Laugh! 💕']
   },
   scoff: {
-    queries: ['scoff anime', 'anime scoff', 'dismissive'],
+    queries: ['anime scoff gif', 'anime scoffing', 'anime dismissive'],
     titles: ['*scoffs* 🙄', 'As If! 💅', 'Whatever! 😒', 'Pfft! 😤']
   },
   grin: {
-    queries: ['grin anime', 'anime grin', 'wide smile'],
+    queries: ['anime grin gif', 'anime grinning', 'anime wide smile'],
     titles: ['Big Grin! 😁', 'Grinning! 😄', 'Cheese! 📸', 'Smile Wide! 😃']
   },
   sleepy: {
-    queries: ['sleepy anime', 'anime sleepy', 'tired'],
+    queries: ['anime sleepy gif', 'anime tired', 'anime yawning sleepy'],
     titles: ['So Sleepy... 😪', 'Tired Mode! 🥱', 'Need Sleep! 💤', 'Energy Low! 🔋']
   },
   thonking: {
-    queries: ['thinking hard', 'hmm anime', 'pondering'],
+    queries: ['anime thinking hard gif', 'anime pondering', 'anime hmm thinking'],
     titles: ['Thonking... 🤔', 'Hmmmm! 💭', 'Deep Thoughts! 🧐', 'Contemplating! 🤨']
   },
   triggered2: {
-    queries: ['angry triggered', 'mad meme', 'rage face'],
+    queries: ['anime angry triggered gif', 'anime rage triggered', 'anime mad angry'],
     titles: ['REEEEE! 😡', 'Anger! 💥', 'Mad Lad! 🤬', 'Furious! 🌶️']
   },
   
   // Physical interactions
   push: {
-    queries: ['push anime', 'anime push', 'shove anime'],
+    queries: ['anime push shove gif', 'anime pushing someone', 'anime shove push'],
     titles: ['*PUSH!* 😈', 'YEET! Out the Way! 🫸', 'Outta My Way! 💥', 'Down You Go! 😂']
   },
   splash: {
-    queries: ['water splash anime', 'anime splash', 'splash water'],
+    queries: ['anime water splash gif', 'anime splash water', 'anime splashing'],
     titles: ['Splash Attack! 💦', 'Water Fight! 🌊', '*splashes water* 💧', 'Get Wet! 🏖️']
   },
   tackle: {
-    queries: ['tackle anime', 'anime tackle', 'tackle hug'],
+    queries: ['anime tackle hug gif', 'anime jumping tackle', 'anime tackle someone'],
     titles: ['Tackle Hug! 🤗', 'INCOMING! 💥', 'Flying Tackle! 🦅', 'Gotcha! 🤸']
   },
   throw: {
-    queries: ['throw anime', 'anime throw', 'yeet anime'],
+    queries: ['anime throw person', 'anime yeet throw', 'anime throwing someone'],
     titles: ['YEET! 🎯', 'Going Flying! ✈️', 'Toss Time! 🤾', 'Launching! 🚀']
   },
   grab: {
-    queries: ['grab anime', 'anime grab', 'grabbing'],
+    queries: ['anime grab person', 'anime grabbing someone', 'anime catch grab'],
     titles: ['Got You! ✊', 'Grab! 🤲', 'Come Here! 💪', 'Gotcha! 🫴']
   },
   
   // Personality reactions (anime dere types)
   tsundere: {
-    queries: ['tsundere anime', 'anime tsundere', 'baka'],
+    queries: ['tsundere anime gif', 'anime tsundere', 'anime baka tsundere'],
     titles: ['I-It\'s Not Like I Like You! 😤', 'B-Baka! >///<', 'Tsundere Mode! 💢', 'Hmph! Don\'t Get the Wrong Idea! 😾']
   },
   deredere: {
-    queries: ['deredere anime', 'loving anime', 'affectionate anime'],
+    queries: ['deredere anime gif', 'anime loving affectionate', 'anime deredere'],
     titles: ['So Much Love! 💕💕💕', 'Lovey Dovey! 😍', 'Adorable! ✨', 'Pure Sweetness! 🍬']
   },
   yandere: {
-    queries: ['yandere anime', 'anime yandere', 'crazy love'],
+    queries: ['yandere anime gif', 'anime yandere', 'anime crazy love'],
     titles: ['Mine Forever! 😈💕', 'Nobody Else! 🔪', 'Obsessed! 👁️👁️', 'You\'re Not Going Anywhere! ⛓️']
   },
   kuudere: {
-    queries: ['kuudere anime', 'anime emotionless', 'cool anime'],
+    queries: ['kuudere anime gif', 'anime emotionless cool', 'anime kuudere'],
     titles: ['Cool & Collected... 😐', 'Emotionless Stare... 😑', 'Whatever... 😶', 'Not Interested... 🧊']
   },
   dandere: {
-    queries: ['shy anime', 'anime shy', 'timid anime'],
+    queries: ['anime shy gif', 'anime dandere shy', 'anime timid nervous'],
     titles: ['S-So Shy... 🙈', 'Too Nervous! 😰', '*hides* 👉👈', 'Quiet Mode... 😶']
   },
   
   // More fun actions
   run: {
-    queries: ['running anime', 'anime run', 'running away'],
+    queries: ['anime running gif', 'anime run away', 'anime running fast'],
     titles: ['Running Away! 🏃', 'Gotta Go Fast! 💨', 'Escape! 🏃‍♀️', 'Nope! *runs* 🚶💨']
   },
   chase: {
-    queries: ['chase anime', 'anime chase', 'running after'],
+    queries: ['anime chase gif', 'anime chasing', 'anime running after'],
     titles: ['Get Back Here! 🏃‍♂️💨', 'Chasing You! 🏃', 'Can\'t Escape! 👟', 'Pursuit! 🎯']
   },
   feed: {
-    queries: ['feed anime', 'anime feeding', 'feeding mouth'],
+    queries: ['anime feed gif', 'anime feeding', 'anime feed mouth'],
     titles: ['Say Ahh! 😋', 'Feeding Time! 🍽️', 'Open Wide! 👄', 'Nom Time! 🥄']
   },
   piggyback: {
-    queries: ['piggyback anime', 'anime piggyback', 'carry back'],
+    queries: ['anime piggyback gif', 'anime piggyback ride', 'anime carry back'],
     titles: ['Piggyback Ride! 🐷', 'Hop On! 🎠', 'Carrying You! 💪', 'Up We Go! ⬆️']
   },
   nosebleed: {
-    queries: ['nosebleed anime', 'anime nosebleed', 'perverted'],
+    queries: ['anime nosebleed gif', 'anime nosebleed perverted', 'anime blood nose'],
     titles: ['NOSEBLEED! 🩸', 'Too Hot! 😳💦', 'Can\'t Handle It! 😵', 'Blood Fountain! ⛲']
   },
   faint: {
-    queries: ['faint anime', 'anime faint', 'passed out'],
+    queries: ['anime faint gif', 'anime fainting', 'anime passed out'],
     titles: ['*faints* 😵', 'Passed Out! 💫', 'Too Much! 🌀', 'Gone! ✨']
   },
   nod: {
-    queries: ['nod anime', 'anime nod', 'nodding'],
+    queries: ['anime nod gif', 'anime nodding', 'anime yes nod'],
     titles: ['*nods* 🙂', 'Yep! 👍', 'Agreed! ✅', 'Understood! 📝']
   },
   peek: {
-    queries: ['peek anime', 'anime peek', 'peeking'],
+    queries: ['anime peek gif', 'anime peeking', 'anime sneaky peek'],
     titles: ['*peeks* 👀', 'Peekaboo! 🙈', 'Sneaky Look! 🕵️', 'What\'s This? 🔍']
   },
   spin: {
-    queries: ['spin anime', 'anime spin', 'spinning'],
+    queries: ['anime spin gif', 'anime spinning', 'anime twirl spin'],
     titles: ['Spinning! 🌀', 'Round and Round! 🔄', 'Wheee! 🎡', 'Tornado Mode! 🌪️']
   },
   trip: {
-    queries: ['trip anime', 'anime trip', 'fall anime'],
+    queries: ['anime trip gif', 'anime tripping', 'anime fall trip'],
     titles: ['*trips* 😵', 'Whoops! 💫', 'Falling! 🤕', 'Clumsy! 😅']
   },
   headbutt: {
-    queries: ['headbutt anime', 'anime headbutt', 'head bash'],
+    queries: ['anime headbutt gif', 'anime head clash', 'anime headbutt bash'],
     titles: ['BONK! Head Clash! 💥', 'Headbutt! 🗿', 'Skull Bash! 💀', 'Ouch! 🤕']
   },
   lurk: {
-    queries: ['lurk anime', 'anime lurking', 'hiding'],
+    queries: ['anime lurk gif', 'anime lurking hiding', 'anime stalker'],
     titles: ['Lurking... 👁️', 'In the Shadows... 🌑', 'Watching... 🕵️', 'Stalker Mode! 🔍']
   },
   spray: {
-    queries: ['spray water anime', 'water spray', 'squirt water'],
+    queries: ['anime spray water gif', 'anime water spray bottle', 'anime squirt water'],
     titles: ['Spray Bottle! 💦', 'Bad! *spray spray* 🚿', 'Squirt! 💧', 'Cooling Off! 🌊']
   },
   flirt: {
-    queries: ['flirt anime', 'anime flirt', 'charming'],
+    queries: ['anime flirt gif', 'anime flirting', 'anime charming'],
     titles: ['Smooth Talker! 😏💕', 'Flirty! 😘', 'Charming! ✨', 'Hey There~ 😉']
   },
   nuzzle: {
-    queries: ['nuzzle anime', 'anime nuzzle', 'nose nuzzle'],
+    queries: ['anime nuzzle gif', 'anime nuzzling', 'anime nose nuzzle'],
     titles: ['*nuzzles* 🥰', 'Snuggle Snuggle! 😊', 'Cute! 💕', 'Rubbing Noses! 👃']
   },
   blep: {
-    queries: ['blep anime', 'anime tongue out', 'tongue stick'],
+    queries: ['anime blep gif', 'anime tongue out', 'anime tongue stick'],
     titles: ['Blep! 😛', 'Tongue Out! 👅', 'Derp! 🤪', 'Silly Face! 😜']
   },
   carry: {
-    queries: ['carry anime', 'anime carry', 'princess carry'],
+    queries: ['anime carry gif', 'anime princess carry', 'anime bridal carry'],
     titles: ['Princess Carry! 👸', 'In My Arms! 💪', 'Carrying You! 🤵', 'Bridal Style! 💑']
   }
 };
@@ -440,7 +440,7 @@ export default {
       for (const [category, data] of Object.entries(categories)) {
         embed.addFields({
           name: category,
-          value: `*${data.subtitle}*\n${data.reactions.join(', ')}`,
+          value: `*${data.subtitle}*\n${data.reactions.map(r => `\`${r}\``).join(', ')}`,
           inline: false
         });
       }
@@ -476,8 +476,9 @@ export default {
     const randomTitle = reactionData.titles[Math.floor(Math.random() * reactionData.titles.length)];
 
     try {
+      // Improved search with better parameters for quality GIFs
       const response = await fetch(
-        `https://tenor.googleapis.com/v2/search?q=${encodeURIComponent(randomQuery)}&key=${apiKey}&client_key=jura_bot&limit=30&media_filter=gif&contentfilter=medium`
+        `https://tenor.googleapis.com/v2/search?q=${encodeURIComponent(randomQuery)}&key=${apiKey}&client_key=jura_bot&limit=50&media_filter=gif&contentfilter=medium&ar_range=standard&locale=en_US`
       );
 
       if (!response.ok) {
@@ -490,8 +491,30 @@ export default {
         return message.reply(`❌ No reaction GIF found. Try again!`);
       }
 
-      const randomGif = data.results[Math.floor(Math.random() * data.results.length)];
-      const gifUrl = randomGif.media_formats.gif.url;
+      // Filter out low-quality GIFs and prioritize higher quality ones
+      const qualityGifs = data.results.filter(gif => {
+        const gifFormat = gif.media_formats?.gif;
+        if (!gifFormat) return false;
+        
+        // Filter: Dimensions should be reasonable (not too small, not too huge)
+        const width = gifFormat.dims?.[0] || 0;
+        const height = gifFormat.dims?.[1] || 0;
+        const size = gifFormat.size || 0;
+        
+        return width >= 200 && width <= 600 && 
+               height >= 200 && height <= 600 && 
+               size < 10000000; // Less than 10MB
+      });
+
+      // Use filtered list if available, otherwise fall back to all results
+      const gifPool = qualityGifs.length > 0 ? qualityGifs : data.results;
+      
+      // Pick from top results for better quality (first 20 are usually more relevant)
+      const topResults = gifPool.slice(0, Math.min(20, gifPool.length));
+      const randomGif = topResults[Math.floor(Math.random() * topResults.length)];
+      
+      // Prefer tinygif format for faster loading, fallback to gif
+      const gifUrl = randomGif.media_formats.tinygif?.url || randomGif.media_formats.gif.url;
 
       // Create action text
       let actionText = '';
