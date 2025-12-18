@@ -796,13 +796,17 @@ export default {
           }
 
           if (response && response.ok) {
+            logger.info(`React command: Fetched from ${endpoint} for action ${action}`);
             const data = await response.json();
-
+            logger.info(`React command: ${endpoint} API response: ${JSON.stringify(data)}`);
+            // console.log('React command API response:', data);
             if (endpoint === 'otaku' && data && data.url) {
+              logger.info(`React command: Received data from OtakuGifs: ${JSON.stringify(data)}`);
               gifUrl = data.url;
               usedEndpoint = 'OtakuGifs';
               break;
             } else if (endpoint === 'rndm' && data && data.url) {
+              logger.info(`React command: Received data from RndmServ: ${JSON.stringify(data)}`);
               gifUrl = data.url;
               usedEndpoint = 'RndmServ';
               break;
