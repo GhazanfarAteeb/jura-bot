@@ -791,7 +791,7 @@ export default {
             );
           } else if (endpoint === 'rndm') {
             response = await fetch(
-              `https://gifs.rndmserv.de/api/endpoint/${randomQuery}`
+              `https://gifs.rndmserv.de/api/api/endpoint/${randomQuery}`
             );
           }
 
