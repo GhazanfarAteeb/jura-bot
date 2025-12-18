@@ -795,7 +795,7 @@ export default {
             );
           }
 
-          if (response && response.ok) {
+          if (response.status === 200) {
             logger.info(`React command: Fetched from ${endpoint} for action ${action}`);
             const data = await response.json();
             logger.info(`React command: ${endpoint} API response: ${JSON.stringify(data)}`);
