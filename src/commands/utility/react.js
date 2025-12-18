@@ -1,4 +1,5 @@
 import { EmbedBuilder } from 'discord.js';
+import logger from '../../utils/logger.js';
 
 const reactions = {
   // Positive reactions
