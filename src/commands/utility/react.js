@@ -195,7 +195,7 @@ const reactions = {
   },
   sleep: {
     queries: ['sleep'],
-    endpoints: ["otaku","rndm"],
+    endpoints: ["otaku", "rndm"],
     titles: ['Zzz... 😴', 'Nap Time! 💤', 'Gone to Dreamland! 🌙', 'Sleep Mode: ON ⏰']
   },
   yawn: {
@@ -237,12 +237,12 @@ const reactions = {
   // More owo-style reactions
   lick: {
     queries: ['lick'],
-    endpoints: ["otaku","rndm"],
+    endpoints: ["otaku", "rndm"],
     titles: ['*lick* 👅', 'Sloppy Kiss! 😛', 'bleh! 👅', 'Taste Test! 😋']
   },
   boop: {
     queries: ['poke'],
-    endpoints: ["otaku","rndm"],
+    endpoints: ["otaku", "rndm"],
     titles: ['Boop! *boops nose* 👉', 'Boop the Snoot! 👃', 'Beep Boop! 🤖', '*boops* Gotcha! 😊']
   },
   greet: {
@@ -272,17 +272,17 @@ const reactions = {
   },
   hold: {
     queries: ['hug', 'cuddle'],
-    endpoints: ["otaku","rndm"],
+    endpoints: ["otaku", "rndm"],
     titles: ['Holding You! 🤗', 'Safe in My Arms! 💕', 'Got You! 🫂', 'Hold Tight! 💪']
   },
   pats: {
     queries: ['pat'],
-    endpoints: ["otaku","rndm"],
+    endpoints: ["otaku", "rndm"],
     titles: ['Pat Pat Pat! 👋👋👋', 'All the Pats! 🥰', 'Unlimited Pats! ✨', 'Pat Overload! 😊']
   },
   snuggle: {
     queries: ['cuddle', 'hug'],
-    endpoints: ["otaku","rndm"],
+    endpoints: ["otaku", "rndm"],
     titles: ['Snuggle Time! 🥺', 'So Cozy! 🛋️', 'Snug as a Bug! 🐛', 'Maximum Snuggles! 💗']
   },
   bully: {
@@ -317,7 +317,7 @@ const reactions = {
   },
   happy: {
     queries: ['happy'],
-    endpoints: ["otaku","rndm"],
+    endpoints: ["otaku", "rndm"],
     titles: ['So Happy! 😊', 'Pure Joy! ✨', 'Happiness! 🌈', 'Feeling Great! 🎉']
   },
   thumbs: {
@@ -327,7 +327,7 @@ const reactions = {
   },
   wag: {
     queries: ['happy', 'dance'],
-    endpoints: ["otaku","rndm"],
+    endpoints: ["otaku", "rndm"],
     titles: ['*wags tail* 🐕', 'Happy Puppy! 🐶', 'Tail Wag! 🐾', 'So Excited! 🦴']
   },
   teehee: {
@@ -374,17 +374,17 @@ const reactions = {
   },
   tackle: {
     queries: ['hug'],
-    endpoints: ["otaku","rndm"],
+    endpoints: ["otaku", "rndm"],
     titles: ['Tackle Hug! 🤗', 'INCOMING! 💥', 'Flying Tackle! 🦅', 'Gotcha! 🤸']
   },
   throw: {
     queries: ['punch', 'smack'],
-    endpoints: ["otaku","rndm"],
+    endpoints: ["otaku", "rndm"],
     titles: ['YEET! 🎯', 'Going Flying! ✈️', 'Toss Time! 🤾', 'Launching! 🚀']
   },
   grab: {
     queries: ['hug'],
-    endpoints: ["otaku","rndm"],
+    endpoints: ["otaku", "rndm"],
     titles: ['Got You! ✊', 'Grab! 🤲', 'Come Here! 💪', 'Gotcha! 🫴']
   },
 
@@ -418,22 +418,22 @@ const reactions = {
   // More fun actions
   run: {
     queries: ['run'],
-    endpoints: ["otaku","rndm"],
+    endpoints: ["otaku", "rndm"],
     titles: ['Running Away! 🏃', 'Gotta Go Fast! 💨', 'Escape! 🏃‍♀️', 'Nope! *runs* 🚶💨']
   },
   chase: {
     queries: ['run'],
-    endpoints: ["otaku","rndm"],
+    endpoints: ["otaku", "rndm"],
     titles: ['Get Back Here! 🏃‍♂️💨', 'Chasing You! 🏃', 'Can\'t Escape! 👟', 'Pursuit! 🎯']
   },
   feed: {
     queries: ['nom'],
-    endpoints: ["otaku","rndm"],
+    endpoints: ["otaku", "rndm"],
     titles: ['Say Ahh! 😋', 'Feeding Time! 🍽️', 'Open Wide! 👄', 'Nom Time! 🥄']
   },
   piggyback: {
     queries: ['hug'],
-    endpoints: ["otaku","rndm"],
+    endpoints: ["otaku", "rndm"],
     titles: ['Piggyback Ride! 🐷', 'Hop On! 🎠', 'Carrying You! 💪', 'Up We Go! ⬆️']
   },
   nosebleed: {
@@ -498,7 +498,7 @@ const reactions = {
   },
   carry: {
     queries: ['hug'],
-    endpoints: ["otaku","rndm"],
+    endpoints: ["otaku", "rndm"],
     titles: ['Princess Carry! 👸', 'In My Arms! 💪', 'Carrying You! 🤵', 'Bridal Style! 💑']
   },
 
@@ -545,7 +545,7 @@ const reactions = {
   },
   handhold: {
     queries: ['handhold'],
-    endpoints: ["otaku","rndm"],
+    endpoints: ["otaku", "rndm"],
     titles: ['Hand Holding! 🤝', 'So Lewd! 😳', 'Holding Hands! 💕', 'Together! 👫']
   },
   headbang: {
@@ -772,7 +772,7 @@ export default {
     const reactionData = reactions[action];
     const randomQuery = reactionData.queries[Math.floor(Math.random() * reactionData.queries.length)];
     const randomTitle = reactionData.titles[Math.floor(Math.random() * reactionData.titles.length)];
-    
+
     // Get endpoints (default to otaku if not specified for backwards compatibility)
     const endpoints = reactionData.endpoints || ['otaku'];
 
@@ -784,7 +784,7 @@ export default {
       for (const endpoint of endpoints) {
         try {
           let response;
-          
+
           if (endpoint === 'otaku') {
             response = await fetch(
               `https://api.otakugifs.xyz/gif?reaction=${randomQuery}&format=gif`
@@ -797,7 +797,7 @@ export default {
 
           if (response && response.ok) {
             const data = await response.json();
-            
+
             if (endpoint === 'otaku' && data && data.url) {
               gifUrl = data.url;
               usedEndpoint = 'OtakuGifs';
