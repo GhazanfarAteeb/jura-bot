@@ -782,14 +782,18 @@ export default {
 
       // Try each endpoint until we get a result
       for (const endpoint of endpoints) {
+        logger.info(`React command: Trying endpoint ${endpoint} for action ${action}`);
+
         try {
           let response;
 
           if (endpoint === 'otaku') {
+            logger.info(`React command: Fetching from OtakuGifs for action ${action} with query ${randomQuery}`);
             response = await fetch(
               `https://api.otakugifs.xyz/gif?reaction=${randomQuery}&format=gif`
             );
           } else if (endpoint === 'rndm') {
+            logger.info(`React command: Fetching from RndmServ for action ${action} with query ${randomQuery}`);
             response = await fetch(
               `https://gifs.rndmserv.de/api/api/endpoint/${randomQuery}`
             );
