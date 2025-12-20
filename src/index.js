@@ -12,8 +12,8 @@ import Guild from './models/Guild.js';
 import logger from './utils/logger.js';
 import ServerData from './database/server.js';
 import Utils from './structures/Utils.js';
-import MusicManager from './structures/MusicManager.js';
-import spotifyTokenManager from './utils/spotifyTokenManager.js';
+import RiffyManager from './music/RiffyManager.js';
+import { loadMusicCommands, loadMusicEvents } from './music/MusicLoader.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -74,11 +74,11 @@ client.aliases = new Collection();
 // Initialize database
 client.db = new ServerData();
 
-// Initialize utils for Wave-Music
+// Initialize utils
 client.utils = Utils;
 
-// Initialize MusicManager
-client.music = new MusicManager(client);
+// Initialize Riffy Music Manager (NodeLink with lavaSrc & lavaSearch plugins)
+client.riffyManager = new RiffyManager(client);
 
 // Configuration
 client.config = {
@@ -235,6 +235,10 @@ async function initialize() {
 
   await connectDatabase();
   await loadCommands();
+
+  // Load music commands and events
+  await loadMusicCommands(client);
+  await loadMusicEvents(client);
 
   // Login to Discord first
   await client.login(process.env.DISCORD_TOKEN);
