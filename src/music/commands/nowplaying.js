@@ -1,5 +1,5 @@
 import Command from '../../structures/Command.js';
-import { createNowPlayingEmbed, createPlayerButtons, createErrorEmbed } from '../../utils/PlayerEmbeds.js';
+import { createNowPlayingEmbed, createPlayerButtons, createErrorEmbed } from '../utils/PlayerEmbeds.js';
 import logger from '../../../utils/logger.js';
 
 export default class NowPlaying extends Command {
