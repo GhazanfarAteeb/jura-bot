@@ -1,4 +1,4 @@
-import Command from '../../../structures/Command.js';
+import Command from '../../structures/Command.js';
 import { createQueueEmbed, createErrorEmbed } from '../../utils/PlayerEmbeds.js';
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import logger from '../../../utils/logger.js';

@@ -2,7 +2,7 @@
 // const { LoadType } = require("shoukaku");
 // const { getButtons } = require("./Buttons.js");
 import { EmbedBuilder } from "discord.js";
-import { LoadType } from "shoukaku";
+// import { LoadType } from "shoukaku";
 import { getButtons } from "./Buttons.js";
 
 function neb(embed, player, client) {

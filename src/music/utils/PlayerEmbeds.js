@@ -1,5 +1,5 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
-import logger from '../logger.js';
+import logger from '../../utils/logger.js';
 
 /**
  * Platform configurations with colors, emojis, and metadata

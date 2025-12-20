@@ -257,9 +257,6 @@ async function initialize() {
     // Load event handlers
     await loadEvents();
 
-    // Initialize Spotify token manager
-    await spotifyTokenManager.initialize();
-
     // Initialize schedulers
     initializeSchedulers(client);
 

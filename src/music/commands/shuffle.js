@@ -1,4 +1,4 @@
-import Command from '../../../structures/Command.js';
+import Command from '../../structures/Command.js';
 import { createErrorEmbed, createSuccessEmbed } from '../../utils/PlayerEmbeds.js';
 import logger from '../../../utils/logger.js';
 
