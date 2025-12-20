@@ -1,0 +1,53 @@
+================================
+NodeLink Server Setup on EC2
+================================
+
+STEP 1: Copy config.js to NodeLink directory
+---------------------------------------------
+cd /home/ec2-user
+cp jura-bot/nodelink/config.js NodeLink/config.js
+
+STEP 2: Create .env file in NodeLink directory  
+----------------------------------------------
+cd /home/ec2-user/NodeLink
+nano .env
+
+Paste this content (CTRL+O to save, CTRL+X to exit):
+
+HOST=0.0.0.0
+PORT=2333
+PASSWORD=youshallnotpass
+SPOTIFY_CLIENT_ID=723cb39cfe904b7080b109effd050dfb
+SPOTIFY_CLIENT_SECRET=6bd3eefcae1f452184a077ba414295ac
+
+STEP 3: Verify files exist
+---------------------------
+ls -la /home/ec2-user/NodeLink/config.js
+ls -la /home/ec2-user/NodeLink/.env
+
+Both should exist!
+
+STEP 4: Start NodeLink server
+------------------------------
+cd /home/ec2-user/NodeLink
+npm run start
+
+You should see: "Server listening on 0.0.0.0:2333"
+
+STEP 5: Verify NodeLink is running
+-----------------------------------
+curl http://localhost:2333/v4/info
+
+Should return JSON with version info.
+
+STEP 6: Start your bot
+-----------------------
+cd /home/ec2-user/jura-bot
+pm2 restart raphael
+
+TROUBLESHOOTING:
+----------------
+- If NodeLink crashes: Check config.js exists in NodeLink directory
+- If bot can't connect: Make sure NodeLink is running first
+- Check NodeLink logs: pm2 logs nodelink (if using pm2)
+- Check bot logs: pm2 logs raphael

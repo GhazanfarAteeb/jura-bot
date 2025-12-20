@@ -179,10 +179,12 @@ export default class RiffyManager {
    */
   getNode() {
     const nodes = Array.from(this.riffy.nodeMap.values());
-    const connectedNodes = nodes.filter(n => n.isConnected);
+    // Check if node is connected using the connected property
+    const connectedNodes = nodes.filter(n => n.connected === true);
 
     if (connectedNodes.length === 0) {
       logger.warn('[RiffyManager] No connected nodes available');
+      logger.warn('[RiffyManager] Total nodes:', nodes.length, 'Node states:', nodes.map(n => ({ name: n.name, connected: n.connected, isConnected: n.isConnected })));
       return null;
     }
 
