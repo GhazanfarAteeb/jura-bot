@@ -250,7 +250,8 @@ export default class RiffyManager {
     logger.info(`[RiffyManager] Searching: ${searchQuery}`);
 
     try {
-      const result = await node.rest.resolve(searchQuery);
+      // Use riffy.resolve() instead of node.rest.resolve()
+      const result = await this.riffy.resolve({ query: searchQuery, requester: this.client.user });
       logger.info(`[RiffyManager] Search result: ${result.loadType}, tracks: ${result.tracks?.length || 0}`);
       return result;
     } catch (error) {
