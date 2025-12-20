@@ -1,6 +1,6 @@
 import Command from '../../structures/Command.js';
 import { createErrorEmbed, createSuccessEmbed } from '../utils/PlayerEmbeds.js';
-import logger from '../../../utils/logger.js';
+import logger from '../../utils/logger.js';
 
 export default class Shuffle extends Command {
   constructor(client) {

@@ -1,7 +1,7 @@
 import Command from '../../structures/Command.js';
 import { createSearchEmbed, createErrorEmbed, createSuccessEmbed } from '../utils/PlayerEmbeds.js';
 import { PermissionFlagsBits } from 'discord.js';
-import logger from '../../../utils/logger.js';
+import logger from '../../utils/logger.js';
 
 export default class Search extends Command {
   constructor(client) {
