@@ -29,11 +29,6 @@ export default class RiffyManager {
       },
       defaultSearchPlatform: 'ytmsearch', // YouTube Music as default
       restVersion: 'v4', // NodeLink REST API version
-      // Plugin support configuration
-      plugins: {
-        lavaSrc: true, // Enable lavaSrc plugin support
-        lavaSearch: true // Enable lavaSearch plugin support
-      },
       // Auto-resume after disconnect
       autoResume: true,
       // Reconnection settings
