@@ -288,7 +288,7 @@ process.on('SIGINT', async () => {
   logger.info('Bot shutting down (SIGINT)');
 
   // Stop Spotify token refresh
-  spotifyTokenManager.stop();
+  // spotifyTokenManager.stop();
 
   // Disconnect from Discord
   client.destroy();
@@ -305,7 +305,7 @@ process.on('SIGTERM', async () => {
   logger.info('Bot shutting down (SIGTERM)');
 
   // Stop Spotify token refresh
-  spotifyTokenManager.stop();
+  // spotifyTokenManager.stop();
 
   // Disconnect from Discord
   client.destroy();
