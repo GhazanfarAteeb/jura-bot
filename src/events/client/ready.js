@@ -2,7 +2,7 @@ import { Events, ActivityType } from 'discord.js';
 import Guild from '../../models/Guild.js';
 
 export default {
-  name: 'clientReady',
+  name: Events.ClientReady,
   once: true,
   async execute(client) {
     console.log(`✅ Logged in as ${client.user.tag}`);
