@@ -9,16 +9,6 @@ export default {
     console.log(`📊 Serving ${client.guilds.cache.size} servers`);
     console.log(`👥 Serving ${client.guilds.cache.reduce((a, g) => a + g.memberCount, 0)} users`);
 
-    // Initialize Riffy music system (must be done in ready event)
-    if (client.riffyManager && client.riffyManager.riffy) {
-      try {
-        await client.riffyManager.riffy.init(client.user.id);
-        console.log('🎵 Riffy music system initialized');
-      } catch (error) {
-        console.error('❌ Failed to initialize Riffy:', error);
-      }
-    }
-
     // Set bot presence
     client.user.setPresence({
       activities: [{

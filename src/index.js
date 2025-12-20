@@ -254,6 +254,17 @@ async function initialize() {
     console.log(`   Guilds: ${client.guilds.cache.size}`);
     console.log(`   WS Status: ${client.ws.status}, Ping: ${client.ws.ping}ms`);
 
+    // Initialize Riffy music system (MUST be done in ready event before anything else)
+    if (client.riffyManager && client.riffyManager.riffy) {
+      try {
+        await client.riffyManager.riffy.init(client.user.id);
+        console.log('🎵 Riffy music system initialized');
+      } catch (error) {
+        console.error('❌ Failed to initialize Riffy:', error);
+        logger.error('Riffy initialization failed', error);
+      }
+    }
+
     // Load event handlers
     await loadEvents();
 
