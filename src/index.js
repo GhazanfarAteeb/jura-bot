@@ -80,6 +80,13 @@ client.utils = Utils;
 // Initialize Riffy Music Manager (NodeLink with lavaSrc & lavaSearch plugins)
 client.riffyManager = new RiffyManager(client);
 
+// Setup raw event listener for Riffy voice state updates
+client.on('raw', (d) => {
+  if (client.riffyManager && client.riffyManager.riffy) {
+    client.riffyManager.riffy.updateVoiceState(d);
+  }
+});
+
 // Configuration
 client.config = {
   logChannelId: process.env.LOG_CHANNEL_ID || null

@@ -29,6 +29,7 @@ export default class RiffyManager {
       },
       defaultSearchPlatform: 'ytmsearch', // YouTube Music as default
       restVersion: 'v4', // NodeLink REST API version
+      plugins: [], // Empty array for plugins (NodeLink has them built-in)
       // Auto-resume after disconnect
       autoResume: true,
       // Reconnection settings
