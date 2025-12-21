@@ -84,7 +84,7 @@ client.riffyManager = new RiffyManager(client);
 client.on('raw', (d) => {
   // Only handle voice-related events
   if (!['VOICE_STATE_UPDATE', 'VOICE_SERVER_UPDATE'].includes(d.t)) return;
-  
+
   if (client.riffyManager && client.riffyManager.riffy) {
     client.riffyManager.riffy.updateVoiceState(d);
   }

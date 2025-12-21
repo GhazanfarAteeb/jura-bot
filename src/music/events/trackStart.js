@@ -8,7 +8,7 @@ export default {
 
     // Delete previous now playing message if exists
     if (player.message) {
-      await player.message.delete().catch(() => {});
+      await player.message.delete().catch(() => { });
     }
 
     // Create now playing embed

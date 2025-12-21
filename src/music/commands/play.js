@@ -45,9 +45,9 @@ export default class Play extends Command {
       });
 
       // Search for tracks
-      const resolve = await client.riffyManager.riffy.resolve({ 
-        query: query, 
-        requester: message.member 
+      const resolve = await client.riffyManager.riffy.resolve({
+        query: query,
+        requester: message.member
       });
 
       const { loadType, tracks, playlistInfo } = resolve;
