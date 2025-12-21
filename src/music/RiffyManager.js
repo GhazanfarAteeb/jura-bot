@@ -160,10 +160,11 @@ export default class RiffyManager {
     logger.info('[RiffyManager] Event listeners configured');
   }
 
-  async handleTrackStart(player, track) {
+  async handleTrackStart(player, track, payload) {
     logger.info(`[RiffyManager] 📥 handleTrackStart called for guild ${player.guildId}`);
     logger.info(`[RiffyManager] Track details: ${JSON.stringify({ title: track.info.title, author: track.info.author, duration: track.info.length })}`);
     logger.info(`[RiffyManager] Player state: playing=${player.playing}, paused=${player.paused}, queue length=${player.queue.length}`);
+    logger.info(`[RiffyManager] Payload:`, payload);
 
     const guild = this.client.guilds.cache.get(player.guildId);
     if (!guild) {
@@ -221,7 +222,7 @@ export default class RiffyManager {
   async handleTrackError(player, track, payload) {
     logger.error(`[RiffyManager] ❌ handleTrackError called for guild ${player.guildId}`);
     logger.error(`[RiffyManager] Failed track: ${track.info.title}`);
-    logger.error(`[RiffyManager] Error payload:`, JSON.stringify(payload, null, 2));
+    logger.error(`[RiffyManager] Error payload:`, payload);
     logger.info(`[RiffyManager] Queue length: ${player.queue.length}`);
 
     const guild = this.client.guilds.cache.get(player.guildId);
