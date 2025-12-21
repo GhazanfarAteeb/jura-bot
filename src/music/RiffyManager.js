@@ -37,8 +37,69 @@ export default class RiffyManager {
       reconnectInterval: 5000
     });
 
+    this.patchRiffyEventHandler();
     this.setupEventListeners();
     logger.info('[RiffyManager] Riffy initialized with NodeLink nodes');
+  }
+
+  /**
+   * Patch Riffy's event handler to gracefully handle unknown events from NodeLink
+   * NodeLink sends custom events that Riffy doesn't recognize:
+   * - PlayerCreatedEvent
+   * - VolumeChangedEvent  
+   * - PlayerConnectedEvent
+   * - PlayerDestroyedEvent
+   * etc.
+   */
+  patchRiffyEventHandler() {
+    // Get all players and patch their handleEvent method
+    const patchPlayer = (player) => {
+      if (player._eventHandlerPatched) return;
+
+      const originalHandleEvent = player.handleEvent.bind(player);
+      player.handleEvent = (data) => {
+        // List of NodeLink events that should be safely ignored
+        const ignoredEvents = [
+          'PlayerCreatedEvent',
+          'VolumeChangedEvent',
+          'PlayerConnectedEvent',
+          'PlayerDestroyedEvent',
+          'PlayerPausedEvent',
+          'PlayerResumedEvent'
+        ];
+
+        if (ignoredEvents.includes(data.type)) {
+          logger.debug(`[RiffyManager] Ignoring NodeLink event: ${data.type}`);
+          return;
+        }
+
+        try {
+          originalHandleEvent(data);
+        } catch (error) {
+          // If the event is unknown, log it but don't crash
+          if (error.message && error.message.includes('unknown event')) {
+            logger.warn(`[RiffyManager] Unknown event from NodeLink: ${data.type}`);
+          } else {
+            throw error;
+          }
+        }
+      };
+
+      player._eventHandlerPatched = true;
+    };
+
+    // Patch existing players
+    this.riffy.players.forEach(patchPlayer);
+
+    // Patch the createConnection method to auto-patch new players
+    const originalCreateConnection = this.riffy.createConnection.bind(this.riffy);
+    this.riffy.createConnection = (options) => {
+      const player = originalCreateConnection(options);
+      patchPlayer(player);
+      return player;
+    };
+
+    logger.info('[RiffyManager] Patched Riffy event handler for NodeLink compatibility');
   }
 
   setupEventListeners() {
@@ -138,11 +199,27 @@ export default class RiffyManager {
     if (!channel) return;
 
     try {
-      await channel.send(`❌ An error occurred while playing **${track.info.title}**: ${error.message || 'Unknown error'}`);
+      const errorData = error.exception || error;
+      const errorMessage = errorData.message || 'Unknown error';
 
-      // Try to play next track if available
+      // Check if it's a YouTube streaming error
+      if (errorMessage.includes('Failed to get a working track URL')) {
+        await channel.send(`❌ **${track.info.title}** is unavailable (YouTube streaming issue). Skipping to next track...`);
+      } else {
+        await channel.send(`❌ An error occurred while playing **${track.info.title}**: ${errorMessage}`);
+      }
+
+      // Auto-skip to next track if available
       if (player.queue.length > 0) {
+        logger.info(`[RiffyManager] Auto-skipping to next track after error`);
         player.stopTrack();
+      } else {
+        // No more tracks, destroy player
+        setTimeout(() => {
+          if (player && player.queue.length === 0) {
+            player.destroy();
+          }
+        }, 5000);
       }
     } catch (err) {
       logger.error('[RiffyManager] Error sending error message:', err);
