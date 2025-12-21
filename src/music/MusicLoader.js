@@ -46,7 +46,7 @@ export async function loadMusicEvents(client) {
   const eventsPath = join(__dirname, 'events');
   const eventFiles = readdirSync(eventsPath).filter(file => file.endsWith('.js'));
 
-  logger.info(`[MusicLoader] Loading ${eventFiles.length} music event handlers...`);
+  logger.info(`[MusicLoader] Loading ${eventFiles.length} Riffy event handlers...`);
 
   for (const file of eventFiles) {
     try {
@@ -54,17 +54,14 @@ export async function loadMusicEvents(client) {
       const eventModule = await import(`file://${filePath}`);
       const event = eventModule.default;
 
-      if (event.once) {
-        client.once(event.name, (...args) => event.execute(...args, client));
-      } else {
-        client.on(event.name, (...args) => event.execute(...args, client));
-      }
+      // Register Riffy event
+      client.riffyManager.riffy.on(event.name, (...args) => event.execute(client, ...args));
 
-      logger.info(`[MusicLoader] ✅ Loaded music event: ${event.name}`);
+      logger.info(`[MusicLoader] ✅ Loaded Riffy event: ${event.name}`);
     } catch (error) {
       logger.error(`[MusicLoader] ❌ Failed to load event ${file}:`, error);
     }
   }
 
-  logger.info(`[MusicLoader] Music event handlers loaded successfully!`);
+  logger.info(`[MusicLoader] Riffy event handlers loaded successfully!`);
 }
