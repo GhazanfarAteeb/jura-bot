@@ -107,6 +107,8 @@ export default class Play extends Command {
         }
       } else {
         // Single track or search result
+        logger.info(`[Play Command] Adding single track to queue`);
+        logger.info(`[Play Command] Result: ${JSON.stringify(result)}`);
         const track = result.tracks[0];
         track.info.requester = message.author;
 
