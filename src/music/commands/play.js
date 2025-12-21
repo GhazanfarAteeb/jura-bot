@@ -89,11 +89,14 @@ export default class Play extends Command {
       if (result.loadType === 'playlist') {
         // Playlist loaded
         const tracks = result.tracks;
+        logger.info(`[Play Command] Adding ${tracks.length} tracks from playlist`);
 
         for (const track of tracks) {
           track.info.requester = message.author;
           player.queue.add(track);
         }
+
+        logger.info(`[Play Command] Playlist added. Queue length: ${player.queue.length}`);
 
         const embed = createSuccessEmbed(
           `Added ${tracks.length} tracks to the queue`,
@@ -102,8 +105,13 @@ export default class Play extends Command {
         await searchMsg.edit({ content: null, embeds: [embed] });
 
         // Start playing if not already playing
+        logger.info(`[Play Command] Player state before play: playing=${player.playing}, paused=${player.paused}, current=${!!player.current}`);
         if (!player.playing && !player.paused) {
+          logger.info(`[Play Command] Calling player.play() to start playback`);
           player.play();
+          logger.info(`[Play Command] player.play() called successfully`);
+        } else {
+          logger.info(`[Play Command] Skipping player.play() - already playing or paused`);
         }
       } else {
         // Single track or search result
@@ -114,6 +122,7 @@ export default class Play extends Command {
 
         // Add to queue
         player.queue.add(track);
+        logger.info(`[Play Command] Track added to queue. Queue length: ${player.queue.length}`);
 
         const embed = createSuccessEmbed(
           'Added to queue',
@@ -124,8 +133,13 @@ export default class Play extends Command {
         await searchMsg.edit({ content: null, embeds: [embed] });
 
         // Start playing if not already playing
+        logger.info(`[Play Command] Player state before play: playing=${player.playing}, paused=${player.paused}, current=${!!player.current}`);
         if (!player.playing && !player.paused) {
+          logger.info(`[Play Command] Calling player.play() to start playback`);
           player.play();
+          logger.info(`[Play Command] player.play() called successfully`);
+        } else {
+          logger.info(`[Play Command] Skipping player.play() - already playing or paused`);
         }
       }
 

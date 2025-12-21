@@ -61,9 +61,11 @@ export default class Search extends Command {
     logger.info(`[Search Command] Platform: ${platform}, Query: "${query}" by ${message.author.tag}`);
 
     try {
+      logger.info(`[Search Command] Starting search on ${platform}`);
       const searchMsg = await message.reply('🔍 Searching...');
 
       const result = await riffyManager.search(query, platform);
+      logger.info(`[Search Command] Search completed. Found ${result?.tracks?.length || 0} results`);
 
       if (!result || !result.tracks || result.tracks.length === 0) {
         const embed = createErrorEmbed(`No results found for "${query}" on ${platform}!`);
@@ -73,6 +75,7 @@ export default class Search extends Command {
       const embed = createSearchEmbed(result.tracks, platform, query, client);
       const searchResultMsg = await searchMsg.edit({ content: null, embeds: [embed] });
 
+      logger.info(`[Search Command] Displaying ${maxReactions} results with reactions`);
       // Add number reactions for selection
       const emojis = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'];
       const maxReactions = Math.min(result.tracks.length, 10);
@@ -80,17 +83,20 @@ export default class Search extends Command {
       for (let i = 0; i < maxReactions; i++) {
         await searchResultMsg.react(emojis[i]);
       }
+      logger.info(`[Search Command] Added ${maxReactions} reaction emojis`);
 
       // Create reaction collector
       const filter = (reaction, user) => {
         return emojis.includes(reaction.emoji.name) && user.id === message.author.id;
       };
 
+      logger.info(`[Search Command] Waiting for user reaction (60s timeout)`);
       const collector = searchResultMsg.createReactionCollector({ filter, time: 60000, max: 1 });
 
       collector.on('collect', async (reaction, user) => {
         const index = emojis.indexOf(reaction.emoji.name);
         const selectedTrack = result.tracks[index];
+        logger.info(`[Search Command] User selected track ${index + 1}: ${selectedTrack?.info?.title || 'unknown'}`);
 
         if (!selectedTrack) return;
 
@@ -98,6 +104,7 @@ export default class Search extends Command {
         let player = riffyManager.getPlayer(message.guild.id);
 
         if (!player) {
+          logger.info(`[Search Command] Creating new player for guild ${message.guild.id}`);
           player = riffyManager.createPlayer(
             message.guild.id,
             memberVoiceChannel.id,
@@ -105,8 +112,9 @@ export default class Search extends Command {
           );
         }
 
-        selectedTrack.requester = message.author;
-        player.queue.push(selectedTrack);
+        selectedTrack.info.requester = message.author;
+        player.queue.add(selectedTrack);
+        logger.info(`[Search Command] Track added to queue. Queue length: ${player.queue.length}`);
 
         const embed = createSuccessEmbed(
           'Added to queue',
@@ -118,13 +126,19 @@ export default class Search extends Command {
         await searchResultMsg.edit({ embeds: [embed] });
         await searchResultMsg.reactions.removeAll().catch(() => { });
 
+        logger.info(`[Search Command] Player state: playing=${player.playing}, paused=${player.paused}`);
         if (!player.playing && !player.paused) {
+          logger.info(`[Search Command] Starting playback`);
           player.play();
+        } else {
+          logger.info(`[Search Command] Player already active, track queued`);
         }
       });
 
       collector.on('end', (collected) => {
+        logger.info(`[Search Command] Collector ended. Collected: ${collected.size}`);
         if (collected.size === 0) {
+          logger.info(`[Search Command] No selection made, cleaning up reactions`);
           searchResultMsg.reactions.removeAll().catch(() => { });
         }
       });
