@@ -106,10 +106,15 @@ export default class Play extends Command {
 
         // Start playing if not already playing
         logger.info(`[Play Command] Player state before play: playing=${player.playing}, paused=${player.paused}, current=${!!player.current}`);
+        logger.info(`[Play Command] Player connected: ${player.connected}, voiceChannel: ${player.voiceChannel}`);
         if (!player.playing && !player.paused) {
           logger.info(`[Play Command] Calling player.play() to start playback`);
-          player.play();
-          logger.info(`[Play Command] player.play() called successfully`);
+          try {
+            await player.play();
+            logger.info(`[Play Command] player.play() completed successfully`);
+          } catch (error) {
+            logger.error(`[Play Command] Error calling player.play():`, error);
+          }
         } else {
           logger.info(`[Play Command] Skipping player.play() - already playing or paused`);
         }
@@ -134,16 +139,20 @@ export default class Play extends Command {
 
         // Start playing if not already playing
         logger.info(`[Play Command] Player state before play: playing=${player.playing}, paused=${player.paused}, current=${!!player.current}`);
+        logger.info(`[Play Command] Player connected: ${player.connected}, voiceChannel: ${player.voiceChannel}, node: ${player.node?.name}`);
         if (!player.playing && !player.paused) {
           logger.info(`[Play Command] Calling player.play() to start playback`);
-          player.play();
-          logger.info(`[Play Command] player.play() called successfully`);
+          try {
+            await player.play();
+            logger.info(`[Play Command] player.play() completed successfully`);
+          } catch (error) {
+            logger.error(`[Play Command] Error calling player.play():`, error);
+            throw error;
+          }
         } else {
           logger.info(`[Play Command] Skipping player.play() - already playing or paused`);
         }
       }
-
-    } catch (error) {
       logger.error('[Play Command] Error:', error);
       const embed = createErrorEmbed(
         'An error occurred while trying to play music!',
