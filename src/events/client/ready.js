@@ -9,6 +9,10 @@ export default {
     console.log(`📊 Serving ${client.guilds.cache.size} servers`);
     console.log(`👥 Serving ${client.guilds.cache.reduce((a, g) => a + g.memberCount, 0)} users`);
 
+    // Initialize Riffy with bot user ID
+    client.riffyManager.riffy.init(client.user.id);
+    console.log('🎵 Riffy initialized');
+
     // Set bot presence
     client.user.setPresence({
       activities: [{

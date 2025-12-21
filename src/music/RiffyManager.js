@@ -27,14 +27,8 @@ export default class RiffyManager {
         const guild = client.guilds.cache.get(payload.d.guild_id);
         if (guild) guild.shard.send(payload);
       },
-      defaultSearchPlatform: 'spsearch', // YouTube Music as default
-      restVersion: 'v4', // NodeLink REST API version
-      plugins: [], // Empty array for plugins (NodeLink has them built-in)
-      // Auto-resume after disconnect
-      autoResume: true,
-      // Reconnection settings
-      reconnectTries: 5,
-      reconnectInterval: 5000
+      defaultSearchPlatform: 'ytmsearch',
+      restVersion: 'v4'
     });
 
     this.patchRiffyEventHandler();
@@ -122,14 +116,14 @@ export default class RiffyManager {
     });
 
     // Track events
-    this.riffy.on('trackStart', (player, track, payload) => {
+    this.riffy.on('trackStart', (player, track) => {
       logger.info(`[RiffyManager] 🎵 Now playing: "${track.info.title}" in guild ${player.guildId}`);
-      this.handleTrackStart(player, track, payload);
+      this.handleTrackStart(player, track);
     });
 
-    this.riffy.on('trackEnd', (player, track, payload) => {
-      logger.info(`[RiffyManager] Track ended: "${track.info.title}" in guild ${player.guildId}`);
-      this.handleTrackEnd(player, track, payload);
+    this.riffy.on('trackEnd', (player) => {
+      logger.info(`[RiffyManager] Track ended in guild ${player.guildId}`);
+      this.handleTrackEnd(player);
     });
 
     this.riffy.on('trackError', (player, track, payload) => {
@@ -160,11 +154,10 @@ export default class RiffyManager {
     logger.info('[RiffyManager] Event listeners configured');
   }
 
-  async handleTrackStart(player, track, payload) {
+  async handleTrackStart(player, track) {
     logger.info(`[RiffyManager] 📥 handleTrackStart called for guild ${player.guildId}`);
     logger.info(`[RiffyManager] Track details: ${JSON.stringify({ title: track.info.title, author: track.info.author, duration: track.info.length })}`);
     logger.info(`[RiffyManager] Player state: playing=${player.playing}, paused=${player.paused}, queue length=${player.queue.length}`);
-    logger.info(`[RiffyManager] Payload:`, payload);
 
     const guild = this.client.guilds.cache.get(player.guildId);
     if (!guild) {
@@ -203,10 +196,8 @@ export default class RiffyManager {
     }
   }
 
-  async handleTrackEnd(player, track, payload) {
+  async handleTrackEnd(player) {
     logger.info(`[RiffyManager] 🔚 handleTrackEnd called for guild ${player.guildId}`);
-    logger.info(`[RiffyManager] Track ended: ${track.info.title}`);
-    logger.info(`[RiffyManager] End reason: ${payload?.reason || 'unknown'}`);
     logger.info(`[RiffyManager] Queue length: ${player.queue.length}`);
     logger.info(`[RiffyManager] Player state: playing=${player.playing}, paused=${player.paused}`);
 

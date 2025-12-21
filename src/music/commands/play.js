@@ -106,15 +106,10 @@ export default class Play extends Command {
 
         // Start playing if not already playing
         logger.info(`[Play Command] Player state before play: playing=${player.playing}, paused=${player.paused}, current=${!!player.current}`);
-        logger.info(`[Play Command] Player connected: ${player.connected}, voiceChannel: ${player.voiceChannel}`);
         if (!player.playing && !player.paused) {
           logger.info(`[Play Command] Calling player.play() to start playback`);
-          try {
-            await player.play();
-            logger.info(`[Play Command] player.play() completed successfully`);
-          } catch (error) {
-            logger.error(`[Play Command] Error calling player.play():`, error);
-          }
+          player.play();
+          logger.info(`[Play Command] player.play() called`);
         } else {
           logger.info(`[Play Command] Skipping player.play() - already playing or paused`);
         }
@@ -139,16 +134,10 @@ export default class Play extends Command {
 
         // Start playing if not already playing
         logger.info(`[Play Command] Player state before play: playing=${player.playing}, paused=${player.paused}, current=${!!player.current}`);
-        logger.info(`[Play Command] Player connected: ${player.connected}, voiceChannel: ${player.voiceChannel}, node: ${player.node?.name}`);
         if (!player.playing && !player.paused) {
           logger.info(`[Play Command] Calling player.play() to start playback`);
-          try {
-            await player.play();
-            logger.info(`[Play Command] player.play() completed successfully`);
-          } catch (error) {
-            logger.error(`[Play Command] Error calling player.play():`, error);
-            throw error;
-          }
+          player.play();
+          logger.info(`[Play Command] player.play() called`);
         } else {
           logger.info(`[Play Command] Skipping player.play() - already playing or paused`);
         }
