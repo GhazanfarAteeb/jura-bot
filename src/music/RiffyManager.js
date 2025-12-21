@@ -122,24 +122,24 @@ export default class RiffyManager {
     });
 
     // Track events
-    this.riffy.on('trackStart', (player, track) => {
+    this.riffy.on('trackStart', (player, track, payload) => {
       logger.info(`[RiffyManager] 🎵 Now playing: "${track.info.title}" in guild ${player.guildId}`);
-      this.handleTrackStart(player, track);
+      this.handleTrackStart(player, track, payload);
     });
 
-    this.riffy.on('trackEnd', (player, track) => {
+    this.riffy.on('trackEnd', (player, track, payload) => {
       logger.info(`[RiffyManager] Track ended: "${track.info.title}" in guild ${player.guildId}`);
-      this.handleTrackEnd(player, track);
+      this.handleTrackEnd(player, track, payload);
     });
 
-    this.riffy.on('trackError', (player, track, error) => {
-      logger.error(`[RiffyManager] 🔴 Track error for "${track.info.title}" in guild ${player.guildId}:`, error);
-      this.handleTrackError(player, track, error);
+    this.riffy.on('trackError', (player, track, payload) => {
+      logger.error(`[RiffyManager] 🔴 Track error for "${track.info.title}" in guild ${player.guildId}:`, payload);
+      this.handleTrackError(player, track, payload);
     });
 
-    this.riffy.on('trackStuck', (player, track, thresholdMs) => {
-      logger.warn(`[RiffyManager] ⚠️ Track stuck: "${track.info.title}" (${thresholdMs}ms) in guild ${player.guildId}`);
-      player.stopTrack();
+    this.riffy.on('trackStuck', (player, track, payload) => {
+      logger.warn(`[RiffyManager] ⚠️ Track stuck: "${track.info.title}" (${payload.thresholdMs}ms) in guild ${player.guildId}`);
+      player.stop();
     });
 
     // Player events
@@ -147,8 +147,8 @@ export default class RiffyManager {
       logger.info(`[RiffyManager] Player created for guild ${player.guildId}`);
     });
 
-    this.riffy.on('playerDestroy', (player) => {
-      logger.info(`[RiffyManager] Player destroyed for guild ${player.guildId}`);
+    this.riffy.on('playerDisconnect', (player) => {
+      logger.info(`[RiffyManager] Player disconnected for guild ${player.guildId}`);
     });
 
     // Queue events
@@ -191,7 +191,7 @@ export default class RiffyManager {
     // Otherwise Riffy automatically plays next track
   }
 
-  async handleTrackError(player, track, error) {
+  async handleTrackError(player, track, payload) {
     const guild = this.client.guilds.cache.get(player.guildId);
     if (!guild) return;
 
@@ -199,7 +199,7 @@ export default class RiffyManager {
     if (!channel) return;
 
     try {
-      const errorData = error.exception || error;
+      const errorData = payload.exception || payload.error || {};
       const errorMessage = errorData.message || 'Unknown error';
 
       // Check if it's a YouTube streaming error
@@ -212,7 +212,7 @@ export default class RiffyManager {
       // Auto-skip to next track if available
       if (player.queue.length > 0) {
         logger.info(`[RiffyManager] Auto-skipping to next track after error`);
-        player.stopTrack();
+        player.stop();
       } else {
         // No more tracks, destroy player
         setTimeout(() => {

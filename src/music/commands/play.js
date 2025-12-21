@@ -91,8 +91,8 @@ export default class Play extends Command {
         const tracks = result.tracks;
 
         for (const track of tracks) {
-          track.requester = message.author;
-          player.queue.push(track);
+          track.info.requester = message.author;
+          player.queue.add(track);
         }
 
         const embed = createSuccessEmbed(
@@ -108,10 +108,10 @@ export default class Play extends Command {
       } else {
         // Single track or search result
         const track = result.tracks[0];
-        track.requester = message.author;
+        track.info.requester = message.author;
 
         // Add to queue
-        player.queue.push(track);
+        player.queue.add(track);
 
         const embed = createSuccessEmbed(
           'Added to queue',
