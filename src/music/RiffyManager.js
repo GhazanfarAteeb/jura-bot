@@ -26,6 +26,61 @@ export default class RiffyManager {
       restVersion: 'v4'
     });
 
+    // Patch to ignore NodeLink custom events
+    this.patchNodeLinkEvents();
+
     logger.info('[RiffyManager] Riffy initialized');
+  }
+
+  /**
+   * Patch Riffy to ignore NodeLink's custom events
+   * NodeLink sends events that vanilla Lavalink doesn't, which Riffy doesn't handle
+   */
+  patchNodeLinkEvents() {
+    const ignoredEvents = [
+      'PlayerCreatedEvent',
+      'VolumeChangedEvent',
+      'PlayerConnectedEvent',
+      'PlayerDestroyedEvent',
+      'PlayerPausedEvent',
+      'PlayerResumedEvent'
+    ];
+
+    // Patch all existing players
+    this.riffy.players.forEach(player => {
+      if (!player._nodeLinkPatched) {
+        const originalHandleEvent = player.handleEvent.bind(player);
+        player.handleEvent = (data) => {
+          if (ignoredEvents.includes(data.type)) return;
+          try {
+            originalHandleEvent(data);
+          } catch (error) {
+            if (!error.message?.includes('unknown event')) throw error;
+          }
+        };
+        player._nodeLinkPatched = true;
+      }
+    });
+
+    // Patch createConnection to auto-patch new players
+    const originalCreate = this.riffy.createConnection.bind(this.riffy);
+    this.riffy.createConnection = (options) => {
+      const player = originalCreate(options);
+      if (!player._nodeLinkPatched) {
+        const originalHandleEvent = player.handleEvent.bind(player);
+        player.handleEvent = (data) => {
+          if (ignoredEvents.includes(data.type)) return;
+          try {
+            originalHandleEvent(data);
+          } catch (error) {
+            if (!error.message?.includes('unknown event')) throw error;
+          }
+        };
+        player._nodeLinkPatched = true;
+      }
+      return player;
+    };
+
+    logger.info('[RiffyManager] NodeLink event patch applied');
   }
 }
