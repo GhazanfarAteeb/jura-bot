@@ -18,6 +18,8 @@ export default class Skip extends Command {
     const message = ctx.message;
     const riffyManager = client.riffyManager;
 
+    logger.info(`[Skip Command] Called by ${message.author.tag} in guild ${message.guild.id}`);
+
     const player = riffyManager.getPlayer(message.guild.id);
 
     if (!player || !player.current) {
@@ -36,7 +38,9 @@ export default class Skip extends Command {
 
     try {
       const skippedTrack = player.current;
+      logger.info(`[Skip Command] Skipping track: ${skippedTrack.info.title} in guild ${message.guild.id}`);
       player.stop();
+      logger.info(`[Skip Command] Track skipped successfully`);
 
       const embed = createSuccessEmbed(
         'Skipped current track',

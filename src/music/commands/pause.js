@@ -18,6 +18,8 @@ export default class Pause extends Command {
     const message = ctx.message;
     const riffyManager = client.riffyManager;
 
+    logger.info(`[Pause Command] Called by ${message.author.tag} in guild ${message.guild.id}`);
+
     const player = riffyManager.getPlayer(message.guild.id);
 
     if (!player || !player.current) {
@@ -36,10 +38,12 @@ export default class Pause extends Command {
 
     try {
       if (player.paused) {
+        logger.info(`[Pause Command] Resuming playback for guild ${message.guild.id}`);
         player.pause(false);
         const embed = createSuccessEmbed('Resumed playback', '▶️ Music is now playing');
         return message.reply({ embeds: [embed] });
       } else {
+        logger.info(`[Pause Command] Pausing playback for guild ${message.guild.id}`);
         player.pause(true);
         const embed = createSuccessEmbed('Paused playback', '⏸️ Music is now paused');
         return message.reply({ embeds: [embed] });

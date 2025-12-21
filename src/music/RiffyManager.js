@@ -161,12 +161,24 @@ export default class RiffyManager {
   }
 
   async handleTrackStart(player, track) {
+    logger.info(`[RiffyManager] 📥 handleTrackStart called for guild ${player.guildId}`);
+    logger.info(`[RiffyManager] Track details: ${JSON.stringify({ title: track.info.title, author: track.info.author, duration: track.info.length })}`);
+    logger.info(`[RiffyManager] Player state: playing=${player.playing}, paused=${player.paused}, queue length=${player.queue.length}`);
+    
     const guild = this.client.guilds.cache.get(player.guildId);
-    if (!guild) return;
+    if (!guild) {
+      logger.warn(`[RiffyManager] ⚠️ Guild ${player.guildId} not found in cache`);
+      return;
+    }
 
     const channel = guild.channels.cache.get(player.textChannel);
-    if (!channel) return;
+    if (!channel) {
+      logger.warn(`[RiffyManager] ⚠️ Text channel ${player.textChannel} not found in guild ${player.guildId}`);
+      return;
+    }
 
+    logger.info(`[RiffyManager] 📨 Sending now playing message to channel ${channel.name}`);
+    
     // Import the player embed creator
     const { createNowPlayingEmbed, createPlayerButtons } = await import('./utils/PlayerEmbeds.js');
 
@@ -176,74 +188,120 @@ export default class RiffyManager {
 
       // Send or update the now playing message
       if (player.nowPlayingMessage) {
+        logger.info(`[RiffyManager] 🔄 Updating existing now playing message`);
         await player.nowPlayingMessage.edit({ embeds: [embed], components: [buttons] });
       } else {
+        logger.info(`[RiffyManager] ✉️ Sending new now playing message`);
         const message = await channel.send({ embeds: [embed], components: [buttons] });
         player.nowPlayingMessage = message;
+        logger.info(`[RiffyManager] Now playing message ID: ${message.id}`);
       }
+      logger.info(`[RiffyManager] ✅ Now playing message sent successfully`);
     } catch (error) {
-      logger.error('[RiffyManager] Error sending now playing message:', error);
+      logger.error('[RiffyManager] ❌ Error sending now playing message:', error);
     }
   }
 
-  async handleTrackEnd(player, track) {
+  async handleTrackEnd(player, track, payload) {
+    logger.info(`[RiffyManager] 🔚 handleTrackEnd called for guild ${player.guildId}`);
+    logger.info(`[RiffyManager] Track ended: ${track.info.title}`);
+    logger.info(`[RiffyManager] End reason: ${payload?.reason || 'unknown'}`);
+    logger.info(`[RiffyManager] Queue length: ${player.queue.length}`);
+    logger.info(`[RiffyManager] Player state: playing=${player.playing}, paused=${player.paused}`);
+    
     // Handled by queueEnd event if queue is empty
     // Otherwise Riffy automatically plays next track
+    if (player.queue.length > 0) {
+      logger.info(`[RiffyManager] ⏭️ Next track available in queue`);
+    } else {
+      logger.info(`[RiffyManager] 📭 Queue is empty, queueEnd event will handle cleanup`);
+    }
   }
 
   async handleTrackError(player, track, payload) {
+    logger.error(`[RiffyManager] ❌ handleTrackError called for guild ${player.guildId}`);
+    logger.error(`[RiffyManager] Failed track: ${track.info.title}`);
+    logger.error(`[RiffyManager] Error payload:`, JSON.stringify(payload, null, 2));
+    logger.info(`[RiffyManager] Queue length: ${player.queue.length}`);
+    
     const guild = this.client.guilds.cache.get(player.guildId);
-    if (!guild) return;
+    if (!guild) {
+      logger.warn(`[RiffyManager] ⚠️ Guild ${player.guildId} not found, cannot send error message`);
+      return;
+    }
 
     const channel = guild.channels.cache.get(player.textChannel);
-    if (!channel) return;
+    if (!channel) {
+      logger.warn(`[RiffyManager] ⚠️ Text channel not found, cannot send error message`);
+      return;
+    }
 
     try {
       const errorData = payload.exception || payload.error || {};
       const errorMessage = errorData.message || 'Unknown error';
+      
+      logger.error(`[RiffyManager] Error message: ${errorMessage}`);
 
       // Check if it's a YouTube streaming error
       if (errorMessage.includes('Failed to get a working track URL')) {
+        logger.warn(`[RiffyManager] 🎥 YouTube streaming error detected`);
         await channel.send(`❌ **${track.info.title}** is unavailable (YouTube streaming issue). Skipping to next track...`);
       } else {
+        logger.warn(`[RiffyManager] 🔴 Generic playback error`);
         await channel.send(`❌ An error occurred while playing **${track.info.title}**: ${errorMessage}`);
       }
 
       // Auto-skip to next track if available
       if (player.queue.length > 0) {
-        logger.info(`[RiffyManager] Auto-skipping to next track after error`);
+        logger.info(`[RiffyManager] ⏭️ Auto-skipping to next track (${player.queue.length} tracks remaining)`);
         player.stop();
       } else {
+        logger.info(`[RiffyManager] 📭 No more tracks in queue, scheduling player destruction`);
         // No more tracks, destroy player
         setTimeout(() => {
           if (player && player.queue.length === 0) {
+            logger.info(`[RiffyManager] 🗑️ Destroying player after error (no tracks in queue)`);
             player.destroy();
           }
         }, 5000);
       }
     } catch (err) {
-      logger.error('[RiffyManager] Error sending error message:', err);
+      logger.error('[RiffyManager] ❌ Error in handleTrackError:', err);
     }
   }
 
   async handleQueueEnd(player) {
+    logger.info(`[RiffyManager] 🏁 handleQueueEnd called for guild ${player.guildId}`);
+    logger.info(`[RiffyManager] Final player state: playing=${player.playing}, paused=${player.paused}`);
+    
     const guild = this.client.guilds.cache.get(player.guildId);
-    if (!guild) return;
+    if (!guild) {
+      logger.warn(`[RiffyManager] ⚠️ Guild ${player.guildId} not found`);
+      return;
+    }
 
     const channel = guild.channels.cache.get(player.textChannel);
-    if (!channel) return;
+    if (!channel) {
+      logger.warn(`[RiffyManager] ⚠️ Text channel not found`);
+      return;
+    }
 
     try {
+      logger.info(`[RiffyManager] 📨 Sending queue end message to channel`);
       await channel.send('✅ Queue has ended. Thanks for listening!');
 
+      logger.info(`[RiffyManager] ⏲️ Scheduling player destruction in 30 seconds`);
       // Destroy player after a delay
       setTimeout(() => {
         if (player && player.queue.length === 0) {
+          logger.info(`[RiffyManager] 🗑️ Destroying player for guild ${player.guildId} (queue empty)`);
           player.destroy();
+        } else {
+          logger.info(`[RiffyManager] ⏸️ Player destruction cancelled (queue has ${player?.queue.length || 0} tracks)`);
         }
       }, 30000); // 30 seconds
     } catch (error) {
-      logger.error('[RiffyManager] Error sending queue end message:', error);
+      logger.error('[RiffyManager] ❌ Error in handleQueueEnd:', error);
     }
   }
 
@@ -269,9 +327,14 @@ export default class RiffyManager {
    * Create or get existing player
    */
   createPlayer(guildId, voiceChannelId, textChannelId) {
+    logger.info(`[RiffyManager] 🎮 createPlayer called for guild ${guildId}`);
+    logger.info(`[RiffyManager] Voice channel: ${voiceChannelId}, Text channel: ${textChannelId}`);
+    
     let player = this.riffy.players.get(guildId);
 
     if (!player) {
+      logger.info(`[RiffyManager] 🆕 No existing player found, creating new connection`);
+      
       player = this.riffy.createConnection({
         guildId: guildId,
         voiceChannel: voiceChannelId,
@@ -280,7 +343,11 @@ export default class RiffyManager {
         mute: false
       });
 
-      logger.info(`[RiffyManager] Created new player for guild ${guildId}`);
+      logger.info(`[RiffyManager] ✅ Created new player for guild ${guildId}`);
+      logger.info(`[RiffyManager] Player node: ${player.node?.name || 'unknown'}`);
+    } else {
+      logger.info(`[RiffyManager] ♻️ Reusing existing player for guild ${guildId}`);
+      logger.info(`[RiffyManager] Existing player state: playing=${player.playing}, paused=${player.paused}, queue=${player.queue.length}`);
     }
 
     return player;
@@ -290,17 +357,31 @@ export default class RiffyManager {
    * Get player for a guild
    */
   getPlayer(guildId) {
-    return this.riffy.players.get(guildId);
+    logger.info(`[RiffyManager] 🔍 getPlayer called for guild ${guildId}`);
+    const player = this.riffy.players.get(guildId);
+    
+    if (player) {
+      logger.info(`[RiffyManager] ✅ Player found - State: playing=${player.playing}, paused=${player.paused}, queue=${player.queue.length}`);
+    } else {
+      logger.info(`[RiffyManager] ❌ No player found for guild ${guildId}`);
+    }
+    
+    return player;
   }
 
   /**
    * Search for tracks using lavaSearch plugin
    */
   async search(query, platform = 'ytmsearch') {
+    logger.info(`[RiffyManager] 🔍 search called with query: "${query}", platform: ${platform}`);
+    
     const node = this.getNode();
     if (!node) {
+      logger.error(`[RiffyManager] ❌ No available nodes for search`);
       throw new Error('No available nodes for search');
     }
+    
+    logger.info(`[RiffyManager] Using node: ${node.name}`);
 
     // Platform prefixes for different sources
     const platformPrefixes = {
@@ -315,20 +396,34 @@ export default class RiffyManager {
 
     // Add platform prefix if not a URL
     let searchQuery = query;
-    if (!query.match(/^https?:\/\//)) {
+    const isUrl = query.match(/^https?:\/\//);
+    
+    if (!isUrl) {
       const prefix = platformPrefixes[platform.toLowerCase()] || platform;
       searchQuery = `${prefix}:${query}`;
+      logger.info(`[RiffyManager] Applied search prefix: ${prefix}`);
+    } else {
+      logger.info(`[RiffyManager] Query is a URL, no prefix applied`);
     }
 
-    logger.info(`[RiffyManager] Searching: ${searchQuery}`);
+    logger.info(`[RiffyManager] 🔎 Searching: ${searchQuery}`);
 
     try {
+      const startTime = Date.now();
       // Use riffy.resolve() instead of node.rest.resolve()
       const result = await this.riffy.resolve({ query: searchQuery, requester: this.client.user });
-      logger.info(`[RiffyManager] Search result: ${result.loadType}, tracks: ${result.tracks?.length || 0}`);
+      const duration = Date.now() - startTime;
+      
+      logger.info(`[RiffyManager] ✅ Search completed in ${duration}ms`);
+      logger.info(`[RiffyManager] Load type: ${result.loadType}, tracks: ${result.tracks?.length || 0}`);
+      
+      if (result.loadType === 'playlist') {
+        logger.info(`[RiffyManager] 📜 Playlist found: ${result.playlistInfo?.name || 'Unknown'}`);
+      }
+      
       return result;
     } catch (error) {
-      logger.error('[RiffyManager] Search error:', error);
+      logger.error('[RiffyManager] ❌ Search error:', error);
       throw error;
     }
   }

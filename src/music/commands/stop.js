@@ -18,6 +18,8 @@ export default class Stop extends Command {
     const message = ctx.message;
     const riffyManager = client.riffyManager;
 
+    logger.info(`[Stop Command] Called by ${message.author.tag} in guild ${message.guild.id}`);
+
     const player = riffyManager.getPlayer(message.guild.id);
 
     if (!player) {
@@ -35,7 +37,10 @@ export default class Stop extends Command {
     }
 
     try {
+      logger.info(`[Stop Command] Destroying player for guild ${message.guild.id}`);
+      logger.info(`[Stop Command] Queue had ${player.queue.length} tracks, current track: ${player.current?.info.title || 'none'}`);
       player.destroy();
+      logger.info(`[Stop Command] Player destroyed successfully`);
 
       const embed = createSuccessEmbed(
         'Stopped music playback',

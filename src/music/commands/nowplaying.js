@@ -18,6 +18,8 @@ export default class NowPlaying extends Command {
     const message = ctx.message;
     const riffyManager = client.riffyManager;
 
+    logger.info(`[NowPlaying Command] Called by ${message.author.tag} in guild ${message.guild.id}`);
+
     const player = riffyManager.getPlayer(message.guild.id);
 
     if (!player || !player.current) {

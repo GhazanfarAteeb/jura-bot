@@ -18,6 +18,8 @@ export default class Loop extends Command {
     const message = ctx.message;
     const riffyManager = client.riffyManager;
 
+    logger.info(`[Loop Command] Called by ${message.author.tag} in guild ${message.guild.id}`);
+
     const player = riffyManager.getPlayer(message.guild.id);
 
     if (!player) {
@@ -83,7 +85,9 @@ export default class Loop extends Command {
           return message.reply({ embeds: [embed] });
       }
 
-      player.setLoop(loopMode);
+      const oldMode = player.loop;
+      player.setLoop(mode);
+      logger.info(`[Loop Command] Loop mode changed from ${oldMode} to ${mode} for guild ${message.guild.id}`);
 
       const embed = createSuccessEmbed(
         'Loop Mode Updated',

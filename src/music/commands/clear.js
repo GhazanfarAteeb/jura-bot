@@ -18,6 +18,8 @@ export default class Clear extends Command {
     const message = ctx.message;
     const riffyManager = client.riffyManager;
 
+    logger.info(`[Clear Command] Called by ${message.author.tag} in guild ${message.guild.id}`);
+
     const player = riffyManager.getPlayer(message.guild.id);
 
     if (!player) {
@@ -42,7 +44,10 @@ export default class Clear extends Command {
     }
 
     try {
+      const clearedCount = player.queue.length;
+      logger.info(`[Clear Command] Clearing ${clearedCount} tracks from queue`);
       player.queue.clear();
+      logger.info(`[Clear Command] Queue cleared successfully`);
 
       const embed = createSuccessEmbed(
         'Queue Cleared',
