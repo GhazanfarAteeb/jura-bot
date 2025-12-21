@@ -27,7 +27,7 @@ export default class RiffyManager {
         const guild = client.guilds.cache.get(payload.d.guild_id);
         if (guild) guild.shard.send(payload);
       },
-      defaultSearchPlatform: 'ytmsearch', // YouTube Music as default
+      defaultSearchPlatform: 'spsearch', // YouTube Music as default
       restVersion: 'v4', // NodeLink REST API version
       plugins: [], // Empty array for plugins (NodeLink has them built-in)
       // Auto-resume after disconnect
@@ -164,7 +164,7 @@ export default class RiffyManager {
     logger.info(`[RiffyManager] 📥 handleTrackStart called for guild ${player.guildId}`);
     logger.info(`[RiffyManager] Track details: ${JSON.stringify({ title: track.info.title, author: track.info.author, duration: track.info.length })}`);
     logger.info(`[RiffyManager] Player state: playing=${player.playing}, paused=${player.paused}, queue length=${player.queue.length}`);
-    
+
     const guild = this.client.guilds.cache.get(player.guildId);
     if (!guild) {
       logger.warn(`[RiffyManager] ⚠️ Guild ${player.guildId} not found in cache`);
@@ -178,7 +178,7 @@ export default class RiffyManager {
     }
 
     logger.info(`[RiffyManager] 📨 Sending now playing message to channel ${channel.name}`);
-    
+
     // Import the player embed creator
     const { createNowPlayingEmbed, createPlayerButtons } = await import('./utils/PlayerEmbeds.js');
 
@@ -208,7 +208,7 @@ export default class RiffyManager {
     logger.info(`[RiffyManager] End reason: ${payload?.reason || 'unknown'}`);
     logger.info(`[RiffyManager] Queue length: ${player.queue.length}`);
     logger.info(`[RiffyManager] Player state: playing=${player.playing}, paused=${player.paused}`);
-    
+
     // Handled by queueEnd event if queue is empty
     // Otherwise Riffy automatically plays next track
     if (player.queue.length > 0) {
@@ -223,7 +223,7 @@ export default class RiffyManager {
     logger.error(`[RiffyManager] Failed track: ${track.info.title}`);
     logger.error(`[RiffyManager] Error payload:`, JSON.stringify(payload, null, 2));
     logger.info(`[RiffyManager] Queue length: ${player.queue.length}`);
-    
+
     const guild = this.client.guilds.cache.get(player.guildId);
     if (!guild) {
       logger.warn(`[RiffyManager] ⚠️ Guild ${player.guildId} not found, cannot send error message`);
@@ -239,7 +239,7 @@ export default class RiffyManager {
     try {
       const errorData = payload.exception || payload.error || {};
       const errorMessage = errorData.message || 'Unknown error';
-      
+
       logger.error(`[RiffyManager] Error message: ${errorMessage}`);
 
       // Check if it's a YouTube streaming error
@@ -273,7 +273,7 @@ export default class RiffyManager {
   async handleQueueEnd(player) {
     logger.info(`[RiffyManager] 🏁 handleQueueEnd called for guild ${player.guildId}`);
     logger.info(`[RiffyManager] Final player state: playing=${player.playing}, paused=${player.paused}`);
-    
+
     const guild = this.client.guilds.cache.get(player.guildId);
     if (!guild) {
       logger.warn(`[RiffyManager] ⚠️ Guild ${player.guildId} not found`);
@@ -329,12 +329,12 @@ export default class RiffyManager {
   createPlayer(guildId, voiceChannelId, textChannelId) {
     logger.info(`[RiffyManager] 🎮 createPlayer called for guild ${guildId}`);
     logger.info(`[RiffyManager] Voice channel: ${voiceChannelId}, Text channel: ${textChannelId}`);
-    
+
     let player = this.riffy.players.get(guildId);
 
     if (!player) {
       logger.info(`[RiffyManager] 🆕 No existing player found, creating new connection`);
-      
+
       player = this.riffy.createConnection({
         guildId: guildId,
         voiceChannel: voiceChannelId,
@@ -359,13 +359,13 @@ export default class RiffyManager {
   getPlayer(guildId) {
     logger.info(`[RiffyManager] 🔍 getPlayer called for guild ${guildId}`);
     const player = this.riffy.players.get(guildId);
-    
+
     if (player) {
       logger.info(`[RiffyManager] ✅ Player found - State: playing=${player.playing}, paused=${player.paused}, queue=${player.queue.length}`);
     } else {
       logger.info(`[RiffyManager] ❌ No player found for guild ${guildId}`);
     }
-    
+
     return player;
   }
 
@@ -374,13 +374,13 @@ export default class RiffyManager {
    */
   async search(query, platform = 'ytmsearch') {
     logger.info(`[RiffyManager] 🔍 search called with query: "${query}", platform: ${platform}`);
-    
+
     const node = this.getNode();
     if (!node) {
       logger.error(`[RiffyManager] ❌ No available nodes for search`);
       throw new Error('No available nodes for search');
     }
-    
+
     logger.info(`[RiffyManager] Using node: ${node.name}`);
 
     // Platform prefixes for different sources
@@ -397,7 +397,7 @@ export default class RiffyManager {
     // Add platform prefix if not a URL
     let searchQuery = query;
     const isUrl = query.match(/^https?:\/\//);
-    
+
     if (!isUrl) {
       const prefix = platformPrefixes[platform.toLowerCase()] || platform;
       searchQuery = `${prefix}:${query}`;
@@ -413,14 +413,14 @@ export default class RiffyManager {
       // Use riffy.resolve() instead of node.rest.resolve()
       const result = await this.riffy.resolve({ query: searchQuery, requester: this.client.user });
       const duration = Date.now() - startTime;
-      
+
       logger.info(`[RiffyManager] ✅ Search completed in ${duration}ms`);
       logger.info(`[RiffyManager] Load type: ${result.loadType}, tracks: ${result.tracks?.length || 0}`);
-      
+
       if (result.loadType === 'playlist') {
         logger.info(`[RiffyManager] 📜 Playlist found: ${result.playlistInfo?.name || 'Unknown'}`);
       }
-      
+
       return result;
     } catch (error) {
       logger.error('[RiffyManager] ❌ Search error:', error);
