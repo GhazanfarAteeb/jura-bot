@@ -153,6 +153,7 @@ export default class Play extends Command {
           logger.info(`[Play Command] Skipping player.play() - already playing or paused`);
         }
       }
+    } catch (error) {
       logger.error('[Play Command] Error:', error);
       const embed = createErrorEmbed(
         'An error occurred while trying to play music!',
