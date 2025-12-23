@@ -19,9 +19,24 @@ class RawEvent extends Event {
             return;
         }
 
-        // Update Riffy's voice state
+        // For VOICE_SERVER_UPDATE, check if endpoint exists
+        // Discord sometimes sends this without endpoint during region changes
+        if (data.t === GatewayDispatchEvents.VoiceServerUpdate) {
+            if (!data.d?.endpoint) {
+                // Endpoint is null/undefined - wait for the next packet with valid endpoint
+                console.log(`[Music] Received VOICE_SERVER_UPDATE without endpoint for guild ${data.d?.guild_id}, waiting for valid packet...`);
+                return;
+            }
+        }
+
+        // Update Riffy's voice state with error handling
         if (this.client.riffy) {
-            this.client.riffy.updateVoiceState(data);
+            try {
+                this.client.riffy.updateVoiceState(data);
+            } catch (error) {
+                console.error(`[Music] Error updating voice state:`, error.message);
+                // Don't rethrow - this prevents the bot from crashing
+            }
         }
     }
 }
