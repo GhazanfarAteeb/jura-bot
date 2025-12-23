@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { Client, GatewayIntentBits, Partials, Collection, EmbedBuilder } from 'discord.js';
+import { Client, GatewayIntentBits, Partials, Collection, EmbedBuilder, ShardingManager, ShardEvents } from 'discord.js';
 import mongoose from 'mongoose';
 // import { fileURLToPath } from 'url';
 // import { dirname, join } from 'path';
@@ -12,7 +12,7 @@ import Guild from './models/Guild.js';
 import logger from './utils/logger.js';
 import ServerData from './database/server.js';
 import Utils from './structures/Utils.js';
-import MusicBot from './music/musicBot.js';
+import RiffyManager from './music/RiffyManager.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -76,13 +76,16 @@ client.db = new ServerData();
 // Initialize utils
 client.utils = Utils;
 
-// Initialize music bot
-client.musicBot = new MusicBot(client);
+// Initialize Riffy Music Manager
+const riffyManager = new RiffyManager(client);
+client.riffyManager = riffyManager;
 
 // Configuration
 client.config = {
   logChannelId: process.env.LOG_CHANNEL_ID || null
 };
+
+
 
 // Logger setup
 client.logger = logger;
@@ -179,6 +182,9 @@ async function loadEvents() {
   let totalEvents = 0;
 
   for (const dir of eventsPath) {
+    // Skip music events - they are loaded separately
+    if (dir === 'music') continue;
+
     try {
       const events = readdirSync(path.join(__dirname, `./events/${dir}`))
         .filter((file) => file.endsWith(".js"));
@@ -223,6 +229,43 @@ async function loadEvents() {
   logger.startup(`Loaded ${totalEvents} events`);
 }
 
+// Load music events specifically
+async function loadMusicEvents() {
+  const musicEventsPath = path.join(__dirname, "./events/music");
+  let totalMusicEvents = 0;
+
+  try {
+    const events = readdirSync(musicEventsPath).filter((file) => file.endsWith(".js"));
+
+    for (const file of events) {
+      try {
+        console.log("🎵 Loading music event:", file);
+        const EventModule = await import(`./events/music/${file}`);
+        const EventClass = EventModule.default || EventModule;
+
+        if (typeof EventClass === 'function') {
+          const evt = new EventClass(client, file);
+          const eventName = evt.name;
+          const eventHandler = (...args) => evt.run(...args);
+
+          // Register event with client
+          client.on(eventName, eventHandler);
+          totalMusicEvents++;
+        }
+      } catch (error) {
+        console.error(`Error loading music event ${file}:`, error);
+        logger.error(`Failed to load music event ${file}`, error);
+      }
+    }
+  } catch (error) {
+    console.error('Error reading music events directory:', error);
+    logger.error('Failed to read music events directory', error);
+  }
+
+  logger.startup(`Loaded ${totalMusicEvents} music events`);
+  console.log(`🎵 Loaded ${totalMusicEvents} music events`);
+}
+
 // Initialize bot
 async function initialize() {
   const startTime = Date.now();
@@ -234,14 +277,6 @@ async function initialize() {
 
   await connectDatabase();
   await loadCommands();
-
-  // Initialize music bot module
-  try {
-    await client.musicBot.initialize();
-  } catch (error) {
-    console.error('⚠️ Music bot failed to initialize, continuing without music features:', error);
-    logger.error('Music bot initialization failed', error);
-  }
 
   // Login to Discord first
   await client.login(process.env.DISCORD_TOKEN);
@@ -257,16 +292,21 @@ async function initialize() {
     console.log(`   Guilds: ${client.guilds.cache.size}`);
     console.log(`   WS Status: ${client.ws.status}, Ping: ${client.ws.ping}ms`);
 
-    // Initialize Riffy music system
+    // Initialize Riffy Music System
     try {
-      await client.musicBot.initRiffy();
+      riffyManager.initialize();
+      riffyManager.initializePlayer();
+      console.log('🎵 Music system initialized!');
     } catch (error) {
-      console.error('⚠️ Riffy initialization failed:', error);
-      logger.error('Riffy initialization failed', error);
+      logger.error('Failed to initialize music system:', error);
+      console.error('❌ Failed to initialize music system:', error.message);
     }
 
     // Load event handlers
     await loadEvents();
+
+    // Load music events
+    await loadMusicEvents();
 
     // Initialize schedulers
     initializeSchedulers(client);

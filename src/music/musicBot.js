@@ -102,6 +102,9 @@ class MusicBot {
           const command = require(commandPath);
 
           if (command.name) {
+            // Set category for proper routing in messageCreate
+            command.category = folder;
+            
             // Store with music prefix to avoid conflicts
             this.musicCommands.set(command.name, command);
             this.mainClient.commands.set(command.name, command);
