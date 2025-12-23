@@ -55,7 +55,17 @@ export default class Queue extends Command {
         }
 
         const current = player.current;
-        const queue = player.queue;
+        const queue = player.queue || [];
+
+        // Check if nothing is playing
+        if (!current && queue.length === 0) {
+            return ctx.sendMessage({
+                embeds: [{
+                    color: 0xffcc00,
+                    description: '📭 The queue is empty. Use `play` to add some tracks!'
+                }]
+            });
+        }
 
         // Format duration
         const formatDuration = (ms) => {

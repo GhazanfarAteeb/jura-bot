@@ -125,15 +125,12 @@ class MessageCreate extends Event {
         }
       }
       if (command.player.active) {
-        if (!this.client.queue.get(message.guildId))
+        const player = this.client.riffy?.players.get(message.guildId);
+        if (!player)
           return await message.reply({
             content: "Nothing is playing right now.",
           });
-        if (!this.client.queue.get(message.guildId).queue)
-          return await message.reply({
-            content: "Nothing is playing right now.",
-          });
-        if (!this.client.queue.get(message.guildId).current)
+        if ((!player.queue || player.queue.length === 0) && !player.current)
           return await message.reply({
             content: "Nothing is playing right now.",
           });
