@@ -60,6 +60,10 @@ class RiffyManager {
 
         // Node error
         this.riffy.on('nodeError', (node, error) => {
+            // Ignore FiltersChangedEvent - it's not a real error
+            if (error?.message?.includes('FiltersChangedEvent')) {
+                return; // Silently ignore this event
+            }
             logger.error(`[RIFFY] Node ${node.name} encountered an error: ${error.message}`);
             console.error(`❌ Lavalink Node ${node.name} error:`, error.message);
         });

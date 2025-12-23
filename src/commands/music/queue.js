@@ -97,22 +97,39 @@ export default class Queue extends Command {
                 .setTitle('🎵 Music Queue')
                 .setThumbnail(current?.info?.thumbnail || current?.info?.artworkUrl || null);
 
-            // Now playing
+            // Now playing - truncate title if too long
             if (current) {
-                embed.setDescription(`**Now Playing:**\n[${current.info.title}](${current.info.uri}) \`[${formatDuration(current.info.length)}]\`\nRequested by: ${current.info.requester?.toString() || 'Unknown'}`);
+                const nowPlayingTitle = current.info.title.length > 50 
+                    ? current.info.title.substring(0, 47) + '...' 
+                    : current.info.title;
+                embed.setDescription(`**Now Playing:**\n[${nowPlayingTitle}](${current.info.uri}) \`[${formatDuration(current.info.length)}]\`\nRequested by: ${current.info.requester?.toString() || 'Unknown'}`);
             }
 
-            // Queue list
+            // Queue list - with character limit handling
             if (queue.length > 0) {
                 const queueSlice = queue.slice(startIndex, endIndex);
-                const queueList = queueSlice.map((track, index) => {
-                    const position = startIndex + index + 1;
-                    return `**${position}.** [${track.info.title}](${track.info.uri}) \`[${formatDuration(track.info.length)}]\``;
-                }).join('\n');
+                let queueList = '';
+                
+                for (let i = 0; i < queueSlice.length; i++) {
+                    const track = queueSlice[i];
+                    const position = startIndex + i + 1;
+                    // Truncate long titles
+                    const title = track.info.title.length > 40 
+                        ? track.info.title.substring(0, 37) + '...' 
+                        : track.info.title;
+                    const line = `**${position}.** ${title} \`[${formatDuration(track.info.length)}]\`\n`;
+                    
+                    // Check if adding this line would exceed 1000 chars (leave some buffer)
+                    if ((queueList + line).length > 1000) {
+                        queueList += `*...and ${queueSlice.length - i} more tracks*`;
+                        break;
+                    }
+                    queueList += line;
+                }
 
                 embed.addFields({
                     name: `Up Next (${queue.length} track${queue.length !== 1 ? 's' : ''})`,
-                    value: queueList || 'No tracks in queue'
+                    value: queueList.trim() || 'No tracks in queue'
                 });
             } else {
                 embed.addFields({
