@@ -266,181 +266,181 @@ async function initialize() {
     }
 
     // Load event handlers
-      await loadEvents();
+    await loadEvents();
 
-      // Initialize schedulers
-      initializeSchedulers(client);
+    // Initialize schedulers
+    initializeSchedulers(client);
 
-      // Start status monitoring
-      startStatusMonitoring();
+    // Start status monitoring
+    startStatusMonitoring();
 
-      // Send initial online message
-      notifyStatusChange('online');
+    // Send initial online message
+    notifyStatusChange('online');
 
-      console.log('✅ All systems initialized and ready!');
-    });
-  }
-
-  // Error handling
-  process.on('unhandledRejection', error => {
-    logger.error('Unhandled promise rejection', error);
-    console.error('Unhandled promise rejection:', error);
+    console.log('✅ All systems initialized and ready!');
   });
+}
 
-  process.on('uncaughtException', error => {
-    logger.error('Uncaught exception', error);
-    console.error('Uncaught exception:', error);
-    process.exit(1);
-  });
+// Error handling
+process.on('unhandledRejection', error => {
+  logger.error('Unhandled promise rejection', error);
+  console.error('Unhandled promise rejection:', error);
+});
 
-  // Graceful shutdown
-  process.on('SIGINT', async () => {
-    console.log('\n🛑 Shutting down gracefully...');
-    logger.info('Bot shutting down (SIGINT)');
+process.on('uncaughtException', error => {
+  logger.error('Uncaught exception', error);
+  console.error('Uncaught exception:', error);
+  process.exit(1);
+});
 
-    // Stop Spotify token refresh
-    // spotifyTokenManager.stop();
+// Graceful shutdown
+process.on('SIGINT', async () => {
+  console.log('\n🛑 Shutting down gracefully...');
+  logger.info('Bot shutting down (SIGINT)');
 
-    // Disconnect from Discord
-    client.destroy();
+  // Stop Spotify token refresh
+  // spotifyTokenManager.stop();
 
-    // Close database connection
-    await mongoose.connection.close();
+  // Disconnect from Discord
+  client.destroy();
 
-    console.log('✅ Shutdown complete');
-    process.exit(0);
-  });
+  // Close database connection
+  await mongoose.connection.close();
 
-  process.on('SIGTERM', async () => {
-    console.log('\n🛑 Shutting down gracefully...');
-    logger.info('Bot shutting down (SIGTERM)');
+  console.log('✅ Shutdown complete');
+  process.exit(0);
+});
 
-    // Stop Spotify token refresh
-    // spotifyTokenManager.stop();
+process.on('SIGTERM', async () => {
+  console.log('\n🛑 Shutting down gracefully...');
+  logger.info('Bot shutting down (SIGTERM)');
 
-    // Disconnect from Discord
-    client.destroy();
+  // Stop Spotify token refresh
+  // spotifyTokenManager.stop();
 
-    // Close database connection
-    await mongoose.connection.close();
+  // Disconnect from Discord
+  client.destroy();
 
-    console.log('✅ Shutdown complete');
-    process.exit(0);
-  });
+  // Close database connection
+  await mongoose.connection.close();
 
-  // Health check endpoint
-  app.get('/health', (req, res) => {
-    const uptime = process.uptime();
-    const status = {
-      status: 'online',
-      uptime: Math.floor(uptime),
-      uptimeFormatted: formatUptime(uptime),
-      timestamp: new Date().toISOString(),
-      bot: {
-        ready: client.readyAt ? true : false,
-        guilds: client.guilds.cache.size,
-        users: client.guilds.cache.reduce((acc, guild) => acc + guild.memberCount, 0),
-        ping: client.ws.ping
-      },
-      database: {
-        connected: mongoose.connection.readyState === 1
-      }
-    };
+  console.log('✅ Shutdown complete');
+  process.exit(0);
+});
 
-    res.json(status);
-  });
-
-  // Root endpoint
-  app.get('/', (req, res) => {
-    res.json({
-      name: 'RAPHAEL',
-      version: '2.1.0',
-      status: 'running',
-      message: 'Bot is online and operational',
-      endpoints: {
-        health: '/health',
-        commands: '/commands'
-      }
-    });
-  });
-
-  // Commands page endpoint
-  app.get('/commands', (req, res) => {
-    res.sendFile(path.join(__dirname, '../docs/commands.html'));
-  });
-
-  function formatUptime(seconds) {
-    const days = Math.floor(seconds / 86400);
-    const hours = Math.floor((seconds % 86400) / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = Math.floor(seconds % 60);
-
-    const parts = [];
-    if (days > 0) parts.push(`${days}d`);
-    if (hours > 0) parts.push(`${hours}h`);
-    if (minutes > 0) parts.push(`${minutes}m`);
-    if (secs > 0) parts.push(`${secs}s`);
-
-    return parts.join(' ') || '0s';
-  }
-
-  // Start Express server
-  app.listen(PORT, () => {
-    console.log(`🌐 Health check server running on port ${PORT}`);
-  });
-
-  // Monitor bot status and send updates
-  let lastStatus = 'online';
-  let statusCheckInterval;
-
-  function startStatusMonitoring() {
-    statusCheckInterval = setInterval(async () => {
-      const currentStatus = client.ws.status === 0 ? 'online' : 'offline';
-
-      if (currentStatus !== lastStatus) {
-        lastStatus = currentStatus;
-        await notifyStatusChange(currentStatus);
-      }
-    }, 60000); // Check every minute
-  }
-
-  async function notifyStatusChange(status) {
-    logger.event(`Bot status changed to ${status}`);
-
-    try {
-      const guilds = await Guild.find({ 'channels.botStatus': { $exists: true, $ne: null } });
-
-      for (const guildConfig of guilds) {
-        try {
-          const guild = client.guilds.cache.get(guildConfig.guildId);
-          if (!guild) continue;
-
-          const channel = guild.channels.cache.get(guildConfig.channels.botStatus);
-          if (!channel) continue;
-
-          const embed = new EmbedBuilder()
-            .setTitle(`🤖 Bot Status Update`)
-            .setDescription(status === 'online'
-              ? '✅ **Bot is now ONLINE**\nAll systems operational.'
-              : '❌ **Bot is now OFFLINE**\nTrying to reconnect...')
-            .setColor(status === 'online' ? '#00ff00' : '#ff0000')
-            .addFields(
-              { name: 'Status', value: status.toUpperCase(), inline: true },
-              { name: 'Timestamp', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: true }
-            )
-            .setTimestamp();
-
-          await channel.send({ embeds: [embed] });
-        } catch (error) {
-          console.error(`Error sending status update to guild ${guildConfig.guildId}:`, error);
-        }
-      }
-    } catch (error) {
-      console.error('Error notifying status change:', error);
+// Health check endpoint
+app.get('/health', (req, res) => {
+  const uptime = process.uptime();
+  const status = {
+    status: 'online',
+    uptime: Math.floor(uptime),
+    uptimeFormatted: formatUptime(uptime),
+    timestamp: new Date().toISOString(),
+    bot: {
+      ready: client.readyAt ? true : false,
+      guilds: client.guilds.cache.size,
+      users: client.guilds.cache.reduce((acc, guild) => acc + guild.memberCount, 0),
+      ping: client.ws.ping
+    },
+    database: {
+      connected: mongoose.connection.readyState === 1
     }
+  };
+
+  res.json(status);
+});
+
+// Root endpoint
+app.get('/', (req, res) => {
+  res.json({
+    name: 'RAPHAEL',
+    version: '2.1.0',
+    status: 'running',
+    message: 'Bot is online and operational',
+    endpoints: {
+      health: '/health',
+      commands: '/commands'
+    }
+  });
+});
+
+// Commands page endpoint
+app.get('/commands', (req, res) => {
+  res.sendFile(path.join(__dirname, '../docs/commands.html'));
+});
+
+function formatUptime(seconds) {
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor((seconds % 86400) / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = Math.floor(seconds % 60);
+
+  const parts = [];
+  if (days > 0) parts.push(`${days}d`);
+  if (hours > 0) parts.push(`${hours}h`);
+  if (minutes > 0) parts.push(`${minutes}m`);
+  if (secs > 0) parts.push(`${secs}s`);
+
+  return parts.join(' ') || '0s';
+}
+
+// Start Express server
+app.listen(PORT, () => {
+  console.log(`🌐 Health check server running on port ${PORT}`);
+});
+
+// Monitor bot status and send updates
+let lastStatus = 'online';
+let statusCheckInterval;
+
+function startStatusMonitoring() {
+  statusCheckInterval = setInterval(async () => {
+    const currentStatus = client.ws.status === 0 ? 'online' : 'offline';
+
+    if (currentStatus !== lastStatus) {
+      lastStatus = currentStatus;
+      await notifyStatusChange(currentStatus);
+    }
+  }, 60000); // Check every minute
+}
+
+async function notifyStatusChange(status) {
+  logger.event(`Bot status changed to ${status}`);
+
+  try {
+    const guilds = await Guild.find({ 'channels.botStatus': { $exists: true, $ne: null } });
+
+    for (const guildConfig of guilds) {
+      try {
+        const guild = client.guilds.cache.get(guildConfig.guildId);
+        if (!guild) continue;
+
+        const channel = guild.channels.cache.get(guildConfig.channels.botStatus);
+        if (!channel) continue;
+
+        const embed = new EmbedBuilder()
+          .setTitle(`🤖 Bot Status Update`)
+          .setDescription(status === 'online'
+            ? '✅ **Bot is now ONLINE**\nAll systems operational.'
+            : '❌ **Bot is now OFFLINE**\nTrying to reconnect...')
+          .setColor(status === 'online' ? '#00ff00' : '#ff0000')
+          .addFields(
+            { name: 'Status', value: status.toUpperCase(), inline: true },
+            { name: 'Timestamp', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: true }
+          )
+          .setTimestamp();
+
+        await channel.send({ embeds: [embed] });
+      } catch (error) {
+        console.error(`Error sending status update to guild ${guildConfig.guildId}:`, error);
+      }
+    }
+  } catch (error) {
+    console.error('Error notifying status change:', error);
   }
+}
 
-  // Start the bot
-  initialize().catch(console.error);
+// Start the bot
+initialize().catch(console.error);
 
-  export default client;
+export default client;
