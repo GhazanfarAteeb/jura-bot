@@ -220,33 +220,44 @@ async function loadEvents() {
     }
   }
 
-  // Initialize bot
-  async function initialize() {
-    const startTime = Date.now();
-    logger.startup('Starting RAPHAEL...');
-    logger.build('Bot version: 2.1.0');
-    logger.build('Node version: ' + process.version);
-    logger.build('Environment: ' + (process.env.NODE_ENV || 'production'));
-    console.log('🚀 Starting RAPHAEL...');
+  logger.startup(`Loaded ${totalEvents} events`);
+}
 
-    await connectDatabase();
-    await loadCommands();
+// Initialize bot
+async function initialize() {
+  const startTime = Date.now();
+  logger.startup('Starting RAPHAEL...');
+  logger.build('Bot version: 2.1.0');
+  logger.build('Node version: ' + process.version);
+  logger.build('Environment: ' + (process.env.NODE_ENV || 'production'));
+  console.log('🚀 Starting RAPHAEL...');
 
-    // Initialize music bot module
-    try {
-      await client.musicBot.initialize();
-    } catch (error) {
-      console.error('⚠️ Music bot failed to initialize, continuing without music features:', error);
-      logger.error('Music bot initialization failed', error);
-    }ing RAPHAEL...');
+  await connectDatabase();
+  await loadCommands();
 
-    await connectDatabase();
-    await loadCommands();
+  // Initialize music bot module
+  try {
+    await client.musicBot.initialize();
+  } catch (error) {
+    console.error('⚠️ Music bot failed to initialize, continuing without music features:', error);
+    logger.error('Music bot initialization failed', error);
+  }
 
-    // Login to Discord first
-    await client.login(process.env.DISCORD_TOKEN);
+  // Login to Discord first
+  await client.login(process.env.DISCORD_TOKEN);
 
-  constInitialize Riffy music system
+  const duration = Date.now() - startTime;
+  logger.performance('Bot initialization', duration);
+  logger.startup(`Bot started successfully in ${duration}ms`);
+
+  // Initialize events after client is ready
+  client.once('ready', async () => {
+    console.log('🤖 Client is ready!');
+    console.log(`   Logged in as: ${client.user.tag}`);
+    console.log(`   Guilds: ${client.guilds.cache.size}`);
+    console.log(`   WS Status: ${client.ws.status}, Ping: ${client.ws.ping}ms`);
+
+    // Initialize Riffy music system
     try {
       await client.musicBot.initRiffy();
     } catch (error) {
@@ -254,18 +265,7 @@ async function loadEvents() {
       logger.error('Riffy initialization failed', error);
     }
 
-    //  duration = Date.now() - startTime;
-    logger.performance('Bot initialization', duration);
-    logger.startup(`Bot started successfully in ${duration}ms`);
-
-    // Initialize events after client is ready
-    client.once('ready', async () => {
-      console.log('🤖 Client is ready!');
-      console.log(`   Logged in as: ${client.user.tag}`);
-      console.log(`   Guilds: ${client.guilds.cache.size}`);
-      console.log(`   WS Status: ${client.ws.status}, Ping: ${client.ws.ping}ms`);
-
-      // Load event handlers
+    // Load event handlers
       await loadEvents();
 
       // Initialize schedulers
