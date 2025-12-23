@@ -19,7 +19,7 @@ class MusicBot {
     this.musicCommands = new Collection();
     this.musicSlashCommands = new Collection();
     this.riffy = null;
-    
+
     // Configuration from environment
     this.config = {
       nodes: JSON.parse(process.env.LAVALINK_NODES || '[{"host":"localhost","port":2333,"password":"youshallnotpass","secure":false}]')
@@ -31,11 +31,11 @@ class MusicBot {
    */
   async initialize() {
     console.log('🎵 Initializing music bot module...');
-    
+
     try {
       // Import Riffy using require for CommonJS compatibility
       const { Riffy } = require('riffy');
-      
+
       // Initialize Riffy
       this.riffy = new Riffy(this.mainClient, this.config.nodes, {
         send: (payload) => {
@@ -82,7 +82,7 @@ class MusicBot {
    */
   async loadMusicCommands() {
     const commandsPath = path.join(__dirname, '../../working-common-js-music-bot/structures/commands');
-    
+
     if (!readdirSync(commandsPath).length) {
       console.log('⚠️ No music command directories found');
       return;
@@ -100,18 +100,18 @@ class MusicBot {
           // Use dynamic import for CommonJS files
           const commandPath = path.join(commandsPath, folder, file);
           const command = require(commandPath);
-          
+
           if (command.name) {
             // Store with music prefix to avoid conflicts
             this.musicCommands.set(command.name, command);
             this.mainClient.commands.set(command.name, command);
-            
+
             if (command.aliases && Array.isArray(command.aliases)) {
               command.aliases.forEach(alias => {
                 this.mainClient.aliases.set(alias, command.name);
               });
             }
-            
+
             loadedCount++;
             console.log(`  🎵 Loaded music command: ${command.name}`);
           }
@@ -129,7 +129,7 @@ class MusicBot {
    */
   async loadMusicSlashCommands() {
     const slashCommandsPath = path.join(__dirname, '../../working-common-js-music-bot/structures/slashcommands');
-    
+
     if (!readdirSync(slashCommandsPath).length) {
       console.log('⚠️ No music slash command directories found');
       return;
@@ -146,12 +146,12 @@ class MusicBot {
         try {
           const commandPath = path.join(slashCommandsPath, folder, file);
           const command = require(commandPath);
-          
+
           if (command.data && command.execute) {
             this.musicSlashCommands.set(command.data.name, command);
             this.mainClient.slashCommands = this.mainClient.slashCommands || new Collection();
             this.mainClient.slashCommands.set(command.data.name, command);
-            
+
             loadedCount++;
             console.log(`  🎵 Loaded music slash command: ${command.data.name}`);
           }
@@ -169,18 +169,18 @@ class MusicBot {
    */
   async loadRiffyEvents() {
     const eventsPath = path.join(__dirname, '../../working-common-js-music-bot/structures/riffy');
-    
+
     // Load node events
     const nodeEventsPath = path.join(eventsPath, 'node');
     if (readdirSync(nodeEventsPath).length) {
       const nodeEvents = readdirSync(nodeEventsPath).filter(file => file.endsWith('.js'));
-      
+
       for (const file of nodeEvents) {
         try {
           const eventPath = path.join(nodeEventsPath, file);
           const event = require(eventPath);
           const eventName = file.split('.')[0];
-          
+
           this.riffy.on(eventName, (...args) => event(this.mainClient, ...args));
           console.log(`  🎵 Loaded Riffy node event: ${eventName}`);
         } catch (error) {
@@ -193,13 +193,13 @@ class MusicBot {
     const trackEventsPath = path.join(eventsPath, 'tracks');
     if (readdirSync(trackEventsPath).length) {
       const trackEvents = readdirSync(trackEventsPath).filter(file => file.endsWith('.js'));
-      
+
       for (const file of trackEvents) {
         try {
           const eventPath = path.join(trackEventsPath, file);
           const event = require(eventPath);
           const eventName = file.split('.')[0];
-          
+
           this.riffy.on(eventName, (...args) => event(this.mainClient, ...args));
           console.log(`  🎵 Loaded Riffy track event: ${eventName}`);
         } catch (error) {

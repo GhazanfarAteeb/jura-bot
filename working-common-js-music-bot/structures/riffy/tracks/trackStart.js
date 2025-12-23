@@ -84,7 +84,7 @@ client.riffy.on('trackStart', async (player, track) => {
     // Auto-disable buttons when track ends
     setTimeout(() => {
       if (msg && !msg.deleted) {
-        msg.edit({ components: [rowDisabled] }).catch(() => {});
+        msg.edit({ components: [rowDisabled] }).catch(() => { });
       }
     }, totalMilliseconds);
 
@@ -100,7 +100,7 @@ client.riffy.on('trackStart', async (player, track) => {
 
     setTimeout(() => {
       if (msg && !msg.deleted) {
-        msg.edit({ components: [rowDisabled] }).catch(() => {});
+        msg.edit({ components: [rowDisabled] }).catch(() => { });
       }
     }, totalMilliseconds);
   }
