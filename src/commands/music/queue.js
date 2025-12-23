@@ -1,10 +1,10 @@
 /**
  * Queue Command
- * Display the current music queue
+ * Display the current music queue with pagination buttons
  */
 
 import Command from '../../structures/Command.js';
-import { EmbedBuilder } from 'discord.js';
+import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 
 export default class Queue extends Command {
     constructor(client) {
@@ -67,73 +67,180 @@ export default class Queue extends Command {
             });
         }
 
-        // Format duration
-        const formatDuration = (ms) => {
-            if (!ms || isNaN(ms)) return 'Live';
-            const seconds = Math.floor((ms / 1000) % 60);
-            const minutes = Math.floor((ms / (1000 * 60)) % 60);
-            const hours = Math.floor(ms / (1000 * 60 * 60));
-
-            if (hours > 0) {
-                return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-            }
-            return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-        };
-
         // Pagination
-        const page = parseInt(args[0]) || 1;
+        let page = parseInt(args[0]) || 1;
         const pageSize = 10;
         const totalPages = Math.ceil(queue.length / pageSize) || 1;
-        const startIndex = (page - 1) * pageSize;
-        const endIndex = startIndex + pageSize;
 
-        if (page < 1 || page > totalPages) {
-            return ctx.sendMessage({
-                embeds: [{
-                    color: 0xff0000,
-                    description: `❌ Invalid page. Please provide a page between 1 and ${totalPages}.`
-                }]
+        if (page < 1) page = 1;
+        if (page > totalPages) page = totalPages;
+
+        const generateEmbed = (currentPage) => {
+            const startIndex = (currentPage - 1) * pageSize;
+            const endIndex = startIndex + pageSize;
+
+            // Format duration
+            const formatDuration = (ms) => {
+                if (!ms || isNaN(ms)) return 'Live';
+                const seconds = Math.floor((ms / 1000) % 60);
+                const minutes = Math.floor((ms / (1000 * 60)) % 60);
+                const hours = Math.floor(ms / (1000 * 60 * 60));
+
+                if (hours > 0) {
+                    return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                }
+                return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            };
+
+            const embed = new EmbedBuilder()
+                .setColor('#0099ff')
+                .setTitle('🎵 Music Queue')
+                .setThumbnail(current?.info?.thumbnail || current?.info?.artworkUrl || null);
+
+            // Now playing
+            if (current) {
+                embed.setDescription(`**Now Playing:**\n[${current.info.title}](${current.info.uri}) \`[${formatDuration(current.info.length)}]\`\nRequested by: ${current.info.requester?.toString() || 'Unknown'}`);
+            }
+
+            // Queue list
+            if (queue.length > 0) {
+                const queueSlice = queue.slice(startIndex, endIndex);
+                const queueList = queueSlice.map((track, index) => {
+                    const position = startIndex + index + 1;
+                    return `**${position}.** [${track.info.title}](${track.info.uri}) \`[${formatDuration(track.info.length)}]\``;
+                }).join('\n');
+
+                embed.addFields({
+                    name: `Up Next (${queue.length} track${queue.length !== 1 ? 's' : ''})`,
+                    value: queueList || 'No tracks in queue'
+                });
+            } else {
+                embed.addFields({
+                    name: 'Up Next',
+                    value: 'No tracks in queue'
+                });
+            }
+
+            // Calculate total queue duration
+            const totalDuration = queue.reduce((acc, track) => acc + (track.info.length || 0), 0);
+
+            embed.setFooter({
+                text: `Page ${currentPage}/${totalPages} • ${queue.length} tracks • Total: ${formatDuration(totalDuration)}`
             });
-        }
 
-        const embed = new EmbedBuilder()
-            .setColor('#0099ff')
-            .setTitle('🎵 Music Queue')
-            .setThumbnail(current?.info?.thumbnail || current?.info?.artworkUrl || null);
+            embed.setTimestamp();
 
-        // Now playing
-        if (current) {
-            embed.setDescription(`**Now Playing:**\n[${current.info.title}](${current.info.uri}) \`[${formatDuration(current.info.length)}]\`\nRequested by: ${current.info.requester?.toString() || 'Unknown'}`);
-        }
+            return embed;
+        };
 
-        // Queue list
-        if (queue.length > 0) {
-            const queueSlice = queue.slice(startIndex, endIndex);
-            const queueList = queueSlice.map((track, index) => {
-                const position = startIndex + index + 1;
-                return `**${position}.** [${track.info.title}](${track.info.uri}) \`[${formatDuration(track.info.length)}]\``;
-            }).join('\n');
+        const generateButtons = (currentPage) => {
+            return new ActionRowBuilder()
+                .addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('queue_first')
+                        .setEmoji('⏮️')
+                        .setStyle(ButtonStyle.Secondary)
+                        .setDisabled(currentPage === 1),
+                    new ButtonBuilder()
+                        .setCustomId('queue_prev')
+                        .setEmoji('◀️')
+                        .setStyle(ButtonStyle.Primary)
+                        .setDisabled(currentPage === 1),
+                    new ButtonBuilder()
+                        .setCustomId('queue_page')
+                        .setLabel(`${currentPage}/${totalPages}`)
+                        .setStyle(ButtonStyle.Secondary)
+                        .setDisabled(true),
+                    new ButtonBuilder()
+                        .setCustomId('queue_next')
+                        .setEmoji('▶️')
+                        .setStyle(ButtonStyle.Primary)
+                        .setDisabled(currentPage === totalPages),
+                    new ButtonBuilder()
+                        .setCustomId('queue_last')
+                        .setEmoji('⏭️')
+                        .setStyle(ButtonStyle.Secondary)
+                        .setDisabled(currentPage === totalPages)
+                );
+        };
 
-            embed.addFields({
-                name: `Up Next (${queue.length} track${queue.length !== 1 ? 's' : ''})`,
-                value: queueList || 'No tracks in queue'
-            });
-        } else {
-            embed.addFields({
-                name: 'Up Next',
-                value: 'No tracks in queue'
-            });
-        }
+        const embed = generateEmbed(page);
+        const components = totalPages > 1 ? [generateButtons(page)] : [];
 
-        // Calculate total queue duration
-        const totalDuration = queue.reduce((acc, track) => acc + (track.info.length || 0), 0);
-
-        embed.setFooter({
-            text: `Page ${page}/${totalPages} • Total Duration: ${formatDuration(totalDuration)}`
+        const message = await ctx.sendMessage({ 
+            embeds: [embed], 
+            components 
         });
 
-        embed.setTimestamp();
+        // If only one page, no need for collector
+        if (totalPages <= 1) return;
 
-        return ctx.sendMessage({ embeds: [embed] });
+        // Create button collector
+        const collector = message.createMessageComponentCollector({
+            filter: (interaction) => interaction.user.id === ctx.author.id,
+            time: 120000 // 2 minutes
+        });
+
+        let currentPage = page;
+
+        collector.on('collect', async (interaction) => {
+            switch (interaction.customId) {
+                case 'queue_first':
+                    currentPage = 1;
+                    break;
+                case 'queue_prev':
+                    currentPage = Math.max(1, currentPage - 1);
+                    break;
+                case 'queue_next':
+                    currentPage = Math.min(totalPages, currentPage + 1);
+                    break;
+                case 'queue_last':
+                    currentPage = totalPages;
+                    break;
+            }
+
+            await interaction.update({
+                embeds: [generateEmbed(currentPage)],
+                components: [generateButtons(currentPage)]
+            });
+        });
+
+        collector.on('end', async () => {
+            // Disable all buttons when collector ends
+            const disabledRow = new ActionRowBuilder()
+                .addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('queue_first')
+                        .setEmoji('⏮️')
+                        .setStyle(ButtonStyle.Secondary)
+                        .setDisabled(true),
+                    new ButtonBuilder()
+                        .setCustomId('queue_prev')
+                        .setEmoji('◀️')
+                        .setStyle(ButtonStyle.Secondary)
+                        .setDisabled(true),
+                    new ButtonBuilder()
+                        .setCustomId('queue_page')
+                        .setLabel(`${currentPage}/${totalPages}`)
+                        .setStyle(ButtonStyle.Secondary)
+                        .setDisabled(true),
+                    new ButtonBuilder()
+                        .setCustomId('queue_next')
+                        .setEmoji('▶️')
+                        .setStyle(ButtonStyle.Secondary)
+                        .setDisabled(true),
+                    new ButtonBuilder()
+                        .setCustomId('queue_last')
+                        .setEmoji('⏭️')
+                        .setStyle(ButtonStyle.Secondary)
+                        .setDisabled(true)
+                );
+
+            try {
+                await message.edit({ components: [disabledRow] });
+            } catch (e) {
+                // Message may have been deleted
+            }
+        });
     }
 }
