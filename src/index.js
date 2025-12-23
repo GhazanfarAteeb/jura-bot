@@ -12,8 +12,7 @@ import Guild from './models/Guild.js';
 import logger from './utils/logger.js';
 import ServerData from './database/server.js';
 import Utils from './structures/Utils.js';
-import RiffyManager from './music/RiffyManager.js';
-import { loadMusicCommands, loadMusicEvents } from './music/MusicLoader.js';
+import MusicBot from './music/musicBot.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -77,18 +76,8 @@ client.db = new ServerData();
 // Initialize utils
 client.utils = Utils;
 
-// Initialize Riffy Music Manager (NodeLink with lavaSrc & lavaSearch plugins)
-client.riffyManager = new RiffyManager(client);
-
-// Setup raw event listener for Riffy voice state updates
-client.on('raw', (d) => {
-  // Only handle voice-related events
-  if (!['VOICE_STATE_UPDATE', 'VOICE_SERVER_UPDATE'].includes(d.t)) return;
-
-  if (client.riffyManager && client.riffyManager.riffy) {
-    client.riffyManager.riffy.updateVoiceState(d);
-  }
-});
+// Initialize music bot
+client.musicBot = new MusicBot(client);
 
 // Configuration
 client.config = {
@@ -231,10 +220,7 @@ async function loadEvents() {
     }
   }
 
-  logger.startup(`Loaded ${totalEvents} events`);
-}
-
-// Initialize bot
+  // Initialize bot
 async function initialize() {
   const startTime = Date.now();
   logger.startup('Starting RAPHAEL...');
@@ -246,14 +232,29 @@ async function initialize() {
   await connectDatabase();
   await loadCommands();
 
-  // Load music commands and events
-  await loadMusicCommands(client);
-  await loadMusicEvents(client);
+  // Initialize music bot module
+  try {
+    await client.musicBot.initialize();
+  } catch (error) {
+    console.error('⚠️ Music bot failed to initialize, continuing without music features:', error);
+    logger.error('Music bot initialization failed', error);
+  }ing RAPHAEL...');
+
+  await connectDatabase();
+  await loadCommands();
 
   // Login to Discord first
   await client.login(process.env.DISCORD_TOKEN);
 
-  const duration = Date.now() - startTime;
+  constInitialize Riffy music system
+    try {
+      await client.musicBot.initRiffy();
+    } catch (error) {
+      console.error('⚠️ Riffy initialization failed:', error);
+      logger.error('Riffy initialization failed', error);
+    }
+
+    //  duration = Date.now() - startTime;
   logger.performance('Bot initialization', duration);
   logger.startup(`Bot started successfully in ${duration}ms`);
 
@@ -263,17 +264,6 @@ async function initialize() {
     console.log(`   Logged in as: ${client.user.tag}`);
     console.log(`   Guilds: ${client.guilds.cache.size}`);
     console.log(`   WS Status: ${client.ws.status}, Ping: ${client.ws.ping}ms`);
-
-    // Initialize Riffy music system (MUST be done in ready event before anything else)
-    if (client.riffyManager && client.riffyManager.riffy) {
-      try {
-        await client.riffyManager.riffy.init(client.user.id);
-        console.log('🎵 Riffy music system initialized');
-      } catch (error) {
-        console.error('❌ Failed to initialize Riffy:', error);
-        logger.error('Riffy initialization failed', error);
-      }
-    }
 
     // Load event handlers
     await loadEvents();
