@@ -93,7 +93,7 @@ class MusicBot {
 
     for (const folder of commandFolders) {
       const commandFiles = readdirSync(path.join(commandsPath, folder))
-        .filter(file => file.endsWith('.js'));
+        .filter(file => file.endsWith('.cjs'));
 
       for (const file of commandFiles) {
         try {
@@ -140,7 +140,7 @@ class MusicBot {
 
     for (const folder of slashFolders) {
       const slashFiles = readdirSync(path.join(slashCommandsPath, folder))
-        .filter(file => file.endsWith('.js'));
+        .filter(file => file.endsWith('.cjs'));
 
       for (const file of slashFiles) {
         try {
