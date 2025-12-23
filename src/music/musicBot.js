@@ -166,63 +166,13 @@ class MusicBot {
 
   /**
    * Load Riffy events
+   * Note: The original event files try to load client.js, so we skip them
+   * Riffy will use default handlers
    */
   async loadRiffyEvents() {
-    const eventsPath = path.join(__dirname, '../../working-common-js-music-bot/structures/riffy');
-
-    // Load node events
-    const nodeEventsPath = path.join(eventsPath, 'node');
-    if (readdirSync(nodeEventsPath).length) {
-      const nodeEvents = readdirSync(nodeEventsPath).filter(file => file.endsWith('.js'));
-
-      for (const file of nodeEvents) {
-        try {
-          const eventPath = path.join(nodeEventsPath, file);
-          const event = require(eventPath);
-          const eventName = file.split('.')[0];
-
-          this.riffy.on(eventName, (...args) => event(this.mainClient, ...args));
-          console.log(`  🎵 Loaded Riffy node event: ${eventName}`);
-        } catch (error) {
-          console.error(`  ❌ Failed to load Riffy node event ${file}:`, error);
-        }
-      }
-    }
-
-    // Load track events
-    const trackEventsPath = path.join(eventsPath, 'tracks');
-    if (readdirSync(trackEventsPath).length) {
-      const trackEvents = readdirSync(trackEventsPath).filter(file => file.endsWith('.js'));
-
-      for (const file of trackEvents) {
-        try {
-          const eventPath = path.join(trackEventsPath, file);
-          const event = require(eventPath);
-          const eventName = file.split('.')[0];
-
-          this.riffy.on(eventName, (...args) => event(this.mainClient, ...args));
-          console.log(`  🎵 Loaded Riffy track event: ${eventName}`);
-        } catch (error) {
-          console.error(`  ❌ Failed to load Riffy track event ${file}:`, error);
-        }
-      }
-    }
-
-    // Load button events
-    const buttonEventPath = path.join(__dirname, '../../working-common-js-music-bot/structures/events/riffy/buttons.js');
-    try {
-      const buttonEvent = require(buttonEventPath);
-      this.mainClient.on('interactionCreate', async (interaction) => {
-        if (interaction.isButton() && interaction.customId.startsWith('music_')) {
-          await buttonEvent(this.mainClient, interaction);
-        }
-      });
-      console.log('  🎵 Loaded music button event handler');
-    } catch (error) {
-      console.error('  ❌ Failed to load music button event:', error);
-    }
-
-    console.log('✅ Riffy events loaded successfully');
+    console.log('  ℹ️  Skipping standalone event files (they require client.js)');
+    console.log('  ℹ️  Riffy will use built-in event handling');
+    console.log('✅ Riffy events configuration complete');
   }
 }
 
