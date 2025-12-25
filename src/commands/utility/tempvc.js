@@ -1,7 +1,77 @@
-import { PermissionFlagsBits, ChannelType, EmbedBuilder } from 'discord.js';
+import { PermissionFlagsBits, ChannelType, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import Guild from '../../models/Guild.js';
 import TempVoice from '../../models/TempVoice.js';
 import { successEmbed, errorEmbed, infoEmbed, GLYPHS } from '../../utils/embeds.js';
+
+// Button configuration for TempVoice interface
+const TEMPVC_BUTTONS = {
+  row1: [
+    { id: 'tempvc_name', emoji: '✏️', label: 'Name', style: ButtonStyle.Secondary },
+    { id: 'tempvc_limit', emoji: '👥', label: 'Limit', style: ButtonStyle.Secondary },
+    { id: 'tempvc_privacy', emoji: '🔒', label: 'Privacy', style: ButtonStyle.Secondary },
+    { id: 'tempvc_hide', emoji: '👁️', label: 'Hide', style: ButtonStyle.Secondary },
+    { id: 'tempvc_bitrate', emoji: '🎵', label: 'Bitrate', style: ButtonStyle.Secondary }
+  ],
+  row2: [
+    { id: 'tempvc_permit', emoji: '✅', label: 'Permit', style: ButtonStyle.Success },
+    { id: 'tempvc_reject', emoji: '❌', label: 'Reject', style: ButtonStyle.Danger },
+    { id: 'tempvc_invite', emoji: '📨', label: 'Invite', style: ButtonStyle.Primary },
+    { id: 'tempvc_kick', emoji: '👢', label: 'Kick', style: ButtonStyle.Danger },
+    { id: 'tempvc_info', emoji: 'ℹ️', label: 'Info', style: ButtonStyle.Secondary }
+  ],
+  row3: [
+    { id: 'tempvc_claim', emoji: '👑', label: 'Claim', style: ButtonStyle.Primary },
+    { id: 'tempvc_transfer', emoji: '🔄', label: 'Transfer', style: ButtonStyle.Primary },
+    { id: 'tempvc_delete', emoji: '🗑️', label: 'Delete', style: ButtonStyle.Danger }
+  ]
+};
+
+/**
+ * Create the TempVoice interface embed and buttons
+ */
+function createInterfaceEmbed() {
+  const embed = new EmbedBuilder()
+    .setColor(0x5865F2)
+    .setTitle('🎙️ TempVoice Interface')
+    .setDescription(
+      'This **interface** can be used to manage temporary voice channels.\n' +
+      'More options are available with `/voice` commands.\n\n' +
+      '**Available Controls:**\n' +
+      '`✏️ NAME` - Rename your channel\n' +
+      '`👥 LIMIT` - Set user limit\n' +
+      '`🔒 PRIVACY` - Lock/Unlock channel\n' +
+      '`👁️ HIDE` - Hide/Show channel\n' +
+      '`🎵 BITRATE` - Set audio quality\n' +
+      '`✅ PERMIT` - Allow a user to join\n' +
+      '`❌ REJECT` - Block a user\n' +
+      '`📨 INVITE` - Send invite link\n' +
+      '`👢 KICK` - Remove a user\n' +
+      '`👑 CLAIM` - Claim abandoned channel\n' +
+      '`🔄 TRANSFER` - Transfer ownership\n' +
+      '`🗑️ DELETE` - Delete your channel\n\n' +
+      '*Press the buttons below to use the interface*'
+    )
+    .setFooter({ text: 'TempVoice • You must be in a temp channel to use these' });
+
+  // Create button rows
+  const rows = [];
+  
+  for (const [rowKey, buttons] of Object.entries(TEMPVC_BUTTONS)) {
+    const row = new ActionRowBuilder();
+    for (const btn of buttons) {
+      row.addComponents(
+        new ButtonBuilder()
+          .setCustomId(btn.id)
+          .setEmoji(btn.emoji)
+          .setLabel(btn.label)
+          .setStyle(btn.style)
+      );
+    }
+    rows.push(row);
+  }
+
+  return { embed, rows };
+}
 
 export default {
   name: 'tempvc',
@@ -32,7 +102,7 @@ export default {
     const action = args[0].toLowerCase();
 
     // Admin commands
-    if (['setup', 'disable', 'category', 'defaultname', 'defaultlimit'].includes(action)) {
+    if (['setup', 'disable', 'category', 'defaultname', 'defaultlimit', 'resend'].includes(action)) {
       if (!message.member.permissions.has(PermissionFlagsBits.ManageGuild)) {
         return message.reply({
           embeds: [await errorEmbed(message.guild.id, 'Permission Denied',
@@ -44,6 +114,9 @@ export default {
     switch (action) {
       case 'setup':
         return setupTempVC(message, guildConfig);
+
+      case 'resend':
+        return resendInterface(message, guildConfig);
 
       case 'disable':
         guildConfig.features.tempVoice.enabled = false;
@@ -139,6 +212,7 @@ async function showStatus(message, guildConfig) {
   const tv = guildConfig.features.tempVoice;
   const createChannel = tv?.createChannelId ? message.guild.channels.cache.get(tv.createChannelId) : null;
   const category = tv?.categoryId ? message.guild.channels.cache.get(tv.categoryId) : null;
+  const interfaceChannel = tv?.interfaceChannelId ? message.guild.channels.cache.get(tv.interfaceChannelId) : null;
 
   // Check if user has a temp channel
   const userChannel = await TempVoice.findUserChannel(message.guild.id, message.author.id);
@@ -146,6 +220,7 @@ async function showStatus(message, guildConfig) {
   const embed = await infoEmbed(message.guild.id, '🎙️ Temporary Voice Channels',
     `**Status:** ${tv?.enabled ? '✅ Enabled' : '❌ Disabled'}\n` +
     `**Join to Create:** ${createChannel || 'Not set'}\n` +
+    `**Interface:** ${interfaceChannel || 'Not set'}\n` +
     `**Category:** ${category || 'Auto'}\n` +
     `**Default Name:** ${tv?.defaultName || "{user}'s Channel"}\n` +
     `**Default Limit:** ${tv?.defaultLimit || 'Unlimited'}\n\n` +
@@ -153,20 +228,18 @@ async function showStatus(message, guildConfig) {
     `**Admin Commands:**\n` +
     `${GLYPHS.DOT} \`tempvc setup\` - Set up temp voice\n` +
     `${GLYPHS.DOT} \`tempvc disable\` - Disable temp voice\n` +
+    `${GLYPHS.DOT} \`tempvc resend\` - Resend interface message\n` +
     `${GLYPHS.DOT} \`tempvc defaultname <name>\` - Set default name\n` +
     `${GLYPHS.DOT} \`tempvc defaultlimit <num>\` - Set default limit\n\n` +
-    `**User Commands (in your temp channel):**\n` +
+    `**User Commands:** Use the buttons in ${interfaceChannel || 'the interface channel'} or:\n` +
     `${GLYPHS.DOT} \`tempvc name <name>\` - Rename your channel\n` +
     `${GLYPHS.DOT} \`tempvc limit <num>\` - Set user limit\n` +
-    `${GLYPHS.DOT} \`tempvc lock\` - Lock channel\n` +
-    `${GLYPHS.DOT} \`tempvc unlock\` - Unlock channel\n` +
-    `${GLYPHS.DOT} \`tempvc permit @user\` - Allow user to join\n` +
-    `${GLYPHS.DOT} \`tempvc reject @user\` - Deny user from joining\n` +
-    `${GLYPHS.DOT} \`tempvc kick @user\` - Kick user from channel\n` +
+    `${GLYPHS.DOT} \`tempvc lock/unlock\` - Lock/unlock channel\n` +
+    `${GLYPHS.DOT} \`tempvc hide/unhide\` - Hide/show channel\n` +
+    `${GLYPHS.DOT} \`tempvc permit/reject @user\` - Allow/block user\n` +
+    `${GLYPHS.DOT} \`tempvc kick @user\` - Kick user\n` +
     `${GLYPHS.DOT} \`tempvc transfer @user\` - Transfer ownership\n` +
     `${GLYPHS.DOT} \`tempvc claim\` - Claim abandoned channel\n` +
-    `${GLYPHS.DOT} \`tempvc hide\` - Hide channel from everyone\n` +
-    `${GLYPHS.DOT} \`tempvc unhide\` - Show channel to everyone\n` +
     `${GLYPHS.DOT} \`tempvc bitrate <8-96>\` - Set audio bitrate\n` +
     `${GLYPHS.DOT} \`tempvc info\` - Show channel info`
   );
@@ -214,6 +287,35 @@ async function setupTempVC(message, guildConfig) {
     guildConfig.features.tempVoice.createChannelId = createChannel.id;
   }
 
+  // Create Interface text channel
+  let interfaceChannel = guildConfig.features.tempVoice.interfaceChannelId
+    ? message.guild.channels.cache.get(guildConfig.features.tempVoice.interfaceChannelId)
+    : null;
+
+  if (!interfaceChannel) {
+    interfaceChannel = await message.guild.channels.create({
+      name: '🎮・interface',
+      type: ChannelType.GuildText,
+      parent: category.id,
+      permissionOverwrites: [
+        {
+          id: message.guild.id,
+          allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory],
+          deny: [PermissionFlagsBits.SendMessages]
+        },
+        {
+          id: message.client.user.id,
+          allow: [PermissionFlagsBits.SendMessages, PermissionFlagsBits.ViewChannel]
+        }
+      ]
+    });
+    guildConfig.features.tempVoice.interfaceChannelId = interfaceChannel.id;
+
+    // Send the interface embed with buttons
+    const { embed, rows } = createInterfaceEmbed();
+    await interfaceChannel.send({ embeds: [embed], components: rows });
+  }
+
   guildConfig.features.tempVoice.enabled = true;
   await guildConfig.save();
 
@@ -221,8 +323,40 @@ async function setupTempVC(message, guildConfig) {
     embeds: [await successEmbed(message.guild.id, 'Temp VC Setup Complete!',
       `${GLYPHS.SUCCESS} Temporary voice channels are now enabled!\n\n` +
       `**Join to Create:** ${createChannel}\n` +
+      `**Interface:** ${interfaceChannel}\n` +
       `**Category:** ${category}\n\n` +
-      `Users can now join ${createChannel} to create their own voice channel!`)]
+      `Users can join ${createChannel} to create their own voice channel!\n` +
+      `They can manage it using buttons in ${interfaceChannel}`)]
+  });
+}
+
+async function resendInterface(message, guildConfig) {
+  const interfaceChannel = guildConfig.features.tempVoice.interfaceChannelId
+    ? message.guild.channels.cache.get(guildConfig.features.tempVoice.interfaceChannelId)
+    : null;
+
+  if (!interfaceChannel) {
+    return message.reply({
+      embeds: [await errorEmbed(message.guild.id, 'No Interface Channel',
+        'Interface channel not found. Please run `tempvc setup` first.')]
+    });
+  }
+
+  // Delete old messages in interface channel (last 10)
+  try {
+    const messages = await interfaceChannel.messages.fetch({ limit: 10 });
+    await interfaceChannel.bulkDelete(messages, true);
+  } catch (e) {
+    // Ignore errors, messages might be too old
+  }
+
+  // Send new interface
+  const { embed, rows } = createInterfaceEmbed();
+  await interfaceChannel.send({ embeds: [embed], components: rows });
+
+  return message.reply({
+    embeds: [await successEmbed(message.guild.id, 'Interface Resent',
+      `${GLYPHS.SUCCESS} TempVoice interface has been resent in ${interfaceChannel}`)]
   });
 }
 
@@ -560,7 +694,7 @@ async function setBitrate(message, bitrateStr) {
 async function channelInfo(message) {
   const channel = await getUserTempChannel(message);
   const voiceChannel = message.member.voice.channel;
-  
+
   // Try to get info for the channel user is in if they don't own one
   let targetChannel = channel || voiceChannel;
   if (!targetChannel) {

@@ -138,7 +138,7 @@ async function transferOwnership(channel, tempData, guild) {
   try {
     // Get remaining members (excluding bots)
     const remainingMembers = channel.members.filter(m => !m.user.bot);
-    
+
     if (remainingMembers.size === 0) {
       // Only bots left, delete the channel
       await TempVoice.findByIdAndDelete(tempData._id);

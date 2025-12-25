@@ -152,6 +152,7 @@ const guildSchema = new mongoose.Schema({
       enabled: { type: Boolean, default: false },
       createChannelId: String, // "Join to Create" channel
       categoryId: String, // Category for temp channels
+      interfaceChannelId: String, // Interface channel for button controls
       defaultName: { type: String, default: "{user}'s Channel" },
       defaultLimit: { type: Number, default: 0 }
     }
