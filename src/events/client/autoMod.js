@@ -143,9 +143,10 @@ export default {
 
 async function handleViolation(message, client, guildConfig, type, reason, action, timeoutDuration = 300) {
   const guildId = message.guild.id;
+  const user = message.author;
 
   try {
-    // Delete the message first
+    // Delete the message IMMEDIATELY
     if (action === 'delete' || action === 'warn' || action === 'timeout' || action === 'kick') {
       await message.delete().catch(() => { });
     }
@@ -158,44 +159,97 @@ async function handleViolation(message, client, guildConfig, type, reason, actio
       action: `automod_${type}`,
       moderatorId: client.user.id,
       moderatorTag: client.user.tag,
-      targetId: message.author.id,
-      targetTag: message.author.tag,
+      targetId: user.id,
+      targetTag: user.tag,
       reason: `[AutoMod] ${reason}`
     });
 
-    // Send notification to user
-    const warningEmbed = await errorEmbed(guildId, 'AutoMod Warning',
-      `${GLYPHS.WARNING} Your message was removed for: **${reason}**\n\n` +
-      `Action taken: **${action.toUpperCase()}**`
+    // Create a personalized warning message for the user
+    const warningMessages = {
+      badWords: [
+        `Hey **${user.username}**, please watch your language! 🚫`,
+        `**${user.username}**, that word isn't allowed here! Please be respectful. ⚠️`,
+        `Whoa there **${user.username}**! Let's keep it friendly. 🛑`,
+        `**${user.username}**, please keep the chat clean! 🧹`
+      ],
+      spam: [
+        `Slow down **${user.username}**! You're sending messages too fast. 🐢`,
+        `**${user.username}**, please don't spam the chat! ⏰`
+      ],
+      massMention: [
+        `**${user.username}**, please don't mass mention users! 📢`,
+        `Easy on the mentions, **${user.username}**! 🔔`
+      ],
+      invite: [
+        `**${user.username}**, posting invite links isn't allowed here! 🔗`,
+        `No advertising please, **${user.username}**! 📝`
+      ],
+      link: [
+        `**${user.username}**, that link isn't allowed here! 🔗`,
+        `**${user.username}**, please don't post unauthorized links! ⛔`
+      ]
+    };
+
+    // Get random warning message for the type
+    const messages = warningMessages[type] || [`**${user.username}**, your message was removed for violating server rules.`];
+    const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+
+    // Build the warning embed
+    const warningEmbed = await errorEmbed(guildId, `${GLYPHS.WARNING} AutoMod Warning`,
+      `${randomMessage}\n\n` +
+      `**Reason:** ${reason}\n` +
+      `**Action:** ${action.charAt(0).toUpperCase() + action.slice(1)}`
     );
+
+    // Send personalized warning in channel
+    const sendWarning = async () => {
+      const warningMsg = await message.channel.send({
+        content: `<@${user.id}>`,
+        embeds: [warningEmbed]
+      });
+      // Auto-delete warning after 10 seconds to keep chat clean
+      setTimeout(() => warningMsg.delete().catch(() => { }), 10000);
+    };
 
     // Execute action
     switch (action) {
       case 'warn':
         // Just warn - message already deleted
-        await message.channel.send({
-          content: `${message.author}`,
-          embeds: [warningEmbed]
-        }).then(msg => setTimeout(() => msg.delete().catch(() => { }), 10000));
-
+        await sendWarning();
         // Add warning to member record
-        await addWarningToMember(message.guild.id, message.author, 'AutoMod', `[AutoMod] ${reason}`);
+        await addWarningToMember(message.guild.id, user, 'AutoMod', `[AutoMod] ${reason}`);
+        break;
+
+      case 'delete':
+        // Just delete - show brief notification
+        await sendWarning();
         break;
 
       case 'timeout':
         if (message.member.moderatable) {
           await message.member.timeout(timeoutDuration * 1000, `[AutoMod] ${reason}`);
-          await message.channel.send({
-            content: `${message.author} has been timed out for ${formatDuration(timeoutDuration)}.`,
-            embeds: [warningEmbed]
-          }).then(msg => setTimeout(() => msg.delete().catch(() => { }), 10000));
+          const timeoutEmbed = await errorEmbed(guildId, `${GLYPHS.WARNING} User Timed Out`,
+            `${randomMessage}\n\n` +
+            `**${user.username}** has been timed out for **${formatDuration(timeoutDuration)}**.\n` +
+            `**Reason:** ${reason}`
+          );
+          const msg = await message.channel.send({
+            content: `<@${user.id}>`,
+            embeds: [timeoutEmbed]
+          });
+          setTimeout(() => msg.delete().catch(() => { }), 15000);
         }
         break;
 
       case 'kick':
         if (message.member.kickable) {
           try {
-            await message.author.send({ embeds: [warningEmbed] }).catch(() => { });
+            // Try to DM the user before kicking
+            const kickEmbed = await errorEmbed(guildId, `${GLYPHS.ERROR} You have been kicked`,
+              `You were kicked from **${message.guild.name}** by AutoMod.\n\n` +
+              `**Reason:** ${reason}`
+            );
+            await user.send({ embeds: [kickEmbed] }).catch(() => { });
             await message.member.kick(`[AutoMod] ${reason}`);
           } catch (error) {
             console.error('AutoMod kick failed:', error);

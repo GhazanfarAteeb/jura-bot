@@ -198,7 +198,7 @@ async function loadEvents() {
           console.log(`⏭️ Skipping ${file} (initialized separately)`);
           continue;
         }
-        
+
         try {
           console.log("📂 Loading event:", file);
           const EventModule = await import(`./events/${dir}/${file}`);
