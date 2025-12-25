@@ -23,16 +23,17 @@ export default {
     try {
       const guildConfig = await Guild.getGuild(message.guild.id, message.guild.name);
 
-      // Skip if automod is disabled
-      if (!guildConfig.features.autoMod.enabled) return;
+      // Skip if automod is disabled or doesn't exist
+      if (!guildConfig.features?.autoMod?.enabled) return;
 
       const autoMod = guildConfig.features.autoMod;
       const userId = message.author.id;
 
-      // Helper to safely check if a feature is enabled (handles legacy boolean values)
+      // Helper to safely check if a feature is enabled (handles legacy boolean values and missing objects)
       const isFeatureEnabled = (feature) => {
+        if (!feature) return false;
         if (typeof feature === 'boolean') return feature;
-        return feature?.enabled ?? false;
+        return feature?.enabled === true;
       };
 
       // Helper to safely get feature property with default
@@ -66,6 +67,7 @@ export default {
         }
 
         if (result.found) {
+          console.log(`[AutoMod] Bad word detected: "${result.word}" from user ${message.author.tag} in ${message.guild.name}`);
           const severity = getWordSeverity(result.word);
 
           // Determine action based on severity or configured action

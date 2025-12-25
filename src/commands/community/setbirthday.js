@@ -121,6 +121,46 @@ export default {
 
       await birthday.save();
 
+      // Assign birthday role if configured
+      const birthdayRole = guildConfig.features.birthdaySystem?.role;
+      let roleAssigned = false;
+      
+      if (birthdayRole) {
+        try {
+          const member = await message.guild.members.fetch(userId).catch(() => null);
+          if (member) {
+            const role = message.guild.roles.cache.get(birthdayRole);
+            if (role && !member.roles.cache.has(birthdayRole)) {
+              await member.roles.add(role, 'Birthday set by staff');
+              roleAssigned = true;
+            }
+          }
+        } catch (roleErr) {
+          console.error('Failed to assign birthday role:', roleErr);
+        }
+      }
+
+      // Send announcement in birthday channel
+      const birthdayChannel = guildConfig.features.birthdaySystem?.channel || guildConfig.channels?.birthdayChannel;
+      let announcementSent = false;
+      
+      if (birthdayChannel) {
+        try {
+          const channel = message.guild.channels.cache.get(birthdayChannel);
+          if (channel) {
+            const dateStr = `${month}/${day}${year ? `/${year}` : ''}`;
+            const announceEmbed = await successEmbed(guildId, '🎂 Birthday Registered!',
+              `**<@${userId}>**'s birthday has been set to **${dateStr}**!\n\n` +
+              `They will receive a special celebration on their birthday! 🎉`
+            );
+            await channel.send({ embeds: [announceEmbed] });
+            announcementSent = true;
+          }
+        } catch (channelErr) {
+          console.error('Failed to send birthday announcement:', channelErr);
+        }
+      }
+
       // Create success message
       const dateStr = `${month}/${day}${year ? `/${year}` : ''}`;
       let description = `${GLYPHS.SUCCESS} Birthday for **${targetUser.tag}** set to **${dateStr}**!`;
@@ -140,12 +180,15 @@ export default {
         }
       }
 
-      const embed = await successEmbed(guildId, 'Birthday Set!', description);
-      embed.addFields({
-        name: 'Celebration Preference',
-        value: `Current: **${birthday.celebrationPreference}**\nMember can change with: \`!birthdaypreference <public|dm|role|none>\``,
-        inline: false
-      });
+      if (roleAssigned) {
+        description += `\n🎀 Birthday role assigned`;
+      }
+
+      if (announcementSent) {
+        description += `\n📢 Announcement sent to <#${birthdayChannel}>`;
+      }
+
+      const embed = await successEmbed(guildId, '🎂 Birthday Set!', description);
 
       message.reply({ embeds: [embed] });
 

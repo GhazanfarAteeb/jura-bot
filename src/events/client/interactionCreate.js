@@ -29,7 +29,7 @@ export default {
     );
 
     // Handle special slash commands that need custom handling
-    const specialCommands = ['automod', 'lockdown', 'setrole', 'setchannel', 'slashcommands'];
+    const specialCommands = ['automod', 'lockdown', 'setrole', 'setchannel', 'slashcommands', 'refreshcache', 'birthdaysettings', 'setbirthday', 'config', 'setup', 'welcome'];
     if (specialCommands.includes(interaction.commandName)) {
       return handleSpecialCommand(interaction, client, guildConfig, hasAdminRole);
     }
@@ -209,6 +209,21 @@ async function handleSpecialCommand(interaction, client, guildConfig, hasAdminRo
         break;
       case 'refreshcache':
         await handleRefreshCacheCommand(interaction, client, guildConfig);
+        break;
+      case 'birthdaysettings':
+        await handleBirthdaySettingsCommand(interaction, guildConfig);
+        break;
+      case 'setbirthday':
+        await handleSetBirthdayCommand(interaction, client, guildConfig);
+        break;
+      case 'config':
+        await handleConfigCommand(interaction, guildConfig);
+        break;
+      case 'setup':
+        await handleSetupCommand(interaction, client, guildConfig);
+        break;
+      case 'welcome':
+        await handleWelcomeCommand(interaction, guildConfig);
         break;
     }
   } catch (error) {
@@ -761,5 +776,330 @@ async function handleRefreshCacheCommand(interaction, client, guildConfig) {
     await interaction.editReply({
       embeds: [await errorEmbed(interaction.guild.id, `Failed to refresh cache: ${error.message}`)]
     });
+  }
+}
+
+// Birthday Settings Handler
+async function handleBirthdaySettingsCommand(interaction, guildConfig) {
+  const { successEmbed, errorEmbed, infoEmbed, GLYPHS } = await import('../../utils/embeds.js');
+  const subcommand = interaction.options.getSubcommand();
+
+  switch (subcommand) {
+    case 'channel': {
+      const channel = interaction.options.getChannel('channel');
+      guildConfig.features.birthdaySystem.channel = channel.id;
+      guildConfig.channels.birthdayChannel = channel.id;
+      await guildConfig.save();
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, '🎂 Birthday Channel Set',
+          `${GLYPHS.SUCCESS} Birthday announcements will be sent to ${channel}`)]
+      });
+      break;
+    }
+
+    case 'role': {
+      const role = interaction.options.getRole('role');
+      guildConfig.features.birthdaySystem.role = role.id;
+      await guildConfig.save();
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, '🎂 Birthday Role Set',
+          `${GLYPHS.SUCCESS} Birthday role set to ${role}\n\nThis role will be assigned to users on their birthday.`)]
+      });
+      break;
+    }
+
+    case 'message': {
+      const message = interaction.options.getString('message');
+      guildConfig.features.birthdaySystem.message = message;
+      await guildConfig.save();
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, '🎂 Birthday Message Set',
+          `${GLYPHS.SUCCESS} Custom birthday message set!\n\n**Preview:**\n${message.replace('{user}', interaction.user.toString()).replace('{username}', interaction.user.username).replace('{age}', '25')}`)]
+      });
+      break;
+    }
+
+    case 'enable': {
+      guildConfig.features.birthdaySystem.enabled = true;
+      await guildConfig.save();
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, '🎂 Birthday System Enabled',
+          `${GLYPHS.SUCCESS} Birthday celebrations are now enabled!`)]
+      });
+      break;
+    }
+
+    case 'disable': {
+      guildConfig.features.birthdaySystem.enabled = false;
+      await guildConfig.save();
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, '🎂 Birthday System Disabled',
+          `${GLYPHS.SUCCESS} Birthday celebrations are now disabled.`)]
+      });
+      break;
+    }
+
+    case 'status': {
+      const bs = guildConfig.features.birthdaySystem;
+      const channel = bs.channel ? `<#${bs.channel}>` : 'Not set';
+      const role = bs.role ? `<@&${bs.role}>` : 'Not set';
+      const message = bs.message || '🎉 Happy Birthday {user}! 🎂';
+
+      await interaction.editReply({
+        embeds: [await infoEmbed(interaction.guild.id, '🎂 Birthday Settings',
+          `**Status:** ${bs.enabled ? '✅ Enabled' : '❌ Disabled'}\n` +
+          `**Channel:** ${channel}\n` +
+          `**Role:** ${role}\n` +
+          `**Message:** ${message}\n\n` +
+          `**Variables:**\n` +
+          `• \`{user}\` - Mentions the user\n` +
+          `• \`{username}\` - User's name\n` +
+          `• \`{age}\` - User's age (if year provided)`)]
+      });
+      break;
+    }
+  }
+}
+
+// Set Birthday Handler (Admin)
+async function handleSetBirthdayCommand(interaction, client, guildConfig) {
+  const { successEmbed, errorEmbed, GLYPHS } = await import('../../utils/embeds.js');
+  const Birthday = (await import('../../models/Birthday.js')).default;
+
+  const user = interaction.options.getUser('user');
+  const month = interaction.options.getInteger('month');
+  const day = interaction.options.getInteger('day');
+  const year = interaction.options.getInteger('year');
+  const isPrivate = interaction.options.getBoolean('private') || false;
+
+  // Validate date
+  const testDate = new Date(year || 2000, month - 1, day);
+  if (testDate.getMonth() !== month - 1 || testDate.getDate() !== day) {
+    return interaction.editReply({
+      embeds: [await errorEmbed(interaction.guild.id, 'Invalid Date',
+        'This date doesn\'t exist! Please check the month and day.')]
+    });
+  }
+
+  try {
+    // Find or create birthday
+    let birthday = await Birthday.findOne({ guildId: interaction.guild.id, userId: user.id });
+
+    if (birthday) {
+      birthday.birthday = { month, day, year };
+      birthday.username = user.username;
+      birthday.showAge = !isPrivate;
+    } else {
+      birthday = new Birthday({
+        guildId: interaction.guild.id,
+        userId: user.id,
+        username: user.username,
+        birthday: { month, day, year },
+        showAge: !isPrivate
+      });
+    }
+
+    await birthday.save();
+
+    // Assign birthday role if configured
+    const birthdayRole = guildConfig.features.birthdaySystem.role;
+    const member = await interaction.guild.members.fetch(user.id).catch(() => null);
+    
+    if (birthdayRole && member) {
+      const role = interaction.guild.roles.cache.get(birthdayRole);
+      if (role && !member.roles.cache.has(birthdayRole)) {
+        await member.roles.add(role, 'Birthday set by admin').catch(() => {});
+      }
+    }
+
+    // Send announcement in birthday channel
+    const birthdayChannel = guildConfig.features.birthdaySystem.channel || guildConfig.channels.birthdayChannel;
+    if (birthdayChannel) {
+      const channel = interaction.guild.channels.cache.get(birthdayChannel);
+      if (channel) {
+        const dateStr = `${month}/${day}${year ? `/${year}` : ''}`;
+        const announceEmbed = await successEmbed(interaction.guild.id, '🎂 Birthday Registered!',
+          `**${user}**'s birthday has been set to **${dateStr}**!\n\n` +
+          `They will receive a special celebration on their birthday! 🎉`
+        );
+        await channel.send({ embeds: [announceEmbed] }).catch(() => {});
+      }
+    }
+
+    // Success message
+    const dateStr = `${month}/${day}${year ? `/${year}` : ''}`;
+    let description = `${GLYPHS.SUCCESS} Birthday for **${user.tag}** set to **${dateStr}**!`;
+    
+    if (isPrivate) {
+      description += '\n🔒 Age will not be shown in announcements';
+    }
+    
+    if (year) {
+      const age = birthday.getAge ? birthday.getAge() : null;
+      if (age !== null) {
+        description += `\n🎂 They'll turn ${age + 1} on their next birthday!`;
+      }
+    }
+
+    if (birthdayRole) {
+      description += `\n🎀 Birthday role assigned`;
+    }
+
+    if (birthdayChannel) {
+      description += `\n📢 Announcement sent to <#${birthdayChannel}>`;
+    }
+
+    await interaction.editReply({
+      embeds: [await successEmbed(interaction.guild.id, '🎂 Birthday Set!', description)]
+    });
+
+  } catch (error) {
+    console.error('Error setting birthday:', error);
+    await interaction.editReply({
+      embeds: [await errorEmbed(interaction.guild.id, 'Error',
+        'Failed to set birthday. Please try again.')]
+    });
+  }
+}
+
+// Config Handler
+async function handleConfigCommand(interaction, guildConfig) {
+  const { successEmbed, errorEmbed, infoEmbed, GLYPHS } = await import('../../utils/embeds.js');
+  const subcommand = interaction.options.getSubcommand();
+
+  switch (subcommand) {
+    case 'view': {
+      const config = guildConfig;
+      const embed = await infoEmbed(interaction.guild.id, '⚙️ Server Configuration',
+        `**Prefix:** \`${config.prefix}\`\n\n` +
+        `**Channels:**\n` +
+        `• Mod Log: ${config.channels.modLog ? `<#${config.channels.modLog}>` : 'Not set'}\n` +
+        `• Alert Log: ${config.channels.alertLog ? `<#${config.channels.alertLog}>` : 'Not set'}\n` +
+        `• Join Log: ${config.channels.joinLog ? `<#${config.channels.joinLog}>` : 'Not set'}\n` +
+        `• Birthday: ${config.channels.birthdayChannel ? `<#${config.channels.birthdayChannel}>` : 'Not set'}\n` +
+        `• Welcome: ${config.channels.welcomeChannel ? `<#${config.channels.welcomeChannel}>` : 'Not set'}\n\n` +
+        `**Features:**\n` +
+        `• AutoMod: ${config.features.autoMod?.enabled ? '✅' : '❌'}\n` +
+        `• Birthdays: ${config.features.birthdaySystem?.enabled ? '✅' : '❌'}\n` +
+        `• Levels: ${config.features.levelSystem?.enabled ? '✅' : '❌'}\n` +
+        `• Welcome: ${config.features.welcomeSystem?.enabled ? '✅' : '❌'}`
+      );
+      await interaction.editReply({ embeds: [embed] });
+      break;
+    }
+
+    case 'prefix': {
+      const newPrefix = interaction.options.getString('prefix');
+      if (newPrefix.length > 5) {
+        return interaction.editReply({
+          embeds: [await errorEmbed(interaction.guild.id, 'Prefix too long (max 5 characters)')]
+        });
+      }
+      guildConfig.prefix = newPrefix;
+      await guildConfig.save();
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, 'Prefix Updated',
+          `${GLYPHS.SUCCESS} Server prefix changed to \`${newPrefix}\``)]
+      });
+      break;
+    }
+  }
+}
+
+// Setup Handler
+async function handleSetupCommand(interaction, client, guildConfig) {
+  const { successEmbed, errorEmbed, infoEmbed, GLYPHS } = await import('../../utils/embeds.js');
+  const { ChannelType } = await import('discord.js');
+  
+  // Import the setup command and run it
+  try {
+    const setupModule = await import('../../commands/config/setup.js');
+    const setupCommand = setupModule.default;
+    
+    // Create a fake message object for the setup command
+    const fakeMessage = {
+      guild: interaction.guild,
+      member: interaction.member,
+      author: interaction.user,
+      reply: async (options) => interaction.editReply(options),
+      channel: interaction.channel
+    };
+
+    await setupCommand.execute(fakeMessage);
+  } catch (error) {
+    console.error('Setup command error:', error);
+    await interaction.editReply({
+      embeds: [await errorEmbed(interaction.guild.id, 'Setup Failed',
+        'An error occurred during setup. Please ensure I have Administrator permissions.')]
+    });
+  }
+}
+
+// Welcome Handler
+async function handleWelcomeCommand(interaction, guildConfig) {
+  const { successEmbed, errorEmbed, infoEmbed, GLYPHS } = await import('../../utils/embeds.js');
+  const subcommand = interaction.options.getSubcommand();
+
+  switch (subcommand) {
+    case 'channel': {
+      const channel = interaction.options.getChannel('channel');
+      guildConfig.features.welcomeSystem.channel = channel.id;
+      guildConfig.channels.welcomeChannel = channel.id;
+      await guildConfig.save();
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, '👋 Welcome Channel Set',
+          `${GLYPHS.SUCCESS} Welcome messages will be sent to ${channel}`)]
+      });
+      break;
+    }
+
+    case 'message': {
+      const message = interaction.options.getString('message');
+      guildConfig.features.welcomeSystem.message = message;
+      await guildConfig.save();
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, '👋 Welcome Message Set',
+          `${GLYPHS.SUCCESS} Welcome message updated!\n\n**Preview:**\n${message.replace('{user}', interaction.user.toString()).replace('{server}', interaction.guild.name).replace('{memberCount}', interaction.guild.memberCount)}`)]
+      });
+      break;
+    }
+
+    case 'enable': {
+      guildConfig.features.welcomeSystem.enabled = true;
+      await guildConfig.save();
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, '👋 Welcome System Enabled',
+          `${GLYPHS.SUCCESS} Welcome messages are now enabled!`)]
+      });
+      break;
+    }
+
+    case 'disable': {
+      guildConfig.features.welcomeSystem.enabled = false;
+      await guildConfig.save();
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, '👋 Welcome System Disabled',
+          `${GLYPHS.SUCCESS} Welcome messages are now disabled.`)]
+      });
+      break;
+    }
+
+    case 'status': {
+      const ws = guildConfig.features.welcomeSystem;
+      const channel = ws?.channel ? `<#${ws.channel}>` : 'Not set';
+      const message = ws?.message || 'Welcome {user} to {server}! You are member #{memberCount}';
+
+      await interaction.editReply({
+        embeds: [await infoEmbed(interaction.guild.id, '👋 Welcome Settings',
+          `**Status:** ${ws?.enabled ? '✅ Enabled' : '❌ Disabled'}\n` +
+          `**Channel:** ${channel}\n` +
+          `**Message:** ${message}\n\n` +
+          `**Variables:**\n` +
+          `• \`{user}\` - Mentions the user\n` +
+          `• \`{server}\` - Server name\n` +
+          `• \`{memberCount}\` - Member count`)]
+      });
+      break;
+    }
   }
 }

@@ -307,6 +307,126 @@ const slashCommands = [
           { name: 'Invites', value: 'invites' }
         ))
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+
+  // Birthday Settings Command (Admin)
+  new SlashCommandBuilder()
+    .setName('birthdaysettings')
+    .setDescription('Configure birthday system settings (Admin)')
+    .addSubcommand(subcommand =>
+      subcommand.setName('channel')
+        .setDescription('Set the birthday announcement channel')
+        .addChannelOption(option =>
+          option.setName('channel')
+            .setDescription('Channel for birthday announcements')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('role')
+        .setDescription('Set the birthday role to assign')
+        .addRoleOption(option =>
+          option.setName('role')
+            .setDescription('Role to give on birthdays')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('message')
+        .setDescription('Set custom birthday message')
+        .addStringOption(option =>
+          option.setName('message')
+            .setDescription('Custom message ({user} = mention, {username} = name, {age} = age)')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('enable')
+        .setDescription('Enable the birthday system'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('disable')
+        .setDescription('Disable the birthday system'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('status')
+        .setDescription('View current birthday settings'))
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+
+  // Set Birthday Command (Admin)
+  new SlashCommandBuilder()
+    .setName('setbirthday')
+    .setDescription('Set a member\'s birthday (Admin)')
+    .addUserOption(option =>
+      option.setName('user')
+        .setDescription('The user to set birthday for')
+        .setRequired(true))
+    .addIntegerOption(option =>
+      option.setName('month')
+        .setDescription('Birth month (1-12)')
+        .setRequired(true)
+        .setMinValue(1)
+        .setMaxValue(12))
+    .addIntegerOption(option =>
+      option.setName('day')
+        .setDescription('Birth day (1-31)')
+        .setRequired(true)
+        .setMinValue(1)
+        .setMaxValue(31))
+    .addIntegerOption(option =>
+      option.setName('year')
+        .setDescription('Birth year (optional, for age)')
+        .setRequired(false)
+        .setMinValue(1900)
+        .setMaxValue(new Date().getFullYear()))
+    .addBooleanOption(option =>
+      option.setName('private')
+        .setDescription('Hide age in announcements')
+        .setRequired(false))
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles),
+
+  // Config Command
+  new SlashCommandBuilder()
+    .setName('config')
+    .setDescription('View or change server configuration')
+    .addSubcommand(subcommand =>
+      subcommand.setName('view')
+        .setDescription('View current server configuration'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('prefix')
+        .setDescription('Change the bot prefix')
+        .addStringOption(option =>
+          option.setName('prefix')
+            .setDescription('New prefix (1-5 characters)')
+            .setRequired(true)
+            .setMaxLength(5)))
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+
+  // Setup Command
+  new SlashCommandBuilder()
+    .setName('setup')
+    .setDescription('Run the initial server setup wizard')
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+
+  // Welcome Settings Command
+  new SlashCommandBuilder()
+    .setName('welcome')
+    .setDescription('Configure welcome message settings')
+    .addSubcommand(subcommand =>
+      subcommand.setName('channel')
+        .setDescription('Set the welcome channel')
+        .addChannelOption(option =>
+          option.setName('channel')
+            .setDescription('Channel for welcome messages')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('message')
+        .setDescription('Set the welcome message')
+        .addStringOption(option =>
+          option.setName('message')
+            .setDescription('Welcome message ({user}, {server}, {memberCount})')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('enable')
+        .setDescription('Enable welcome messages'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('disable')
+        .setDescription('Disable welcome messages'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('status')
+        .setDescription('View welcome settings'))
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 ];
 
 export async function registerSlashCommands(client) {
