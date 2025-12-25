@@ -904,11 +904,11 @@ async function handleSetBirthdayCommand(interaction, client, guildConfig) {
     // Assign birthday role if configured
     const birthdayRole = guildConfig.features.birthdaySystem.role;
     const member = await interaction.guild.members.fetch(user.id).catch(() => null);
-    
+
     if (birthdayRole && member) {
       const role = interaction.guild.roles.cache.get(birthdayRole);
       if (role && !member.roles.cache.has(birthdayRole)) {
-        await member.roles.add(role, 'Birthday set by admin').catch(() => {});
+        await member.roles.add(role, 'Birthday set by admin').catch(() => { });
       }
     }
 
@@ -922,18 +922,18 @@ async function handleSetBirthdayCommand(interaction, client, guildConfig) {
           `**${user}**'s birthday has been set to **${dateStr}**!\n\n` +
           `They will receive a special celebration on their birthday! 🎉`
         );
-        await channel.send({ embeds: [announceEmbed] }).catch(() => {});
+        await channel.send({ embeds: [announceEmbed] }).catch(() => { });
       }
     }
 
     // Success message
     const dateStr = `${month}/${day}${year ? `/${year}` : ''}`;
     let description = `${GLYPHS.SUCCESS} Birthday for **${user.tag}** set to **${dateStr}**!`;
-    
+
     if (isPrivate) {
       description += '\n🔒 Age will not be shown in announcements';
     }
-    
+
     if (year) {
       const age = birthday.getAge ? birthday.getAge() : null;
       if (age !== null) {
@@ -1010,12 +1010,12 @@ async function handleConfigCommand(interaction, guildConfig) {
 async function handleSetupCommand(interaction, client, guildConfig) {
   const { successEmbed, errorEmbed, infoEmbed, GLYPHS } = await import('../../utils/embeds.js');
   const { ChannelType } = await import('discord.js');
-  
+
   // Import the setup command and run it
   try {
     const setupModule = await import('../../commands/config/setup.js');
     const setupCommand = setupModule.default;
-    
+
     // Create a fake message object for the setup command
     const fakeMessage = {
       guild: interaction.guild,

@@ -4,7 +4,8 @@
  * Supports custom words from database and leetspeak detection
  */
 
-import Filter from 'bad-words';
+import BadWordsFilter from 'bad-words';
+const Filter = BadWordsFilter.default || BadWordsFilter;
 
 // Create the base filter instance with the built-in word list
 const baseFilter = new Filter();
@@ -18,7 +19,7 @@ const ADDITIONAL_BAD_WORDS = [
   'tr4nny', 'tr@nny',
   'sp1c', 'ch1nk', 'k1ke',
   'towelhead', 'raghead', 'sandnigger',
-  
+
   // Leetspeak/bypass variations
   'fck', 'f*ck', 'fuk', 'fuq', 'phuck', 'phuk',
   'sh1t', 'sh!t', 'sht', 's#it',
@@ -30,7 +31,7 @@ const ADDITIONAL_BAD_WORDS = [
   'c*nt', 'cvnt',
   'wh0re', 'wh*re',
   'sl*t', 'slvt',
-  
+
   // Sexual content variations
   'p0rn', 'pr0n', 'p*rn',
   's3x', 's*x',
@@ -41,10 +42,10 @@ const ADDITIONAL_BAD_WORDS = [
   'j1zz', 'j!zz',
   'd1ldo', 'dild0',
   'bl0wjob', 'bl*wjob',
-  
+
   // Self-harm related
   'kys', // "kill yourself"
-  
+
   // Common abbreviations
   'stfu', 'gtfo'
 ];
@@ -96,20 +97,20 @@ function normalizeLeetspeak(text) {
  */
 function createCustomFilter(customWords = [], ignoredWords = []) {
   const filter = new Filter();
-  
+
   // Add additional words
   filter.addWords(...ADDITIONAL_BAD_WORDS);
-  
+
   // Add custom words from database
   if (customWords.length > 0) {
     filter.addWords(...customWords);
   }
-  
+
   // Remove whitelisted words
   if (ignoredWords.length > 0) {
     filter.removeWords(...ignoredWords);
   }
-  
+
   return filter;
 }
 
@@ -184,7 +185,7 @@ function checkBadWords(message, customWords = [], ignoredWords = [], useBuiltIn 
 function checkBadWordsAdvanced(message, customWords = []) {
   try {
     const filter = createCustomFilter(customWords, []);
-    
+
     // Remove spaces and special characters for bypass detection
     const stripped = message.toLowerCase().replace(/[\s\W_]/g, '');
     const normalized = normalizeLeetspeak(stripped);

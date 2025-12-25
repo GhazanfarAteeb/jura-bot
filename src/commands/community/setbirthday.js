@@ -124,7 +124,7 @@ export default {
       // Assign birthday role if configured
       const birthdayRole = guildConfig.features.birthdaySystem?.role;
       let roleAssigned = false;
-      
+
       if (birthdayRole) {
         try {
           const member = await message.guild.members.fetch(userId).catch(() => null);
@@ -143,7 +143,7 @@ export default {
       // Send announcement in birthday channel
       const birthdayChannel = guildConfig.features.birthdaySystem?.channel || guildConfig.channels?.birthdayChannel;
       let announcementSent = false;
-      
+
       if (birthdayChannel) {
         try {
           const channel = message.guild.channels.cache.get(birthdayChannel);

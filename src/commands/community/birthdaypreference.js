@@ -11,7 +11,7 @@ export default {
   permissions: {
     user: PermissionFlagsBits.Administrator
   },
-  
+
   async execute(message, args) {
     const guildId = message.guild.id;
     const guildConfig = await Guild.getGuild(guildId, message.guild.name);
@@ -81,7 +81,7 @@ async function showHelp(message, guildConfig) {
 }
 
 async function setChannel(message, args, guildConfig) {
-  const channel = message.mentions.channels.first() || 
+  const channel = message.mentions.channels.first() ||
     message.guild.channels.cache.get(args[1]?.replace(/[<#>]/g, ''));
 
   if (!channel) {
@@ -102,7 +102,7 @@ async function setChannel(message, args, guildConfig) {
 }
 
 async function setRole(message, args, guildConfig) {
-  const role = message.mentions.roles.first() || 
+  const role = message.mentions.roles.first() ||
     message.guild.roles.cache.get(args[1]?.replace(/[<@&>]/g, ''));
 
   if (!role) {
@@ -151,7 +151,7 @@ async function toggleSystem(message, guildConfig, enabled) {
   await guildConfig.save();
 
   return message.reply({
-    embeds: [await successEmbed(message.guild.id, 
+    embeds: [await successEmbed(message.guild.id,
       enabled ? '🎂 Birthday System Enabled' : '🎂 Birthday System Disabled',
       `${GLYPHS.SUCCESS} Birthday celebrations are now ${enabled ? 'enabled' : 'disabled'}!`)]
   });
