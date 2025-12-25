@@ -181,6 +181,9 @@ async function loadEvents() {
   const eventsPath = readdirSync(path.join(__dirname, "./events"));
   let totalEvents = 0;
 
+  // Skip these files - they are initialized separately or called from schedulers
+  const skipFiles = ['antiNuke.js', 'messageLogging.js', 'reminderHandler.js'];
+
   for (const dir of eventsPath) {
     // Skip music events - they are loaded separately
     if (dir === 'music') continue;
@@ -190,6 +193,12 @@ async function loadEvents() {
         .filter((file) => file.endsWith(".js"));
 
       for (const file of events) {
+        // Skip special files that are initialized separately
+        if (skipFiles.includes(file)) {
+          console.log(`⏭️ Skipping ${file} (initialized separately)`);
+          continue;
+        }
+        
         try {
           console.log("📂 Loading event:", file);
           const EventModule = await import(`./events/${dir}/${file}`);
