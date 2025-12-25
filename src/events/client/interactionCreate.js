@@ -207,6 +207,9 @@ async function handleSpecialCommand(interaction, client, guildConfig, hasAdminRo
       case 'slashcommands':
         await handleSlashcommandsCommand(interaction, guildConfig);
         break;
+      case 'refreshcache':
+        await handleRefreshCacheCommand(interaction, client, guildConfig);
+        break;
     }
   } catch (error) {
     console.error(`Error handling ${interaction.commandName}:`, error);
@@ -692,5 +695,71 @@ async function handleSlashcommandsCommand(interaction, guildConfig) {
           `**Commands:**\n${commandList}`)]
       });
       break;
+  }
+}
+
+async function handleRefreshCacheCommand(interaction, client, guildConfig) {
+  const { successEmbed, infoEmbed, GLYPHS } = await import('../../utils/embeds.js');
+  const Guild = (await import('../../models/Guild.js')).default;
+  
+  const cacheType = interaction.options.getString('type') || 'all';
+  const guild = interaction.guild;
+  const refreshed = [];
+  
+  try {
+    // Refresh Guild Settings from database
+    if (cacheType === 'all' || cacheType === 'guild') {
+      // Clear mongoose cache and re-fetch
+      const freshGuildConfig = await Guild.findOne({ guildId: guild.id });
+      if (freshGuildConfig) {
+        // Force update the cached version
+        Object.assign(guildConfig, freshGuildConfig.toObject());
+      }
+      refreshed.push('✅ Guild Settings');
+    }
+    
+    // Refresh Members cache
+    if (cacheType === 'all' || cacheType === 'members') {
+      await guild.members.fetch();
+      refreshed.push(`✅ Members (${guild.memberCount} cached)`);
+    }
+    
+    // Refresh Roles cache
+    if (cacheType === 'all' || cacheType === 'roles') {
+      await guild.roles.fetch();
+      refreshed.push(`✅ Roles (${guild.roles.cache.size} cached)`);
+    }
+    
+    // Refresh Channels cache
+    if (cacheType === 'all' || cacheType === 'channels') {
+      await guild.channels.fetch();
+      refreshed.push(`✅ Channels (${guild.channels.cache.size} cached)`);
+    }
+    
+    // Refresh Invites cache
+    if (cacheType === 'all' || cacheType === 'invites') {
+      try {
+        const invites = await guild.invites.fetch();
+        client.invites.set(guild.id, new Map(invites.map(inv => [inv.code, inv.uses])));
+        refreshed.push(`✅ Invites (${invites.size} cached)`);
+      } catch (invErr) {
+        refreshed.push('⚠️ Invites (no permission)');
+      }
+    }
+    
+    const embed = await successEmbed(interaction.guild.id, '🔄 Cache Refreshed',
+      `Successfully refreshed cache for **${guild.name}**\n\n` +
+      `**Refreshed:**\n${refreshed.join('\n')}\n\n` +
+      `**Refreshed at:** <t:${Math.floor(Date.now() / 1000)}:F>`
+    );
+    
+    await interaction.editReply({ embeds: [embed] });
+    
+  } catch (error) {
+    console.error('Error refreshing cache:', error);
+    const { errorEmbed } = await import('../../utils/embeds.js');
+    await interaction.editReply({
+      embeds: [await errorEmbed(interaction.guild.id, `Failed to refresh cache: ${error.message}`)]
+    });
   }
 }

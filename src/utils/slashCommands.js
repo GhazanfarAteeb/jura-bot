@@ -289,6 +289,24 @@ const slashCommands = [
       subcommand.setName('list')
         .setDescription('List all slash commands and their status'))
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+
+  // Refresh Cache Command
+  new SlashCommandBuilder()
+    .setName('refreshcache')
+    .setDescription('Refresh cached data for this server')
+    .addStringOption(option =>
+      option.setName('type')
+        .setDescription('Type of cache to refresh')
+        .setRequired(false)
+        .addChoices(
+          { name: 'All', value: 'all' },
+          { name: 'Guild Settings', value: 'guild' },
+          { name: 'Members', value: 'members' },
+          { name: 'Roles', value: 'roles' },
+          { name: 'Channels', value: 'channels' },
+          { name: 'Invites', value: 'invites' }
+        ))
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 ];
 
 export async function registerSlashCommands(client) {
