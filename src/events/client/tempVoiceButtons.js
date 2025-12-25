@@ -1,4 +1,4 @@
-import { Events, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, UserSelectMenuBuilder, EmbedBuilder, PermissionFlagsBits } from 'discord.js';
+import { Events, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, UserSelectMenuBuilder, StringSelectMenuBuilder, EmbedBuilder, PermissionFlagsBits } from 'discord.js';
 import Guild from '../../models/Guild.js';
 import TempVoice from '../../models/TempVoice.js';
 
@@ -18,6 +18,11 @@ export default {
     // Handle TempVoice user select menus
     if (interaction.isUserSelectMenu() && interaction.customId.startsWith('tempvc_select_')) {
       return handleTempVCUserSelect(interaction);
+    }
+
+    // Handle TempVoice string select menus (privacy options)
+    if (interaction.isStringSelectMenu() && interaction.customId.startsWith('tempvc_privacy_')) {
+      return handlePrivacySelect(interaction);
     }
   }
 };
@@ -71,11 +76,13 @@ async function handleTempVCButton(interaction) {
     case 'limit':
       return showLimitModal(interaction);
     case 'privacy':
-      return togglePrivacy(interaction);
+      return showPrivacyMenu(interaction);
     case 'hide':
       return toggleHide(interaction);
     case 'bitrate':
       return showBitrateModal(interaction);
+    case 'status':
+      return showStatusModal(interaction);
     case 'permit':
       return showUserSelectMenu(interaction, 'permit', '✅ Select a user to PERMIT to your channel');
     case 'reject':
@@ -158,37 +165,169 @@ async function showBitrateModal(interaction) {
 }
 
 /**
- * Toggle channel privacy (lock/unlock)
+ * Show modal for setting channel status
  */
-async function togglePrivacy(interaction) {
-  const channel = await getUserTempChannel(interaction);
-  const tempData = await TempVoice.findByChannel(channel.id);
-  
-  const isLocked = tempData?.locked || false;
-  const newLockState = !isLocked;
+async function showStatusModal(interaction) {
+  const modal = new ModalBuilder()
+    .setCustomId('tempvc_modal_status')
+    .setTitle('🎙️ Raphael - Set Channel Status');
 
-  await channel.permissionOverwrites.edit(interaction.guild.id, {
-    Connect: newLockState ? false : null
-  });
+  const statusInput = new TextInputBuilder()
+    .setCustomId('channel_status')
+    .setLabel('Set a status for your voice channel')
+    .setPlaceholder('e.g., 🎵 Listening to music')
+    .setStyle(TextInputStyle.Short)
+    .setMaxLength(50)
+    .setRequired(false);
 
-  await TempVoice.findOneAndUpdate(
-    { channelId: channel.id },
-    { locked: newLockState }
-  );
-
-  const embed = new EmbedBuilder()
-    .setColor(newLockState ? 0xED4245 : 0x57F287)
-    .setTitle(newLockState ? '🔒 Channel Locked' : '🔓 Channel Unlocked')
-    .setDescription(newLockState 
-      ? 'Your channel is now **locked**. Only permitted users can join.'
-      : 'Your channel is now **unlocked**. Anyone can join.')
-    .setFooter({ text: 'Raphael Temp Voice' });
-
-  return interaction.reply({ embeds: [embed], ephemeral: true });
+  modal.addComponents(new ActionRowBuilder().addComponents(statusInput));
+  await interaction.showModal(modal);
 }
 
 /**
- * Toggle channel visibility (hide/show)
+ * Show privacy options dropdown menu
+ */
+async function showPrivacyMenu(interaction) {
+  const channel = await getUserTempChannel(interaction);
+  const tempData = await TempVoice.findByChannel(channel.id);
+  
+  const selectMenu = new StringSelectMenuBuilder()
+    .setCustomId('tempvc_privacy_select')
+    .setPlaceholder('Select a Privacy Option')
+    .addOptions([
+      {
+        label: 'Lock',
+        description: 'Only trusted users will be able to join your voice channel',
+        value: 'lock',
+        emoji: '🔒'
+      },
+      {
+        label: 'Unlock',
+        description: 'Everyone will be able to join your voice channel',
+        value: 'unlock',
+        emoji: '🔓'
+      },
+      {
+        label: 'Invisible',
+        description: 'Only trusted users will be able to view your voice channel',
+        value: 'invisible',
+        emoji: '👻'
+      },
+      {
+        label: 'Visible',
+        description: 'Everyone will be able to view your voice channel',
+        value: 'visible',
+        emoji: '👁️'
+      },
+      {
+        label: 'Close Chat',
+        description: 'Only trusted users will be able to text in your chat',
+        value: 'close_chat',
+        emoji: '💬'
+      },
+      {
+        label: 'Open Chat',
+        description: 'Everyone will be able to text in your chat',
+        value: 'open_chat',
+        emoji: '💭'
+      }
+    ]);
+
+  const row = new ActionRowBuilder().addComponents(selectMenu);
+
+  await interaction.reply({
+    content: '**Select a Privacy Option** 🔒',
+    components: [row],
+    ephemeral: true
+  });
+}
+
+/**
+ * Handle privacy select menu choice
+ */
+async function handlePrivacySelect(interaction) {
+  const channel = await getUserTempChannel(interaction);
+  if (!channel) {
+    return interaction.update({
+      content: '❌ You don\'t own a temporary voice channel.',
+      components: [],
+      embeds: []
+    });
+  }
+
+  const choice = interaction.values[0];
+  let embed;
+
+  switch (choice) {
+    case 'lock':
+      await channel.permissionOverwrites.edit(interaction.guild.id, { Connect: false });
+      await TempVoice.findOneAndUpdate({ channelId: channel.id }, { locked: true });
+      embed = new EmbedBuilder()
+        .setColor(0xED4245)
+        .setTitle('🔒 Lock')
+        .setDescription('Only trusted users will be able to join your voice channel.')
+        .setFooter({ text: 'Raphael Temp Voice' });
+      break;
+
+    case 'unlock':
+      await channel.permissionOverwrites.edit(interaction.guild.id, { Connect: null });
+      await TempVoice.findOneAndUpdate({ channelId: channel.id }, { locked: false });
+      embed = new EmbedBuilder()
+        .setColor(0x57F287)
+        .setTitle('🔓 Unlock')
+        .setDescription('Everyone will be able to join your voice channel.')
+        .setFooter({ text: 'Raphael Temp Voice' });
+      break;
+
+    case 'invisible':
+      await channel.permissionOverwrites.edit(interaction.guild.id, { ViewChannel: false });
+      embed = new EmbedBuilder()
+        .setColor(0x5865F2)
+        .setTitle('👻 Invisible')
+        .setDescription('Only trusted users will be able to view your voice channel.')
+        .setFooter({ text: 'Raphael Temp Voice' });
+      break;
+
+    case 'visible':
+      await channel.permissionOverwrites.edit(interaction.guild.id, { ViewChannel: null });
+      embed = new EmbedBuilder()
+        .setColor(0x57F287)
+        .setTitle('👁️ Visible')
+        .setDescription('Everyone will be able to view your voice channel.')
+        .setFooter({ text: 'Raphael Temp Voice' });
+      break;
+
+    case 'close_chat':
+      await channel.permissionOverwrites.edit(interaction.guild.id, { SendMessages: false });
+      embed = new EmbedBuilder()
+        .setColor(0xED4245)
+        .setTitle('💬 Close Chat')
+        .setDescription('Only trusted users will be able to text in your chat.')
+        .setFooter({ text: 'Raphael Temp Voice' });
+      break;
+
+    case 'open_chat':
+      await channel.permissionOverwrites.edit(interaction.guild.id, { SendMessages: null });
+      embed = new EmbedBuilder()
+        .setColor(0x57F287)
+        .setTitle('💭 Open Chat')
+        .setDescription('Everyone will be able to text in your chat.')
+        .setFooter({ text: 'Raphael Temp Voice' });
+      break;
+
+    default:
+      embed = new EmbedBuilder()
+        .setColor(0xED4245)
+        .setTitle('❌ Error')
+        .setDescription('Unknown privacy option.')
+        .setFooter({ text: 'Raphael Temp Voice' });
+  }
+
+  return interaction.update({ content: null, embeds: [embed], components: [] });
+}
+
+/**
+ * Toggle channel visibility (hide/show) - kept for hide button
  */
 async function toggleHide(interaction) {
   const channel = await getUserTempChannel(interaction);
@@ -462,6 +601,29 @@ async function handleTempVCModal(interaction) {
         .setFooter({ text: 'Raphael Temp Voice' });
 
       return interaction.reply({ embeds: [embed], ephemeral: true });
+    }
+
+    case 'status': {
+      const status = interaction.fields.getTextInputValue('channel_status');
+      
+      try {
+        // Voice channels support status in Discord
+        await channel.setStatus(status || null);
+        
+        const embed = new EmbedBuilder()
+          .setColor(0x57F287)
+          .setTitle('📝 Status Set')
+          .setDescription(status ? `Channel status set to: **${status}**` : 'Channel status has been cleared.')
+          .setFooter({ text: 'Raphael Temp Voice' });
+
+        return interaction.reply({ embeds: [embed], ephemeral: true });
+      } catch (error) {
+        console.error('Error setting channel status:', error);
+        return interaction.reply({
+          content: '❌ Failed to set channel status. This feature may not be available.',
+          ephemeral: true
+        });
+      }
     }
 
     default:

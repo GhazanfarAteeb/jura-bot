@@ -9,8 +9,8 @@ const TEMPVC_BUTTONS = {
     { id: 'tempvc_name', emoji: '✏️', label: 'Name', style: ButtonStyle.Secondary },
     { id: 'tempvc_limit', emoji: '👥', label: 'Limit', style: ButtonStyle.Secondary },
     { id: 'tempvc_privacy', emoji: '🔒', label: 'Privacy', style: ButtonStyle.Secondary },
-    { id: 'tempvc_hide', emoji: '👁️', label: 'Hide', style: ButtonStyle.Secondary },
-    { id: 'tempvc_bitrate', emoji: '🎵', label: 'Bitrate', style: ButtonStyle.Secondary }
+    { id: 'tempvc_bitrate', emoji: '🎵', label: 'Bitrate', style: ButtonStyle.Secondary },
+    { id: 'tempvc_status', emoji: '📝', label: 'Status', style: ButtonStyle.Secondary }
   ],
   row2: [
     { id: 'tempvc_permit', emoji: '✅', label: 'Permit', style: ButtonStyle.Success },
@@ -39,9 +39,9 @@ function createInterfaceEmbed() {
       '**Available Controls:**\n' +
       '`✏️ NAME` - Rename your channel\n' +
       '`👥 LIMIT` - Set user limit\n' +
-      '`🔒 PRIVACY` - Lock/Unlock channel\n' +
-      '`👁️ HIDE` - Hide/Show channel\n' +
+      '`🔒 PRIVACY` - Lock/Unlock/Hide/Chat options\n' +
       '`🎵 BITRATE` - Set audio quality\n' +
+      '`📝 STATUS` - Set channel status\n' +
       '`✅ PERMIT` - Allow a user to join\n' +
       '`❌ REJECT` - Block a user\n' +
       '`📨 INVITE` - Send invite link\n' +

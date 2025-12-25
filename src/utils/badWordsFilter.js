@@ -154,18 +154,18 @@ function normalizeLeetspeak(text) {
  */
 function findBadWord(text, wordList) {
   const lowerText = text.toLowerCase();
-  
+
   for (const badWord of wordList) {
     // Escape special regex characters in the bad word
     const escapedWord = badWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     // Create regex with word boundaries
     const regex = new RegExp(`\\b${escapedWord}\\b`, 'i');
-    
+
     if (regex.test(lowerText)) {
       return badWord;
     }
   }
-  
+
   return null;
 }
 
