@@ -1,58 +1,114 @@
 /**
  * Bad Words Filter Utility
- * Uses the 'bad-words' npm package for comprehensive profanity filtering
+ * Custom implementation for comprehensive profanity filtering
  * Supports custom words from database and leetspeak detection
  */
 
-import { createRequire } from 'module';
-const required = createRequire(import.meta.url);
-const Filter = required('bad-words');
+// Comprehensive built-in bad words list
+const DEFAULT_BAD_WORDS = [
+  // Common profanity
+  'fuck', 'fucking', 'fucked', 'fucker', 'fucks', 'motherfucker', 'motherfucking',
+  'shit', 'shitting', 'shitted', 'shits', 'bullshit',
+  'ass', 'asses', 'asshole', 'assholes',
+  'bitch', 'bitches', 'bitching',
+  'damn', 'dammit', 'damned', 'goddamn',
+  'crap', 'crappy',
+  'piss', 'pissed', 'pissing',
+  'dick', 'dicks', 'dickhead',
+  'cock', 'cocks', 'cocksucker',
+  'pussy', 'pussies',
+  'cunt', 'cunts',
+  'bastard', 'bastards',
+  'whore', 'whores',
+  'slut', 'sluts',
+  'hoe', 'hoes',
+  'twat', 'twats',
+  'wanker', 'wankers',
+  'bollocks',
+  'arse', 'arsehole',
 
-// Create the base filter instance with the built-in word list
-const baseFilter = new Filter();
+  // Slurs and hate speech
+  'nigger', 'nigga', 'niggers', 'niggas',
+  'faggot', 'fag', 'fags', 'faggots',
+  'retard', 'retarded', 'retards',
+  'homo', 'homos',
+  'tranny', 'trannies',
+  'spic', 'spics',
+  'chink', 'chinks',
+  'kike', 'kikes',
+  'beaner', 'beaners',
+  'wetback', 'wetbacks',
+  'coon', 'coons',
+  'towelhead', 'towelheads',
+  'raghead', 'ragheads',
+  'sandnigger', 'sandniggers',
+  'gook', 'gooks',
+  'jap', 'japs',
+  'cracker', 'crackers',
 
-// Additional words to add to the filter (slurs and variations not in default list)
-const ADDITIONAL_BAD_WORDS = [
-  // Slurs and hate speech variations
-  'nigga', 'n1gger', 'n1gga', 'nigg3r', 'n!gger',
-  'f4g', 'f4ggot', 'f@g', 'f@ggot',
-  'r3tard', 'r3t4rd',
-  'tr4nny', 'tr@nny',
-  'sp1c', 'ch1nk', 'k1ke',
-  'towelhead', 'raghead', 'sandnigger',
+  // Sexual content
+  'porn', 'porno', 'pornography',
+  'sex', 'sexual', 'sexy',
+  'nude', 'nudes', 'nudity',
+  'naked',
+  'boobs', 'boob', 'boobies',
+  'tits', 'titties', 'titty',
+  'penis', 'penises',
+  'vagina', 'vaginas',
+  'cum', 'cumming', 'cummed', 'cumshot',
+  'jizz', 'jizzed',
+  'dildo', 'dildos',
+  'vibrator',
+  'masturbate', 'masturbating', 'masturbation',
+  'orgasm', 'orgasms',
+  'erection', 'erect',
+  'blowjob', 'blowjobs',
+  'handjob', 'handjobs',
+  'anal',
+  'rape', 'raped', 'raping', 'rapist',
+  'molest', 'molested', 'molesting',
+  'incest',
+  'bestiality',
+  'pedophile', 'pedophilia',
 
-  // Leetspeak/bypass variations
-  'fck', 'f*ck', 'fuk', 'fuq', 'phuck', 'phuk',
-  'sh1t', 'sh!t', 'sht', 's#it',
-  'b1tch', 'b!tch', 'b*tch',
-  'a$$', 'a**', '@ss', '@sshole',
-  'd1ck', 'd!ck',
-  'c0ck', 'c*ck',
-  'p*ssy', 'pu$$y',
-  'c*nt', 'cvnt',
-  'wh0re', 'wh*re',
-  'sl*t', 'slvt',
-
-  // Sexual content variations
-  'p0rn', 'pr0n', 'p*rn',
-  's3x', 's*x',
-  'b00bs', 'b00bies',
-  't1ts', 't!ts',
-  'pen1s', 'pen!s',
-  'vag1na', 'vag!na',
-  'j1zz', 'j!zz',
-  'd1ldo', 'dild0',
-  'bl0wjob', 'bl*wjob',
-
-  // Self-harm related
+  // Violence
+  'kill', 'killed', 'killing', 'killer',
+  'murder', 'murdered', 'murdering', 'murderer',
+  'suicide', 'suicidal',
   'kys', // "kill yourself"
 
-  // Common abbreviations
-  'stfu', 'gtfo'
-];
+  // Drugs
+  'cocaine',
+  'heroin',
+  'meth', 'methamphetamine',
+  'crack',
 
-// Add additional words to the base filter
-baseFilter.addWords(...ADDITIONAL_BAD_WORDS);
+  // Misc offensive
+  'stfu',
+  'gtfo',
+  'lmfao',
+
+  // Leetspeak/bypass variations
+  'fck', 'fuk', 'fuq', 'phuck', 'phuk',
+  'sh1t', 'sht',
+  'b1tch', 'biatch',
+  'a$$', 'd1ck', 'c0ck', 'cvnt',
+  'wh0re', 'h0e', 'h03',
+  'n1gger', 'n1gga', 'nigg3r', 'n!gger',
+  'f4g', 'f4ggot',
+  'r3tard', 'r3t4rd',
+  'tr4nny',
+  'sp1c', 'ch1nk', 'k1ke',
+  'p0rn', 'pr0n',
+  's3x',
+  'b00bs', 'b00bies',
+  't1ts',
+  'pen1s',
+  'vag1na',
+  'j1zz',
+  'd1ldo', 'dild0',
+  'bl0wjob'
+];
 
 // Leetspeak/bypass character mappings
 const LEETSPEAK_MAP = {
@@ -91,28 +147,26 @@ function normalizeLeetspeak(text) {
 }
 
 /**
- * Create a custom filter with guild-specific words
- * @param {string[]} customWords - Additional words to add
- * @param {string[]} ignoredWords - Words to remove/whitelist
- * @returns {Filter} - Configured filter instance
+ * Check if text contains any bad words
+ * @param {string} text - Text to check
+ * @param {string[]} wordList - List of bad words to check against
+ * @returns {string|null} - The bad word found, or null
  */
-function createCustomFilter(customWords = [], ignoredWords = []) {
-  const filter = new Filter();
-
-  // Add additional words
-  filter.addWords(...ADDITIONAL_BAD_WORDS);
-
-  // Add custom words from database
-  if (customWords.length > 0) {
-    filter.addWords(...customWords);
+function findBadWord(text, wordList) {
+  const lowerText = text.toLowerCase();
+  
+  for (const badWord of wordList) {
+    // Escape special regex characters in the bad word
+    const escapedWord = badWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // Create regex with word boundaries
+    const regex = new RegExp(`\\b${escapedWord}\\b`, 'i');
+    
+    if (regex.test(lowerText)) {
+      return badWord;
+    }
   }
-
-  // Remove whitelisted words
-  if (ignoredWords.length > 0) {
-    filter.removeWords(...ignoredWords);
-  }
-
-  return filter;
+  
+  return null;
 }
 
 /**
@@ -125,48 +179,30 @@ function createCustomFilter(customWords = [], ignoredWords = []) {
  */
 function checkBadWords(message, customWords = [], ignoredWords = [], useBuiltIn = true) {
   try {
-    // Create filter based on settings
-    let filter;
-    if (useBuiltIn) {
-      filter = createCustomFilter(customWords, ignoredWords);
-    } else {
-      // Only use custom words
-      filter = new Filter({ emptyList: true });
-      if (customWords.length > 0) {
-        filter.addWords(...customWords);
-      }
-    }
+    // Combine word lists
+    const builtInWords = useBuiltIn ? DEFAULT_BAD_WORDS : [];
+    const allWords = [...builtInWords, ...customWords.map(w => w.toLowerCase())]
+      .filter(word => !ignoredWords.map(w => w.toLowerCase()).includes(word.toLowerCase()));
 
     // Check original message
-    if (filter.isProfane(message)) {
-      // Find which word triggered it
-      const words = message.toLowerCase().split(/\s+/);
-      for (const word of words) {
-        if (filter.isProfane(word)) {
-          return {
-            found: true,
-            word: word,
-            type: customWords.map(w => w.toLowerCase()).includes(word.toLowerCase()) ? 'custom' : 'builtin'
-          };
-        }
-      }
-      return { found: true, word: 'detected', type: 'builtin' };
+    const foundWord = findBadWord(message, allWords);
+    if (foundWord) {
+      return {
+        found: true,
+        word: foundWord,
+        type: customWords.map(w => w.toLowerCase()).includes(foundWord.toLowerCase()) ? 'custom' : 'builtin'
+      };
     }
 
     // Check normalized (leetspeak converted) message
     const normalizedMessage = normalizeLeetspeak(message);
-    if (filter.isProfane(normalizedMessage)) {
-      const words = normalizedMessage.split(/\s+/);
-      for (const word of words) {
-        if (filter.isProfane(word)) {
-          return {
-            found: true,
-            word: word,
-            type: customWords.map(w => w.toLowerCase()).includes(word.toLowerCase()) ? 'custom' : 'builtin'
-          };
-        }
-      }
-      return { found: true, word: 'detected (leetspeak)', type: 'builtin' };
+    const foundNormalized = findBadWord(normalizedMessage, allWords);
+    if (foundNormalized) {
+      return {
+        found: true,
+        word: foundNormalized,
+        type: customWords.map(w => w.toLowerCase()).includes(foundNormalized.toLowerCase()) ? 'custom' : 'builtin'
+      };
     }
 
     return { found: false, word: null, type: null };
@@ -185,26 +221,18 @@ function checkBadWords(message, customWords = [], ignoredWords = [], useBuiltIn 
  */
 function checkBadWordsAdvanced(message, customWords = []) {
   try {
-    const filter = createCustomFilter(customWords, []);
+    const allWords = [...DEFAULT_BAD_WORDS, ...customWords.map(w => w.toLowerCase())];
 
     // Remove spaces and special characters for bypass detection
     const stripped = message.toLowerCase().replace(/[\s\W_]/g, '');
     const normalized = normalizeLeetspeak(stripped);
 
-    // Check stripped message
-    if (filter.isProfane(stripped)) {
-      return { found: true, word: 'bypass attempt detected' };
-    }
-
-    // Check normalized stripped message
-    if (filter.isProfane(normalized)) {
-      return { found: true, word: 'bypass attempt detected (leetspeak)' };
-    }
-
-    // Check for spaced out words like "f u c k"
-    const spacedOut = message.toLowerCase().replace(/\s+/g, '');
-    if (filter.isProfane(spacedOut)) {
-      return { found: true, word: 'spaced bypass detected' };
+    // Check if any bad word appears in the stripped text
+    for (const badWord of allWords) {
+      const cleanBadWord = badWord.replace(/[\s\W_]/g, '');
+      if (stripped.includes(cleanBadWord) || normalized.includes(cleanBadWord)) {
+        return { found: true, word: badWord };
+      }
     }
 
     return { found: false, word: null };
@@ -239,7 +267,7 @@ function getWordSeverity(word) {
 }
 
 /**
- * Censor/clean a message
+ * Censor/clean a message by replacing bad words with asterisks
  * @param {string} text - Original text
  * @param {string[]} customWords - Custom words to also censor
  * @param {string[]} ignoredWords - Words to not censor
@@ -247,8 +275,20 @@ function getWordSeverity(word) {
  */
 function censorMessage(text, customWords = [], ignoredWords = []) {
   try {
-    const filter = createCustomFilter(customWords, ignoredWords);
-    return filter.clean(text);
+    let result = text;
+    const allWords = [...DEFAULT_BAD_WORDS, ...customWords.map(w => w.toLowerCase())]
+      .filter(word => !ignoredWords.map(w => w.toLowerCase()).includes(word.toLowerCase()));
+
+    for (const badWord of allWords) {
+      const escapedWord = badWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`\\b${escapedWord}\\b`, 'gi');
+      result = result.replace(regex, (match) => {
+        if (match.length <= 2) return '*'.repeat(match.length);
+        return match[0] + '*'.repeat(match.length - 2) + match[match.length - 1];
+      });
+    }
+
+    return result;
   } catch (error) {
     console.error('Error censoring message:', error);
     return text;
@@ -272,15 +312,15 @@ function censorWord(text, badWord) {
  * @returns {string[]}
  */
 function getBuiltInWords() {
-  return [...baseFilter.list, ...ADDITIONAL_BAD_WORDS];
+  return [...DEFAULT_BAD_WORDS];
 }
 
 /**
- * Get safe version of the word list (for display)
+ * Get count of built-in words
  * @returns {number} - Count of built-in words
  */
 function getBuiltInWordCount() {
-  return baseFilter.list.length + ADDITIONAL_BAD_WORDS.length;
+  return DEFAULT_BAD_WORDS.length;
 }
 
 /**
@@ -289,8 +329,8 @@ function getBuiltInWordCount() {
  */
 function testFilter() {
   try {
-    const filter = new Filter();
-    return filter.isProfane('fuck'); // Should return true
+    const result = checkBadWords('fuck');
+    return result.found === true;
   } catch {
     return false;
   }
@@ -305,7 +345,6 @@ export {
   normalizeLeetspeak,
   getBuiltInWords,
   getBuiltInWordCount,
-  createCustomFilter,
   testFilter,
-  ADDITIONAL_BAD_WORDS
+  DEFAULT_BAD_WORDS
 };
