@@ -29,6 +29,18 @@ export default {
       const autoMod = guildConfig.features.autoMod;
       const userId = message.author.id;
 
+      // Helper to safely check if a feature is enabled (handles legacy boolean values)
+      const isFeatureEnabled = (feature) => {
+        if (typeof feature === 'boolean') return feature;
+        return feature?.enabled ?? false;
+      };
+
+      // Helper to safely get feature property with default
+      const getFeatureProp = (feature, prop, defaultVal) => {
+        if (typeof feature === 'boolean' || !feature) return defaultVal;
+        return feature[prop] ?? defaultVal;
+      };
+
       // Check if user has staff role (bypass automod)
       const isStaff = guildConfig.roles.staffRoles?.some(roleId =>
         message.member.roles.cache.has(roleId)
@@ -39,11 +51,11 @@ export default {
       if (isStaff) return;
 
       // === BAD WORDS FILTER ===
-      if (autoMod.badWords.enabled) {
+      if (isFeatureEnabled(autoMod.badWords)) {
         // Get custom words from database (if any)
-        const customWords = autoMod.badWords.words || [];
-        const ignoredWords = autoMod.badWords.ignoredWords || [];
-        const useBuiltIn = autoMod.badWords.useBuiltInList !== false; // Default to true
+        const customWords = getFeatureProp(autoMod.badWords, 'words', []);
+        const ignoredWords = getFeatureProp(autoMod.badWords, 'ignoredWords', []);
+        const useBuiltIn = getFeatureProp(autoMod.badWords, 'useBuiltInList', true);
 
         // First check with word boundaries (prevents false positives like "grass" matching "ass")
         let result = checkBadWords(message.content, customWords, ignoredWords, useBuiltIn);
@@ -57,36 +69,40 @@ export default {
           const severity = getWordSeverity(result.word);
 
           // Determine action based on severity or configured action
-          let action = autoMod.badWords.action;
+          let action = getFeatureProp(autoMod.badWords, 'action', 'delete');
 
           // Auto-escalate for extreme severity if enabled
-          if (autoMod.badWords.autoEscalate && severity === 'extreme') {
+          if (getFeatureProp(autoMod.badWords, 'autoEscalate', true) && severity === 'extreme') {
             action = 'kick'; // Extreme slurs get kicked
           }
 
           await handleViolation(message, client, guildConfig, 'badWords',
-            `Used prohibited word (${severity} severity)`, action, autoMod.badWords.timeoutDuration);
+            `Used prohibited word (${severity} severity)`, action, getFeatureProp(autoMod.badWords, 'timeoutDuration', 300));
           return;
         }
       }
 
       // === ANTI-SPAM ===
-      if (autoMod.antiSpam.enabled) {
+      if (isFeatureEnabled(autoMod.antiSpam)) {
         const now = Date.now();
         const userMessages = messageCache.get(userId) || { messages: [], lastCleanup: now };
 
+        const spamTimeWindow = getFeatureProp(autoMod.antiSpam, 'timeWindow', 5);
+        const spamMessageLimit = getFeatureProp(autoMod.antiSpam, 'messageLimit', 5);
+        const spamAction = getFeatureProp(autoMod.antiSpam, 'action', 'warn');
+
         // Clean old messages
         userMessages.messages = userMessages.messages.filter(
-          timestamp => now - timestamp < autoMod.antiSpam.timeWindow * 1000
+          timestamp => now - timestamp < spamTimeWindow * 1000
         );
 
         userMessages.messages.push(now);
         messageCache.set(userId, userMessages);
 
-        if (userMessages.messages.length > autoMod.antiSpam.messageLimit) {
+        if (userMessages.messages.length > spamMessageLimit) {
           await handleViolation(message, client, guildConfig, 'spam',
-            `Sending messages too fast (${userMessages.messages.length} msgs in ${autoMod.antiSpam.timeWindow}s)`,
-            autoMod.antiSpam.action);
+            `Sending messages too fast (${userMessages.messages.length} msgs in ${spamTimeWindow}s)`,
+            spamAction);
 
           // Clear cache after action
           messageCache.delete(userId);
@@ -95,41 +111,48 @@ export default {
       }
 
       // === ANTI-MASS MENTION ===
-      if (autoMod.antiMassMention.enabled) {
+      if (isFeatureEnabled(autoMod.antiMassMention)) {
         const mentionCount = message.mentions.users.size + message.mentions.roles.size;
+        const mentionLimit = getFeatureProp(autoMod.antiMassMention, 'limit', 5);
+        const mentionAction = getFeatureProp(autoMod.antiMassMention, 'action', 'delete');
 
-        if (mentionCount >= autoMod.antiMassMention.limit) {
+        if (mentionCount >= mentionLimit) {
           await handleViolation(message, client, guildConfig, 'massMention',
             `Mass mentioning (${mentionCount} mentions)`,
-            autoMod.antiMassMention.action);
+            mentionAction);
           return;
         }
       }
 
       // === ANTI-INVITES ===
-      if (autoMod.antiInvites.enabled && inviteRegex.test(message.content)) {
+      if (isFeatureEnabled(autoMod.antiInvites) && inviteRegex.test(message.content)) {
         await handleViolation(message, client, guildConfig, 'invite',
           'Posting Discord invite links',
-          autoMod.antiInvites.action);
+          getFeatureProp(autoMod.antiInvites, 'action', 'delete'));
         return;
       }
 
       // === ANTI-LINKS ===
-      if (autoMod.antiLinks?.enabled) {
+      if (isFeatureEnabled(autoMod.antiLinks)) {
         const links = message.content.match(linkRegex);
         if (links) {
           // Check if any link is not whitelisted
+          const whitelistedDomains = getFeatureProp(autoMod.antiLinks, 'whitelistedDomains', []);
           const hasUnwhitelistedLink = links.some(link => {
-            const domain = new URL(link).hostname;
-            return !autoMod.antiLinks.whitelistedDomains?.some(
-              whitelisted => domain.includes(whitelisted)
-            );
+            try {
+              const domain = new URL(link).hostname;
+              return !whitelistedDomains.some(
+                whitelisted => domain.includes(whitelisted)
+              );
+            } catch {
+              return true; // Invalid URL, treat as unwhitelisted
+            }
           });
 
           if (hasUnwhitelistedLink) {
             await handleViolation(message, client, guildConfig, 'link',
               'Posting unauthorized links',
-              autoMod.antiLinks.action);
+              getFeatureProp(autoMod.antiLinks, 'action', 'delete'));
             return;
           }
         }

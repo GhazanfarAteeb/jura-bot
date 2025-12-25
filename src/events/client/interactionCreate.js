@@ -241,16 +241,24 @@ async function handleAutomodCommand(interaction, guildConfig) {
 
     case 'status':
       const autoMod = guildConfig.features.autoMod;
+      // Helper to safely check if a feature is enabled (handles boolean or object)
+      const isEnabled = (feature) => {
+        if (typeof feature === 'boolean') return feature;
+        return feature?.enabled ?? false;
+      };
+      const getSpamLimit = () => typeof autoMod.antiSpam === 'object' ? autoMod.antiSpam.messageLimit : 5;
+      const getSpamWindow = () => typeof autoMod.antiSpam === 'object' ? autoMod.antiSpam.timeWindow : 5;
+      
       const statusEmbed = await infoEmbed(interaction.guild.id, '🛡️ AutoMod Status',
         `**Overall:** ${autoMod.enabled ? '✅ Enabled' : '❌ Disabled'}\n\n` +
         `**Features:**\n` +
-        `${GLYPHS.DOT} Anti-Spam: ${autoMod.antiSpam.enabled ? '✅' : '❌'} (${autoMod.antiSpam.messageLimit} msgs/${autoMod.antiSpam.timeWindow}s)\n` +
-        `${GLYPHS.DOT} Anti-Raid: ${autoMod.antiRaid?.enabled ? '✅' : '❌'} (${autoMod.antiRaid?.joinThreshold || 10} joins/${autoMod.antiRaid?.timeWindow || 30}s)\n` +
-        `${GLYPHS.DOT} Anti-Nuke: ${autoMod.antiNuke?.enabled ? '✅' : '❌'}\n` +
-        `${GLYPHS.DOT} Anti-Invites: ${autoMod.antiInvites?.enabled ? '✅' : '❌'}\n` +
-        `${GLYPHS.DOT} Anti-Links: ${autoMod.antiLinks?.enabled ? '✅' : '❌'}\n` +
-        `${GLYPHS.DOT} Bad Words: ${autoMod.badWords?.enabled ? '✅' : '❌'} (${autoMod.badWords?.words?.length || 0} words)\n` +
-        `${GLYPHS.DOT} Mass Mention: ${autoMod.antiMassMention?.enabled ? '✅' : '❌'} (limit: ${autoMod.antiMassMention?.limit || 5})`
+        `${GLYPHS.DOT} Anti-Spam: ${isEnabled(autoMod.antiSpam) ? '✅' : '❌'} (${getSpamLimit()} msgs/${getSpamWindow()}s)\n` +
+        `${GLYPHS.DOT} Anti-Raid: ${isEnabled(autoMod.antiRaid) ? '✅' : '❌'} (${autoMod.antiRaid?.joinThreshold || 10} joins/${autoMod.antiRaid?.timeWindow || 30}s)\n` +
+        `${GLYPHS.DOT} Anti-Nuke: ${isEnabled(autoMod.antiNuke) ? '✅' : '❌'}\n` +
+        `${GLYPHS.DOT} Anti-Invites: ${isEnabled(autoMod.antiInvites) ? '✅' : '❌'}\n` +
+        `${GLYPHS.DOT} Anti-Links: ${isEnabled(autoMod.antiLinks) ? '✅' : '❌'}\n` +
+        `${GLYPHS.DOT} Bad Words: ${isEnabled(autoMod.badWords) ? '✅' : '❌'} (${autoMod.badWords?.words?.length || 0} words)\n` +
+        `${GLYPHS.DOT} Mass Mention: ${isEnabled(autoMod.antiMassMention) ? '✅' : '❌'} (limit: ${autoMod.antiMassMention?.limit || 5})`
       );
       await interaction.editReply({ embeds: [statusEmbed] });
       break;
@@ -263,6 +271,16 @@ async function handleAutomodCommand(interaction, guildConfig) {
       const spamEnabled = interaction.options.getBoolean('enabled');
       const messageLimit = interaction.options.getInteger('message_limit');
       const timeWindow = interaction.options.getInteger('time_window');
+
+      // Ensure antiSpam is an object (fix for legacy boolean values)
+      if (!guildConfig.features.autoMod.antiSpam || typeof guildConfig.features.autoMod.antiSpam === 'boolean') {
+        guildConfig.features.autoMod.antiSpam = {
+          enabled: false,
+          messageLimit: 5,
+          timeWindow: 5,
+          action: 'warn'
+        };
+      }
 
       guildConfig.features.autoMod.antiSpam.enabled = spamEnabled;
       if (messageLimit) guildConfig.features.autoMod.antiSpam.messageLimit = messageLimit;

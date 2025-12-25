@@ -58,27 +58,32 @@ const levelSchema = new mongoose.Schema({
 
 // Compound index
 levelSchema.index({ userId: 1, guildId: 1 }, { unique: true });
-levelSchema.index({ guildId: 1, level: -1, xp: -1 }); // For leaderboard
+levelSchema.index({ guildId: 1, totalXP: -1 }); // For leaderboard
 
 // Calculate XP needed for next level
+// Formula: 100 + (level * 50) + (level^1.5 * 25)
+// Level 0->1: 100 XP, Level 1->2: 175 XP, Level 5->6: 428 XP, Level 10->11: 791 XP
 levelSchema.methods.xpForNextLevel = function () {
-  return Math.floor(100 * Math.pow(this.level, 1.5));
+  const level = this.level || 0;
+  return Math.floor(100 + (level * 50) + Math.pow(level, 1.5) * 25);
 };
 
 // Add XP and check for level up
 levelSchema.methods.addXP = function (amount) {
   this.xp += amount;
   this.totalXP += amount;
-  this.dailyXP += amount;
-  this.weeklyXP += amount;
+  this.dailyXP = (this.dailyXP || 0) + amount;
+  this.weeklyXP = (this.weeklyXP || 0) + amount;
 
   const leveledUp = [];
 
-  // Check for level ups
-  while (this.xp >= this.xpForNextLevel()) {
+  // Check for level ups (prevent infinite loop with max 10 level ups per call)
+  let iterations = 0;
+  while (this.xp >= this.xpForNextLevel() && iterations < 10) {
     this.xp -= this.xpForNextLevel();
     this.level++;
     leveledUp.push(this.level);
+    iterations++;
   }
 
   return leveledUp;

@@ -1,10 +1,16 @@
 import Member from '../../models/Member.js';
+import Level from '../../models/Level.js';
+import Guild from '../../models/Guild.js';
+import { EmbedBuilder } from 'discord.js';
+
+// XP cooldown cache to prevent spam
+const xpCooldowns = new Map(); // guildId:userId -> lastXpTime
 
 export default {
     name: 'messageCreate',
     once: false,
     
-    execute: async (message) => {
+    execute: async (message, client) => {
         // Ignore bot messages and DMs
         if (message.author.bot || !message.guild) return;
         
@@ -88,8 +94,187 @@ export default {
             
             await member.save();
             
+            // === XP SYSTEM (Guild-Specific) ===
+            await handleXPGain(message, client, userId, guildId);
+            
         } catch (error) {
             console.error('Error tracking message stats:', error);
         }
     }
 };
+
+/**
+ * Handle XP gain for a message
+ * XP is guild-specific - each server has its own XP/levels
+ */
+async function handleXPGain(message, client, userId, guildId) {
+    try {
+        // Get guild config to check if level system is enabled
+        const guildConfig = await Guild.getGuild(guildId, message.guild.name);
+        
+        // Check if level system is enabled
+        if (!guildConfig.features?.levelSystem?.enabled) return;
+        
+        const levelConfig = guildConfig.features.levelSystem;
+        
+        // Check XP cooldown (default 60 seconds per guild)
+        const cooldownKey = `${guildId}:${userId}`;
+        const now = Date.now();
+        const lastXpTime = xpCooldowns.get(cooldownKey) || 0;
+        const cooldownMs = (levelConfig.xpCooldown || 60) * 1000;
+        
+        if (now - lastXpTime < cooldownMs) {
+            return; // Still on cooldown, no XP
+        }
+        
+        // Update cooldown
+        xpCooldowns.set(cooldownKey, now);
+        
+        // Calculate XP gain (random between min and max)
+        const minXP = levelConfig.minXpPerMessage || 15;
+        const maxXP = levelConfig.maxXpPerMessage || 25;
+        const xpGain = Math.floor(Math.random() * (maxXP - minXP + 1)) + minXP;
+        
+        // Get or create level data for this user in this guild
+        let levelData = await Level.findOne({ userId, guildId });
+        
+        if (!levelData) {
+            levelData = new Level({
+                userId,
+                guildId,
+                username: message.author.username,
+                level: 0,
+                xp: 0,
+                totalXP: 0,
+                messageCount: 0
+            });
+        }
+        
+        // Update username
+        levelData.username = message.author.username;
+        levelData.messageCount = (levelData.messageCount || 0) + 1;
+        levelData.lastMessageTime = new Date();
+        
+        // Add XP and check for level ups
+        const previousLevel = levelData.level;
+        const leveledUp = levelData.addXP(xpGain);
+        
+        await levelData.save();
+        
+        // Announce level up if enabled
+        if (leveledUp.length > 0 && levelConfig.announceLevelUp !== false) {
+            await announceLevelUp(message, client, guildConfig, levelData, leveledUp);
+        }
+        
+        // Check for level rewards
+        if (leveledUp.length > 0 && levelConfig.rewards?.length > 0) {
+            await checkLevelRewards(message, levelData, levelConfig.rewards, leveledUp);
+        }
+        
+    } catch (error) {
+        console.error('Error handling XP gain:', error);
+    }
+}
+
+/**
+ * Announce level up to the channel
+ */
+async function announceLevelUp(message, client, guildConfig, levelData, leveledUp) {
+    try {
+        const newLevel = Math.max(...leveledUp);
+        const levelConfig = guildConfig.features.levelSystem;
+        
+        // Determine which channel to send to
+        let channel = message.channel;
+        if (levelConfig.levelUpChannel) {
+            const levelChannel = message.guild.channels.cache.get(levelConfig.levelUpChannel);
+            if (levelChannel) {
+                channel = levelChannel;
+            }
+        }
+        
+        // Build level up message
+        let levelUpMessage = levelConfig.levelUpMessage || '🎉 {user} leveled up to level {level}!';
+        levelUpMessage = levelUpMessage
+            .replace(/{user}/g, `<@${message.author.id}>`)
+            .replace(/{username}/g, message.author.username)
+            .replace(/{level}/g, newLevel)
+            .replace(/{totalxp}/g, levelData.totalXP.toLocaleString())
+            .replace(/{server}/g, message.guild.name);
+        
+        // Create embed
+        const embed = new EmbedBuilder()
+            .setColor(guildConfig.embedStyle?.color || '#FFD700')
+            .setTitle('🎉 Level Up!')
+            .setDescription(levelUpMessage)
+            .setThumbnail(message.author.displayAvatarURL({ extension: 'png', size: 128 }))
+            .addFields(
+                { name: 'New Level', value: `**${newLevel}**`, inline: true },
+                { name: 'Total XP', value: levelData.totalXP.toLocaleString(), inline: true }
+            )
+            .setFooter({ text: `Keep chatting to level up more!` })
+            .setTimestamp();
+        
+        await channel.send({ 
+            content: `<@${message.author.id}>`,
+            embeds: [embed] 
+        });
+        
+    } catch (error) {
+        console.error('Error announcing level up:', error);
+    }
+}
+
+/**
+ * Check and award level rewards (roles)
+ */
+async function checkLevelRewards(message, levelData, rewards, leveledUp) {
+    try {
+        const newLevel = Math.max(...leveledUp);
+        
+        // Find rewards for levels we just reached
+        const earnedRewards = rewards.filter(reward => {
+            const rewardLevel = parseInt(reward.level);
+            return leveledUp.includes(rewardLevel) || (rewardLevel <= newLevel && 
+                !levelData.rewardsClaimed?.some(r => r.level === rewardLevel));
+        });
+        
+        for (const reward of earnedRewards) {
+            if (reward.roleId) {
+                const role = message.guild.roles.cache.get(reward.roleId);
+                if (role && message.member) {
+                    try {
+                        await message.member.roles.add(role, `Level ${reward.level} reward`);
+                        
+                        // Track claimed reward
+                        if (!levelData.rewardsClaimed) levelData.rewardsClaimed = [];
+                        levelData.rewardsClaimed.push({
+                            level: parseInt(reward.level),
+                            roleId: reward.roleId,
+                            claimedAt: new Date()
+                        });
+                        await levelData.save();
+                        
+                    } catch (error) {
+                        console.error(`Failed to add level reward role: ${error.message}`);
+                    }
+                }
+            }
+        }
+        
+    } catch (error) {
+        console.error('Error checking level rewards:', error);
+    }
+}
+
+// Clean up old cooldown entries every 5 minutes
+setInterval(() => {
+    const now = Date.now();
+    const maxAge = 5 * 60 * 1000; // 5 minutes
+    
+    for (const [key, time] of xpCooldowns) {
+        if (now - time > maxAge) {
+            xpCooldowns.delete(key);
+        }
+    }
+}, 5 * 60 * 1000);

@@ -12,8 +12,9 @@ const COMMANDS_BY_CATEGORY = {
     'loop', 'seek', 'remove', 'clear', 'skipto'],
   community: ['setbirthday', 'birthdays', 'removebirthday', 'birthdaypreference',
     'createevent', 'events', 'joinevent', 'cancelevent', 'giveaway', 'starboard'],
-  info: ['help', 'ping', 'serverinfo', 'userinfo', 'checkuser'],
-  utility: ['rank', 'leaderboard', 'top', 'stats', 'embed', 'embedset', 'embedhelp', 'afk', 'gif', 'meme', 'react', 'remind', 'tempvc']
+  info: ['help', 'ping', 'serverinfo', 'userinfo', 'checkuser', 'roleinfo', 'channelinfo'],
+  utility: ['rank', 'leaderboard', 'top', 'stats', 'embed', 'embedset', 'embedhelp', 'afk', 'gif', 'meme', 'react', 
+    'remind', 'tempvc', 'snipe', 'editsnipe', 'avatar', 'banner', 'steal', 'firstmessage']
 };
 
 const CATEGORY_INFO = {

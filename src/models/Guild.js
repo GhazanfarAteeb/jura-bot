@@ -92,13 +92,14 @@ const guildSchema = new mongoose.Schema({
       channel: String
     },
     levelSystem: {
-      enabled: { type: Boolean, default: false },
-      xpPerMessage: { type: Number, default: 10 },
-      cooldown: { type: Number, default: 60 }, // seconds
+      enabled: { type: Boolean, default: true },
+      minXpPerMessage: { type: Number, default: 15 },
+      maxXpPerMessage: { type: Number, default: 25 },
+      xpCooldown: { type: Number, default: 60 }, // seconds between XP gains
       levelUpChannel: String,
       levelUpMessage: { type: String, default: '🎉 {user} leveled up to level {level}!' },
       announceLevelUp: { type: Boolean, default: true },
-      roleRewards: [{
+      rewards: [{
         level: Number,
         roleId: String
       }]

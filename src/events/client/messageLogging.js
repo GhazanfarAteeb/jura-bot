@@ -1,6 +1,8 @@
 import { Events, EmbedBuilder } from 'discord.js';
 import Guild from '../../models/Guild.js';
 import { GLYPHS } from '../../utils/embeds.js';
+import { cacheDeletedMessage } from '../../commands/utility/snipe.js';
+import { cacheEditedMessage } from '../../commands/utility/editsnipe.js';
 
 export default {
   name: 'messageLogging',
@@ -9,6 +11,10 @@ export default {
     // Message Delete
     client.on(Events.MessageDelete, async (message) => {
       if (!message.guild || message.author?.bot) return;
+      
+      // Cache for snipe command
+      cacheDeletedMessage(message);
+      
       await logMessageDelete(message);
     });
 
@@ -16,6 +22,10 @@ export default {
     client.on(Events.MessageUpdate, async (oldMessage, newMessage) => {
       if (!newMessage.guild || newMessage.author?.bot) return;
       if (oldMessage.content === newMessage.content) return; // Embed updates, etc.
+      
+      // Cache for editsnipe command
+      cacheEditedMessage(oldMessage, newMessage);
+      
       await logMessageEdit(oldMessage, newMessage);
     });
 
