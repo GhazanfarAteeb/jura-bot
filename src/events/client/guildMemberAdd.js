@@ -1,4 +1,4 @@
-import { Events } from 'discord.js';
+import { Events, EmbedBuilder, Collection } from 'discord.js';
 import Guild from '../../models/Guild.js';
 import Member from '../../models/Member.js';
 import { getHoursSince } from '../../utils/helpers.js';
@@ -122,13 +122,16 @@ export default {
       if (guildConfig.features.memberTracking.enabled &&
         susLevel >= guildConfig.features.memberTracking.susThreshold) {
 
-        // Assign sus role
-        if (guildConfig.roles.susRole) {
+        // Assign sus role - check both possible locations for the role ID
+        const susRoleId = guildConfig.roles.susRole || guildConfig.features.memberTracking.susRole;
+        if (susRoleId) {
           try {
-            const role = member.guild.roles.cache.get(guildConfig.roles.susRole);
+            const role = member.guild.roles.cache.get(susRoleId);
             if (role) {
               await member.roles.add(role);
-              console.log(`Assigned sus role to ${member.user.tag}`);
+              console.log(`Assigned sus role to ${member.user.tag} (sus level: ${susLevel})`);
+            } else {
+              console.warn(`Sus role ${susRoleId} not found in guild ${member.guild.name}`);
             }
           } catch (error) {
             console.error('Error assigning sus role:', error.message);
@@ -209,8 +212,100 @@ export default {
         }
       }
 
+      // Send welcome message
+      if (guildConfig.features.welcomeSystem?.enabled) {
+        await sendWelcomeMessage(member, guildConfig);
+      }
+
     } catch (error) {
       console.error('Error in guildMemberAdd event:', error);
     }
   }
 };
+
+/**
+ * Send welcome message to new member
+ */
+async function sendWelcomeMessage(member, guildConfig) {
+  const welcome = guildConfig.features.welcomeSystem;
+
+  try {
+    // Parse the welcome message with variables
+    const welcomeMsg = parseWelcomeMessage(
+      welcome.message || 'Welcome {user} to {server}!',
+      member
+    );
+
+    // Send to channel
+    const channelId = welcome.channel || guildConfig.channels.welcomeChannel;
+    if (channelId) {
+      const channel = member.guild.channels.cache.get(channelId);
+
+      if (channel) {
+        if (welcome.embedEnabled) {
+          const embed = new EmbedBuilder()
+            .setColor(guildConfig.embedStyle?.color || '#5865F2')
+            .setTitle('👋 Welcome!')
+            .setDescription(welcomeMsg)
+            .setThumbnail(member.user.displayAvatarURL({ dynamic: true, size: 256 }))
+            .setFooter({ text: `Member #${member.guild.memberCount}` })
+            .setTimestamp();
+
+          if (welcome.bannerUrl) {
+            embed.setImage(welcome.bannerUrl);
+          }
+
+          await channel.send({ embeds: [embed] });
+        } else {
+          await channel.send(welcomeMsg);
+        }
+      }
+    }
+
+    // Send DM if enabled
+    if (welcome.dmWelcome) {
+      try {
+        const dmMsg = parseWelcomeMessage(
+          welcome.message || 'Welcome to {server}!',
+          member
+        );
+
+        if (welcome.embedEnabled) {
+          const dmEmbed = new EmbedBuilder()
+            .setColor(guildConfig.embedStyle?.color || '#5865F2')
+            .setTitle(`👋 Welcome to ${member.guild.name}!`)
+            .setDescription(dmMsg)
+            .setThumbnail(member.guild.iconURL({ dynamic: true, size: 256 }))
+            .setTimestamp();
+
+          if (welcome.bannerUrl) {
+            dmEmbed.setImage(welcome.bannerUrl);
+          }
+
+          await member.send({ embeds: [dmEmbed] });
+        } else {
+          await member.send(dmMsg);
+        }
+      } catch (dmError) {
+        // User has DMs disabled, that's fine
+        console.log(`Could not send welcome DM to ${member.user.tag}: DMs disabled`);
+      }
+    }
+  } catch (error) {
+    console.error('Error sending welcome message:', error.message);
+  }
+}
+
+/**
+ * Parse welcome message with variables
+ */
+function parseWelcomeMessage(msg, member) {
+  return msg
+    .replace(/{user}/gi, `<@${member.user.id}>`)
+    .replace(/{username}/gi, member.user.username)
+    .replace(/{tag}/gi, member.user.tag)
+    .replace(/{server}/gi, member.guild.name)
+    .replace(/{membercount}/gi, member.guild.memberCount.toString())
+    .replace(/{usercreated}/gi, `<t:${Math.floor(member.user.createdTimestamp / 1000)}:D>`)
+    .replace(/\\n/g, '\n');
+}

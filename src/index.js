@@ -308,6 +308,12 @@ async function initialize() {
     // Load music events
     await loadMusicEvents();
 
+    // Initialize security systems
+    await initializeSecuritySystems(client);
+
+    // Register slash commands
+    await registerSlashCommandsOnReady(client);
+
     // Initialize schedulers
     initializeSchedulers(client);
 
@@ -319,6 +325,40 @@ async function initialize() {
 
     console.log('✅ All systems initialized and ready!');
   });
+}
+
+// Initialize security systems (anti-nuke, anti-raid, message logging)
+async function initializeSecuritySystems(client) {
+  try {
+    // Initialize anti-nuke
+    const antiNuke = await import('./events/client/antiNuke.js');
+    if (antiNuke.default?.initialize) {
+      await antiNuke.default.initialize(client);
+    }
+
+    // Initialize message logging
+    const messageLogging = await import('./events/client/messageLogging.js');
+    if (messageLogging.default?.initialize) {
+      await messageLogging.default.initialize(client);
+    }
+
+    console.log('🛡️ Security systems initialized!');
+  } catch (error) {
+    console.error('Error initializing security systems:', error);
+    logger.error('Failed to initialize security systems', error);
+  }
+}
+
+// Register slash commands
+async function registerSlashCommandsOnReady(client) {
+  try {
+    const { registerSlashCommands } = await import('./utils/slashCommands.js');
+    const commandCount = await registerSlashCommands(client);
+    console.log(`📝 Registered ${commandCount} slash commands`);
+  } catch (error) {
+    console.error('Error registering slash commands:', error);
+    logger.error('Failed to register slash commands', error);
+  }
 }
 
 // Error handling

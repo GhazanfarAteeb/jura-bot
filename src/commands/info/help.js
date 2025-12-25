@@ -3,25 +3,26 @@ import { infoEmbed, errorEmbed, GLYPHS } from '../../utils/embeds.js';
 import { getPrefix } from '../../utils/helpers.js';
 
 const COMMANDS_BY_CATEGORY = {
-  config: ['setup', 'config', 'setprefix', 'setchannel', 'setrole', 'setcoin'],
-  moderation: ['warn', 'kick', 'ban', 'purge', 'userhistory'],
+  admin: ['deployment', 'logs'],
+  config: ['setup', 'config', 'setprefix', 'setchannel', 'setrole', 'setcoin', 'automod', 'welcome'],
+  moderation: ['warn', 'kick', 'ban', 'purge', 'userhistory', 'timeout', 'lockdown'],
   economy: ['daily', 'balance', 'profile', 'level', 'shop', 'inventory', 'setprofile', 'setbackground',
     'adventure', 'rep', 'addcoins', 'coinflip', 'slots', 'dice', 'roulette', 'claim'],
   music: ['play', 'pause', 'resume', 'skip', 'stop', 'queue', 'nowplaying', 'volume', 'shuffle',
-    'loop', 'search', 'seek', 'forward', 'backward', 'move', 'swap', 'remove', 'clear',
-    'previous', 'skipto', 'filters', 'bassboost', 'nightcore', 'vaporwave', '8d', 'karaoke'],
+    'loop', 'seek', 'remove', 'clear', 'skipto'],
   community: ['setbirthday', 'birthdays', 'removebirthday', 'birthdaypreference',
-    'createevent', 'events', 'joinevent', 'cancelevent'],
+    'createevent', 'events', 'joinevent', 'cancelevent', 'giveaway', 'starboard'],
   info: ['help', 'ping', 'serverinfo', 'userinfo', 'checkuser'],
-  utility: ['rank', 'leaderboard', 'top', 'stats', 'embed', 'embedset', 'embedhelp']
+  utility: ['rank', 'leaderboard', 'top', 'stats', 'embed', 'embedset', 'embedhelp', 'afk', 'gif', 'meme', 'react', 'remind', 'tempvc']
 };
 
 const CATEGORY_INFO = {
+  admin: { emoji: '👑', name: 'Admin', description: 'Bot owner/admin commands' },
   config: { emoji: '⚙️', name: 'Configuration', description: 'Server setup and configuration commands' },
   moderation: { emoji: '🛡️', name: 'Moderation', description: 'Moderation and security commands' },
   economy: { emoji: '💰', name: 'Economy', description: 'Coins, profile, and gambling commands' },
-  music: { emoji: '🎵', name: 'Music', description: 'Music playback and audio effects' },
-  community: { emoji: '🎉', name: 'Community', description: 'Birthdays, events, and community features' },
+  music: { emoji: '🎵', name: 'Music', description: 'Music playback and queue controls' },
+  community: { emoji: '🎉', name: 'Community', description: 'Birthdays, events, giveaways, and community features' },
   info: { emoji: 'ℹ️', name: 'Information', description: 'Bot and server information commands' },
   utility: { emoji: '🔧', name: 'Utility', description: 'Useful utility commands' }
 };
@@ -106,6 +107,7 @@ export default {
 
 async function createMainHelpEmbed(message, prefix, client) {
   const totalCommands = client.commands.size;
+  const categoryCount = Object.keys(CATEGORY_INFO).length;
 
   const embed = new EmbedBuilder()
     .setColor('#5865F2')
@@ -115,7 +117,7 @@ async function createMainHelpEmbed(message, prefix, client) {
     })
     .setTitle(`${GLYPHS.SPARKLE} Command Categories`)
     .setDescription(
-      `Multi-purpose Discord bot with **${totalCommands} commands** across 7 categories.\n\n` +
+      `Multi-purpose Discord bot with **${totalCommands} commands** across ${categoryCount} categories.\n\n` +
       `**Current Prefix:** \`${prefix}\`\n` +
       `**Quick Help:** \`${prefix}help <command>\` for detailed info\n\n` +
       `**Select a category below to explore commands!**`

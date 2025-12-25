@@ -1,0 +1,244 @@
+import { PermissionFlagsBits, SlashCommandBuilder } from 'discord.js';
+import Member from '../../models/Member.js';
+import ModLog from '../../models/ModLog.js';
+import Guild from '../../models/Guild.js';
+import { successEmbed, errorEmbed, modLogEmbed, GLYPHS } from '../../utils/embeds.js';
+
+export default {
+  name: 'timeout',
+  description: 'Timeout a member (prevent them from sending messages)',
+  usage: '<@user|user_id> <duration> [reason]',
+  aliases: ['mute', 'to'],
+  permissions: {
+    user: PermissionFlagsBits.ModerateMembers,
+    client: PermissionFlagsBits.ModerateMembers
+  },
+  cooldown: 3,
+
+  // Slash command data
+  slashCommand: true,
+  data: new SlashCommandBuilder()
+    .setName('timeout')
+    .setDescription('Timeout a member (prevent them from sending messages)')
+    .addUserOption(option =>
+      option.setName('user')
+        .setDescription('The user to timeout')
+        .setRequired(true))
+    .addStringOption(option =>
+      option.setName('duration')
+        .setDescription('Duration (e.g., 5m, 1h, 1d, 1w)')
+        .setRequired(true))
+    .addStringOption(option =>
+      option.setName('reason')
+        .setDescription('Reason for the timeout')
+        .setRequired(false))
+    .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
+
+  async execute(message, args) {
+    if (!args[0]) {
+      const embed = await errorEmbed(message.guild.id, 'Invalid Usage',
+        `${GLYPHS.ARROW_RIGHT} Usage: \`timeout <@user|user_id> <duration> [reason]\`\n\n` +
+        `**Duration Examples:**\n` +
+        `${GLYPHS.DOT} \`5m\` - 5 minutes\n` +
+        `${GLYPHS.DOT} \`1h\` - 1 hour\n` +
+        `${GLYPHS.DOT} \`1d\` - 1 day\n` +
+        `${GLYPHS.DOT} \`1w\` - 1 week\n` +
+        `${GLYPHS.DOT} \`off\` - Remove timeout`
+      );
+      return message.reply({ embeds: [embed] });
+    }
+
+    const userId = args[0].replace(/[<@!>]/g, '');
+    const targetMember = await message.guild.members.fetch(userId).catch(() => null);
+
+    if (!targetMember) {
+      const embed = await errorEmbed(message.guild.id, 'User Not Found',
+        `${GLYPHS.ERROR} Could not find that user.`
+      );
+      return message.reply({ embeds: [embed] });
+    }
+
+    if (!targetMember.moderatable) {
+      const embed = await errorEmbed(message.guild.id, 'Cannot Timeout',
+        `${GLYPHS.ERROR} I cannot timeout this user. They may have a higher role than me.`
+      );
+      return message.reply({ embeds: [embed] });
+    }
+
+    if (targetMember.roles.highest.position >= message.member.roles.highest.position) {
+      const embed = await errorEmbed(message.guild.id, 'Permission Denied',
+        `${GLYPHS.LOCK} You cannot timeout someone with equal or higher role than you.`
+      );
+      return message.reply({ embeds: [embed] });
+    }
+
+    const durationArg = args[1]?.toLowerCase();
+
+    // Handle timeout removal
+    if (durationArg === 'off' || durationArg === 'remove' || durationArg === 'clear') {
+      if (!targetMember.isCommunicationDisabled()) {
+        const embed = await errorEmbed(message.guild.id, 'Not Timed Out',
+          `${GLYPHS.ERROR} This user is not currently timed out.`
+        );
+        return message.reply({ embeds: [embed] });
+      }
+
+      await targetMember.timeout(null, `Timeout removed by ${message.author.tag}`);
+
+      const embed = await successEmbed(message.guild.id, 'Timeout Removed',
+        `${GLYPHS.SUCCESS} Removed timeout from ${targetMember.user.tag}`
+      );
+      return message.reply({ embeds: [embed] });
+    }
+
+    if (!durationArg) {
+      const embed = await errorEmbed(message.guild.id, 'Missing Duration',
+        `${GLYPHS.ERROR} Please specify a duration.\n\n` +
+        `Examples: \`5m\`, \`1h\`, \`1d\`, \`1w\`, \`off\``
+      );
+      return message.reply({ embeds: [embed] });
+    }
+
+    // Parse duration
+    const durationMs = parseDuration(durationArg);
+
+    if (!durationMs) {
+      const embed = await errorEmbed(message.guild.id, 'Invalid Duration',
+        `${GLYPHS.ERROR} Invalid duration format.\n\n` +
+        `**Valid formats:**\n` +
+        `${GLYPHS.DOT} \`5m\` - 5 minutes\n` +
+        `${GLYPHS.DOT} \`1h\` - 1 hour\n` +
+        `${GLYPHS.DOT} \`1d\` - 1 day\n` +
+        `${GLYPHS.DOT} \`1w\` - 1 week`
+      );
+      return message.reply({ embeds: [embed] });
+    }
+
+    // Max timeout is 28 days (Discord limit)
+    const maxTimeout = 28 * 24 * 60 * 60 * 1000;
+    if (durationMs > maxTimeout) {
+      const embed = await errorEmbed(message.guild.id, 'Duration Too Long',
+        `${GLYPHS.ERROR} Maximum timeout duration is 28 days.`
+      );
+      return message.reply({ embeds: [embed] });
+    }
+
+    const reason = args.slice(2).join(' ') || 'No reason provided';
+
+    // Update member data
+    let memberData = await Member.findOne({
+      userId: targetMember.user.id,
+      guildId: message.guild.id
+    });
+
+    if (!memberData) {
+      memberData = await Member.create({
+        userId: targetMember.user.id,
+        guildId: message.guild.id,
+        username: targetMember.user.username,
+        discriminator: targetMember.user.discriminator || '0',
+        accountCreatedAt: targetMember.user.createdAt
+      });
+    }
+
+    memberData.mutes.push({
+      moderatorId: message.author.id,
+      reason,
+      duration: durationMs / 1000,
+      timestamp: new Date(),
+      expiresAt: new Date(Date.now() + durationMs)
+    });
+    await memberData.save();
+
+    // Apply timeout
+    await targetMember.timeout(durationMs, reason);
+
+    // Create mod log
+    const caseNumber = await ModLog.getNextCaseNumber(message.guild.id);
+    const guildConfig = await Guild.getGuild(message.guild.id);
+
+    const logData = {
+      caseNumber,
+      targetTag: targetMember.user.tag,
+      targetId: targetMember.user.id,
+      moderatorTag: message.author.tag,
+      reason,
+      duration: formatDuration(durationMs)
+    };
+
+    // Save to database
+    await ModLog.create({
+      guildId: message.guild.id,
+      caseNumber,
+      action: 'timeout',
+      moderatorId: message.author.id,
+      moderatorTag: message.author.tag,
+      targetId: targetMember.user.id,
+      targetTag: targetMember.user.tag,
+      reason,
+      duration: durationMs / 1000
+    });
+
+    // Send to mod log channel
+    if (guildConfig.channels.modLog) {
+      const modLogChannel = message.guild.channels.cache.get(guildConfig.channels.modLog);
+      if (modLogChannel) {
+        const logEmbed = await modLogEmbed(message.guild.id, 'timeout', logData);
+        await modLogChannel.send({ embeds: [logEmbed] });
+      }
+    }
+
+    // DM the user
+    try {
+      const dmEmbed = await errorEmbed(message.guild.id, `Timed Out in ${message.guild.name}`,
+        `${GLYPHS.MUTE} You have been timed out.\n\n` +
+        `**Duration:** ${formatDuration(durationMs)}\n` +
+        `**Reason:** ${reason}\n` +
+        `**Moderator:** ${message.author.tag}\n\n` +
+        `You will be able to interact again <t:${Math.floor((Date.now() + durationMs) / 1000)}:R>`
+      );
+      await targetMember.send({ embeds: [dmEmbed] });
+    } catch (error) {
+      // User has DMs disabled
+    }
+
+    const embed = await successEmbed(message.guild.id, 'Member Timed Out',
+      `${GLYPHS.MUTE} **${targetMember.user.tag}** has been timed out.\n\n` +
+      `**Duration:** ${formatDuration(durationMs)}\n` +
+      `**Reason:** ${reason}\n` +
+      `**Case:** #${caseNumber}\n` +
+      `**Expires:** <t:${Math.floor((Date.now() + durationMs) / 1000)}:R>`
+    );
+    message.reply({ embeds: [embed] });
+  }
+};
+
+function parseDuration(str) {
+  const match = str.match(/^(\d+)(s|m|h|d|w)$/i);
+  if (!match) return null;
+
+  const [, num, unit] = match;
+  const multipliers = {
+    s: 1000,
+    m: 60 * 1000,
+    h: 60 * 60 * 1000,
+    d: 24 * 60 * 60 * 1000,
+    w: 7 * 24 * 60 * 60 * 1000
+  };
+
+  return parseInt(num) * multipliers[unit.toLowerCase()];
+}
+
+function formatDuration(ms) {
+  const seconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+  const weeks = Math.floor(days / 7);
+
+  if (weeks > 0) return `${weeks} week${weeks !== 1 ? 's' : ''}`;
+  if (days > 0) return `${days} day${days !== 1 ? 's' : ''}`;
+  if (hours > 0) return `${hours} hour${hours !== 1 ? 's' : ''}`;
+  if (minutes > 0) return `${minutes} minute${minutes !== 1 ? 's' : ''}`;
+  return `${seconds} second${seconds !== 1 ? 's' : ''}`;
+}
