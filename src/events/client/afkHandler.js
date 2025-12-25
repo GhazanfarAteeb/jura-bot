@@ -6,6 +6,9 @@ import { infoEmbed, GLYPHS } from '../../utils/embeds.js';
 // URL regex pattern
 const urlRegex = /(https?:\/\/[^\s]+)/gi;
 
+// Image URL pattern - handles query strings like ?size=4096
+const imageUrlPattern = /\.(png|jpg|jpeg|gif|webp)($|\?)/i;
+
 export default {
   name: Events.MessageCreate,
   async execute(message, client) {
@@ -50,12 +53,18 @@ export default {
 
         const embed = await infoEmbed(message.guild.id, 'Welcome Back!', welcomeBackMsg);
 
-        const reply = await message.reply({ embeds: [embed] });
+        // Use channel.send instead of reply in case message was deleted by automod
+        const reply = await message.channel.send({ 
+          content: `<@${message.author.id}>`,
+          embeds: [embed] 
+        }).catch(() => null);
 
         // Delete after 10 seconds
-        setTimeout(() => {
-          reply.delete().catch(() => { });
-        }, 10000);
+        if (reply) {
+          setTimeout(() => {
+            reply.delete().catch(() => { });
+          }, 10000);
+        }
 
         // Try to remove [AFK] from nickname
         try {
@@ -134,12 +143,13 @@ export default {
               });
 
               // If it's an image link, set it as the embed image
-              const imageLink = links.find(link => link.match(/\.(png|jpg|jpeg|gif|webp)$/i));
+              const imageLink = links.find(link => imageUrlPattern.test(link));
               if (imageLink) {
                 embed.setImage(imageLink);
               }
 
-              await message.reply({ embeds: [embed] });
+              // Use channel.send instead of reply in case message was deleted by automod
+              await message.channel.send({ embeds: [embed] }).catch(() => {});
             } else {
               // No links - simple text response
               const embed = new EmbedBuilder()
@@ -147,7 +157,8 @@ export default {
                 .setDescription(`💤 **${user.username}** is AFK: ${reason}\n⏰ *AFK for ${duration}*`)
                 .setTimestamp();
 
-              await message.reply({ embeds: [embed] });
+              // Use channel.send instead of reply in case message was deleted by automod
+              await message.channel.send({ embeds: [embed] }).catch(() => {});
             }
           }
         }
@@ -186,6 +197,6 @@ function getLinkTitle(link, index, totalLinks) {
   if (link.includes('instagram.com')) return '📷 Instagram';
   if (link.includes('tiktok.com')) return '🎵 TikTok';
   if (link.includes('spotify.com')) return '🎧 Spotify';
-  if (link.match(/\.(png|jpg|jpeg|gif|webp)$/i)) return '🖼️ Image';
+  if (imageUrlPattern.test(link)) return '🖼️ Image';
   return `🔗 Link ${totalLinks > 1 ? index + 1 : ''}`;
 }

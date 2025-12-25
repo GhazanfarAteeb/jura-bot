@@ -205,6 +205,18 @@ export default {
       guild.features.levelSystem.levelUpChannel = levelUpChannel.id;
       guild.features.levelSystem.enabled = true;
 
+      // Enable all AutoMod features
+      guild.features.autoMod.enabled = true;
+      guild.features.autoMod.antiSpam.enabled = true;
+      guild.features.autoMod.antiRaid.enabled = true;
+      guild.features.autoMod.antiNuke.enabled = true;
+      guild.features.autoMod.antiMassMention.enabled = true;
+      guild.features.autoMod.badWords.enabled = true;
+      guild.features.autoMod.badWords.useBuiltInList = true;
+      guild.features.autoMod.antiRoleSpam.enabled = true;
+      guild.features.autoMod.antiInvites.enabled = true;
+      guild.features.autoMod.antiLinks.enabled = false; // Keep disabled by default as it's too restrictive
+
       // Welcome channel
       let welcomeChannel = message.guild.channels.cache.find(c => c.name === 'welcome');
       if (!welcomeChannel) {
@@ -240,8 +252,10 @@ export default {
         `Thank you for choosing RAPHAEL!\n\n` +
         `${GLYPHS.SHIELD} All moderation and security features are now active.\n` +
         `${GLYPHS.RADAR} Monitoring for suspicious activity has begun.\n` +
-        `${GLYPHS.EGG} New account detection is enabled.\n\n` +
-        `Use \`${guild.prefix}help\` to see all available commands.`
+        `${GLYPHS.EGG} New account detection is enabled.\n` +
+        `🛡️ AutoMod is active (bad words, spam, invites, mass mentions).\n\n` +
+        `Use \`${guild.prefix}help\` to see all available commands.\n` +
+        `Use \`${guild.prefix}automod\` to configure AutoMod settings.`
       );
 
       await modLogChannel.send({ embeds: [welcomeEmbed] });

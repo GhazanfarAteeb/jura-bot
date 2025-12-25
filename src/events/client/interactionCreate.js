@@ -251,7 +251,7 @@ async function handleAutomodCommand(interaction, guildConfig) {
       };
       const getSpamLimit = () => typeof autoMod.antiSpam === 'object' ? autoMod.antiSpam.messageLimit : 5;
       const getSpamWindow = () => typeof autoMod.antiSpam === 'object' ? autoMod.antiSpam.timeWindow : 5;
-      
+
       const statusEmbed = await infoEmbed(interaction.guild.id, '🛡️ AutoMod Status',
         `**Overall:** ${autoMod.enabled ? '✅ Enabled' : '❌ Disabled'}\n\n` +
         `**Features:**\n` +
@@ -701,11 +701,11 @@ async function handleSlashcommandsCommand(interaction, guildConfig) {
 async function handleRefreshCacheCommand(interaction, client, guildConfig) {
   const { successEmbed, infoEmbed, GLYPHS } = await import('../../utils/embeds.js');
   const Guild = (await import('../../models/Guild.js')).default;
-  
+
   const cacheType = interaction.options.getString('type') || 'all';
   const guild = interaction.guild;
   const refreshed = [];
-  
+
   try {
     // Refresh Guild Settings from database
     if (cacheType === 'all' || cacheType === 'guild') {
@@ -717,25 +717,25 @@ async function handleRefreshCacheCommand(interaction, client, guildConfig) {
       }
       refreshed.push('✅ Guild Settings');
     }
-    
+
     // Refresh Members cache
     if (cacheType === 'all' || cacheType === 'members') {
       await guild.members.fetch();
       refreshed.push(`✅ Members (${guild.memberCount} cached)`);
     }
-    
+
     // Refresh Roles cache
     if (cacheType === 'all' || cacheType === 'roles') {
       await guild.roles.fetch();
       refreshed.push(`✅ Roles (${guild.roles.cache.size} cached)`);
     }
-    
+
     // Refresh Channels cache
     if (cacheType === 'all' || cacheType === 'channels') {
       await guild.channels.fetch();
       refreshed.push(`✅ Channels (${guild.channels.cache.size} cached)`);
     }
-    
+
     // Refresh Invites cache
     if (cacheType === 'all' || cacheType === 'invites') {
       try {
@@ -746,15 +746,15 @@ async function handleRefreshCacheCommand(interaction, client, guildConfig) {
         refreshed.push('⚠️ Invites (no permission)');
       }
     }
-    
+
     const embed = await successEmbed(interaction.guild.id, '🔄 Cache Refreshed',
       `Successfully refreshed cache for **${guild.name}**\n\n` +
       `**Refreshed:**\n${refreshed.join('\n')}\n\n` +
       `**Refreshed at:** <t:${Math.floor(Date.now() / 1000)}:F>`
     );
-    
+
     await interaction.editReply({ embeds: [embed] });
-    
+
   } catch (error) {
     console.error('Error refreshing cache:', error);
     const { errorEmbed } = await import('../../utils/embeds.js');

@@ -6,6 +6,9 @@ import { successEmbed, infoEmbed, GLYPHS } from '../../utils/embeds.js';
 // URL regex pattern
 const urlRegex = /(https?:\/\/[^\s]+)/gi;
 
+// Image URL pattern - handles query strings like ?size=4096
+const imageUrlPattern = /\.(png|jpg|jpeg|gif|webp)($|\?)/i;
+
 export default {
   name: 'afk',
   description: 'Set your AFK status with an optional reason',
@@ -52,14 +55,14 @@ export default {
         else if (link.includes('instagram.com')) linkTitle = '📷 Instagram';
         else if (link.includes('tiktok.com')) linkTitle = '🎵 TikTok';
         else if (link.includes('spotify.com')) linkTitle = '🎧 Spotify';
-        else if (link.match(/\.(png|jpg|jpeg|gif|webp)$/i)) linkTitle = '🖼️ Image';
+        else if (imageUrlPattern.test(link)) linkTitle = '🖼️ Image';
         else linkTitle = `🔗 Link ${links.length > 1 ? index + 1 : ''}`;
 
         embed.addFields({ name: linkTitle, value: link, inline: false });
       });
 
       // If it's an image link, set it as the embed image
-      const imageLink = links.find(link => link.match(/\.(png|jpg|jpeg|gif|webp)$/i));
+      const imageLink = links.find(link => imageUrlPattern.test(link));
       if (imageLink) {
         embed.setImage(imageLink);
       }
