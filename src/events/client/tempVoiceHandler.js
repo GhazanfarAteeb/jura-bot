@@ -102,6 +102,7 @@ async function createTempChannel(voiceState, guildConfig) {
 
 async function checkAndDeleteTempChannel(voiceState) {
   const channelId = voiceState.channelId;
+  const leavingUserId = voiceState.member?.id;
 
   // Check if this was a temp channel
   const tempData = await TempVoice.findByChannel(channelId);
@@ -124,6 +125,77 @@ async function checkAndDeleteTempChannel(voiceState) {
     } catch (error) {
       console.error('Error deleting temp voice channel:', error);
     }
+    return;
+  }
+
+  // If the owner left but there are still members, transfer ownership
+  if (leavingUserId === tempData.ownerId && channel.members.size > 0) {
+    await transferOwnership(channel, tempData, guild);
+  }
+}
+
+async function transferOwnership(channel, tempData, guild) {
+  try {
+    // Get remaining members (excluding bots)
+    const remainingMembers = channel.members.filter(m => !m.user.bot);
+    
+    if (remainingMembers.size === 0) {
+      // Only bots left, delete the channel
+      await TempVoice.findByIdAndDelete(tempData._id);
+      await channel.delete('Temp voice channel - no human members left');
+      console.log(`Deleted temp voice channel (only bots): ${tempData.name}`);
+      return;
+    }
+
+    // Pick the first remaining member as new owner
+    const newOwner = remainingMembers.first();
+    const oldOwnerId = tempData.ownerId;
+
+    // Update channel name to reflect new owner
+    const guildConfig = await Guild.getGuild(guild.id, guild.name);
+    const tempVoice = guildConfig.features.tempVoice;
+    const newChannelName = (tempVoice?.defaultName || "{user}'s Channel")
+      .replace(/{user}/gi, newOwner.displayName)
+      .replace(/{username}/gi, newOwner.user.username)
+      .replace(/{tag}/gi, newOwner.user.tag);
+
+    // Update channel permissions - remove old owner's special perms, add new owner's
+    await channel.permissionOverwrites.edit(newOwner.id, {
+      ViewChannel: true,
+      Connect: true,
+      ManageChannels: true,
+      MuteMembers: true,
+      DeafenMembers: true,
+      MoveMembers: true
+    });
+
+    // Remove old owner's special permissions (if they're not in the channel)
+    try {
+      await channel.permissionOverwrites.delete(oldOwnerId);
+    } catch (e) {
+      // Old owner permission might not exist, ignore
+    }
+
+    // Rename the channel
+    await channel.setName(newChannelName);
+
+    // Update database
+    tempData.ownerId = newOwner.id;
+    tempData.name = newChannelName;
+    await tempData.save();
+
+    console.log(`Transferred temp voice channel ownership from ${oldOwnerId} to ${newOwner.user.tag}`);
+
+    // Notify the new owner (optional - send DM)
+    try {
+      await newOwner.send({
+        content: `🎙️ You are now the owner of **${newChannelName}** in **${guild.name}**!\n\nUse \`!tempvc\` commands to manage your channel.`
+      });
+    } catch (e) {
+      // DM might be disabled, ignore
+    }
+  } catch (error) {
+    console.error('Error transferring temp voice channel ownership:', error);
   }
 }
 

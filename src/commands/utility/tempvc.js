@@ -116,6 +116,19 @@ export default {
       case 'transfer':
         return transferOwnership(message, args.slice(1));
 
+      case 'hide':
+        return hideChannel(message, true);
+
+      case 'unhide':
+      case 'show':
+        return hideChannel(message, false);
+
+      case 'bitrate':
+        return setBitrate(message, args[1]);
+
+      case 'info':
+        return channelInfo(message);
+
       default:
         return showStatus(message, guildConfig);
     }
@@ -151,7 +164,11 @@ async function showStatus(message, guildConfig) {
     `${GLYPHS.DOT} \`tempvc reject @user\` - Deny user from joining\n` +
     `${GLYPHS.DOT} \`tempvc kick @user\` - Kick user from channel\n` +
     `${GLYPHS.DOT} \`tempvc transfer @user\` - Transfer ownership\n` +
-    `${GLYPHS.DOT} \`tempvc claim\` - Claim abandoned channel`
+    `${GLYPHS.DOT} \`tempvc claim\` - Claim abandoned channel\n` +
+    `${GLYPHS.DOT} \`tempvc hide\` - Hide channel from everyone\n` +
+    `${GLYPHS.DOT} \`tempvc unhide\` - Show channel to everyone\n` +
+    `${GLYPHS.DOT} \`tempvc bitrate <8-96>\` - Set audio bitrate\n` +
+    `${GLYPHS.DOT} \`tempvc info\` - Show channel info`
   );
 
   return message.reply({ embeds: [embed] });
@@ -436,6 +453,13 @@ async function transferOwnership(message, args) {
     });
   }
 
+  if (target.user.bot) {
+    return message.reply({
+      embeds: [await errorEmbed(message.guild.id, 'Invalid User',
+        'You cannot transfer ownership to a bot.')]
+    });
+  }
+
   const channel = await getUserTempChannel(message);
   if (!channel) {
     return message.reply({
@@ -451,13 +475,122 @@ async function transferOwnership(message, args) {
     });
   }
 
+  // Remove old owner's special permissions
+  try {
+    await channel.permissionOverwrites.delete(message.author.id);
+  } catch (e) {
+    // Ignore if permission doesn't exist
+  }
+
+  // Grant new owner full permissions
+  await channel.permissionOverwrites.edit(target.id, {
+    ViewChannel: true,
+    Connect: true,
+    ManageChannels: true,
+    MuteMembers: true,
+    DeafenMembers: true,
+    MoveMembers: true
+  });
+
+  // Rename channel to new owner
+  const guildConfig = await Guild.getGuild(message.guild.id, message.guild.name);
+  const tempVoice = guildConfig.features.tempVoice;
+  const newName = (tempVoice?.defaultName || "{user}'s Channel")
+    .replace(/{user}/gi, target.displayName)
+    .replace(/{username}/gi, target.user.username)
+    .replace(/{tag}/gi, target.user.tag);
+
+  await channel.setName(newName);
+
   await TempVoice.findOneAndUpdate(
     { channelId: channel.id },
-    { ownerId: target.id }
+    { ownerId: target.id, name: newName }
   );
 
   return message.reply({
     embeds: [await successEmbed(message.guild.id, 'Ownership Transferred',
-      `${GLYPHS.SUCCESS} ${target} is now the owner of this channel!`)]
+      `${GLYPHS.SUCCESS} ${target} is now the owner of **${newName}**!\nChannel has been renamed and permissions updated.`)]
   });
+}
+
+async function hideChannel(message, hide) {
+  const channel = await getUserTempChannel(message);
+  if (!channel) {
+    return message.reply({
+      embeds: [await errorEmbed(message.guild.id, 'No Channel',
+        'You don\'t own a temporary voice channel.')]
+    });
+  }
+
+  await channel.permissionOverwrites.edit(message.guild.id, {
+    ViewChannel: hide ? false : null
+  });
+
+  return message.reply({
+    embeds: [await successEmbed(message.guild.id, hide ? 'Channel Hidden' : 'Channel Visible',
+      `${GLYPHS.SUCCESS} Your channel is now **${hide ? 'hidden' : 'visible'}** to everyone.`)]
+  });
+}
+
+async function setBitrate(message, bitrateStr) {
+  const bitrate = parseInt(bitrateStr);
+  if (isNaN(bitrate) || bitrate < 8 || bitrate > 96) {
+    return message.reply({
+      embeds: [await errorEmbed(message.guild.id, 'Invalid Bitrate',
+        'Bitrate must be between 8 and 96 kbps.')]
+    });
+  }
+
+  const channel = await getUserTempChannel(message);
+  if (!channel) {
+    return message.reply({
+      embeds: [await errorEmbed(message.guild.id, 'No Channel',
+        'You don\'t own a temporary voice channel.')]
+    });
+  }
+
+  await channel.setBitrate(bitrate * 1000); // Convert to bps
+
+  return message.reply({
+    embeds: [await successEmbed(message.guild.id, 'Bitrate Set',
+      `${GLYPHS.SUCCESS} Channel bitrate set to **${bitrate} kbps**`)]
+  });
+}
+
+async function channelInfo(message) {
+  const channel = await getUserTempChannel(message);
+  const voiceChannel = message.member.voice.channel;
+  
+  // Try to get info for the channel user is in if they don't own one
+  let targetChannel = channel || voiceChannel;
+  if (!targetChannel) {
+    return message.reply({
+      embeds: [await errorEmbed(message.guild.id, 'No Channel',
+        'You are not in a temporary voice channel.')]
+    });
+  }
+
+  const tempData = await TempVoice.findByChannel(targetChannel.id);
+  if (!tempData) {
+    return message.reply({
+      embeds: [await errorEmbed(message.guild.id, 'Not a Temp Channel',
+        'This is not a temporary voice channel.')]
+    });
+  }
+
+  const owner = await message.guild.members.fetch(tempData.ownerId).catch(() => null);
+  const memberCount = targetChannel.members.size;
+  const userLimit = targetChannel.userLimit || 'Unlimited';
+  const bitrate = Math.floor(targetChannel.bitrate / 1000);
+
+  const embed = await infoEmbed(message.guild.id, '🎙️ Channel Info',
+    `**Channel:** ${targetChannel.name}\n` +
+    `**Owner:** ${owner ? owner.user.tag : 'Unknown'}\n` +
+    `**Members:** ${memberCount}/${userLimit}\n` +
+    `**Bitrate:** ${bitrate} kbps\n` +
+    `**Locked:** ${tempData.locked ? 'Yes 🔒' : 'No 🔓'}\n` +
+    `**Created:** <t:${Math.floor(tempData.createdAt.getTime() / 1000)}:R>`
+  );
+
+  return message.reply({ embeds: [embed] });
 }
