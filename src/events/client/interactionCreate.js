@@ -282,8 +282,14 @@ async function handleAutomodCommand(interaction, guildConfig) {
       const joinThreshold = interaction.options.getInteger('join_threshold');
       const raidAction = interaction.options.getString('action');
 
-      if (!guildConfig.features.autoMod.antiRaid) {
-        guildConfig.features.autoMod.antiRaid = {};
+      // Ensure antiRaid is an object (fix for legacy boolean values)
+      if (!guildConfig.features.autoMod.antiRaid || typeof guildConfig.features.autoMod.antiRaid === 'boolean') {
+        guildConfig.features.autoMod.antiRaid = {
+          enabled: false,
+          joinThreshold: 10,
+          timeWindow: 30,
+          action: 'lockdown'
+        };
       }
 
       guildConfig.features.autoMod.antiRaid.enabled = raidEnabled;
@@ -303,8 +309,18 @@ async function handleAutomodCommand(interaction, guildConfig) {
       const nukeEnabled = interaction.options.getBoolean('enabled');
       const nukeAction = interaction.options.getString('action');
 
-      if (!guildConfig.features.autoMod.antiNuke) {
-        guildConfig.features.autoMod.antiNuke = {};
+      // Ensure antiNuke is an object (fix for legacy boolean values)
+      if (!guildConfig.features.autoMod.antiNuke || typeof guildConfig.features.autoMod.antiNuke === 'boolean') {
+        guildConfig.features.autoMod.antiNuke = {
+          enabled: false,
+          banThreshold: 5,
+          kickThreshold: 5,
+          roleDeleteThreshold: 3,
+          channelDeleteThreshold: 3,
+          timeWindow: 60,
+          action: 'removeRoles',
+          whitelistedUsers: []
+        };
       }
 
       guildConfig.features.autoMod.antiNuke.enabled = nukeEnabled;
