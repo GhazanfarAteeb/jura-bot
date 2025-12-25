@@ -4,8 +4,9 @@
  * Supports custom words from database and leetspeak detection
  */
 
-import BadWordsFilter from 'bad-words';
-const Filter = BadWordsFilter.default || BadWordsFilter;
+import { createRequire } from 'module';
+const required = createRequire(import.meta.url);
+const Filter = required('bad-words');
 
 // Create the base filter instance with the built-in word list
 const baseFilter = new Filter();

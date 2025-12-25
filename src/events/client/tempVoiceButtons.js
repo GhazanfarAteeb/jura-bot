@@ -59,7 +59,7 @@ async function handleTempVCButton(interaction) {
     const channel = await getUserTempChannel(interaction);
     if (!channel) {
       return interaction.reply({
-        content: '❌ **Attention!**\nYou are not in a temporary voice channel from TempVoice. Join a Creator Channel first:\n🔊 <#creator_channel>',
+        content: '❌ **Attention!**\nYou are not in a temporary voice channel. Join a **➕ Join to Create** channel first!',
         ephemeral: true
       });
     }
@@ -103,7 +103,7 @@ async function handleTempVCButton(interaction) {
 async function showNameModal(interaction) {
   const modal = new ModalBuilder()
     .setCustomId('tempvc_modal_name')
-    .setTitle('🎙️ TempVoice - Rename Channel');
+    .setTitle('🎙️ Raphael - Rename Channel');
 
   const nameInput = new TextInputBuilder()
     .setCustomId('channel_name')
@@ -123,7 +123,7 @@ async function showNameModal(interaction) {
 async function showLimitModal(interaction) {
   const modal = new ModalBuilder()
     .setCustomId('tempvc_modal_limit')
-    .setTitle('🎙️ TempVoice - Set User Limit');
+    .setTitle('🎙️ Raphael - Set User Limit');
 
   const limitInput = new TextInputBuilder()
     .setCustomId('user_limit')
@@ -143,7 +143,7 @@ async function showLimitModal(interaction) {
 async function showBitrateModal(interaction) {
   const modal = new ModalBuilder()
     .setCustomId('tempvc_modal_bitrate')
-    .setTitle('🎙️ TempVoice - Set Bitrate');
+    .setTitle('🎙️ Raphael - Set Bitrate');
 
   const bitrateInput = new TextInputBuilder()
     .setCustomId('bitrate')
@@ -182,7 +182,7 @@ async function togglePrivacy(interaction) {
     .setDescription(newLockState 
       ? 'Your channel is now **locked**. Only permitted users can join.'
       : 'Your channel is now **unlocked**. Anyone can join.')
-    .setFooter({ text: 'TempVoice' });
+    .setFooter({ text: 'Raphael Temp Voice' });
 
   return interaction.reply({ embeds: [embed], ephemeral: true });
 }
@@ -208,7 +208,7 @@ async function toggleHide(interaction) {
     .setDescription(newHideState 
       ? 'Your channel is now **hidden** from the channel list.'
       : 'Your channel is now **visible** to everyone.')
-    .setFooter({ text: 'TempVoice' });
+    .setFooter({ text: 'Raphael Temp Voice' });
 
   return interaction.reply({ embeds: [embed], ephemeral: true });
 }
@@ -249,7 +249,7 @@ async function sendInvite(interaction) {
     .setColor(0x5865F2)
     .setTitle('📨 Channel Invite Created')
     .setDescription(`Here's your invite link:\n${invite.url}\n\n*Expires in 1 hour or after 10 uses*`)
-    .setFooter({ text: 'TempVoice' });
+    .setFooter({ text: 'Raphael Temp Voice' });
 
   return interaction.reply({ embeds: [embed], ephemeral: true });
 }
@@ -306,7 +306,7 @@ async function claimChannel(interaction) {
     .setColor(0x57F287)
     .setTitle('👑 Channel Claimed!')
     .setDescription(`You are now the owner of **${voiceChannel.name}**!`)
-    .setFooter({ text: 'TempVoice' });
+    .setFooter({ text: 'Raphael Temp Voice' });
 
   return interaction.reply({ embeds: [embed], ephemeral: true });
 }
@@ -374,7 +374,7 @@ async function showChannelInfo(interaction) {
       { name: '🔒 Locked', value: tempData.locked ? 'Yes' : 'No', inline: true },
       { name: '⏰ Created', value: `<t:${Math.floor(tempData.createdAt.getTime() / 1000)}:R>`, inline: true }
     )
-    .setFooter({ text: 'TempVoice' });
+    .setFooter({ text: 'Raphael Temp Voice' });
 
   return interaction.reply({ embeds: [embed], ephemeral: true });
 }
@@ -414,7 +414,7 @@ async function handleTempVCModal(interaction) {
         .setColor(0x57F287)
         .setTitle('✏️ Channel Renamed')
         .setDescription(`Your channel has been renamed to **${newName}**`)
-        .setFooter({ text: 'TempVoice' });
+        .setFooter({ text: 'Raphael Temp Voice' });
 
       return interaction.reply({ embeds: [embed], ephemeral: true });
     }
@@ -437,7 +437,7 @@ async function handleTempVCModal(interaction) {
         .setColor(0x57F287)
         .setTitle('👥 User Limit Set')
         .setDescription(`User limit set to: **${limit || 'Unlimited'}**`)
-        .setFooter({ text: 'TempVoice' });
+        .setFooter({ text: 'Raphael Temp Voice' });
 
       return interaction.reply({ embeds: [embed], ephemeral: true });
     }
@@ -459,7 +459,7 @@ async function handleTempVCModal(interaction) {
         .setColor(0x57F287)
         .setTitle('🎵 Bitrate Set')
         .setDescription(`Audio bitrate set to: **${bitrate} kbps**`)
-        .setFooter({ text: 'TempVoice' });
+        .setFooter({ text: 'Raphael Temp Voice' });
 
       return interaction.reply({ embeds: [embed], ephemeral: true });
     }
@@ -510,7 +510,7 @@ async function handleTempVCUserSelect(interaction) {
         .setColor(0x57F287)
         .setTitle('✅ User Permitted')
         .setDescription(`${targetUser} can now join your channel.`)
-        .setFooter({ text: 'TempVoice' });
+        .setFooter({ text: 'Raphael Temp Voice' });
 
       return interaction.update({ content: null, embeds: [embed], components: [] });
     }
@@ -530,7 +530,7 @@ async function handleTempVCUserSelect(interaction) {
         .setColor(0xED4245)
         .setTitle('❌ User Rejected')
         .setDescription(`${targetUser} is now blocked from your channel.`)
-        .setFooter({ text: 'TempVoice' });
+        .setFooter({ text: 'Raphael Temp Voice' });
 
       return interaction.update({ content: null, embeds: [embed], components: [] });
     }
@@ -550,7 +550,7 @@ async function handleTempVCUserSelect(interaction) {
         .setColor(0xED4245)
         .setTitle('👢 User Kicked')
         .setDescription(`${targetUser} has been kicked from your channel.`)
-        .setFooter({ text: 'TempVoice' });
+        .setFooter({ text: 'Raphael Temp Voice' });
 
       return interaction.update({ content: null, embeds: [embed], components: [] });
     }
@@ -598,7 +598,7 @@ async function handleTempVCUserSelect(interaction) {
         .setColor(0x57F287)
         .setTitle('🔄 Ownership Transferred')
         .setDescription(`${targetUser} is now the owner of **${newName}**!`)
-        .setFooter({ text: 'TempVoice' });
+        .setFooter({ text: 'Raphael Temp Voice' });
 
       // Notify new owner
       try {
