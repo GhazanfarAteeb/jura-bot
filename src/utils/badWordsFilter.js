@@ -5,11 +5,11 @@
  */
 
 import BadWordsNext from 'bad-words-next';
-import en from 'bad-words-next/lib/en.js';
-import es from 'bad-words-next/lib/es.js';
-import fr from 'bad-words-next/lib/fr.js';
-import de from 'bad-words-next/lib/de.js';
-import ru from 'bad-words-next/lib/ru.js';
+import en from 'bad-words-next/lib/en';
+import es from 'bad-words-next/lib/es';
+import fr from 'bad-words-next/lib/fr';
+import de from 'bad-words-next/lib/de';
+import ru from 'bad-words-next/lib/ru';
 
 // Initialize bad words filter with multiple language dictionaries
 let badWordsFilter = null;
