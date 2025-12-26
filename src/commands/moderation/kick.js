@@ -72,10 +72,23 @@ export default {
     }
 
     if (targetMember.roles.highest.position >= message.member.roles.highest.position) {
-      const embed = await errorEmbed(message.guild.id, 'Permission Denied',
-        `${GLYPHS.LOCK} You cannot kick someone with equal or higher role than you.`
-      );
-      return message.reply({ embeds: [embed] });
+      // Allow server owner and administrators to bypass role hierarchy check
+      const isOwner = message.author.id === message.guild.ownerId;
+      if (!isOwner && !message.member.permissions.has(PermissionFlagsBits.Administrator)) {
+        logger.info(`[Kick Debug] Moderator role hierarchy check failed`);
+        logger.info(`  Moderator: ${message.author.tag} - highest role: ${message.member.roles.highest.name} (pos: ${message.member.roles.highest.position})`);
+        logger.info(`  Target: ${targetMember.user.tag} - highest role: ${targetMember.roles.highest.name} (pos: ${targetMember.roles.highest.position})`);
+        logger.info(`  Moderator is Owner: ${isOwner}`);
+        
+        const embed = await errorEmbed(message.guild.id, 'Permission Denied',
+          `${GLYPHS.LOCK} You cannot kick someone with equal or higher role than you.\n\n` +
+          `**Debug Info:**\n` +
+          `${GLYPHS.DOT} Your highest role: \`${message.member.roles.highest.name}\` (pos: ${message.member.roles.highest.position})\n` +
+          `${GLYPHS.DOT} Their highest role: \`${targetMember.roles.highest.name}\` (pos: ${targetMember.roles.highest.position})\n\n` +
+          `*Server owner and Administrators can bypass this check.*`
+        );
+        return message.reply({ embeds: [embed] });
+      }
     }
 
     const reason = args.slice(1).join(' ') || 'No reason provided';
