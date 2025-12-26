@@ -27,6 +27,13 @@ export default {
             // Get guild config
             const guildConfig = await Guild.getGuild(guild.id);
             
+            // Check for color roles first
+            if (guildConfig.settings?.colorRoles?.enabled && 
+                guildConfig.settings.colorRoles.messageId === message.id) {
+                return this.handleColorRole(reaction, user, guild, guildConfig, emoji, message);
+            }
+            
+            // Then check regular reaction roles
             if (!guildConfig.settings?.reactionRoles?.enabled) return;
             
             // Find the message in our reaction roles config
@@ -88,6 +95,81 @@ export default {
 
         } catch (error) {
             console.error('Reaction role add error:', error);
+        }
+    },
+
+    async handleColorRole(reaction, user, guild, guildConfig, emoji, message) {
+        try {
+            const colorRolesConfig = guildConfig.settings.colorRoles;
+            const emojiName = emoji.name;
+            
+            // Find the role for this emoji
+            let roleConfig = colorRolesConfig.roles?.find(r => r.emoji === emojiName);
+            
+            // If no roles map, try to find by role name prefix
+            if (!roleConfig) {
+                // Map emoji to color name
+                const emojiToColor = {
+                    '❤️': 'Red', '🧡': 'Orange', '💛': 'Yellow', '💚': 'Green',
+                    '💙': 'Blue', '💜': 'Purple', '🩷': 'Pink', '🤍': 'White',
+                    '🖤': 'Black', '🩵': 'Cyan', '🤎': 'Brown', '💗': 'Hot Pink'
+                };
+                
+                const colorName = emojiToColor[emojiName];
+                if (!colorName) return;
+                
+                const role = guild.roles.cache.find(r => r.name === `🎨 ${colorName}`);
+                if (!role) return;
+                
+                roleConfig = { emoji: emojiName, roleId: role.id, name: colorName };
+            }
+            
+            // Get the role
+            const role = guild.roles.cache.get(roleConfig.roleId);
+            if (!role) return;
+
+            // Get the member
+            const member = await guild.members.fetch(user.id).catch(() => null);
+            if (!member) return;
+
+            // Remove other color roles first (only one color at a time)
+            const allColorRoles = guild.roles.cache.filter(r => r.name.startsWith('🎨 '));
+            const memberColorRoles = member.roles.cache.filter(r => r.name.startsWith('🎨 '));
+            
+            for (const [roleId, existingRole] of memberColorRoles) {
+                if (roleId !== role.id) {
+                    try {
+                        await member.roles.remove(existingRole, 'Color role change');
+                        
+                        // Remove their reaction from the old color
+                        const emojiToColor = {
+                            'Red': '❤️', 'Orange': '🧡', 'Yellow': '💛', 'Green': '💚',
+                            'Blue': '💙', 'Purple': '💜', 'Pink': '🩷', 'White': '🤍',
+                            'Black': '🖤', 'Cyan': '🩵', 'Brown': '🤎', 'Hot Pink': '💗'
+                        };
+                        
+                        const colorName = existingRole.name.replace('🎨 ', '');
+                        const oldEmoji = emojiToColor[colorName];
+                        
+                        if (oldEmoji) {
+                            const oldReaction = message.reactions.cache.find(r => r.emoji.name === oldEmoji);
+                            if (oldReaction) {
+                                await oldReaction.users.remove(user.id).catch(() => {});
+                            }
+                        }
+                    } catch (err) {
+                        console.error('Failed to remove old color role:', err);
+                    }
+                }
+            }
+
+            // Add the new role
+            if (!member.roles.cache.has(role.id)) {
+                await member.roles.add(role, 'Color role selection');
+            }
+
+        } catch (error) {
+            console.error('Color role add error:', error);
         }
     }
 };

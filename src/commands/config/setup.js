@@ -478,7 +478,13 @@ export default {
         { emoji: '💗', name: 'Hot Pink', color: '#FF69B4' }
       ];
 
-      // Create color roles
+      // Get the bot's highest role position to place color roles just below it
+      const botMember = message.guild.members.cache.get(message.client.user.id);
+      const botHighestRole = botMember.roles.highest;
+      const targetPosition = Math.max(1, botHighestRole.position - 1);
+
+      // Create color roles at a higher position so colors are visible
+      const colorRolesMap = [];
       for (const colorData of colorOptions) {
         let colorRole = message.guild.roles.cache.find(r => r.name === `🎨 ${colorData.name}`);
         if (!colorRole) {
@@ -487,12 +493,23 @@ export default {
               name: `🎨 ${colorData.name}`,
               color: colorData.color,
               permissions: [],
+              position: targetPosition,
               reason: 'RAPHAEL Setup - Color roles'
             });
             createdItems.push(`Role: ${colorRole}`);
           } catch (err) {
             console.error(`Failed to create color role ${colorData.name}:`, err);
           }
+        } else {
+          // Move existing role to higher position
+          try {
+            await colorRole.setPosition(targetPosition);
+          } catch (err) {
+            console.error(`Failed to move color role ${colorData.name}:`, err);
+          }
+        }
+        if (colorRole) {
+          colorRolesMap.push({ emoji: colorData.emoji, roleId: colorRole.id, name: colorData.name });
         }
       }
 
@@ -549,7 +566,8 @@ export default {
         channelId: colorChannel.id,
         messageId: colorMessage.id,
         allowMultiple: false,
-        rolePrefix: '🎨 '
+        rolePrefix: '🎨 ',
+        roles: colorRolesMap
       };
       guild.markModified('settings.colorRoles');
 
