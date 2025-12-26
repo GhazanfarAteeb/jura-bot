@@ -3,6 +3,7 @@ import Member from '../../models/Member.js';
 import ModLog from '../../models/ModLog.js';
 import Guild from '../../models/Guild.js';
 import { successEmbed, errorEmbed, modLogEmbed, GLYPHS } from '../../utils/embeds.js';
+import logger from '../../utils/logger.js';
 
 export default {
   name: 'kick',
@@ -24,7 +25,8 @@ export default {
     }
 
     const userId = args[0].replace(/[<@!>]/g, '');
-    const targetMember = await message.guild.members.fetch(userId).catch(() => null);
+    // Force fetch to bypass cache and get fresh member data
+    const targetMember = await message.guild.members.fetch({ user: userId, force: true }).catch(() => null);
 
     if (!targetMember) {
       const embed = await errorEmbed(message.guild.id, 'User Not Found',
@@ -33,9 +35,38 @@ export default {
       return message.reply({ embeds: [embed] });
     }
 
+    // Check if trying to kick the server owner
+    if (targetMember.id === message.guild.ownerId) {
+      const embed = await errorEmbed(message.guild.id, 'Cannot Kick Owner',
+        `${GLYPHS.ERROR} Cannot kick the server owner. The owner is immune to all moderation actions.`
+      );
+      return message.reply({ embeds: [embed] });
+    }
+
     if (!targetMember.kickable) {
+      const botMember = message.guild.members.me;
+      const isRoleIssue = targetMember.roles.highest.position >= botMember.roles.highest.position;
+      
+      // Log detailed permission info for debugging
+      logger.warn(`[Kick Debug] Cannot kick user in ${message.guild.name}`);
+      logger.warn(`  Target: ${targetMember.user.tag} (${targetMember.id})`);
+      logger.warn(`  Target highest role: ${targetMember.roles.highest.name} (pos: ${targetMember.roles.highest.position})`);
+      logger.warn(`  Target role permissions: ${targetMember.roles.highest.permissions.bitfield}`);
+      logger.warn(`  Bot highest role: ${botMember.roles.highest.name} (pos: ${botMember.roles.highest.position})`);
+      logger.warn(`  Bot role permissions: ${botMember.roles.highest.permissions.bitfield}`);
+      logger.warn(`  Bot has Admin: ${botMember.permissions.has('Administrator')}`);
+      logger.warn(`  Bot has KickMembers: ${botMember.permissions.has('KickMembers')}`);
+      logger.warn(`  Target is kickable: ${targetMember.kickable}`);
+      logger.warn(`  All target roles: ${targetMember.roles.cache.map(r => `${r.name}(${r.position})`).join(', ')}`);
+      logger.warn(`  All bot roles: ${botMember.roles.cache.map(r => `${r.name}(${r.position})`).join(', ')}`);
+      
       const embed = await errorEmbed(message.guild.id, 'Cannot Kick',
-        `${GLYPHS.ERROR} I cannot kick this user. They may have a higher role than me.`
+        `${GLYPHS.ERROR} I cannot kick this user.\n\n` +
+        `**Debug Info:**\n` +
+        `${GLYPHS.DOT} My highest role: \`${botMember.roles.highest.name}\` (pos: ${botMember.roles.highest.position})\n` +
+        `${GLYPHS.DOT} Their highest role: \`${targetMember.roles.highest.name}\` (pos: ${targetMember.roles.highest.position})\n` +
+        `${GLYPHS.DOT} Bot has Admin: ${botMember.permissions.has('Administrator') ? 'Yes' : 'No'}\n\n` +
+        `**Issue:** ${isRoleIssue ? 'Their role is higher or equal to mine.' : 'Unknown - check Discord permissions.'}`
       );
       return message.reply({ embeds: [embed] });
     }

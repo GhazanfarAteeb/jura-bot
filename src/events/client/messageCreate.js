@@ -166,7 +166,7 @@ class MessageCreate extends Event {
               const msg = await safeReply({
                 content: "You need to have the DJ role to use this command.",
               });
-              if (msg) setTimeout(() => msg.delete().catch(() => {}), 5000);
+              if (msg) setTimeout(() => msg.delete().catch(() => { }), 5000);
               return;
             }
           }

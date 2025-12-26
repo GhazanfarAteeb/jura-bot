@@ -1,5 +1,6 @@
 import { PermissionFlagsBits } from 'discord.js';
 import { successEmbed, errorEmbed, GLYPHS } from '../../utils/embeds.js';
+import logger from '../../utils/logger.js';
 
 export default {
   name: 'purge',
@@ -22,9 +23,11 @@ export default {
 
     const amount = parseInt(args[0]);
 
-    if (isNaN(amount) || amount < 1 || amount > 100) {
+    // Discord max is 100, but we fetch amount+1 to include the command message
+    // So limit to 99 to avoid exceeding 100
+    if (isNaN(amount) || amount < 1 || amount > 99) {
       const embed = await errorEmbed(message.guild.id, 'Invalid Amount',
-        `${GLYPHS.WARNING} Please provide a number between 1 and 100.`
+        `${GLYPHS.WARNING} Please provide a number between 1 and 99.`
       );
       return message.reply({ embeds: [embed] });
     }
@@ -33,7 +36,7 @@ export default {
     const targetUser = args[1] ? args[1].replace(/[<@!>]/g, '') : null;
 
     try {
-      // Fetch messages
+      // Fetch messages (amount + 1 to include the command message)
       const messages = await message.channel.messages.fetch({ limit: amount + 1 });
 
       // Filter messages
@@ -61,7 +64,7 @@ export default {
       setTimeout(() => reply.delete().catch(() => { }), 5000);
 
     } catch (error) {
-      console.error('Error purging messages:', error);
+      logger.error('Error purging messages:', error);
       const embed = await errorEmbed(message.guild.id, 'Purge Failed',
         `${GLYPHS.ERROR} Failed to delete messages. They may be too old (>14 days).`
       );

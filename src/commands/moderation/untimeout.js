@@ -2,6 +2,7 @@ import { PermissionFlagsBits, SlashCommandBuilder } from 'discord.js';
 import ModLog from '../../models/ModLog.js';
 import Guild from '../../models/Guild.js';
 import { successEmbed, errorEmbed, modLogEmbed, GLYPHS } from '../../utils/embeds.js';
+import logger from '../../utils/logger.js';
 
 export default {
   name: 'untimeout',
@@ -41,7 +42,8 @@ export default {
     }
 
     const userId = args[0].replace(/[<@!>]/g, '');
-    const targetMember = await message.guild.members.fetch(userId).catch(() => null);
+    // Force fetch to bypass cache and get fresh member data
+    const targetMember = await message.guild.members.fetch({ user: userId, force: true }).catch(() => null);
 
     if (!targetMember) {
       const embed = await errorEmbed(message.guild.id, 'User Not Found',
@@ -50,9 +52,38 @@ export default {
       return message.reply({ embeds: [embed] });
     }
 
+    // Check if target is the server owner (owners can't be timed out anyway)
+    if (targetMember.id === message.guild.ownerId) {
+      const embed = await errorEmbed(message.guild.id, 'Cannot Modify Owner',
+        `${GLYPHS.ERROR} The server owner cannot be timed out or have timeouts removed.`
+      );
+      return message.reply({ embeds: [embed] });
+    }
+
     if (!targetMember.moderatable) {
+      const botMember = message.guild.members.me;
+      const isRoleIssue = targetMember.roles.highest.position >= botMember.roles.highest.position;
+      
+      // Log detailed permission info for debugging
+      logger.warn(`[Untimeout Debug] Cannot modify user in ${message.guild.name}`);
+      logger.warn(`  Target: ${targetMember.user.tag} (${targetMember.id})`);
+      logger.warn(`  Target highest role: ${targetMember.roles.highest.name} (pos: ${targetMember.roles.highest.position})`);
+      logger.warn(`  Target role permissions: ${targetMember.roles.highest.permissions.bitfield}`);
+      logger.warn(`  Bot highest role: ${botMember.roles.highest.name} (pos: ${botMember.roles.highest.position})`);
+      logger.warn(`  Bot role permissions: ${botMember.roles.highest.permissions.bitfield}`);
+      logger.warn(`  Bot has Admin: ${botMember.permissions.has('Administrator')}`);
+      logger.warn(`  Bot has ModerateMembers: ${botMember.permissions.has('ModerateMembers')}`);
+      logger.warn(`  Target is moderatable: ${targetMember.moderatable}`);
+      logger.warn(`  All target roles: ${targetMember.roles.cache.map(r => `${r.name}(${r.position})`).join(', ')}`);
+      logger.warn(`  All bot roles: ${botMember.roles.cache.map(r => `${r.name}(${r.position})`).join(', ')}`);
+      
       const embed = await errorEmbed(message.guild.id, 'Cannot Modify',
-        `${GLYPHS.ERROR} I cannot modify this user. They may have a higher role than me.`
+        `${GLYPHS.ERROR} I cannot modify this user.\n\n` +
+        `**Debug Info:**\n` +
+        `${GLYPHS.DOT} My highest role: \`${botMember.roles.highest.name}\` (pos: ${botMember.roles.highest.position})\n` +
+        `${GLYPHS.DOT} Their highest role: \`${targetMember.roles.highest.name}\` (pos: ${targetMember.roles.highest.position})\n` +
+        `${GLYPHS.DOT} Bot has Admin: ${botMember.permissions.has('Administrator') ? 'Yes' : 'No'}\n\n` +
+        `**Issue:** ${isRoleIssue ? 'Their role is higher or equal to mine.' : 'Unknown - check Discord permissions.'}`
       );
       return message.reply({ embeds: [embed] });
     }
@@ -89,7 +120,7 @@ export default {
             reason: reason
           });
           logEmbed.setColor(0x57F287); // Green for removal
-          await logChannel.send({ embeds: [logEmbed] }).catch(() => {});
+          await logChannel.send({ embeds: [logEmbed] }).catch(() => { });
         }
       }
 
@@ -134,7 +165,11 @@ export default {
 
   // Slash command execution
   async executeSlash(interaction) {
-    const targetMember = interaction.options.getMember('user');
+    // Force fetch member for fresh data
+    const userId = interaction.options.getUser('user')?.id;
+    const targetMember = userId 
+      ? await interaction.guild.members.fetch({ user: userId, force: true }).catch(() => null)
+      : null;
     const reason = interaction.options.getString('reason') || 'No reason provided';
 
     if (!targetMember) {
@@ -145,8 +180,12 @@ export default {
     }
 
     if (!targetMember.moderatable) {
+      const botMember = interaction.guild.members.me;
       const embed = await errorEmbed(interaction.guild.id, 'Cannot Modify',
-        `${GLYPHS.ERROR} I cannot modify this user. They may have a higher role than me.`
+        `${GLYPHS.ERROR} I cannot modify this user.\n\n` +
+        `**Possible reasons:**\n` +
+        `${GLYPHS.DOT} My highest role: \`${botMember.roles.highest.name}\` (pos: ${botMember.roles.highest.position})\n` +
+        `${GLYPHS.DOT} Their highest role: \`${targetMember.roles.highest.name}\` (pos: ${targetMember.roles.highest.position})`
       );
       return interaction.reply({ embeds: [embed], ephemeral: true });
     }
@@ -181,7 +220,7 @@ export default {
             reason: reason
           });
           logEmbed.setColor(0x57F287);
-          await logChannel.send({ embeds: [logEmbed] }).catch(() => {});
+          await logChannel.send({ embeds: [logEmbed] }).catch(() => { });
         }
       }
 

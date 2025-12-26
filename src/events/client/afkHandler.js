@@ -50,10 +50,10 @@ export default {
               const truncatedContent = mention.messageContent.length > 40
                 ? mention.messageContent.slice(0, 40) + '...'
                 : mention.messageContent;
-              
+
               // Create jump link to the message
               const jumpLink = `https://discord.com/channels/${message.guild.id}/${mention.channelId}/${mention.messageId}`;
-              
+
               welcomeBackMsg += `\n${GLYPHS.DOT} **${mention.username}** in <#${mention.channelId}> (${timeAgo} ago)`;
               welcomeBackMsg += `\n  └ "${truncatedContent}" [⤴️ Jump](${jumpLink})`;
             });
@@ -101,7 +101,7 @@ export default {
         };
 
         // Send message
-        const sentMessage = await message.channel.send({ 
+        const sentMessage = await message.channel.send({
           content: `<@${message.author.id}>`,
           embeds: [embed],
           components: [buildButtons(0)]
@@ -147,7 +147,7 @@ export default {
                 .setEmoji('✖️')
                 .setStyle(ButtonStyle.Secondary)
             );
-            sentMessage.edit({ components: [disabledRow] }).catch(() => {});
+            sentMessage.edit({ components: [disabledRow] }).catch(() => { });
           });
         }
 
@@ -235,7 +235,7 @@ export default {
               }
 
               // Use channel.send instead of reply in case message was deleted by automod
-              await message.channel.send({ embeds: [embed] }).catch(() => {});
+              await message.channel.send({ embeds: [embed] }).catch(() => { });
             } else {
               // No links - simple text response
               const embed = new EmbedBuilder()
@@ -244,7 +244,7 @@ export default {
                 .setTimestamp();
 
               // Use channel.send instead of reply in case message was deleted by automod
-              await message.channel.send({ embeds: [embed] }).catch(() => {});
+              await message.channel.send({ embeds: [embed] }).catch(() => { });
             }
           }
         }

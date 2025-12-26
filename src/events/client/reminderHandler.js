@@ -57,7 +57,7 @@ export async function checkReminders(client) {
             console.log(`[Reminders] Could not send to channel, trying DM`);
           }
         }
-        
+
         if (!sent) {
           // Fall back to DM
           try {

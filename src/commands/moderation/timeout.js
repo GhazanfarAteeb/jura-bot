@@ -3,6 +3,7 @@ import Member from '../../models/Member.js';
 import ModLog from '../../models/ModLog.js';
 import Guild from '../../models/Guild.js';
 import { successEmbed, errorEmbed, modLogEmbed, GLYPHS } from '../../utils/embeds.js';
+import logger from '../../utils/logger.js';
 
 export default {
   name: 'timeout',
@@ -49,7 +50,8 @@ export default {
     }
 
     const userId = args[0].replace(/[<@!>]/g, '');
-    const targetMember = await message.guild.members.fetch(userId).catch(() => null);
+    // Force fetch to bypass cache and get fresh member data
+    const targetMember = await message.guild.members.fetch({ user: userId, force: true }).catch(() => null);
 
     if (!targetMember) {
       const embed = await errorEmbed(message.guild.id, 'User Not Found',
@@ -58,9 +60,43 @@ export default {
       return message.reply({ embeds: [embed] });
     }
 
+    // Check if target is the server owner
+    if (targetMember.id === message.guild.ownerId) {
+      const embed = await errorEmbed(message.guild.id, 'Cannot Timeout Owner',
+        `${GLYPHS.ERROR} Cannot timeout the server owner. The owner is immune to all moderation actions.`
+      );
+      return message.reply({ embeds: [embed] });
+    }
+
     if (!targetMember.moderatable) {
+      // Get the bot's highest role for better error message
+      const botMember = message.guild.members.me;
+      const botHighestRole = botMember.roles.highest;
+      const targetHighestRole = targetMember.roles.highest;
+      
+      // Check role hierarchy
+      const isRoleIssue = targetHighestRole.position >= botHighestRole.position;
+      
+      // Log detailed permission info for debugging
+      logger.warn(`[Timeout Debug] Cannot moderate user in ${message.guild.name}`);
+      logger.warn(`  Target: ${targetMember.user.tag} (${targetMember.id})`);
+      logger.warn(`  Target highest role: ${targetHighestRole.name} (pos: ${targetHighestRole.position})`);
+      logger.warn(`  Target role permissions: ${targetHighestRole.permissions.bitfield}`);
+      logger.warn(`  Bot highest role: ${botHighestRole.name} (pos: ${botHighestRole.position})`);
+      logger.warn(`  Bot role permissions: ${botHighestRole.permissions.bitfield}`);
+      logger.warn(`  Bot has Admin: ${botMember.permissions.has('Administrator')}`);
+      logger.warn(`  Bot has ModerateMembers: ${botMember.permissions.has('ModerateMembers')}`);
+      logger.warn(`  Target is moderatable: ${targetMember.moderatable}`);
+      logger.warn(`  All target roles: ${targetMember.roles.cache.map(r => `${r.name}(${r.position})`).join(', ')}`);
+      logger.warn(`  All bot roles: ${botMember.roles.cache.map(r => `${r.name}(${r.position})`).join(', ')}`);
+      
       const embed = await errorEmbed(message.guild.id, 'Cannot Timeout',
-        `${GLYPHS.ERROR} I cannot timeout this user. They may have a higher role than me.`
+        `${GLYPHS.ERROR} I cannot timeout this user.\n\n` +
+        `**Debug Info:**\n` +
+        `${GLYPHS.DOT} My highest role: \`${botHighestRole.name}\` (position: ${botHighestRole.position})\n` +
+        `${GLYPHS.DOT} Their highest role: \`${targetHighestRole.name}\` (position: ${targetHighestRole.position})\n` +
+        `${GLYPHS.DOT} Bot has Admin: ${botMember.permissions.has('Administrator') ? 'Yes' : 'No'}\n\n` +
+        `**Issue:** ${isRoleIssue ? 'Their role is higher or equal to mine. Move my role above theirs in Server Settings → Roles.' : 'Unknown - check Discord permissions.'}`
       );
       return message.reply({ embeds: [embed] });
     }

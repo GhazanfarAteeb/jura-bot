@@ -254,7 +254,7 @@ export function startGiveawayChecker(client) {
 export function startReminderChecker(client) {
   // Run immediately on startup to catch any missed reminders
   checkReminders(client).catch(err => console.error('Initial reminder check failed:', err));
-  
+
   setInterval(async () => {
     try {
       await checkReminders(client);

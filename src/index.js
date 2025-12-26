@@ -45,20 +45,30 @@ const client = new Client({
     large_threshold: 50 // Only request offline members for servers < 50 members
   },
   sweepers: {
-    // Sweep messages every 5 minutes to free memory
+    // Sweep messages every 2 minutes to free memory (reduced for fresher data)
     messages: {
-      interval: 300,
-      lifetime: 900
+      interval: 120,
+      lifetime: 300
     },
-    // Sweep users not in voice channels
+    // Sweep users every 10 minutes (reduced from 1 hour)
     users: {
-      interval: 3600,
+      interval: 600,
       filter: () => user => {
         // Keep bot users and users in voice channels
         if (user.bot) return false;
         return !client.guilds.cache.some(guild =>
           guild.members.cache.get(user.id)?.voice?.channel
         );
+      }
+    },
+    // Sweep guild members every 10 minutes
+    guildMembers: {
+      interval: 600,
+      filter: () => member => {
+        // Keep members in voice channels and recent interactions
+        if (member.user.bot) return false;
+        if (member.voice?.channel) return false;
+        return true;
       }
     }
   }
