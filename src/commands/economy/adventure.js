@@ -54,18 +54,19 @@ export default {
             await economy.save();
             
             const coinEmoji = guildConfig.economy?.coinEmoji || '💰';
+            const coinName = guildConfig.economy?.coinName || 'coins';
             const oldBalance = economy.coins - reward;
             
             const embed = new EmbedBuilder()
                 .setColor('#00ff00')
                 .setTitle('🗺️ Adventure Complete!')
                 .setDescription(
-                    `You ${adventureMsg}! As a reward, **${npc}** gave you **${reward}** ${coinEmoji}.\n\n` +
-                    `**New Balance:** ${economy.coins} ${coinEmoji}\n` +
+                    `You ${adventureMsg}! As a reward, **${npc}** gave you **${reward}** ${coinEmoji} ${coinName}.\n\n` +
+                    `**New Balance:** ${economy.coins} ${coinEmoji} ${coinName}\n` +
                     `**Adventures Completed:** ${economy.adventuresCompleted}`
                 )
                 .setThumbnail(message.author.displayAvatarURL({ extension: 'png' }))
-                .setFooter({ text: `Previous balance: ${oldBalance} ${coinEmoji}` })
+                .setFooter({ text: `Previous balance: ${oldBalance} ${coinEmoji} ${coinName}` })
                 .setTimestamp();
             
             await message.reply({ embeds: [embed] });

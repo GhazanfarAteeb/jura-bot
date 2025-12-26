@@ -55,13 +55,14 @@ export default {
             const guildConfig = await Guild.getGuild(guildId);
             const economy = await Economy.getEconomy(userId, guildId);
             const coinEmoji = guildConfig.economy?.coinEmoji || '💰';
+            const coinName = guildConfig.economy?.coinName || 'coins';
             
             if (economy.coins < amount) {
                 return message.reply({
                     embeds: [await errorEmbed(guildId, 
-                        `You don't have enough ${coinEmoji}!\n\n` +
-                        `**Your Balance:** ${economy.coins} ${coinEmoji}\n` +
-                        `**Bet Amount:** ${amount} ${coinEmoji}`
+                        `You don't have enough ${coinEmoji} ${coinName}!\n\n` +
+                        `**Your Balance:** ${economy.coins} ${coinEmoji} ${coinName}\n` +
+                        `**Bet Amount:** ${amount} ${coinEmoji} ${coinName}`
                     )]
                 });
             }
@@ -90,8 +91,8 @@ export default {
                     `**Your Choice:** ${userChoice.charAt(0).toUpperCase() + userChoice.slice(1)}\n` +
                     `**Result:** ${result.charAt(0).toUpperCase() + result.slice(1)}\n\n` +
                     `**${won ? '✅ YOU WON!' : '❌ YOU LOST!'}**\n\n` +
-                    `**${won ? '+' : '-'}${amount}** ${coinEmoji}\n` +
-                    `**New Balance:** ${economy.coins} ${coinEmoji}`
+                    `**${won ? '+' : '-'}${amount}** ${coinEmoji} ${coinName}\n` +
+                    `**New Balance:** ${economy.coins} ${coinEmoji} ${coinName}`
                 )
                 .setColor(won ? '#00ff00' : '#ff0000')
                 .setThumbnail(message.author.displayAvatarURL({ extension: 'png' }))

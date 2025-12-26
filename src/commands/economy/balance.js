@@ -1,5 +1,6 @@
 import { EmbedBuilder } from 'discord.js';
 import Economy from '../../models/Economy.js';
+import Guild from '../../models/Guild.js';
 
 export default {
     name: 'balance',
@@ -16,6 +17,11 @@ export default {
         
         try {
             const economy = await Economy.getEconomy(userId, guildId);
+            const guildConfig = await Guild.getGuild(guildId);
+            
+            // Get custom coin settings
+            const coinEmoji = guildConfig.economy?.coinEmoji || '💰';
+            const coinName = guildConfig.economy?.coinName || 'coins';
             
             const embed = new EmbedBuilder()
                 .setColor('#FFD700')
@@ -23,21 +29,21 @@ export default {
                     name: targetUser.tag, 
                     iconURL: targetUser.displayAvatarURL({ dynamic: true }) 
                 })
-                .setTitle('💰 Balance')
+                .setTitle(`${coinEmoji} Balance`)
                 .addFields(
                     { 
                         name: '💵 Wallet', 
-                        value: `**${economy.coins.toLocaleString()}** coins`, 
+                        value: `**${economy.coins.toLocaleString()}** ${coinName}`, 
                         inline: true 
                     },
                     { 
                         name: '🏦 Bank', 
-                        value: `**${economy.bank.toLocaleString()}** coins`, 
+                        value: `**${economy.bank.toLocaleString()}** ${coinName}`, 
                         inline: true 
                     },
                     { 
                         name: '💎 Total', 
-                        value: `**${(economy.coins + economy.bank).toLocaleString()}** coins`, 
+                        value: `**${(economy.coins + economy.bank).toLocaleString()}** ${coinName}`, 
                         inline: true 
                     }
                 )

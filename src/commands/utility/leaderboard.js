@@ -1,5 +1,6 @@
 import { EmbedBuilder } from 'discord.js';
 import Level from '../../models/Level.js';
+import Guild from '../../models/Guild.js';
 import { infoEmbed, GLYPHS } from '../../utils/embeds.js';
 
 export default {
@@ -30,6 +31,11 @@ export default {
     try {
       let leaderboard;
       let title;
+      
+      // Get guild config for coin settings
+      const guildConfig = await Guild.getGuild(guildId);
+      const coinEmoji = guildConfig.economy?.coinEmoji || '💰';
+      const coinName = guildConfig.economy?.coinName || 'coins';
 
       // Get appropriate leaderboard based on type
       if (type === 'coins') {
@@ -38,7 +44,7 @@ export default {
           .sort({ coins: -1 })
           .limit(perPage * 10)
           .lean();
-        title = '💰 Coins Leaderboard';
+        title = `${coinEmoji} ${coinName.charAt(0).toUpperCase() + coinName.slice(1)} Leaderboard`;
       } else if (type === 'messages') {
         const Economy = (await import('../../models/Economy.js')).default;
         leaderboard = await Economy.find({ guildId, 'stats.messagesCount': { $gt: 0 } })
@@ -82,7 +88,7 @@ export default {
 
           // Display different stats based on type
           if (type === 'coins') {
-            leaderboardText += `${GLYPHS.ARROW_RIGHT} ${(user.coins || 0).toLocaleString()} coins\n\n`;
+            leaderboardText += `${GLYPHS.ARROW_RIGHT} ${(user.coins || 0).toLocaleString()} ${coinEmoji} ${coinName}\n\n`;
           } else if (type === 'messages') {
             leaderboardText += `${GLYPHS.ARROW_RIGHT} ${(user.stats?.messagesCount || 0).toLocaleString()} messages\n\n`;
           } else {

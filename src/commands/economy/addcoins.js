@@ -44,10 +44,11 @@ export default {
             await economy.save();
             
             const coinEmoji = guildConfig.economy?.coinEmoji || '💰';
+            const coinName = guildConfig.economy?.coinName || 'coins';
             
-            const embed = await successEmbed(guildId, 'Coins Awarded!',
-                `Successfully gave **${amount}** ${coinEmoji} to ${targetUser}!\n\n` +
-                `**${targetUser.username}'s New Balance:** ${economy.coins} ${coinEmoji}`
+            const embed = await successEmbed(guildId, `${coinEmoji} ${coinName.charAt(0).toUpperCase() + coinName.slice(1)} Awarded!`,
+                `Successfully gave **${amount}** ${coinEmoji} ${coinName} to ${targetUser}!\n\n` +
+                `**${targetUser.username}'s New Balance:** ${economy.coins} ${coinEmoji} ${coinName}`
             );
             
             await message.reply({ embeds: [embed] });
@@ -55,8 +56,8 @@ export default {
             // Notify the user
             try {
                 await targetUser.send(
-                    `🎉 You received **${amount}** ${coinEmoji} from an administrator in **${message.guild.name}**!\n` +
-                    `New balance: ${economy.coins} ${coinEmoji}`
+                    `🎉 You received **${amount}** ${coinEmoji} ${coinName} from an administrator in **${message.guild.name}**!\n` +
+                    `New balance: ${economy.coins} ${coinEmoji} ${coinName}`
                 );
             } catch (error) {
                 // User has DMs disabled, ignore

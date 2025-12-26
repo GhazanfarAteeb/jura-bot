@@ -138,6 +138,19 @@ export default {
 
       await targetMember.timeout(null, `Timeout removed by ${message.author.tag}`);
 
+      // Remove muted role if configured
+      const guildConfig = await Guild.getGuild(message.guild.id);
+      if (guildConfig.roles?.mutedRole) {
+        const mutedRole = message.guild.roles.cache.get(guildConfig.roles.mutedRole);
+        if (mutedRole && targetMember.roles.cache.has(mutedRole.id)) {
+          try {
+            await targetMember.roles.remove(mutedRole, `Timeout removed by ${message.author.tag}`);
+          } catch (err) {
+            logger.warn(`[Timeout] Failed to remove muted role: ${err.message}`);
+          }
+        }
+      }
+
       const embed = await successEmbed(message.guild.id, 'Timeout Removed',
         `${GLYPHS.SUCCESS} Removed timeout from ${targetMember.user.tag}`
       );
@@ -203,12 +216,26 @@ export default {
     });
     await memberData.save();
 
+    // Get guild config for muted role and mod log
+    const guildConfig = await Guild.getGuild(message.guild.id);
+
     // Apply timeout
     await targetMember.timeout(durationMs, reason);
 
+    // Apply muted role if configured
+    if (guildConfig.roles?.mutedRole) {
+      const mutedRole = message.guild.roles.cache.get(guildConfig.roles.mutedRole);
+      if (mutedRole && targetMember.manageable) {
+        try {
+          await targetMember.roles.add(mutedRole, `[Timeout] ${reason}`);
+        } catch (err) {
+          logger.warn(`[Timeout] Failed to add muted role: ${err.message}`);
+        }
+      }
+    }
+
     // Create mod log
     const caseNumber = await ModLog.getNextCaseNumber(message.guild.id);
-    const guildConfig = await Guild.getGuild(message.guild.id);
 
     const logData = {
       caseNumber,

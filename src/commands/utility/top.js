@@ -21,6 +21,7 @@ export default {
         try {
             const guildConfig = await Guild.getGuild(guildId);
             const coinEmoji = guildConfig.economy?.coinEmoji || '💰';
+            const coinName = guildConfig.economy?.coinName || 'coins';
             
             let leaderboard, title, emoji, formatEntry;
             
@@ -33,12 +34,12 @@ export default {
                         .sort({ coins: -1 })
                         .limit(perPage * 10);
                     
-                    title = `${coinEmoji} Coin Leaderboard`;
+                    title = `${coinEmoji} ${coinName.charAt(0).toUpperCase() + coinName.slice(1)} Leaderboard`;
                     emoji = coinEmoji;
                     formatEntry = (user, i) => {
                         const pos = i + 1;
                         const medal = pos === 1 ? '🥇' : pos === 2 ? '🥈' : pos === 3 ? '🥉' : `#${pos}`;
-                        return `${medal} **${user.username || 'Unknown'}**\n${GLYPHS.ARROW_RIGHT} ${user.coins} ${coinEmoji} • Bank: ${user.bank} ${coinEmoji}\n`;
+                        return `${medal} **${user.username || 'Unknown'}**\n${GLYPHS.ARROW_RIGHT} ${user.coins} ${coinEmoji} ${coinName} • Bank: ${user.bank} ${coinEmoji}\n`;
                     };
                     break;
                     

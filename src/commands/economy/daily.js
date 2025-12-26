@@ -1,5 +1,6 @@
 import { EmbedBuilder } from 'discord.js';
 import Economy from '../../models/Economy.js';
+import Guild from '../../models/Guild.js';
 import { GLYPHS } from '../../utils/embeds.js';
 
 export default {
@@ -16,6 +17,11 @@ export default {
         
         try {
             const economy = await Economy.getEconomy(userId, guildId);
+            const guildConfig = await Guild.getGuild(guildId);
+            
+            // Get custom coin settings
+            const coinEmoji = guildConfig.economy?.coinEmoji || '💰';
+            const coinName = guildConfig.economy?.coinName || 'coins';
             
             // Try to claim daily
             const result = await economy.claimDaily();
@@ -26,13 +32,13 @@ export default {
                     name: message.author.tag, 
                     iconURL: message.author.displayAvatarURL({ dynamic: true }) 
                 })
-                .setTitle('💰 Daily Reward Claimed!')
-                .setDescription(`You earned **${result.amount.toLocaleString()}** coins!`)
+                .setTitle(`${coinEmoji} Daily Reward Claimed!`)
+                .setDescription(`You earned **${result.amount.toLocaleString()}** ${coinEmoji} ${coinName}!`)
                 .addFields(
                     { 
                         name: '💵 Breakdown', 
-                        value: `Base Reward: **${result.baseReward.toLocaleString()}** coins\n` +
-                               `Streak Bonus: **+${result.streakBonus.toLocaleString()}** coins`, 
+                        value: `Base Reward: **${result.baseReward.toLocaleString()}** ${coinName}\n` +
+                               `Streak Bonus: **+${result.streakBonus.toLocaleString()}** ${coinName}`, 
                         inline: true 
                     },
                     { 
@@ -42,8 +48,8 @@ export default {
                         inline: true 
                     },
                     { 
-                        name: '💰 Balance', 
-                        value: `**${economy.coins.toLocaleString()}** coins`, 
+                        name: `${coinEmoji} Balance`, 
+                        value: `**${economy.coins.toLocaleString()}** ${coinName}`, 
                         inline: true 
                     }
                 )

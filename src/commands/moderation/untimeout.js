@@ -102,8 +102,21 @@ export default {
       // Remove the timeout
       await targetMember.timeout(null, `${reason} | Removed by ${message.author.tag}`);
 
-      // Log to mod log channel
+      // Get guild config and remove muted role if configured
       const guildConfig = await Guild.getGuild(message.guild.id, message.guild.name);
+      
+      if (guildConfig.roles?.mutedRole) {
+        const mutedRole = message.guild.roles.cache.get(guildConfig.roles.mutedRole);
+        if (mutedRole && targetMember.roles.cache.has(mutedRole.id)) {
+          try {
+            await targetMember.roles.remove(mutedRole, `${reason} | Removed by ${message.author.tag}`);
+          } catch (err) {
+            logger.warn(`[Untimeout] Failed to remove muted role: ${err.message}`);
+          }
+        }
+      }
+
+      // Log to mod log channel
       const modLogChannel = guildConfig.channels?.modLogChannel;
 
       // Get next case number
@@ -202,8 +215,21 @@ export default {
       // Remove the timeout
       await targetMember.timeout(null, `${reason} | Removed by ${interaction.user.tag}`);
 
-      // Log to mod log channel
+      // Get guild config and remove muted role if configured
       const guildConfig = await Guild.getGuild(interaction.guild.id, interaction.guild.name);
+      
+      if (guildConfig.roles?.mutedRole) {
+        const mutedRole = interaction.guild.roles.cache.get(guildConfig.roles.mutedRole);
+        if (mutedRole && targetMember.roles.cache.has(mutedRole.id)) {
+          try {
+            await targetMember.roles.remove(mutedRole, `${reason} | Removed by ${interaction.user.tag}`);
+          } catch (err) {
+            logger.warn(`[Untimeout Slash] Failed to remove muted role: ${err.message}`);
+          }
+        }
+      }
+
+      // Log to mod log channel
       const modLogChannel = guildConfig.channels?.modLogChannel;
 
       // Get next case number

@@ -1,5 +1,6 @@
 import { EmbedBuilder } from 'discord.js';
 import Economy from '../../models/Economy.js';
+import Guild from '../../models/Guild.js';
 
 // Define timed rewards here (can be configured per server later)
 const TIMED_REWARDS = {
@@ -67,7 +68,12 @@ export default {
         
         try {
             const economy = await Economy.getEconomy(userId, guildId);
+            const guildConfig = await Guild.getGuild(guildId);
             const reward = TIMED_REWARDS[rewardType];
+            
+            // Get custom coin settings
+            const coinEmoji = guildConfig.economy?.coinEmoji || '💰';
+            const coinName = guildConfig.economy?.coinName || 'coins';
             
             // Try to claim
             const amount = await economy.claimTimed(
@@ -86,11 +92,11 @@ export default {
                     iconURL: message.author.displayAvatarURL({ dynamic: true }) 
                 })
                 .setTitle(`✅ ${reward.name} Claimed!`)
-                .setDescription(`You earned **${amount.toLocaleString()}** coins!`)
+                .setDescription(`You earned **${amount.toLocaleString()}** ${coinEmoji} ${coinName}!`)
                 .addFields(
                     { 
-                        name: '💰 Balance', 
-                        value: `**${economy.coins.toLocaleString()}** coins`, 
+                        name: `${coinEmoji} Balance`, 
+                        value: `**${economy.coins.toLocaleString()}** ${coinName}`, 
                         inline: true 
                     },
                     { 

@@ -1,5 +1,6 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } from 'discord.js';
 import Economy from '../../models/Economy.js';
+import Guild from '../../models/Guild.js';
 import { BACKGROUNDS, RARITY_COLORS, RARITY_EMOJIS } from '../../utils/shopItems.js';
 
 export default {
@@ -16,6 +17,11 @@ export default {
         
         try {
             const economy = await Economy.getEconomy(userId, guildId);
+            const guildConfig = await Guild.getGuild(guildId);
+            
+            // Get custom coin settings
+            const coinEmoji = guildConfig.economy?.coinEmoji || '💰';
+            const coinName = guildConfig.economy?.coinName || 'coins';
             
             // Filter backgrounds
             const category = args[0]?.toLowerCase();
@@ -39,9 +45,9 @@ export default {
                     .setTitle('🛍️ Background Shop')
                     .setDescription(`**${RARITY_EMOJIS[item.rarity]} ${item.name}**\n${item.description}`)
                     .addFields(
-                        { name: '💎 Price', value: `**${item.price.toLocaleString()}** coins`, inline: true },
+                        { name: '💎 Price', value: `**${item.price.toLocaleString()}** ${coinEmoji} ${coinName}`, inline: true },
                         { name: '🎨 Rarity', value: item.rarity.charAt(0).toUpperCase() + item.rarity.slice(1), inline: true },
-                        { name: '💰 Your Balance', value: `**${economy.coins.toLocaleString()}** coins`, inline: true }
+                        { name: `${coinEmoji} Your Balance`, value: `**${economy.coins.toLocaleString()}** ${coinName}`, inline: true }
                     )
                     .setImage(item.image)
                     .setFooter({ text: `Page ${page + 1}/${maxPages} | ${owned ? '✅ Owned' : canAfford ? '💳 Can purchase' : '❌ Insufficient funds'}` })
@@ -85,7 +91,7 @@ export default {
                     .addComponents(
                         new ButtonBuilder()
                             .setCustomId('buy')
-                            .setLabel(owned ? 'Already Owned' : `Purchase (${item.price.toLocaleString()} coins)`)
+                            .setLabel(owned ? 'Already Owned' : `Purchase (${item.price.toLocaleString()} ${coinName})`)
                             .setStyle(owned ? ButtonStyle.Secondary : canAfford ? ButtonStyle.Success : ButtonStyle.Danger)
                             .setDisabled(owned || !canAfford),
                         new ButtonBuilder()
@@ -170,8 +176,8 @@ export default {
                             .setTitle('✅ Purchase Successful!')
                             .setDescription(`You purchased **${item.name}**!`)
                             .addFields(
-                                { name: '💰 Spent', value: `${item.price.toLocaleString()} coins`, inline: true },
-                                { name: '💵 Balance', value: `${freshEconomy.coins.toLocaleString()} coins`, inline: true }
+                                { name: `${coinEmoji} Spent`, value: `${item.price.toLocaleString()} ${coinName}`, inline: true },
+                                { name: '💵 Balance', value: `${freshEconomy.coins.toLocaleString()} ${coinName}`, inline: true }
                             )
                             .setFooter({ text: 'Use !setbg to apply this background to your profile' })
                             .setTimestamp();
