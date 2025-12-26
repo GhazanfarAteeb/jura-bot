@@ -1,6 +1,7 @@
 import { PermissionFlagsBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } from 'discord.js';
 import Guild from '../../models/Guild.js';
 import { successEmbed, errorEmbed, warningEmbed, GLYPHS } from '../../utils/embeds.js';
+import RateLimitQueue from '../../utils/RateLimitQueue.js';
 
 export default {
   name: 'cleanup',
@@ -147,38 +148,42 @@ export default {
         await interaction.update({
           embeds: [new EmbedBuilder()
             .setColor('#5865F2')
-            .setDescription(`${GLYPHS.LOADING} Cleaning up... Please wait.`)
+            .setDescription(`${GLYPHS.LOADING} Cleaning up... Please wait.\nThis may take a moment due to rate limiting.`)
           ],
           components: []
         });
 
         const deletedItems = [];
         const failedItems = [];
+        const queue = RateLimitQueue.forDiscord();
 
-        // Delete channels first (before categories)
+        // Queue channel deletions first (before categories)
         for (const channel of itemsToDelete.channels) {
-          try {
+          queue.add(async () => {
             const ch = message.guild.channels.cache.get(channel.id);
             if (ch) {
               await ch.delete('RAPHAEL Cleanup');
               deletedItems.push(`Channel: #${channel.name}`);
             }
-          } catch (err) {
-            failedItems.push(`Channel: #${channel.name} (${err.message})`);
-          }
+          }, `Delete channel #${channel.name}`);
         }
 
-        // Delete categories
+        // Wait for channels to be deleted before categories
+        await queue.onIdle();
+
+        // Queue category deletions (including any remaining child channels)
         for (const category of itemsToDelete.categories) {
-          try {
+          queue.add(async () => {
             const cat = message.guild.channels.cache.get(category.id);
             if (cat) {
-              // Delete any remaining channels in the category
+              // First delete any remaining child channels
               const childChannels = message.guild.channels.cache.filter(c => c.parentId === cat.id);
               for (const [, child] of childChannels) {
                 try {
                   await child.delete('RAPHAEL Cleanup - Category deletion');
                   deletedItems.push(`Channel: #${child.name}`);
+                  // Small delay for child channel deletions
+                  await new Promise(r => setTimeout(r, 200));
                 } catch (e) {
                   failedItems.push(`Channel: #${child.name}`);
                 }
@@ -186,22 +191,29 @@ export default {
               await cat.delete('RAPHAEL Cleanup');
               deletedItems.push(`Category: ${category.name}`);
             }
-          } catch (err) {
-            failedItems.push(`Category: ${category.name} (${err.message})`);
-          }
+          }, `Delete category ${category.name}`);
         }
 
-        // Delete roles
+        // Wait for categories to be deleted
+        await queue.onIdle();
+
+        // Queue role deletions
         for (const role of itemsToDelete.roles) {
-          try {
+          queue.add(async () => {
             const r = message.guild.roles.cache.get(role.id);
             if (r) {
               await r.delete('RAPHAEL Cleanup');
               deletedItems.push(`Role: ${role.name}`);
             }
-          } catch (err) {
-            failedItems.push(`Role: ${role.name} (${err.message})`);
-          }
+          }, `Delete role ${role.name}`);
+        }
+
+        // Wait for all deletions to complete
+        await queue.onIdle();
+
+        // Collect failed items from queue stats
+        if (queue.stats.failed > 0) {
+          failedItems.push(`${queue.stats.failed} operations failed during cleanup`);
         }
 
         // Reset guild configuration
@@ -258,6 +270,7 @@ export default {
         await guildConfig.save();
 
         // Send success message
+        const stats = queue.stats;
         const resultEmbed = new EmbedBuilder()
           .setColor(failedItems.length > 0 ? '#FEE75C' : '#57F287')
           .setTitle(failedItems.length > 0 ? '⚠️ Cleanup Completed with Errors' : '✅ Cleanup Complete!')
@@ -266,11 +279,12 @@ export default {
             `${deletedItems.slice(0, 15).map(i => `${GLYPHS.SUCCESS} ${i}`).join('\n')}` +
             `${deletedItems.length > 15 ? `\n... and ${deletedItems.length - 15} more` : ''}\n\n` +
             (failedItems.length > 0 ? 
-              `**Failed to delete ${failedItems.length} items:**\n` +
+              `**Failed operations:**\n` +
               `${failedItems.map(i => `${GLYPHS.ERROR} ${i}`).join('\n')}\n\n` : '') +
             `${GLYPHS.SUCCESS} Bot configuration has been reset.\n` +
             `Use \`!setup\` to set up the bot again.`
           )
+          .setFooter({ text: `Queue stats: ${stats.completed} completed, ${stats.failed} failed` })
           .setTimestamp();
 
         await confirmMsg.edit({ embeds: [resultEmbed], components: [] });

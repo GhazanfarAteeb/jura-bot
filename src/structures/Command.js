@@ -16,7 +16,7 @@ export default class Command {
     };
     this.descriptionLocalizations = options.descriptionLocalizations;
     this.aliases = options.aliases || [];
-    this.cooldown = options.cooldown || 3;
+    this.cooldown = options.cooldown || 10;
     this.args = options.args || false;
     this.player = {
       voice: options.player ? options.player.voice || false : false,
