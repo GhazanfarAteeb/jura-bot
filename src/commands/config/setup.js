@@ -413,9 +413,9 @@ export default {
           guild.features.autoMod.badWords.useBuiltInList = true;
         }
         if (typeof guild.features.autoMod.antiRoleSpam === 'object') guild.features.autoMod.antiRoleSpam.enabled = true;
+        if (typeof guild.features.autoMod.antiInvites === 'object') guild.features.autoMod.antiInvites.enabled = true;
+        if (typeof guild.features.autoMod.antiLinks === 'object') guild.features.autoMod.antiLinks.enabled = false;
       }
-      guild.features.autoMod.antiInvites.enabled = true;
-      guild.features.autoMod.antiLinks.enabled = false; // Keep disabled by default as it's too restrictive
 
       // Welcome channel
       let welcomeChannel = message.guild.channels.cache.find(c => c.name === 'welcome');
