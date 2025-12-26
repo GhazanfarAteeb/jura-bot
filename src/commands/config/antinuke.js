@@ -1,29 +1,16 @@
-import Command from '../../structures/Command.js';
 import { EmbedBuilder, PermissionFlagsBits } from 'discord.js';
 import Guild from '../../models/Guild.js';
 
-export default new Command({
+export default {
   name: 'antinuke',
-  description: {
-    content: 'Configure anti-nuke protection to prevent server raiding/nuking',
-    usage: 'antinuke <enable|disable|config|whitelist> [options]',
-    examples: [
-      'antinuke enable',
-      'antinuke config action ban',
-      'antinuke config limit channelDelete 3',
-      'antinuke whitelist add @user',
-      'antinuke whitelist remove @user',
-      'antinuke status'
-    ]
-  },
+  description: 'Configure anti-nuke protection to prevent server raiding/nuking',
+  usage: '<enable|disable|config|whitelist|status> [options]',
   aliases: ['an', 'nuke'],
-  permissions: {
-    user: [PermissionFlagsBits.Administrator],
-    client: ['SendMessages', 'EmbedLinks']
-  },
+  permissions: [PermissionFlagsBits.Administrator],
   category: 'config',
+  cooldown: 3,
   
-  async run(client, message, args) {
+  async execute(message, args, client) {
     const guildConfig = await Guild.findOne({ guildId: message.guild.id }) || 
       await Guild.create({ guildId: message.guild.id });
 
@@ -208,4 +195,4 @@ export default new Command({
         });
     }
   }
-});
+};
