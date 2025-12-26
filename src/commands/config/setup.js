@@ -390,32 +390,60 @@ export default {
       }
 
       // Enable all AutoMod features (reset if stored as boolean from old schema)
-      if (typeof guild.features.autoMod !== 'object' || guild.features.autoMod === null) {
-        guild.features.autoMod = {
+      // Always reset to proper structure to avoid Mongoose nested object issues
+      guild.features.autoMod = {
+        enabled: true,
+        antiSpam: { 
           enabled: true,
-          antiSpam: { enabled: true },
-          antiRaid: { enabled: true },
-          antiNuke: { enabled: true },
-          antiMassMention: { enabled: true },
-          badWords: { enabled: true, useBuiltInList: true },
-          antiRoleSpam: { enabled: true },
-          antiLinks: { enabled: false },
-          antiInvites: { enabled: true }
-        };
-      } else {
-        guild.features.autoMod.enabled = true;
-        if (typeof guild.features.autoMod.antiSpam === 'object') guild.features.autoMod.antiSpam.enabled = true;
-        if (typeof guild.features.autoMod.antiRaid === 'object') guild.features.autoMod.antiRaid.enabled = true;
-        if (typeof guild.features.autoMod.antiNuke === 'object') guild.features.autoMod.antiNuke.enabled = true;
-        if (typeof guild.features.autoMod.antiMassMention === 'object') guild.features.autoMod.antiMassMention.enabled = true;
-        if (typeof guild.features.autoMod.badWords === 'object') {
-          guild.features.autoMod.badWords.enabled = true;
-          guild.features.autoMod.badWords.useBuiltInList = true;
+          messageLimit: guild.features.autoMod?.antiSpam?.messageLimit || 5,
+          timeWindow: guild.features.autoMod?.antiSpam?.timeWindow || 5,
+          action: guild.features.autoMod?.antiSpam?.action || 'warn'
+        },
+        antiRaid: { 
+          enabled: true,
+          joinThreshold: guild.features.autoMod?.antiRaid?.joinThreshold || 10,
+          timeWindow: guild.features.autoMod?.antiRaid?.timeWindow || 30,
+          action: guild.features.autoMod?.antiRaid?.action || 'lockdown'
+        },
+        antiNuke: { 
+          enabled: true,
+          banThreshold: guild.features.autoMod?.antiNuke?.banThreshold || 5,
+          kickThreshold: guild.features.autoMod?.antiNuke?.kickThreshold || 5,
+          roleDeleteThreshold: guild.features.autoMod?.antiNuke?.roleDeleteThreshold || 3,
+          channelDeleteThreshold: guild.features.autoMod?.antiNuke?.channelDeleteThreshold || 3,
+          timeWindow: guild.features.autoMod?.antiNuke?.timeWindow || 60,
+          action: guild.features.autoMod?.antiNuke?.action || 'removeRoles',
+          whitelistedUsers: guild.features.autoMod?.antiNuke?.whitelistedUsers || []
+        },
+        antiMassMention: { 
+          enabled: true,
+          limit: guild.features.autoMod?.antiMassMention?.limit || 5,
+          action: guild.features.autoMod?.antiMassMention?.action || 'delete'
+        },
+        badWords: { 
+          enabled: true, 
+          useBuiltInList: true,
+          words: guild.features.autoMod?.badWords?.words || [],
+          ignoredWords: guild.features.autoMod?.badWords?.ignoredWords || [],
+          action: guild.features.autoMod?.badWords?.action || 'delete',
+          timeoutDuration: guild.features.autoMod?.badWords?.timeoutDuration || 300,
+          autoEscalate: guild.features.autoMod?.badWords?.autoEscalate ?? true
+        },
+        antiRoleSpam: { 
+          enabled: true,
+          cooldown: guild.features.autoMod?.antiRoleSpam?.cooldown || 60
+        },
+        antiLinks: { 
+          enabled: false,
+          whitelistedDomains: guild.features.autoMod?.antiLinks?.whitelistedDomains || [],
+          action: guild.features.autoMod?.antiLinks?.action || 'delete'
+        },
+        antiInvites: { 
+          enabled: true,
+          action: guild.features.autoMod?.antiInvites?.action || 'delete'
         }
-        if (typeof guild.features.autoMod.antiRoleSpam === 'object') guild.features.autoMod.antiRoleSpam.enabled = true;
-        if (typeof guild.features.autoMod.antiInvites === 'object') guild.features.autoMod.antiInvites.enabled = true;
-        if (typeof guild.features.autoMod.antiLinks === 'object') guild.features.autoMod.antiLinks.enabled = false;
-      }
+      };
+      guild.markModified('features.autoMod');
 
       // Welcome channel
       let welcomeChannel = message.guild.channels.cache.find(c => c.name === 'welcome');
