@@ -17,7 +17,7 @@ export default {
     description: 'View your level and rank card (without description)',
     usage: 'level [@user]',
     category: 'economy',
-    aliases: ['lvl', 'rank', 'xp'],
+    aliases: ['lvl', 'rank', 'xp', 'profile', 'prof', 'card', 'me'],
     cooldown: 5,
     
     execute: async (message, args) => {

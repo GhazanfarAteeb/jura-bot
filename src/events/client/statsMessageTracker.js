@@ -117,6 +117,12 @@ async function handleXPGain(message, client, userId, guildId) {
         
         const levelConfig = guildConfig.features.levelSystem;
         
+        // Check if channel is in no-XP list
+        const noXpChannels = levelConfig.noXpChannels || [];
+        if (noXpChannels.includes(message.channel.id)) {
+            return; // No XP in this channel
+        }
+        
         // Check XP cooldown (default 60 seconds per guild)
         const cooldownKey = `${guildId}:${userId}`;
         const now = Date.now();
@@ -133,7 +139,29 @@ async function handleXPGain(message, client, userId, guildId) {
         // Calculate XP gain (random between min and max)
         const minXP = levelConfig.minXpPerMessage || 15;
         const maxXP = levelConfig.maxXpPerMessage || 25;
-        const xpGain = Math.floor(Math.random() * (maxXP - minXP + 1)) + minXP;
+        let xpGain = Math.floor(Math.random() * (maxXP - minXP + 1)) + minXP;
+        
+        // Apply XP multipliers
+        const member = message.member;
+        if (member) {
+            // Check for role multipliers (use highest)
+            const xpMultipliers = levelConfig.xpMultipliers || [];
+            let highestMultiplier = 1;
+            
+            for (const mult of xpMultipliers) {
+                if (member.roles.cache.has(mult.roleId) && mult.multiplier > highestMultiplier) {
+                    highestMultiplier = mult.multiplier;
+                }
+            }
+            
+            // Check for booster bonus (additive)
+            if (member.premiumSince) {
+                const boosterMult = levelConfig.boosterMultiplier || 1.5;
+                highestMultiplier += (boosterMult - 1); // Add bonus portion
+            }
+            
+            xpGain = Math.floor(xpGain * highestMultiplier);
+        }
         
         // Get or create level data for this user in this guild
         let levelData = await Level.findOne({ userId, guildId });

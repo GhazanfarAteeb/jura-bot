@@ -102,7 +102,13 @@ const guildSchema = new mongoose.Schema({
       rewards: [{
         level: Number,
         roleId: String
-      }]
+      }],
+      noXpChannels: [String], // Channels where XP is not earned
+      xpMultipliers: [{
+        roleId: String,
+        multiplier: { type: Number, default: 1 }
+      }],
+      boosterMultiplier: { type: Number, default: 1.5 } // Multiplier for server boosters
     },
     ticketSystem: {
       enabled: { type: Boolean, default: false },
@@ -135,6 +141,16 @@ const guildSchema = new mongoose.Schema({
           roleId: String
         }]
       }]
+    },
+    colorRoles: {
+      channelId: String,
+      messageId: String,
+      title: { type: String, default: '🎨 Color Roles' },
+      description: { type: String, default: '**React to get a color role!**\nYou can only have one color at a time.' },
+      embedColor: { type: String, default: '#667eea' },
+      image: String,
+      thumbnail: String,
+      footerText: { type: String, default: 'Click a reaction to get/remove a color role' }
     },
     autoMute: {
       enabled: { type: Boolean, default: false },
@@ -173,11 +189,16 @@ const guildSchema = new mongoose.Schema({
     joinLog: String,
     leaveLog: String,
     messageLog: String, // For message edit/delete logs
+    voiceLog: String, // For voice channel activity
+    memberLog: String, // For member updates (roles, nickname)
+    serverLog: String, // For server changes
     staffChannel: String,
     birthdayChannel: String,
     eventChannel: String,
     welcomeChannel: String,
     ticketLog: String,
+    ticketCategory: String, // Category for ticket channels
+    ticketPanelChannel: String, // Channel for ticket panel
     botStatus: String,
     levelUpChannel: String
   },
