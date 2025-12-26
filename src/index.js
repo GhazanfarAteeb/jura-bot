@@ -192,7 +192,7 @@ async function loadEvents() {
   let totalEvents = 0;
 
   // Skip these files - they are initialized separately or called from schedulers
-  const skipFiles = ['antiNuke.js', 'messageLogging.js', 'reminderHandler.js'];
+  const skipFiles = ['antiNuke.js', 'messageLogging.js', 'reminderHandler.js', 'voiceLogging.js', 'memberLogging.js', 'serverLogging.js'];
 
   for (const dir of eventsPath) {
     // Skip music events - they are loaded separately
@@ -361,7 +361,25 @@ async function initializeSecuritySystems(client) {
       await messageLogging.default.initialize(client);
     }
 
-    console.log('🛡️ Security systems initialized!');
+    // Initialize voice logging
+    const voiceLogging = await import('./events/client/voiceLogging.js');
+    if (voiceLogging.default?.initialize) {
+      await voiceLogging.default.initialize(client);
+    }
+
+    // Initialize member logging
+    const memberLogging = await import('./events/client/memberLogging.js');
+    if (memberLogging.default?.initialize) {
+      await memberLogging.default.initialize(client);
+    }
+
+    // Initialize server logging
+    const serverLogging = await import('./events/client/serverLogging.js');
+    if (serverLogging.default?.initialize) {
+      await serverLogging.default.initialize(client);
+    }
+
+    console.log('🛡️ Security and logging systems initialized!');
   } catch (error) {
     console.error('Error initializing security systems:', error);
     logger.error('Failed to initialize security systems', error);
