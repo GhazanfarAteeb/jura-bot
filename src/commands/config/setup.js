@@ -458,6 +458,101 @@ export default {
       guild.channels.welcomeChannel = welcomeChannel.id;
       guild.features.welcomeSystem.channel = welcomeChannel.id;
 
+      // Create color roles channel
+      embed.setDescription(`${GLYPHS.LOADING} Setting up color roles...`);
+      await setupMsg.edit({ embeds: [embed] });
+
+      // Default color options
+      const colorOptions = [
+        { emoji: '❤️', name: 'Red', color: '#FF0000' },
+        { emoji: '🧡', name: 'Orange', color: '#FF8000' },
+        { emoji: '💛', name: 'Yellow', color: '#FFFF00' },
+        { emoji: '💚', name: 'Green', color: '#00FF00' },
+        { emoji: '💙', name: 'Blue', color: '#0080FF' },
+        { emoji: '💜', name: 'Purple', color: '#8000FF' },
+        { emoji: '🩷', name: 'Pink', color: '#FF80C0' },
+        { emoji: '🤍', name: 'White', color: '#FFFFFF' },
+        { emoji: '🖤', name: 'Black', color: '#000001' },
+        { emoji: '🩵', name: 'Cyan', color: '#00FFFF' },
+        { emoji: '🤎', name: 'Brown', color: '#8B4513' },
+        { emoji: '💗', name: 'Hot Pink', color: '#FF69B4' }
+      ];
+
+      // Create color roles
+      for (const colorData of colorOptions) {
+        let colorRole = message.guild.roles.cache.find(r => r.name === `🎨 ${colorData.name}`);
+        if (!colorRole) {
+          try {
+            colorRole = await message.guild.roles.create({
+              name: `🎨 ${colorData.name}`,
+              color: colorData.color,
+              permissions: [],
+              reason: 'RAPHAEL Setup - Color roles'
+            });
+            createdItems.push(`Role: ${colorRole}`);
+          } catch (err) {
+            console.error(`Failed to create color role ${colorData.name}:`, err);
+          }
+        }
+      }
+
+      // Create color roles channel
+      let colorChannel = message.guild.channels.cache.find(c => c.name.includes('color-role') || c.name.includes('get-color'));
+      if (!colorChannel) {
+        colorChannel = await message.guild.channels.create({
+          name: '🎨-color-roles',
+          type: ChannelType.GuildText,
+          topic: 'React to get a color role! You can only have one color at a time.',
+          permissionOverwrites: [
+            {
+              id: message.guild.id,
+              deny: [PermissionFlagsBits.SendMessages],
+              allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.AddReactions, PermissionFlagsBits.ReadMessageHistory]
+            },
+            {
+              id: message.client.user.id,
+              allow: [PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageMessages, PermissionFlagsBits.AddReactions, PermissionFlagsBits.EmbedLinks]
+            }
+          ],
+          reason: 'RAPHAEL Setup - Color roles selection'
+        });
+        createdItems.push(`Channel: ${colorChannel}`);
+      }
+
+      // Create color selection embed
+      const colorEmbed = new EmbedBuilder()
+        .setColor('#667eea')
+        .setTitle('🎨 Color Roles')
+        .setDescription(
+          '**React to get a color role!**\n' +
+          'You can only have one color at a time.\n\n' +
+          colorOptions.map(c => `${c.emoji} → \`${c.name}\``).join('\n')
+        )
+        .setFooter({ text: 'Click a reaction to get/remove a color role' })
+        .setTimestamp();
+
+      const colorMessage = await colorChannel.send({ embeds: [colorEmbed] });
+
+      // Add reactions to the message
+      for (const colorData of colorOptions) {
+        try {
+          await colorMessage.react(colorData.emoji);
+        } catch (err) {
+          console.error(`Failed to add reaction ${colorData.emoji}:`, err);
+        }
+      }
+
+      // Save color roles settings
+      if (!guild.settings) guild.settings = {};
+      guild.settings.colorRoles = {
+        enabled: true,
+        channelId: colorChannel.id,
+        messageId: colorMessage.id,
+        allowMultiple: false,
+        rolePrefix: '🎨 '
+      };
+      guild.markModified('settings.colorRoles');
+
       // Save configuration
       await guild.save();
 
@@ -469,6 +564,7 @@ export default {
         `${GLYPHS.ARROW_RIGHT} 🛡️ AutoMod & Security\n` +
         `${GLYPHS.ARROW_RIGHT} 📊 Leveling System (with 5 level roles)\n` +
         `${GLYPHS.ARROW_RIGHT} 🎫 Ticket System\n` +
+        `${GLYPHS.ARROW_RIGHT} 🎨 Color Roles (12 colors)\n` +
         `${GLYPHS.ARROW_RIGHT} 📝 Full Logging\n\n` +
         `**Next Steps:**\n` +
         `${GLYPHS.ONE} Configure settings with \`${guild.prefix}config\`\n` +
