@@ -1,4 +1,4 @@
-import { Events, EmbedBuilder } from 'discord.js';
+import { Events, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import Afk from '../../models/Afk.js';
 import Guild from '../../models/Guild.js';
 import { infoEmbed, GLYPHS } from '../../utils/embeds.js';
@@ -53,18 +53,22 @@ export default {
 
         const embed = await infoEmbed(message.guild.id, 'Welcome Back!', welcomeBackMsg);
 
-        // Use channel.send instead of reply in case message was deleted by automod
-        const reply = await message.channel.send({ 
-          content: `<@${message.author.id}>`,
-          embeds: [embed] 
-        }).catch(() => null);
+        // Create dismiss button
+        const dismissRow = new ActionRowBuilder()
+          .addComponents(
+            new ButtonBuilder()
+              .setCustomId(`afk_dismiss_${message.author.id}`)
+              .setLabel('Dismiss')
+              .setEmoji('✖️')
+              .setStyle(ButtonStyle.Secondary)
+          );
 
-        // Delete after 10 seconds
-        if (reply) {
-          setTimeout(() => {
-            reply.delete().catch(() => { });
-          }, 10000);
-        }
+        // Use channel.send instead of reply in case message was deleted by automod
+        await message.channel.send({ 
+          content: `<@${message.author.id}>`,
+          embeds: [embed],
+          components: [dismissRow]
+        }).catch(() => null);
 
         // Try to remove [AFK] from nickname
         try {

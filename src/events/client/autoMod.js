@@ -79,7 +79,7 @@ export default {
           }
 
           await handleViolation(message, client, guildConfig, 'badWords',
-            `Used prohibited word (${severity} severity)`, action, getFeatureProp(autoMod.badWords, 'timeoutDuration', 300));
+            `Used prohibited word (${severity} severity)`, action, getFeatureProp(autoMod.badWords, 'timeoutDuration', 300), message.content);
           return;
         }
       }
@@ -104,7 +104,7 @@ export default {
         if (userMessages.messages.length > spamMessageLimit) {
           await handleViolation(message, client, guildConfig, 'spam',
             `Sending messages too fast (${userMessages.messages.length} msgs in ${spamTimeWindow}s)`,
-            spamAction);
+            spamAction, 300, message.content);
 
           // Clear cache after action
           messageCache.delete(userId);
@@ -121,7 +121,7 @@ export default {
         if (mentionCount >= mentionLimit) {
           await handleViolation(message, client, guildConfig, 'massMention',
             `Mass mentioning (${mentionCount} mentions)`,
-            mentionAction);
+            mentionAction, 300, message.content);
           return;
         }
       }
@@ -130,7 +130,7 @@ export default {
       if (isFeatureEnabled(autoMod.antiInvites) && inviteRegex.test(message.content)) {
         await handleViolation(message, client, guildConfig, 'invite',
           'Posting Discord invite links',
-          getFeatureProp(autoMod.antiInvites, 'action', 'delete'));
+          getFeatureProp(autoMod.antiInvites, 'action', 'delete'), 300, message.content);
         return;
       }
 
@@ -154,7 +154,7 @@ export default {
           if (hasUnwhitelistedLink) {
             await handleViolation(message, client, guildConfig, 'link',
               'Posting unauthorized links',
-              getFeatureProp(autoMod.antiLinks, 'action', 'delete'));
+              getFeatureProp(autoMod.antiLinks, 'action', 'delete'), 300, message.content);
             return;
           }
         }
@@ -166,7 +166,7 @@ export default {
   }
 };
 
-async function handleViolation(message, client, guildConfig, type, reason, action, timeoutDuration = 300) {
+async function handleViolation(message, client, guildConfig, type, reason, action, timeoutDuration = 300, deletedMessageContent = null) {
   const guildId = message.guild.id;
   const user = message.author;
 
@@ -186,7 +186,8 @@ async function handleViolation(message, client, guildConfig, type, reason, actio
       moderatorTag: client.user.tag,
       targetId: user.id,
       targetTag: user.tag,
-      reason: `[AutoMod] ${reason}`
+      reason: `[AutoMod] ${reason}`,
+      deletedMessage: deletedMessageContent ? deletedMessageContent.substring(0, 1000) : null // Store up to 1000 chars
     });
 
     // Create a personalized warning message for the user
@@ -303,7 +304,8 @@ async function handleViolation(message, client, guildConfig, type, reason, actio
           targetId: message.author.id,
           moderatorTag: 'AutoMod',
           reason: reason,
-          action: action
+          action: action,
+          deletedMessage: deletedMessageContent ? deletedMessageContent.substring(0, 500) : null // Include deleted message in embed
         });
         await modLogChannel.send({ embeds: [logEmbed] });
       }

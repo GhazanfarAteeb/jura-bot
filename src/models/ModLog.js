@@ -16,7 +16,8 @@ const modLogSchema = new mongoose.Schema({
             'warn', 'mute', 'unmute', 'kick', 'ban', 'unban', 'purge', 'slowmode', 'note', 'invite_delete', 'sus_alert',
             // AutoMod actions
             'automod_badWords', 'automod_spam', 'automod_caps', 'automod_links', 'automod_invites', 
-            'automod_mentions', 'automod_emojis', 'automod_zalgo', 'automod_newlines'
+            'automod_mentions', 'automod_emojis', 'automod_zalgo', 'automod_newlines',
+            'automod_massMention', 'automod_invite', 'automod_link'
         ]
     },
     moderatorId: {
@@ -30,7 +31,8 @@ const modLogSchema = new mongoose.Schema({
     details: mongoose.Schema.Types.Mixed,
     duration: String,
     messageId: String, // ID of the log message in Discord
-    channelId: String
+    channelId: String,
+    deletedMessage: String // The content of the deleted message (for automod logs)
 }, {
     timestamps: true
 });

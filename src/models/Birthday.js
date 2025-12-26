@@ -1,5 +1,91 @@
 import mongoose from 'mongoose';
 
+// Counter schema for ticket numbers
+const birthdayTicketCounterSchema = new mongoose.Schema({
+    guildId: { type: String, required: true, unique: true },
+    count: { type: Number, default: 0 }
+});
+
+export const BirthdayTicketCounter = mongoose.model('BirthdayTicketCounter', birthdayTicketCounterSchema);
+
+// Birthday request schema for pending birthday change requests (ticket system)
+const birthdayRequestSchema = new mongoose.Schema({
+    ticketNumber: {
+        type: Number,
+        required: true
+    },
+    requestId: {
+        type: String,
+        required: true,
+        unique: true
+    },
+    userId: {
+        type: String,
+        required: true
+    },
+    guildId: {
+        type: String,
+        required: true
+    },
+    requestedBirthday: {
+        month: { type: Number, required: true, min: 1, max: 12 },
+        day: { type: Number, required: true, min: 1, max: 31 },
+        year: Number
+    },
+    currentBirthday: {
+        month: Number,
+        day: Number,
+        year: Number
+    },
+    reason: String,
+    status: {
+        type: String,
+        enum: ['open', 'approved', 'rejected', 'cancelled'],
+        default: 'open'
+    },
+    priority: {
+        type: String,
+        enum: ['low', 'normal', 'high'],
+        default: 'normal'
+    },
+    // Ticket message tracking
+    ticketMessageId: String,
+    ticketChannelId: String,
+    // Review info
+    reviewedBy: String,
+    reviewedAt: Date,
+    rejectionReason: String,
+    // Notes from staff
+    staffNotes: [{
+        staffId: String,
+        note: String,
+        createdAt: { type: Date, default: Date.now }
+    }]
+}, {
+    timestamps: true
+});
+
+birthdayRequestSchema.index({ guildId: 1, status: 1 });
+birthdayRequestSchema.index({ guildId: 1, ticketNumber: 1 }, { unique: true });
+birthdayRequestSchema.index({ userId: 1, guildId: 1 });
+
+// Static method to get next ticket number
+birthdayRequestSchema.statics.getNextTicketNumber = async function(guildId) {
+    const counter = await BirthdayTicketCounter.findOneAndUpdate(
+        { guildId },
+        { $inc: { count: 1 } },
+        { upsert: true, new: true }
+    );
+    return counter.count;
+};
+
+// Format ticket number as #0001
+birthdayRequestSchema.methods.getFormattedTicketNumber = function() {
+    return `#${String(this.ticketNumber).padStart(4, '0')}`;
+};
+
+export const BirthdayRequest = mongoose.model('BirthdayRequest', birthdayRequestSchema);
+
 const birthdaySchema = new mongoose.Schema({
     userId: {
         type: String,
@@ -17,6 +103,14 @@ const birthdaySchema = new mongoose.Schema({
         day: { type: Number, required: true, min: 1, max: 31 },
         year: Number // Optional - for age calculation
     },
+    
+    // Source tracking - where did this birthday come from
+    source: {
+        type: String,
+        enum: ['self', 'staff', 'request'],
+        default: 'self'
+    },
+    setBy: String, // User ID of who set the birthday (staff member or self)
     
     // Display preferences
     displayBirthday: {
@@ -38,6 +132,14 @@ const birthdaySchema = new mongoose.Schema({
         type: Boolean,
         default: true
     },
+    
+    // Verification status
+    verified: {
+        type: Boolean,
+        default: false // Set to true when staff verifies the birthday
+    },
+    verifiedBy: String,
+    verifiedAt: Date,
     
     // Notifications
     lastCelebrated: Date,

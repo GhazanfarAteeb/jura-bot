@@ -187,6 +187,14 @@ export async function modLogEmbed(guildId, action, data) {
         embed.addFields({ name: `${GLYPHS.LOADING} Duration`, value: data.duration, inline: true });
     }
     
+    if (data.deletedMessage) {
+        // Truncate and format the deleted message for display
+        const truncatedMessage = data.deletedMessage.length > 500 
+            ? data.deletedMessage.substring(0, 497) + '...' 
+            : data.deletedMessage;
+        embed.addFields({ name: `${GLYPHS.ERROR || '🗑️'} Deleted Message`, value: `\`\`\`${truncatedMessage}\`\`\`` });
+    }
+    
     return embed;
 }
 

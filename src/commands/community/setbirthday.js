@@ -92,6 +92,7 @@ export default {
     try {
       // Find or create birthday
       let birthday = await Birthday.findOne({ guildId, userId });
+      const isNewBirthday = !birthday;
 
       if (birthday) {
         // Update existing - using the nested birthday object structure
@@ -103,6 +104,11 @@ export default {
         birthday.username = targetUser.username;
         birthday.isActualBirthday = !isFake;
         birthday.showAge = !isPrivate;
+        birthday.source = 'staff';
+        birthday.setBy = message.author.id;
+        birthday.verified = true;
+        birthday.verifiedBy = message.author.id;
+        birthday.verifiedAt = new Date();
       } else {
         // Create new - using the nested birthday object structure
         birthday = new Birthday({
@@ -115,23 +121,33 @@ export default {
             year: year
           },
           isActualBirthday: !isFake,
-          showAge: !isPrivate
+          showAge: !isPrivate,
+          source: 'staff',
+          setBy: message.author.id,
+          verified: true,
+          verifiedBy: message.author.id,
+          verifiedAt: new Date()
         });
       }
 
       await birthday.save();
 
-      // Assign birthday role if configured
-      const birthdayRole = guildConfig.features.birthdaySystem?.role;
+      // Check if today is this user's birthday
+      const today = new Date();
+      const isBirthdayToday = birthday.birthday.month === (today.getMonth() + 1) && 
+                              birthday.birthday.day === today.getDate();
+
+      // Assign birthday role if configured AND it's their birthday today
+      const birthdayRoleId = guildConfig.features.birthdaySystem?.role || guildConfig.roles?.birthdayRole;
       let roleAssigned = false;
 
-      if (birthdayRole) {
+      if (birthdayRoleId && isBirthdayToday) {
         try {
           const member = await message.guild.members.fetch(userId).catch(() => null);
           if (member) {
-            const role = message.guild.roles.cache.get(birthdayRole);
-            if (role && !member.roles.cache.has(birthdayRole)) {
-              await member.roles.add(role, 'Birthday set by staff');
+            const role = message.guild.roles.cache.get(birthdayRoleId);
+            if (role && !member.roles.cache.has(birthdayRoleId)) {
+              await member.roles.add(role, 'Birthday set by staff - It\'s their birthday!');
               roleAssigned = true;
             }
           }
@@ -140,24 +156,54 @@ export default {
         }
       }
 
-      // Send announcement in birthday channel
+      // If it's their birthday today and not already celebrated, send celebration announcement
       const birthdayChannel = guildConfig.features.birthdaySystem?.channel || guildConfig.channels?.birthdayChannel;
-      let announcementSent = false;
+      let celebrationSent = false;
 
-      if (birthdayChannel) {
-        try {
-          const channel = message.guild.channels.cache.get(birthdayChannel);
-          if (channel) {
-            const dateStr = `${month}/${day}${year ? `/${year}` : ''}`;
-            const announceEmbed = await successEmbed(guildId, '🎂 Birthday Registered!',
-              `**<@${userId}>**'s birthday has been set to **${dateStr}**!\n\n` +
-              `They will receive a special celebration on their birthday! 🎉`
-            );
-            await channel.send({ embeds: [announceEmbed] });
-            announcementSent = true;
+      if (isBirthdayToday && birthdayChannel) {
+        // Check if not already celebrated today
+        const alreadyCelebrated = birthday.lastCelebrated && 
+          new Date(birthday.lastCelebrated).toDateString() === today.toDateString();
+        
+        if (!alreadyCelebrated) {
+          try {
+            const channel = message.guild.channels.cache.get(birthdayChannel);
+            if (channel) {
+              let celebrationMessage = guildConfig.features.birthdaySystem?.message || '🎉 Happy Birthday {user}! 🎂';
+              celebrationMessage = celebrationMessage.replace('{user}', `<@${userId}>`);
+
+              const age = birthday.getAge();
+              if (age && birthday.showAge) {
+                celebrationMessage += `\n🎈 Turning ${age} today!`;
+              }
+
+              if (birthday.customMessage) {
+                celebrationMessage += `\n\n💭 "${birthday.customMessage}"`;
+              }
+
+              const celebrationEmbed = await successEmbed(guildId, 
+                `${GLYPHS.SPARKLE} Birthday Celebration!`, 
+                celebrationMessage
+              );
+              celebrationEmbed.setColor('#FF69B4');
+              
+              const targetMember = await message.guild.members.fetch(userId).catch(() => null);
+              if (targetMember) {
+                celebrationEmbed.setThumbnail(targetMember.user.displayAvatarURL({ dynamic: true, size: 256 }));
+              }
+
+              await channel.send({ content: '@everyone', embeds: [celebrationEmbed] });
+              
+              // Update last celebrated
+              birthday.lastCelebrated = new Date();
+              birthday.notificationSent = true;
+              await birthday.save();
+              
+              celebrationSent = true;
+            }
+          } catch (channelErr) {
+            console.error('Failed to send birthday celebration:', channelErr);
           }
-        } catch (channelErr) {
-          console.error('Failed to send birthday announcement:', channelErr);
         }
       }
 
@@ -176,17 +222,22 @@ export default {
       if (!isFake && year) {
         const age = birthday.getAge();
         if (age !== null) {
-          description += `\n🎂 They'll turn ${age + 1} on their next birthday!`;
+          description += `\n🎂 They\'ll turn ${age + 1} on their next birthday!`;
         }
       }
 
-      if (roleAssigned) {
-        description += `\n🎀 Birthday role assigned`;
+      if (isBirthdayToday) {
+        description += '\n\n🎉 **It\'s their birthday today!**';
+        if (roleAssigned) {
+          description += `\n🎀 Birthday role assigned`;
+        }
+        if (celebrationSent) {
+          description += `\n📢 Celebration announcement sent to <#${birthdayChannel}>`;
+        }
       }
 
-      if (announcementSent) {
-        description += `\n📢 Announcement sent to <#${birthdayChannel}>`;
-      }
+      description += `\n\n📋 Source: Staff (set by ${message.author.tag})`;
+      description += '\n✅ Verified';
 
       const embed = await successEmbed(guildId, '🎂 Birthday Set!', description);
 

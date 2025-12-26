@@ -5,7 +5,7 @@ import { getBuiltInWordCount } from '../../utils/badWordsFilter.js';
 
 export default {
   name: 'automod',
-  description: 'Configure automod settings for the server',
+  description: 'Configure automod settings (bad words filter with multi-language support, anti-spam, anti-raid, etc.)',
   usage: '<setting> [options]',
   aliases: ['am'],
   permissions: {
@@ -130,11 +130,13 @@ async function handleBadwords(message, args, guildConfig) {
     return message.reply({
       embeds: [await infoEmbed(message.guild.id, 'Bad Words Filter',
         `**Current Status:** ${guildConfig.features.autoMod.badWords.enabled ? '✅ Enabled' : '❌ Disabled'}\n` +
-        `**Built-in Words:** ${guildConfig.features.autoMod.badWords.useBuiltInList !== false ? `✅ Using (${builtInCount} words)` : '❌ Disabled'}\n` +
+        `**Built-in Words:** ${guildConfig.features.autoMod.badWords.useBuiltInList !== false ? `✅ Using (~${builtInCount} words, multi-language)` : '❌ Disabled'}\n` +
         `**Custom Words:** ${guildConfig.features.autoMod.badWords.words?.length || 0}\n` +
         `**Ignored Words:** ${guildConfig.features.autoMod.badWords.ignoredWords?.length || 0}\n` +
         `**Action:** ${guildConfig.features.autoMod.badWords.action}\n` +
         `**Auto-Escalate:** ${guildConfig.features.autoMod.badWords.autoEscalate !== false ? '✅' : '❌'}\n\n` +
+        `**Supported Languages:** English, Spanish, French, German, Russian\n` +
+        `**Features:** Leetspeak detection, bypass prevention, homoglyph detection\n\n` +
         `**Commands:**\n` +
         `${GLYPHS.DOT} \`automod badwords enable\` - Enable filter\n` +
         `${GLYPHS.DOT} \`automod badwords disable\` - Disable filter\n` +
