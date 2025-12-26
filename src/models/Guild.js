@@ -190,7 +190,12 @@ const guildSchema = new mongoose.Schema({
     lockdownActive: { type: Boolean, default: false },
     lockdownReason: String,
     lockdownBy: String,
-    lockdownAt: Date
+    lockdownAt: Date,
+    lockdownPermissions: [{
+      channelId: String,
+      channelType: String, // 'text' or 'voice'
+      permissions: mongoose.Schema.Types.Mixed // Store the original permission overwrites
+    }]
   },
   embedStyle: {
     color: { type: String, default: '#5865F2' },

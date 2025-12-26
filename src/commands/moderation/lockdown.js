@@ -4,7 +4,7 @@ import { successEmbed, errorEmbed, infoEmbed, GLYPHS } from '../../utils/embeds.
 
 export default {
   name: 'lockdown',
-  description: 'Lock or unlock the server during emergencies',
+  description: 'Lock or unlock the server during emergencies (text, voice, threads)',
   usage: '<on|off> [reason]',
   aliases: ['lock', 'unlock'],
   permissions: {
@@ -42,39 +42,148 @@ export default {
     const reason = args.slice(1).join(' ') || 'No reason provided';
 
     if (action === 'on' || action === 'enable' || action === 'lock') {
-      // Enable lockdown
-      guildConfig.security = guildConfig.security || {};
-      guildConfig.security.lockdownActive = true;
-      guildConfig.security.lockdownReason = reason;
-      guildConfig.security.lockdownBy = message.author.id;
-      guildConfig.security.lockdownAt = new Date();
-      await guildConfig.save();
+      // Check if already locked
+      if (guildConfig.security?.lockdownActive) {
+        return message.reply({
+          embeds: [await errorEmbed(message.guild.id, 'Already Locked',
+            `${GLYPHS.ERROR} The server is already in lockdown mode.\n` +
+            `Use \`lockdown off\` to unlock first.`)]
+        });
+      }
 
-      // Lock all text channels
+      // Get all lockable channels
       const textChannels = message.guild.channels.cache.filter(
-        c => c.type === ChannelType.GuildText
+        c => c.type === ChannelType.GuildText || c.type === ChannelType.GuildAnnouncement
+      );
+      const voiceChannels = message.guild.channels.cache.filter(
+        c => c.type === ChannelType.GuildVoice || c.type === ChannelType.GuildStageVoice
       );
 
-      let lockedCount = 0;
+      const totalChannels = textChannels.size + voiceChannels.size;
+
       const statusMsg = await message.reply({
         embeds: [await infoEmbed(message.guild.id, '🔒 Locking Server...',
-          `Locking ${textChannels.size} channels...`)]
+          `Saving permissions and locking ${totalChannels} channels...`)]
       });
 
+      // Save current permissions before locking
+      const savedPermissions = [];
+
+      // Save and lock text channels
+      let lockedTextCount = 0;
       for (const [, channel] of textChannels) {
         try {
+          // Get current @everyone overwrites
+          const everyoneOverwrite = channel.permissionOverwrites.cache.get(message.guild.id);
+          const currentPerms = everyoneOverwrite ? {
+            SendMessages: everyoneOverwrite.allow.has(PermissionFlagsBits.SendMessages) ? true : 
+                          everyoneOverwrite.deny.has(PermissionFlagsBits.SendMessages) ? false : null,
+            CreatePublicThreads: everyoneOverwrite.allow.has(PermissionFlagsBits.CreatePublicThreads) ? true :
+                                 everyoneOverwrite.deny.has(PermissionFlagsBits.CreatePublicThreads) ? false : null,
+            CreatePrivateThreads: everyoneOverwrite.allow.has(PermissionFlagsBits.CreatePrivateThreads) ? true :
+                                  everyoneOverwrite.deny.has(PermissionFlagsBits.CreatePrivateThreads) ? false : null,
+            SendMessagesInThreads: everyoneOverwrite.allow.has(PermissionFlagsBits.SendMessagesInThreads) ? true :
+                                   everyoneOverwrite.deny.has(PermissionFlagsBits.SendMessagesInThreads) ? false : null,
+            AddReactions: everyoneOverwrite.allow.has(PermissionFlagsBits.AddReactions) ? true :
+                          everyoneOverwrite.deny.has(PermissionFlagsBits.AddReactions) ? false : null
+          } : {
+            SendMessages: null,
+            CreatePublicThreads: null,
+            CreatePrivateThreads: null,
+            SendMessagesInThreads: null,
+            AddReactions: null
+          };
+
+          savedPermissions.push({
+            channelId: channel.id,
+            channelType: 'text',
+            permissions: currentPerms
+          });
+
+          // Apply lockdown permissions
           await channel.permissionOverwrites.edit(message.guild.id, {
-            SendMessages: false
+            SendMessages: false,
+            CreatePublicThreads: false,
+            CreatePrivateThreads: false,
+            SendMessagesInThreads: false,
+            AddReactions: false
           }, { reason: `[Lockdown] ${reason}` });
-          lockedCount++;
+          lockedTextCount++;
         } catch (error) {
           // Channel might not be editable
         }
       }
 
+      // Save and lock voice channels
+      let lockedVoiceCount = 0;
+      for (const [, channel] of voiceChannels) {
+        try {
+          // Get current @everyone overwrites
+          const everyoneOverwrite = channel.permissionOverwrites.cache.get(message.guild.id);
+          const currentPerms = everyoneOverwrite ? {
+            Connect: everyoneOverwrite.allow.has(PermissionFlagsBits.Connect) ? true :
+                     everyoneOverwrite.deny.has(PermissionFlagsBits.Connect) ? false : null,
+            Speak: everyoneOverwrite.allow.has(PermissionFlagsBits.Speak) ? true :
+                   everyoneOverwrite.deny.has(PermissionFlagsBits.Speak) ? false : null,
+            Stream: everyoneOverwrite.allow.has(PermissionFlagsBits.Stream) ? true :
+                    everyoneOverwrite.deny.has(PermissionFlagsBits.Stream) ? false : null,
+            UseVAD: everyoneOverwrite.allow.has(PermissionFlagsBits.UseVAD) ? true :
+                    everyoneOverwrite.deny.has(PermissionFlagsBits.UseVAD) ? false : null
+          } : {
+            Connect: null,
+            Speak: null,
+            Stream: null,
+            UseVAD: null
+          };
+
+          savedPermissions.push({
+            channelId: channel.id,
+            channelType: 'voice',
+            permissions: currentPerms
+          });
+
+          // Apply lockdown permissions
+          await channel.permissionOverwrites.edit(message.guild.id, {
+            Connect: false,
+            Speak: false,
+            Stream: false,
+            UseVAD: false
+          }, { reason: `[Lockdown] ${reason}` });
+          lockedVoiceCount++;
+        } catch (error) {
+          // Channel might not be editable
+        }
+      }
+
+      // Save lockdown state and permissions to database
+      guildConfig.security = guildConfig.security || {};
+      guildConfig.security.lockdownActive = true;
+      guildConfig.security.lockdownReason = reason;
+      guildConfig.security.lockdownBy = message.author.id;
+      guildConfig.security.lockdownAt = new Date();
+      guildConfig.security.lockdownPermissions = savedPermissions;
+      await guildConfig.save();
+
+      // Disconnect all members from voice channels
+      for (const [, channel] of voiceChannels) {
+        try {
+          for (const [, member] of channel.members) {
+            if (!member.permissions.has(PermissionFlagsBits.Administrator)) {
+              await member.voice.disconnect(`[Lockdown] ${reason}`).catch(() => {});
+            }
+          }
+        } catch (error) {
+          // Ignore errors
+        }
+      }
+
       await statusMsg.edit({
         embeds: [await successEmbed(message.guild.id, '🔒 Server Lockdown Enabled',
-          `${GLYPHS.SUCCESS} Locked **${lockedCount}** channels.\n\n` +
+          `${GLYPHS.SUCCESS} Locked **${lockedTextCount}** text channels and **${lockedVoiceCount}** voice channels.\n\n` +
+          `**Permissions Saved:** ${savedPermissions.length} channels\n` +
+          `**Restrictions:**\n` +
+          `${GLYPHS.DOT} Text: Messages, threads, and reactions disabled\n` +
+          `${GLYPHS.DOT} Voice: Connect, speak, and stream disabled\n\n` +
           `**Reason:** ${reason}\n` +
           `**By:** ${message.author.tag}\n\n` +
           `Use \`${await getPrefix(message.guild.id)}lockdown off\` to unlock the server.`)]
@@ -93,43 +202,99 @@ export default {
             embeds: [await errorEmbed(message.guild.id, '🔒 SERVER LOCKDOWN ACTIVATED',
               `**Activated By:** ${message.author.tag}\n` +
               `**Reason:** ${reason}\n` +
-              `**Channels Locked:** ${lockedCount}\n\n` +
-              `${GLYPHS.WARNING} All text channels are now locked.`)]
+              `**Text Channels Locked:** ${lockedTextCount}\n` +
+              `**Voice Channels Locked:** ${lockedVoiceCount}\n\n` +
+              `${GLYPHS.WARNING} All channels are now locked (text, voice & threads disabled).`)]
           });
         }
       }
 
     } else if (action === 'off' || action === 'disable' || action === 'unlock') {
-      // Disable lockdown
-      guildConfig.security = guildConfig.security || {};
-      guildConfig.security.lockdownActive = false;
-      await guildConfig.save();
+      // Check if lockdown is active
+      if (!guildConfig.security?.lockdownActive) {
+        return message.reply({
+          embeds: [await errorEmbed(message.guild.id, 'Not Locked',
+            `${GLYPHS.ERROR} The server is not currently in lockdown mode.`)]
+        });
+      }
 
-      // Unlock all text channels
-      const textChannels = message.guild.channels.cache.filter(
-        c => c.type === ChannelType.GuildText
-      );
+      const savedPermissions = guildConfig.security.lockdownPermissions || [];
+      const hasSavedPerms = savedPermissions.length > 0;
 
-      let unlockedCount = 0;
       const statusMsg = await message.reply({
         embeds: [await infoEmbed(message.guild.id, '🔓 Unlocking Server...',
-          `Unlocking ${textChannels.size} channels...`)]
+          hasSavedPerms 
+            ? `Restoring ${savedPermissions.length} saved channel permissions...`
+            : `Resetting channel permissions to default...`)]
       });
 
-      for (const [, channel] of textChannels) {
-        try {
-          await channel.permissionOverwrites.edit(message.guild.id, {
-            SendMessages: null
-          }, { reason: 'Lockdown ended' });
-          unlockedCount++;
-        } catch (error) {
-          // Channel might not be editable
+      let restoredTextCount = 0;
+      let restoredVoiceCount = 0;
+
+      if (hasSavedPerms) {
+        // Restore saved permissions
+        for (const saved of savedPermissions) {
+          const channel = message.guild.channels.cache.get(saved.channelId);
+          if (!channel) continue;
+
+          try {
+            await channel.permissionOverwrites.edit(message.guild.id, saved.permissions, { 
+              reason: 'Lockdown ended - restoring original permissions' 
+            });
+            
+            if (saved.channelType === 'text') {
+              restoredTextCount++;
+            } else {
+              restoredVoiceCount++;
+            }
+          } catch (error) {
+            // Channel might not be editable or was deleted
+          }
+        }
+      } else {
+        // Fallback: reset to null if no saved permissions
+        const textChannels = message.guild.channels.cache.filter(
+          c => c.type === ChannelType.GuildText || c.type === ChannelType.GuildAnnouncement
+        );
+        const voiceChannels = message.guild.channels.cache.filter(
+          c => c.type === ChannelType.GuildVoice || c.type === ChannelType.GuildStageVoice
+        );
+
+        for (const [, channel] of textChannels) {
+          try {
+            await channel.permissionOverwrites.edit(message.guild.id, {
+              SendMessages: null,
+              CreatePublicThreads: null,
+              CreatePrivateThreads: null,
+              SendMessagesInThreads: null,
+              AddReactions: null
+            }, { reason: 'Lockdown ended' });
+            restoredTextCount++;
+          } catch (error) {}
+        }
+
+        for (const [, channel] of voiceChannels) {
+          try {
+            await channel.permissionOverwrites.edit(message.guild.id, {
+              Connect: null,
+              Speak: null,
+              Stream: null,
+              UseVAD: null
+            }, { reason: 'Lockdown ended' });
+            restoredVoiceCount++;
+          } catch (error) {}
         }
       }
 
+      // Clear lockdown state
+      guildConfig.security.lockdownActive = false;
+      guildConfig.security.lockdownPermissions = [];
+      await guildConfig.save();
+
       await statusMsg.edit({
         embeds: [await successEmbed(message.guild.id, '🔓 Server Lockdown Disabled',
-          `${GLYPHS.SUCCESS} Unlocked **${unlockedCount}** channels.\n\n` +
+          `${GLYPHS.SUCCESS} Restored **${restoredTextCount}** text channels and **${restoredVoiceCount}** voice channels.\n\n` +
+          `${hasSavedPerms ? '✅ Original permissions have been restored.' : '⚠️ Permissions reset to default (no saved data found).'}\n` +
           `Server is now back to normal operation.`)]
       });
 
@@ -140,7 +305,9 @@ export default {
           await alertChannel.send({
             embeds: [await successEmbed(message.guild.id, '🔓 SERVER LOCKDOWN ENDED',
               `**Ended By:** ${message.author.tag}\n` +
-              `**Channels Unlocked:** ${unlockedCount}`)]
+              `**Text Channels Restored:** ${restoredTextCount}\n` +
+              `**Voice Channels Restored:** ${restoredVoiceCount}\n\n` +
+              `${hasSavedPerms ? '✅ Original permissions restored.' : '⚠️ Permissions reset to default.'}`)]
           });
         }
       }
