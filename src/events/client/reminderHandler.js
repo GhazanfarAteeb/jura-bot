@@ -10,10 +10,15 @@ export async function checkReminders(client) {
   try {
     const dueReminders = await Reminder.getDueReminders();
 
+    if (dueReminders.length > 0) {
+      console.log(`[Reminders] Found ${dueReminders.length} due reminder(s)`);
+    }
+
     for (const reminder of dueReminders) {
       try {
         const guild = client.guilds.cache.get(reminder.guildId);
         if (!guild) {
+          console.log(`[Reminders] Guild ${reminder.guildId} not found, marking complete`);
           await reminder.complete();
           continue;
         }
@@ -22,6 +27,7 @@ export async function checkReminders(client) {
         const user = await client.users.fetch(reminder.userId).catch(() => null);
 
         if (!user) {
+          console.log(`[Reminders] User ${reminder.userId} not found, marking complete`);
           await reminder.complete();
           continue;
         }
@@ -38,17 +44,27 @@ export async function checkReminders(client) {
           .setTimestamp();
 
         // Try to send in channel first
+        let sent = false;
         if (channel) {
-          await channel.send({
-            content: `<@${reminder.userId}>`,
-            embeds: [embed]
-          });
-        } else {
+          try {
+            await channel.send({
+              content: `<@${reminder.userId}>`,
+              embeds: [embed]
+            });
+            sent = true;
+            console.log(`[Reminders] Sent reminder to ${user.tag} in #${channel.name}`);
+          } catch (channelError) {
+            console.log(`[Reminders] Could not send to channel, trying DM`);
+          }
+        }
+        
+        if (!sent) {
           // Fall back to DM
           try {
             await user.send({ embeds: [embed] });
+            console.log(`[Reminders] Sent reminder via DM to ${user.tag}`);
           } catch (dmError) {
-            // Can't send DM, just mark as completed
+            console.log(`[Reminders] Could not DM user ${user.tag}`);
           }
         }
 

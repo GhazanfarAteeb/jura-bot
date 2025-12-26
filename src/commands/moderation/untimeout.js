@@ -75,13 +75,17 @@ export default {
       const guildConfig = await Guild.getGuild(message.guild.id, message.guild.name);
       const modLogChannel = guildConfig.channels?.modLogChannel;
 
+      // Get next case number
+      const caseNumber = await ModLog.getNextCaseNumber(message.guild.id);
+
       if (modLogChannel) {
         const logChannel = message.guild.channels.cache.get(modLogChannel);
         if (logChannel) {
-          const logEmbed = await modLogEmbed(message.guild.id, {
-            action: 'UNTIMEOUT',
-            moderator: message.author,
-            target: targetMember.user,
+          const logEmbed = await modLogEmbed(message.guild.id, 'untimeout', {
+            caseNumber,
+            moderatorTag: message.author.tag,
+            targetTag: targetMember.user.tag,
+            targetId: targetMember.id,
             reason: reason
           });
           logEmbed.setColor(0x57F287); // Green for removal
@@ -92,11 +96,12 @@ export default {
       // Create mod log entry
       await ModLog.create({
         guildId: message.guild.id,
+        caseNumber,
         moderatorId: message.author.id,
         moderatorTag: message.author.tag,
         targetId: targetMember.id,
         targetTag: targetMember.user.tag,
-        action: 'UNTIMEOUT',
+        action: 'untimeout',
         reason: reason
       });
 
@@ -162,13 +167,17 @@ export default {
       const guildConfig = await Guild.getGuild(interaction.guild.id, interaction.guild.name);
       const modLogChannel = guildConfig.channels?.modLogChannel;
 
+      // Get next case number
+      const caseNumber = await ModLog.getNextCaseNumber(interaction.guild.id);
+
       if (modLogChannel) {
         const logChannel = interaction.guild.channels.cache.get(modLogChannel);
         if (logChannel) {
-          const logEmbed = await modLogEmbed(interaction.guild.id, {
-            action: 'UNTIMEOUT',
-            moderator: interaction.user,
-            target: targetMember.user,
+          const logEmbed = await modLogEmbed(interaction.guild.id, 'untimeout', {
+            caseNumber,
+            moderatorTag: interaction.user.tag,
+            targetTag: targetMember.user.tag,
+            targetId: targetMember.id,
             reason: reason
           });
           logEmbed.setColor(0x57F287);
@@ -179,11 +188,12 @@ export default {
       // Create mod log entry
       await ModLog.create({
         guildId: interaction.guild.id,
+        caseNumber,
         moderatorId: interaction.user.id,
         moderatorTag: interaction.user.tag,
         targetId: targetMember.id,
         targetTag: targetMember.user.tag,
-        action: 'UNTIMEOUT',
+        action: 'untimeout',
         reason: reason
       });
 

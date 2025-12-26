@@ -14,6 +14,7 @@ const modLogSchema = new mongoose.Schema({
         required: true,
         enum: [
             'warn', 'mute', 'unmute', 'kick', 'ban', 'unban', 'purge', 'slowmode', 'note', 'invite_delete', 'sus_alert',
+            'timeout', 'untimeout',
             // AutoMod actions
             'automod_badWords', 'automod_spam', 'automod_caps', 'automod_links', 'automod_invites', 
             'automod_mentions', 'automod_emojis', 'automod_zalgo', 'automod_newlines',

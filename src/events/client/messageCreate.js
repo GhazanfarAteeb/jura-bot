@@ -21,8 +21,21 @@ class MessageCreate extends Event {
     // Check setup (don't await unless needed)
     const setupPromise = this.client.db.getSetup(message.guildId);
 
+    // Helper to safely reply (handles deleted messages)
+    const safeReply = async (options) => {
+      try {
+        return await message.reply(options);
+      } catch (error) {
+        // Message was deleted (e.g., by automod) - try channel.send instead
+        if (error.code === 50035 || error.code === 10008) {
+          return await message.channel.send(options).catch(() => null);
+        }
+        throw error;
+      }
+    };
+
     if (message.content.match(mention)) {
-      await message.reply({
+      await safeReply({
         content: `Hey, my prefix for this server is \`${currentPrefix}\` Want more info? then do \`${currentPrefix}help\`\nStay Safe, Stay Awesome!`,
       });
       return;
@@ -58,7 +71,7 @@ class MessageCreate extends Event {
     // Quick permission checks - exit early if missing critical permissions
     if (!botPerms.has(PermissionFlagsBits.SendMessages)) return;
     if (!botPerms.has(PermissionFlagsBits.EmbedLinks)) {
-      return message.reply({ content: "I don't have **`EmbedLinks`** permission." }).catch(() => { });
+      return safeReply({ content: "I don't have **`EmbedLinks`** permission." });
     }
 
     const ctx = new Context(message, args);
@@ -68,13 +81,13 @@ class MessageCreate extends Event {
         if (
           !message.guild.members.me.permissions.has(command.permissions.client)
         )
-          return await message.reply({
+          return await safeReply({
             content: "I don't have enough permissions to execute this command.",
           });
       }
       if (command.permissions.user) {
         if (!message.member.permissions.has(command.permissions.user))
-          return await message.reply({
+          return await safeReply({
             content: "You don't have enough permissions to use this command.",
           });
       }
@@ -90,19 +103,19 @@ class MessageCreate extends Event {
     if (command.player) {
       if (command.player.voice) {
         if (!message.member.voice.channel)
-          return await message.reply({
+          return await safeReply({
             content: `You must be connected to a voice channel to use this \`${command.name}\` command.`,
           });
         if (
           !message.guild.members.me.permissions.has(PermissionFlagsBits.Speak)
         )
-          return await message.reply({
+          return await safeReply({
             content: `I don't have \`CONNECT\` permissions to execute this \`${command.name}\` command.`,
           });
         if (
           !message.guild.members.me.permissions.has(PermissionFlagsBits.Speak)
         )
-          return await message.reply({
+          return await safeReply({
             content: `I don't have \`SPEAK\` permissions to execute this \`${command.name}\` command.`,
           });
         if (
@@ -111,7 +124,7 @@ class MessageCreate extends Event {
             PermissionFlagsBits.RequestToSpeak
           )
         )
-          return await message.reply({
+          return await safeReply({
             content: `I don't have \`REQUEST TO SPEAK\` permission to execute this \`${command.name}\` command.`,
           });
         if (message.guild.members.me.voice.channel) {
@@ -119,7 +132,7 @@ class MessageCreate extends Event {
             message.guild.members.me.voice.channelId !==
             message.member.voice.channelId
           )
-            return await message.reply({
+            return await safeReply({
               content: `You are not connected to <#${message.guild.members.me.voice.channel.id}> to use this \`${command.name}\` command.`,
             });
         }
@@ -127,11 +140,11 @@ class MessageCreate extends Event {
       if (command.player.active) {
         const player = this.client.riffy?.players.get(message.guildId);
         if (!player)
-          return await message.reply({
+          return await safeReply({
             content: "Nothing is playing right now.",
           });
         if ((!player.queue || player.queue.length === 0) && !player.current)
-          return await message.reply({
+          return await safeReply({
             content: "Nothing is playing right now.",
           });
       }
@@ -140,7 +153,7 @@ class MessageCreate extends Event {
         if (dj && dj.mode) {
           const djRole = this.client.db.getRoles(message.guildId);
           if (!djRole)
-            return await message.reply({
+            return await safeReply({
               content: "DJ role is not set.",
             });
           const findDJRole = message.member.roles.cache.find((x) =>
@@ -150,11 +163,11 @@ class MessageCreate extends Event {
             if (
               !message.member.permissions.has(PermissionFlagsBits.ManageGuild)
             ) {
-              return await message
-                .reply({
-                  content: "You need to have the DJ role to use this command.",
-                })
-                .then((msg) => setTimeout(() => msg.delete(), 5000));
+              const msg = await safeReply({
+                content: "You need to have the DJ role to use this command.",
+              });
+              if (msg) setTimeout(() => msg.delete().catch(() => {}), 5000);
+              return;
             }
           }
         }
@@ -174,7 +187,7 @@ class MessageCreate extends Event {
             }`
           )
           .setFooter({ text: "Syntax: [] = optional, <> = required" });
-        return await message.reply({ embeds: [embed] });
+        return await safeReply({ embeds: [embed] });
       }
     }
     if (!this.client.cooldowns.has(cmd)) {
@@ -190,7 +203,7 @@ class MessageCreate extends Event {
       const expirationTime = timestamps.get(message.author.id) + cooldownAmount;
       const timeLeft = (expirationTime - now) / 1000;
       if (now < expirationTime && timeLeft > 0.9) {
-        return await message.reply({
+        return await safeReply({
           content: `Please wait ${timeLeft.toFixed(
             1
           )} more second(s) before reusing the \`${cmd}\` command.`,
@@ -200,7 +213,7 @@ class MessageCreate extends Event {
       setTimeout(() => timestamps.delete(message.author.id), cooldownAmount);
     }
     if (args.includes("@everyone") || args.includes("@here"))
-      return await message.reply({
+      return await safeReply({
         content: "You can't use this command with everyone or here.",
       });
     try {
@@ -211,7 +224,7 @@ class MessageCreate extends Event {
       }
     } catch (error) {
       this.client.logger.error(error);
-      await message.reply({ content: `An error occurred: \`${error}\`` });
+      await safeReply({ content: `An error occurred: \`${error}\`` });
       return;
     }
   }

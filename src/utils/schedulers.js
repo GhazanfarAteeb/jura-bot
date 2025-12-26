@@ -250,13 +250,20 @@ export function startGiveawayChecker(client) {
   console.log('✅ Giveaway checker started (every 15 seconds)');
 }
 
-// Check reminders every 30 seconds
+// Check reminders every 15 seconds for more timely delivery
 export function startReminderChecker(client) {
+  // Run immediately on startup to catch any missed reminders
+  checkReminders(client).catch(err => console.error('Initial reminder check failed:', err));
+  
   setInterval(async () => {
-    await checkReminders(client);
-  }, 30000);
+    try {
+      await checkReminders(client);
+    } catch (error) {
+      console.error('Reminder checker error:', error);
+    }
+  }, 15000); // 15 seconds for faster reminder delivery
 
-  console.log('✅ Reminder checker started (every 30 seconds)');
+  console.log('✅ Reminder checker started (every 15 seconds)');
 }
 
 // Initialize all schedulers

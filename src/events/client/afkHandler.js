@@ -29,33 +29,67 @@ export default {
         const afkDuration = Date.now() - authorAfk.timestamp.getTime();
         const durationText = formatDuration(afkDuration);
 
-        // Build welcome back message
-        let welcomeBackMsg = `${GLYPHS.SUCCESS} Welcome back ${message.author}! You were AFK for **${durationText}**`;
+        const mentions = authorAfk.mentions || [];
+        const MENTIONS_PER_PAGE = 5;
+        const totalPages = Math.ceil(mentions.length / MENTIONS_PER_PAGE) || 1;
+        let currentPage = 0;
 
-        // Show missed mentions if any
-        if (authorAfk.mentions && authorAfk.mentions.length > 0) {
-          welcomeBackMsg += `\n\n📬 **You were mentioned ${authorAfk.mentions.length} time(s) while AFK:**`;
+        // Function to build embed for a specific page
+        const buildMentionsEmbed = async (page) => {
+          let welcomeBackMsg = `${GLYPHS.SUCCESS} Welcome back ${message.author}! You were AFK for **${durationText}**`;
 
-          // Show up to 5 mentions
-          const mentionsToShow = authorAfk.mentions.slice(-5);
-          mentionsToShow.forEach((mention, index) => {
-            const timeAgo = formatDuration(Date.now() - mention.timestamp.getTime());
-            const truncatedContent = mention.messageContent.length > 50
-              ? mention.messageContent.slice(0, 50) + '...'
-              : mention.messageContent;
-            welcomeBackMsg += `\n${GLYPHS.DOT} **${mention.username}** in <#${mention.channelId}> (${timeAgo} ago): "${truncatedContent}"`;
-          });
+          if (mentions.length > 0) {
+            welcomeBackMsg += `\n\n📬 **You were mentioned ${mentions.length} time(s) while AFK:**`;
 
-          if (authorAfk.mentions.length > 5) {
-            welcomeBackMsg += `\n... and ${authorAfk.mentions.length - 5} more`;
+            const startIdx = page * MENTIONS_PER_PAGE;
+            const endIdx = Math.min(startIdx + MENTIONS_PER_PAGE, mentions.length);
+            const mentionsToShow = mentions.slice(startIdx, endIdx);
+
+            mentionsToShow.forEach((mention) => {
+              const timeAgo = formatDuration(Date.now() - new Date(mention.timestamp).getTime());
+              const truncatedContent = mention.messageContent.length > 40
+                ? mention.messageContent.slice(0, 40) + '...'
+                : mention.messageContent;
+              
+              // Create jump link to the message
+              const jumpLink = `https://discord.com/channels/${message.guild.id}/${mention.channelId}/${mention.messageId}`;
+              
+              welcomeBackMsg += `\n${GLYPHS.DOT} **${mention.username}** in <#${mention.channelId}> (${timeAgo} ago)`;
+              welcomeBackMsg += `\n  └ "${truncatedContent}" [⤴️ Jump](${jumpLink})`;
+            });
+
+            if (totalPages > 1) {
+              welcomeBackMsg += `\n\n📄 Page ${page + 1}/${totalPages}`;
+            }
           }
-        }
 
-        const embed = await infoEmbed(message.guild.id, 'Welcome Back!', welcomeBackMsg);
+          return await infoEmbed(message.guild.id, 'Welcome Back!', welcomeBackMsg);
+        };
 
-        // Create dismiss button
-        const dismissRow = new ActionRowBuilder()
-          .addComponents(
+        // Build initial embed
+        const embed = await buildMentionsEmbed(0);
+
+        // Create buttons row
+        const buildButtons = (page) => {
+          const row = new ActionRowBuilder();
+
+          // Add pagination buttons only if there are multiple pages
+          if (totalPages > 1) {
+            row.addComponents(
+              new ButtonBuilder()
+                .setCustomId(`afk_prev_${message.author.id}`)
+                .setLabel('◀️')
+                .setStyle(ButtonStyle.Primary)
+                .setDisabled(page === 0),
+              new ButtonBuilder()
+                .setCustomId(`afk_next_${message.author.id}`)
+                .setLabel('▶️')
+                .setStyle(ButtonStyle.Primary)
+                .setDisabled(page >= totalPages - 1)
+            );
+          }
+
+          row.addComponents(
             new ButtonBuilder()
               .setCustomId(`afk_dismiss_${message.author.id}`)
               .setLabel('Dismiss')
@@ -63,12 +97,59 @@ export default {
               .setStyle(ButtonStyle.Secondary)
           );
 
-        // Use channel.send instead of reply in case message was deleted by automod
-        await message.channel.send({ 
+          return row;
+        };
+
+        // Send message
+        const sentMessage = await message.channel.send({ 
           content: `<@${message.author.id}>`,
           embeds: [embed],
-          components: [dismissRow]
+          components: [buildButtons(0)]
         }).catch(() => null);
+
+        // Create collector for pagination if there are multiple pages
+        if (sentMessage && totalPages > 1) {
+          const collector = sentMessage.createMessageComponentCollector({
+            filter: (i) => i.user.id === message.author.id && (i.customId.startsWith('afk_prev_') || i.customId.startsWith('afk_next_')),
+            time: 300000 // 5 minutes
+          });
+
+          collector.on('collect', async (interaction) => {
+            if (interaction.customId.startsWith('afk_prev_')) {
+              currentPage = Math.max(0, currentPage - 1);
+            } else if (interaction.customId.startsWith('afk_next_')) {
+              currentPage = Math.min(totalPages - 1, currentPage + 1);
+            }
+
+            const newEmbed = await buildMentionsEmbed(currentPage);
+            await interaction.update({
+              embeds: [newEmbed],
+              components: [buildButtons(currentPage)]
+            });
+          });
+
+          collector.on('end', () => {
+            // Disable pagination buttons when collector ends
+            const disabledRow = new ActionRowBuilder().addComponents(
+              new ButtonBuilder()
+                .setCustomId(`afk_prev_${message.author.id}`)
+                .setLabel('◀️')
+                .setStyle(ButtonStyle.Primary)
+                .setDisabled(true),
+              new ButtonBuilder()
+                .setCustomId(`afk_next_${message.author.id}`)
+                .setLabel('▶️')
+                .setStyle(ButtonStyle.Primary)
+                .setDisabled(true),
+              new ButtonBuilder()
+                .setCustomId(`afk_dismiss_${message.author.id}`)
+                .setLabel('Dismiss')
+                .setEmoji('✖️')
+                .setStyle(ButtonStyle.Secondary)
+            );
+            sentMessage.edit({ components: [disabledRow] }).catch(() => {});
+          });
+        }
 
         // Try to remove [AFK] from nickname
         try {
@@ -97,6 +178,7 @@ export default {
               userId: message.author.id,
               username: message.author.username,
               channelId: message.channel.id,
+              messageId: message.id,
               messageContent: message.content.slice(0, 100),
               timestamp: new Date()
             });

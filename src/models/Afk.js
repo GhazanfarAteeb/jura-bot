@@ -21,6 +21,7 @@ const afkSchema = new mongoose.Schema({
     userId: String,
     username: String,
     channelId: String,
+    messageId: String,
     messageContent: String,
     timestamp: { type: Date, default: Date.now }
   }]
