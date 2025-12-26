@@ -48,17 +48,17 @@ export default {
       const isRoleIssue = targetMember.roles.highest.position >= botMember.roles.highest.position;
       
       // Log detailed permission info for debugging
-      logger.warn(`[Kick Debug] Cannot kick user in ${message.guild.name}`);
-      logger.warn(`  Target: ${targetMember.user.tag} (${targetMember.id})`);
-      logger.warn(`  Target highest role: ${targetMember.roles.highest.name} (pos: ${targetMember.roles.highest.position})`);
-      logger.warn(`  Target role permissions: ${targetMember.roles.highest.permissions.bitfield}`);
-      logger.warn(`  Bot highest role: ${botMember.roles.highest.name} (pos: ${botMember.roles.highest.position})`);
-      logger.warn(`  Bot role permissions: ${botMember.roles.highest.permissions.bitfield}`);
-      logger.warn(`  Bot has Admin: ${botMember.permissions.has('Administrator')}`);
-      logger.warn(`  Bot has KickMembers: ${botMember.permissions.has('KickMembers')}`);
-      logger.warn(`  Target is kickable: ${targetMember.kickable}`);
-      logger.warn(`  All target roles: ${targetMember.roles.cache.map(r => `${r.name}(${r.position})`).join(', ')}`);
-      logger.warn(`  All bot roles: ${botMember.roles.cache.map(r => `${r.name}(${r.position})`).join(', ')}`);
+      logger.info(`[Kick Debug] Cannot kick user in ${message.guild.name}`);
+      logger.info(`  Target: ${targetMember.user.tag} (${targetMember.id})`);
+      logger.info(`  Target highest role: ${targetMember.roles.highest.name} (pos: ${targetMember.roles.highest.position})`);
+      logger.info(`  Target role permissions: ${targetMember.roles.highest.permissions.bitfield}`);
+      logger.info(`  Bot highest role: ${botMember.roles.highest.name} (pos: ${botMember.roles.highest.position})`);
+      logger.info(`  Bot role permissions: ${botMember.roles.highest.permissions.bitfield}`);
+      logger.info(`  Bot has Admin: ${botMember.permissions.has('Administrator')}`);
+      logger.info(`  Bot has KickMembers: ${botMember.permissions.has('KickMembers')}`);
+      logger.info(`  Target is kickable: ${targetMember.kickable}`);
+      logger.info(`  All target roles: ${targetMember.roles.cache.map(r => `${r.name}(${r.position})`).join(', ')}`);
+      logger.info(`  All bot roles: ${botMember.roles.cache.map(r => `${r.name}(${r.position})`).join(', ')}`);
       
       const embed = await errorEmbed(message.guild.id, 'Cannot Kick',
         `${GLYPHS.ERROR} I cannot kick this user.\n\n` +

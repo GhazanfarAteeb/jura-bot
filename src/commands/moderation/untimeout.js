@@ -65,17 +65,17 @@ export default {
       const isRoleIssue = targetMember.roles.highest.position >= botMember.roles.highest.position;
       
       // Log detailed permission info for debugging
-      logger.warn(`[Untimeout Debug] Cannot modify user in ${message.guild.name}`);
-      logger.warn(`  Target: ${targetMember.user.tag} (${targetMember.id})`);
-      logger.warn(`  Target highest role: ${targetMember.roles.highest.name} (pos: ${targetMember.roles.highest.position})`);
-      logger.warn(`  Target role permissions: ${targetMember.roles.highest.permissions.bitfield}`);
-      logger.warn(`  Bot highest role: ${botMember.roles.highest.name} (pos: ${botMember.roles.highest.position})`);
-      logger.warn(`  Bot role permissions: ${botMember.roles.highest.permissions.bitfield}`);
-      logger.warn(`  Bot has Admin: ${botMember.permissions.has('Administrator')}`);
-      logger.warn(`  Bot has ModerateMembers: ${botMember.permissions.has('ModerateMembers')}`);
-      logger.warn(`  Target is moderatable: ${targetMember.moderatable}`);
-      logger.warn(`  All target roles: ${targetMember.roles.cache.map(r => `${r.name}(${r.position})`).join(', ')}`);
-      logger.warn(`  All bot roles: ${botMember.roles.cache.map(r => `${r.name}(${r.position})`).join(', ')}`);
+      logger.info(`[Untimeout Debug] Cannot modify user in ${message.guild.name}`);
+      logger.info(`  Target: ${targetMember.user.tag} (${targetMember.id})`);
+      logger.info(`  Target highest role: ${targetMember.roles.highest.name} (pos: ${targetMember.roles.highest.position})`);
+      logger.info(`  Target role permissions: ${targetMember.roles.highest.permissions.bitfield}`);
+      logger.info(`  Bot highest role: ${botMember.roles.highest.name} (pos: ${botMember.roles.highest.position})`);
+      logger.info(`  Bot role permissions: ${botMember.roles.highest.permissions.bitfield}`);
+      logger.info(`  Bot has Admin: ${botMember.permissions.has('Administrator')}`);
+      logger.info(`  Bot has ModerateMembers: ${botMember.permissions.has('ModerateMembers')}`);
+      logger.info(`  Target is moderatable: ${targetMember.moderatable}`);
+      logger.info(`  All target roles: ${targetMember.roles.cache.map(r => `${r.name}(${r.position})`).join(', ')}`);
+      logger.info(`  All bot roles: ${botMember.roles.cache.map(r => `${r.name}(${r.position})`).join(', ')}`);
       
       const embed = await errorEmbed(message.guild.id, 'Cannot Modify',
         `${GLYPHS.ERROR} I cannot modify this user.\n\n` +

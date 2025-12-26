@@ -78,17 +78,17 @@ export default {
       const isRoleIssue = targetHighestRole.position >= botHighestRole.position;
       
       // Log detailed permission info for debugging
-      logger.warn(`[Timeout Debug] Cannot moderate user in ${message.guild.name}`);
-      logger.warn(`  Target: ${targetMember.user.tag} (${targetMember.id})`);
-      logger.warn(`  Target highest role: ${targetHighestRole.name} (pos: ${targetHighestRole.position})`);
-      logger.warn(`  Target role permissions: ${targetHighestRole.permissions.bitfield}`);
-      logger.warn(`  Bot highest role: ${botHighestRole.name} (pos: ${botHighestRole.position})`);
-      logger.warn(`  Bot role permissions: ${botHighestRole.permissions.bitfield}`);
-      logger.warn(`  Bot has Admin: ${botMember.permissions.has('Administrator')}`);
-      logger.warn(`  Bot has ModerateMembers: ${botMember.permissions.has('ModerateMembers')}`);
-      logger.warn(`  Target is moderatable: ${targetMember.moderatable}`);
-      logger.warn(`  All target roles: ${targetMember.roles.cache.map(r => `${r.name}(${r.position})`).join(', ')}`);
-      logger.warn(`  All bot roles: ${botMember.roles.cache.map(r => `${r.name}(${r.position})`).join(', ')}`);
+      logger.info(`[Timeout Debug] Cannot moderate user in ${message.guild.name}`);
+      logger.info(`  Target: ${targetMember.user.tag} (${targetMember.id})`);
+      logger.info(`  Target highest role: ${targetHighestRole.name} (pos: ${targetHighestRole.position})`);
+      logger.info(`  Target role permissions: ${targetHighestRole.permissions.bitfield}`);
+      logger.info(`  Bot highest role: ${botHighestRole.name} (pos: ${botHighestRole.position})`);
+      logger.info(`  Bot role permissions: ${botHighestRole.permissions.bitfield}`);
+      logger.info(`  Bot has Admin: ${botMember.permissions.has('Administrator')}`);
+      logger.info(`  Bot has ModerateMembers: ${botMember.permissions.has('ModerateMembers')}`);
+      logger.info(`  Target is moderatable: ${targetMember.moderatable}`);
+      logger.info(`  All target roles: ${targetMember.roles.cache.map(r => `${r.name}(${r.position})`).join(', ')}`);
+      logger.info(`  All bot roles: ${botMember.roles.cache.map(r => `${r.name}(${r.position})`).join(', ')}`);
       
       const embed = await errorEmbed(message.guild.id, 'Cannot Timeout',
         `${GLYPHS.ERROR} I cannot timeout this user.\n\n` +

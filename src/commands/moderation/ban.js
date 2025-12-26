@@ -42,17 +42,17 @@ export default {
         const isRoleIssue = targetMember.roles.highest.position >= botMember.roles.highest.position;
         
         // Log detailed permission info for debugging
-        logger.warn(`[Ban Debug] Cannot ban user in ${message.guild.name}`);
-        logger.warn(`  Target: ${targetMember.user.tag} (${targetMember.id})`);
-        logger.warn(`  Target highest role: ${targetMember.roles.highest.name} (pos: ${targetMember.roles.highest.position})`);
-        logger.warn(`  Target role permissions: ${targetMember.roles.highest.permissions.bitfield}`);
-        logger.warn(`  Bot highest role: ${botMember.roles.highest.name} (pos: ${botMember.roles.highest.position})`);
-        logger.warn(`  Bot role permissions: ${botMember.roles.highest.permissions.bitfield}`);
-        logger.warn(`  Bot has Admin: ${botMember.permissions.has('Administrator')}`);
-        logger.warn(`  Bot has BanMembers: ${botMember.permissions.has('BanMembers')}`);
-        logger.warn(`  Target is bannable: ${targetMember.bannable}`);
-        logger.warn(`  All target roles: ${targetMember.roles.cache.map(r => `${r.name}(${r.position})`).join(', ')}`);
-        logger.warn(`  All bot roles: ${botMember.roles.cache.map(r => `${r.name}(${r.position})`).join(', ')}`);
+        logger.info(`[Ban Debug] Cannot ban user in ${message.guild.name}`);
+        logger.info(`  Target: ${targetMember.user.tag} (${targetMember.id})`);
+        logger.info(`  Target highest role: ${targetMember.roles.highest.name} (pos: ${targetMember.roles.highest.position})`);
+        logger.info(`  Target role permissions: ${targetMember.roles.highest.permissions.bitfield}`);
+        logger.info(`  Bot highest role: ${botMember.roles.highest.name} (pos: ${botMember.roles.highest.position})`);
+        logger.info(`  Bot role permissions: ${botMember.roles.highest.permissions.bitfield}`);
+        logger.info(`  Bot has Admin: ${botMember.permissions.has('Administrator')}`);
+        logger.info(`  Bot has BanMembers: ${botMember.permissions.has('BanMembers')}`);
+        logger.info(`  Target is bannable: ${targetMember.bannable}`);
+        logger.info(`  All target roles: ${targetMember.roles.cache.map(r => `${r.name}(${r.position})`).join(', ')}`);
+        logger.info(`  All bot roles: ${botMember.roles.cache.map(r => `${r.name}(${r.position})`).join(', ')}`);
         
         const embed = await errorEmbed(message.guild.id, 'Cannot Ban',
           `${GLYPHS.ERROR} I cannot ban this user.\n\n` +
