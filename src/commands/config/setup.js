@@ -389,15 +389,31 @@ export default {
         }
       }
 
-      // Enable all AutoMod features
-      guild.features.autoMod.enabled = true;
-      guild.features.autoMod.antiSpam.enabled = true;
-      guild.features.autoMod.antiRaid.enabled = true;
-      guild.features.autoMod.antiNuke.enabled = true;
-      guild.features.autoMod.antiMassMention.enabled = true;
-      guild.features.autoMod.badWords.enabled = true;
-      guild.features.autoMod.badWords.useBuiltInList = true;
-      guild.features.autoMod.antiRoleSpam.enabled = true;
+      // Enable all AutoMod features (reset if stored as boolean from old schema)
+      if (typeof guild.features.autoMod !== 'object' || guild.features.autoMod === null) {
+        guild.features.autoMod = {
+          enabled: true,
+          antiSpam: { enabled: true },
+          antiRaid: { enabled: true },
+          antiNuke: { enabled: true },
+          antiMassMention: { enabled: true },
+          badWords: { enabled: true, useBuiltInList: true },
+          antiRoleSpam: { enabled: true },
+          antiLinks: { enabled: false },
+          antiInvites: { enabled: true }
+        };
+      } else {
+        guild.features.autoMod.enabled = true;
+        if (typeof guild.features.autoMod.antiSpam === 'object') guild.features.autoMod.antiSpam.enabled = true;
+        if (typeof guild.features.autoMod.antiRaid === 'object') guild.features.autoMod.antiRaid.enabled = true;
+        if (typeof guild.features.autoMod.antiNuke === 'object') guild.features.autoMod.antiNuke.enabled = true;
+        if (typeof guild.features.autoMod.antiMassMention === 'object') guild.features.autoMod.antiMassMention.enabled = true;
+        if (typeof guild.features.autoMod.badWords === 'object') {
+          guild.features.autoMod.badWords.enabled = true;
+          guild.features.autoMod.badWords.useBuiltInList = true;
+        }
+        if (typeof guild.features.autoMod.antiRoleSpam === 'object') guild.features.autoMod.antiRoleSpam.enabled = true;
+      }
       guild.features.autoMod.antiInvites.enabled = true;
       guild.features.autoMod.antiLinks.enabled = false; // Keep disabled by default as it's too restrictive
 
