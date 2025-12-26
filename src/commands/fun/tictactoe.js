@@ -150,14 +150,21 @@ export default {
                 const index = i * 3 + j;
                 const cell = game.board[index];
                 
-                row.addComponents(
-                    new ButtonBuilder()
-                        .setCustomId(`ttt_${index}`)
-                        .setLabel(cell === '⬜' ? '‎' : '')
-                        .setEmoji(cell === '⬜' ? '⬜' : (cell === 'X' ? '❌' : '⭕'))
-                        .setStyle(cell === '⬜' ? ButtonStyle.Secondary : (cell === 'X' ? ButtonStyle.Danger : ButtonStyle.Primary))
-                        .setDisabled(cell !== '⬜')
-                );
+                const button = new ButtonBuilder()
+                    .setCustomId(`ttt_${index}`)
+                    .setStyle(cell === '⬜' ? ButtonStyle.Secondary : (cell === 'X' ? ButtonStyle.Danger : ButtonStyle.Primary))
+                    .setDisabled(cell !== '⬜');
+
+                // Use emoji only, no label (avoids empty string validation error)
+                if (cell === '⬜') {
+                    button.setEmoji('⬜');
+                } else if (cell === 'X') {
+                    button.setEmoji('❌');
+                } else {
+                    button.setEmoji('⭕');
+                }
+
+                row.addComponents(button);
             }
             rows.push(row);
         }
