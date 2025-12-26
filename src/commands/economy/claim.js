@@ -1,6 +1,7 @@
 import { EmbedBuilder } from 'discord.js';
 import Economy from '../../models/Economy.js';
 import Guild from '../../models/Guild.js';
+import { getPrefix } from '../../utils/helpers.js';
 
 // Define timed rewards here (can be configured per server later)
 const TIMED_REWARDS = {
@@ -47,12 +48,13 @@ export default {
         }
         
         if (!rewardType || !TIMED_REWARDS[rewardType]) {
+            const prefix = await getPrefix(guildId);
             const availableRewards = Object.entries(TIMED_REWARDS)
                 .map(([key, reward]) => 
                     `**${reward.name}** - ${reward.description}\n` +
                     `💰 Reward: **${reward.amount}** coins\n` +
                     `⏰ Cooldown: **${reward.interval}** minutes\n` +
-                    `Command: \`!claim ${key}\` or \`!${key}\``
+                    `Command: \`${prefix}claim ${key}\` or \`${prefix}${key}\``
                 )
                 .join('\n\n');
             

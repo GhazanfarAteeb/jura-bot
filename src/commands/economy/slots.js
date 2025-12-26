@@ -3,6 +3,7 @@ import Economy from '../../models/Economy.js';
 import Guild from '../../models/Guild.js';
 import { SLOTS_MIN, SLOTS_MAX, SLOTS_EMOJIS } from '../../utils/gameConfig.js';
 import { errorEmbed } from '../../utils/embeds.js';
+import { getPrefix } from '../../utils/helpers.js';
 
 export default {
     name: 'slots',
@@ -20,11 +21,12 @@ export default {
             const amount = parseInt(args[0]);
             
             if (!amount || isNaN(amount)) {
+                const prefix = await getPrefix(guildId);
                 return message.reply({
                     embeds: [await errorEmbed(guildId, 
                         `Please provide a valid bet amount!\n\n` +
-                        `Usage: \`!slots <amount>\`\n` +
-                        `Example: \`!slots 100\``
+                        `Usage: \`${prefix}slots <amount>\`\n` +
+                        `Example: \`${prefix}slots 100\``
                     )]
                 });
             }

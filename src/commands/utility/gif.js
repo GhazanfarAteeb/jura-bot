@@ -1,4 +1,5 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { getPrefix } from '../../utils/helpers.js';
 
 export default {
   name: 'gif',
@@ -10,7 +11,8 @@ export default {
 
   execute: async (message, args) => {
     if (!args.length) {
-      return message.reply('❌ Please provide a search query! Usage: `!gif <search term>`\n**Tip:** Use specific terms for better results!');
+      const prefix = await getPrefix(message.guild.id);
+      return message.reply(`❌ Please provide a search query! Usage: \`${prefix}gif <search term>\`\n**Tip:** Use specific terms for better results!`);
     }
 
     const searchQuery = args.join(' ');

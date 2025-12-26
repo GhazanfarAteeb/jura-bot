@@ -1,6 +1,7 @@
 import { EmbedBuilder, PermissionFlagsBits } from 'discord.js';
 import Guild from '../../models/Guild.js';
 import { successEmbed, errorEmbed, infoEmbed, GLYPHS } from '../../utils/embeds.js';
+import { getPrefix } from '../../utils/helpers.js';
 
 export default {
     name: 'levelroles',
@@ -49,6 +50,7 @@ export default {
 
     async showHelp(message, guildId, guildConfig) {
         const rewards = guildConfig.features.levelSystem.rewards || [];
+        const prefix = await getPrefix(guildId);
         
         const embed = new EmbedBuilder()
             .setColor('#5865F2')
@@ -56,13 +58,13 @@ export default {
             .setDescription(
                 `**Active Rewards:** ${rewards.length}\n\n` +
                 `**Commands:**\n` +
-                `${GLYPHS.ARROW_RIGHT} \`!levelroles add <level> @role\` - Add reward\n` +
-                `${GLYPHS.ARROW_RIGHT} \`!levelroles remove <level>\` - Remove reward\n` +
-                `${GLYPHS.ARROW_RIGHT} \`!levelroles list\` - View all rewards\n` +
-                `${GLYPHS.ARROW_RIGHT} \`!levelroles clear\` - Remove all rewards\n\n` +
+                `${GLYPHS.ARROW_RIGHT} \`${prefix}levelroles add <level> @role\` - Add reward\n` +
+                `${GLYPHS.ARROW_RIGHT} \`${prefix}levelroles remove <level>\` - Remove reward\n` +
+                `${GLYPHS.ARROW_RIGHT} \`${prefix}levelroles list\` - View all rewards\n` +
+                `${GLYPHS.ARROW_RIGHT} \`${prefix}levelroles clear\` - Remove all rewards\n\n` +
                 `**Example:**\n` +
-                `\`!levelroles add 5 @Active Member\`\n` +
-                `\`!levelroles add 10 @Regular\``
+                `\`${prefix}levelroles add 5 @Active Member\`\n` +
+                `\`${prefix}levelroles add 10 @Regular\``
             )
             .setFooter({ text: 'Users automatically receive roles when reaching the level!' })
             .setTimestamp();
@@ -73,11 +75,12 @@ export default {
     async addReward(message, args, guildConfig, guildId) {
         const level = parseInt(args[0]);
         const role = message.mentions.roles.first();
+        const prefix = await getPrefix(guildId);
 
         if (!level || isNaN(level) || level < 1 || level > 100) {
             const embed = await errorEmbed(guildId, 'Invalid Level',
                 `${GLYPHS.ERROR} Please provide a valid level (1-100).\n\n` +
-                `**Usage:** \`!levelroles add <level> @role\``
+                `**Usage:** \`${prefix}levelroles add <level> @role\``
             );
             return message.reply({ embeds: [embed] });
         }
@@ -85,7 +88,7 @@ export default {
         if (!role) {
             const embed = await errorEmbed(guildId, 'No Role Mentioned',
                 `${GLYPHS.ERROR} Please mention a role to add.\n\n` +
-                `**Usage:** \`!levelroles add ${level} @role\``
+                `**Usage:** \`${prefix}levelroles add ${level} @role\``
             );
             return message.reply({ embeds: [embed] });
         }
@@ -129,11 +132,12 @@ export default {
 
     async removeReward(message, args, guildConfig, guildId) {
         const level = parseInt(args[0]);
+        const prefix = await getPrefix(guildId);
 
         if (!level || isNaN(level)) {
             const embed = await errorEmbed(guildId, 'Invalid Level',
                 `${GLYPHS.ERROR} Please provide a level to remove.\n\n` +
-                `**Usage:** \`!levelroles remove <level>\``
+                `**Usage:** \`${prefix}levelroles remove <level>\``
             );
             return message.reply({ embeds: [embed] });
         }
@@ -161,11 +165,12 @@ export default {
 
     async listRewards(message, guildConfig, guildId) {
         const rewards = guildConfig.features.levelSystem.rewards || [];
+        const prefix = await getPrefix(guildId);
 
         if (rewards.length === 0) {
             const embed = await infoEmbed(guildId, 'No Level Rewards',
                 `${GLYPHS.INFO} No level rewards have been set up yet.\n\n` +
-                `Use \`!levelroles add <level> @role\` to add one!`
+                `Use \`${prefix}levelroles add <level> @role\` to add one!`
             );
             return message.reply({ embeds: [embed] });
         }

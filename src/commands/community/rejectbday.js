@@ -3,6 +3,7 @@ import { BirthdayRequest } from '../../models/Birthday.js';
 import Guild from '../../models/Guild.js';
 import { successEmbed, errorEmbed, GLYPHS } from '../../utils/embeds.js';
 import { createTicketEmbed, createTicketButtons, MONTH_NAMES } from './requestbirthday.js';
+import { getPrefix } from '../../utils/helpers.js';
 
 export default {
   name: 'rejectbday',
@@ -29,8 +30,9 @@ export default {
     }
 
     if (!args[0]) {
+      const prefix = await getPrefix(guildId);
       return message.reply({
-        embeds: [await errorEmbed(guildId, 'Please provide a ticket number!\n\nUsage: `!rejectbday <ticket-number> [reason]`\n\nExamples:\n• `!rejectbday #0001 Invalid date`\n• `!rejectbday 1 Please provide proof`\n\nUse `!birthdayrequests` to see open tickets.')]
+        embeds: [await errorEmbed(guildId, `Please provide a ticket number!\n\nUsage: \`${prefix}rejectbday <ticket-number> [reason]\`\n\nExamples:\n• \`${prefix}rejectbday #0001 Invalid date\`\n• \`${prefix}rejectbday 1 Please provide proof\`\n\nUse \`${prefix}birthdayrequests\` to see open tickets.`)]
       });
     }
 

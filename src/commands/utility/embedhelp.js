@@ -1,4 +1,5 @@
 import { EmbedBuilder } from 'discord.js';
+import { getPrefix } from '../../utils/helpers.js';
 
 export default {
     name: 'embedhelp',
@@ -8,6 +9,8 @@ export default {
     aliases: ['embedguide', 'embedinfo'],
     
     execute: async (message, args) => {
+        const prefix = await getPrefix(message.guild.id);
+        
         const embed1 = new EmbedBuilder()
             .setColor('#5865F2')
             .setTitle('📚 Custom Embed System Guide')
@@ -15,24 +18,24 @@ export default {
             .addFields(
                 {
                     name: '🎯 Quick Start',
-                    value: '```\n!embed create welcome\n!embedset welcome title Welcome to {server}!\n!embedset welcome description Hello {user}!\n!embedset welcome thumbnail userAvatar\n!embed send welcome\n```',
+                    value: `\`\`\`\n${prefix}embed create welcome\n${prefix}embedset welcome title Welcome to {server}!\n${prefix}embedset welcome description Hello {user}!\n${prefix}embedset welcome thumbnail userAvatar\n${prefix}embed send welcome\n\`\`\``,
                     inline: false
                 },
                 {
                     name: '📝 Basic Commands',
-                    value: '`!embed create <name>` - Create new embed\n' +
-                           '`!embed list` - List all embeds\n' +
-                           '`!embed preview <name>` - Preview embed\n' +
-                           '`!embed send <name> [#channel]` - Send embed\n' +
-                           '`!embed delete <name>` - Delete embed',
+                    value: `\`${prefix}embed create <name>\` - Create new embed\n` +
+                           `\`${prefix}embed list\` - List all embeds\n` +
+                           `\`${prefix}embed preview <name>\` - Preview embed\n` +
+                           `\`${prefix}embed send <name> [#channel]\` - Send embed\n` +
+                           `\`${prefix}embed delete <name>\` - Delete embed`,
                     inline: false
                 },
                 {
                     name: '⚙️ Configuration',
-                    value: '`!embedset <name> title <text>` - Set title\n' +
-                           '`!embedset <name> description <text>` - Set description\n' +
-                           '`!embedset <name> color <hex>` - Set color (#FF0000)\n' +
-                           '`!embedset <name> content <text>` - Set message text',
+                    value: `\`${prefix}embedset <name> title <text>\` - Set title\n` +
+                           `\`${prefix}embedset <name> description <text>\` - Set description\n` +
+                           `\`${prefix}embedset <name> color <hex>\` - Set color (#FF0000)\n` +
+                           `\`${prefix}embedset <name> content <text>\` - Set message text`,
                     inline: false
                 }
             )
@@ -44,23 +47,23 @@ export default {
             .addFields(
                 {
                     name: 'Images',
-                    value: '`!embedset <name> image <url>` - Large image\n' +
-                           '`!embedset <name> thumbnail <url>` - Small thumbnail\n' +
+                    value: `\`${prefix}embedset <name> image <url>\` - Large image\n` +
+                           `\`${prefix}embedset <name> thumbnail <url>\` - Small thumbnail\n` +
                            '• Attach an image instead of URL\n' +
                            '• Use GIF URLs for animated images',
                     inline: false
                 },
                 {
                     name: 'User Avatars',
-                    value: '`!embedset <name> thumbnail userAvatar` - User\'s avatar as thumbnail\n' +
-                           '`!embedset <name> authorIcon userAvatar` - User\'s avatar in author\n' +
-                           '`!embedset <name> footerIcon userAvatar` - User\'s avatar in footer\n' +
-                           '`!embedset <name> footerIcon botAvatar` - Bot\'s avatar in footer',
+                    value: `\`${prefix}embedset <name> thumbnail userAvatar\` - User's avatar as thumbnail\n` +
+                           `\`${prefix}embedset <name> authorIcon userAvatar\` - User's avatar in author\n` +
+                           `\`${prefix}embedset <name> footerIcon userAvatar\` - User's avatar in footer\n` +
+                           `\`${prefix}embedset <name> footerIcon botAvatar\` - Bot's avatar in footer`,
                     inline: false
                 },
                 {
                     name: 'Example: Welcome Embed with Avatar',
-                    value: '```\n!embed create welcome\n!embedset welcome title Welcome {user.name}!\n!embedset welcome thumbnail userAvatar\n!embedset welcome color #00FF00\n!embed send welcome\n```',
+                    value: `\`\`\`\n${prefix}embed create welcome\n${prefix}embedset welcome title Welcome {user.name}!\n${prefix}embedset welcome thumbnail userAvatar\n${prefix}embedset welcome color #00FF00\n${prefix}embed send welcome\n\`\`\``,
                     inline: false
                 }
             )
@@ -72,33 +75,33 @@ export default {
             .addFields(
                 {
                     name: 'Author Section',
-                    value: '`!embedset <name> author <text>` - Set author name\n' +
-                           '`!embedset <name> author username` - Use user\'s name\n' +
-                           '`!embedset <name> authorIcon <url>` - Set author icon\n' +
-                           '`!embedset <name> authorIcon userAvatar` - Use user avatar',
+                    value: `\`${prefix}embedset <name> author <text>\` - Set author name\n` +
+                           `\`${prefix}embedset <name> author username\` - Use user's name\n` +
+                           `\`${prefix}embedset <name> authorIcon <url>\` - Set author icon\n` +
+                           `\`${prefix}embedset <name> authorIcon userAvatar\` - Use user avatar`,
                     inline: false
                 },
                 {
                     name: 'Footer',
-                    value: '`!embedset <name> footer <text>` - Set footer text\n' +
-                           '`!embedset <name> footerIcon <url>` - Set footer icon\n' +
-                           '`!embedset <name> footerIcon userAvatar` - User avatar\n' +
-                           '`!embedset <name> footerIcon botAvatar` - Bot avatar',
+                    value: `\`${prefix}embedset <name> footer <text>\` - Set footer text\n` +
+                           `\`${prefix}embedset <name> footerIcon <url>\` - Set footer icon\n` +
+                           `\`${prefix}embedset <name> footerIcon userAvatar\` - User avatar\n` +
+                           `\`${prefix}embedset <name> footerIcon botAvatar\` - Bot avatar`,
                     inline: false
                 },
                 {
                     name: 'Fields',
-                    value: '`!embedset <name> addfield <name> | <value>` - Add field\n' +
-                           '`!embedset <name> addfield <name> | <value> | inline` - Inline field\n' +
-                           '`!embedset <name> removefield <number>` - Remove field\n' +
+                    value: `\`${prefix}embedset <name> addfield <name> | <value>\` - Add field\n` +
+                           `\`${prefix}embedset <name> addfield <name> | <value> | inline\` - Inline field\n` +
+                           `\`${prefix}embedset <name> removefield <number>\` - Remove field\n` +
                            '• Maximum 25 fields per embed',
                     inline: false
                 },
                 {
                     name: 'Other Options',
-                    value: '`!embedset <name> url <link>` - Make title clickable\n' +
-                           '`!embedset <name> timestamp on/off` - Toggle timestamp\n' +
-                           '`!embedset <name> category <type>` - Set category',
+                    value: `\`${prefix}embedset <name> url <link>\` - Make title clickable\n` +
+                           `\`${prefix}embedset <name> timestamp on/off\` - Toggle timestamp\n` +
+                           `\`${prefix}embedset <name> category <type>\` - Set category`,
                     inline: false
                 }
             )

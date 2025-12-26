@@ -26,7 +26,64 @@ export default {
       const createdItems = [];
       const results = { roles: {}, channels: {}, categories: {} };
 
-      // ==================== PHASE 1: CREATE ROLES ====================
+      // ==================== PHASE 1: CREATE LOGS CATEGORY ====================
+      embed.setDescription(`${GLYPHS.LOADING} Creating logs category...`);
+      await setupMsg.edit({ embeds: [embed] });
+
+      let logsCategory = message.guild.channels.cache.find(
+        c => c.name.toLowerCase() === 'logs' && c.type === ChannelType.GuildCategory
+      );
+      if (!logsCategory) {
+        logsCategory = await queue.add(async () => {
+          const cat = await message.guild.channels.create({
+            name: '📋 Logs',
+            type: ChannelType.GuildCategory,
+            permissionOverwrites: [
+              { id: message.guild.id, deny: [PermissionFlagsBits.ViewChannel] }
+            ]
+          });
+          createdItems.push(`Category: ${cat.name}`);
+          return cat;
+        }, 'category:logs');
+      }
+      results.categories.logs = logsCategory;
+      await queue.onIdle();
+
+      // ==================== PHASE 2: CREATE LOG CHANNELS ====================
+      embed.setDescription(`${GLYPHS.LOADING} Creating log channels...`);
+      await setupMsg.edit({ embeds: [embed] });
+
+      const logChannelsToCreate = [
+        { key: 'modLog', name: '🔨-mod-log', find: 'mod-log' },
+        { key: 'alertLog', name: '🚨-alert-log', find: 'alert-log' },
+        { key: 'joinLog', name: '📥-join-log', find: 'join-log' },
+        { key: 'botStatus', name: '🤖-bot-status', find: 'bot-status' },
+        { key: 'messageLog', name: '💬-message-log', find: 'message-log' },
+        { key: 'voiceLog', name: '🔊-voice-log', find: 'voice-log' },
+        { key: 'memberLog', name: '👤-member-log', find: 'member-log' },
+        { key: 'serverLog', name: '⚙️-server-log', find: 'server-log' },
+        { key: 'ticketLog', name: '📝-ticket-logs', find: 'ticket-log' }
+      ];
+
+      for (const chData of logChannelsToCreate) {
+        queue.add(async () => {
+          let channel = message.guild.channels.cache.find(c => c.name.includes(chData.find));
+          if (!channel) {
+            channel = await message.guild.channels.create({
+              name: chData.name,
+              type: ChannelType.GuildText,
+              parent: results.categories.logs?.id,
+              reason: 'RAPHAEL Setup - Log channel'
+            });
+            createdItems.push(`Channel: #${channel.name}`);
+          }
+          results.channels[chData.key] = channel;
+        }, `channel:${chData.name}`);
+      }
+
+      await queue.onIdle();
+
+      // ==================== PHASE 3: CREATE ROLES ====================
       embed.setDescription(`${GLYPHS.LOADING} Creating roles... (0%)`);
       await setupMsg.edit({ embeds: [embed] });
 
@@ -143,7 +200,7 @@ export default {
       // Wait for all roles to be created
       await queue.onIdle();
 
-      // ==================== PHASE 2: SET MUTED PERMISSIONS ====================
+      // ==================== PHASE 4: SET MUTED PERMISSIONS ====================
       embed.setDescription(`${GLYPHS.LOADING} Setting up muted role permissions...`);
       await setupMsg.edit({ embeds: [embed] });
 
@@ -168,28 +225,9 @@ export default {
         await queue.onIdle();
       }
 
-      // ==================== PHASE 3: CREATE CATEGORIES ====================
-      embed.setDescription(`${GLYPHS.LOADING} Creating categories...`);
+      // ==================== PHASE 5: CREATE TICKETS CATEGORY ====================
+      embed.setDescription(`${GLYPHS.LOADING} Creating tickets category...`);
       await setupMsg.edit({ embeds: [embed] });
-
-      // Logs category
-      let logsCategory = message.guild.channels.cache.find(
-        c => c.name.toLowerCase() === 'logs' && c.type === ChannelType.GuildCategory
-      );
-      if (!logsCategory) {
-        logsCategory = await queue.add(async () => {
-          const cat = await message.guild.channels.create({
-            name: '📋 Logs',
-            type: ChannelType.GuildCategory,
-            permissionOverwrites: [
-              { id: message.guild.id, deny: [PermissionFlagsBits.ViewChannel] }
-            ]
-          });
-          createdItems.push(`Category: ${cat.name}`);
-          return cat;
-        }, 'category:logs');
-      }
-      results.categories.logs = logsCategory;
 
       // Tickets category
       let ticketsCategory = message.guild.channels.cache.find(
@@ -212,22 +250,12 @@ export default {
 
       await queue.onIdle();
 
-      // ==================== PHASE 4: CREATE CHANNELS ====================
-      embed.setDescription(`${GLYPHS.LOADING} Creating channels...`);
+      // ==================== PHASE 6: CREATE COMMUNITY CHANNELS ====================
+      embed.setDescription(`${GLYPHS.LOADING} Creating community channels...`);
       await setupMsg.edit({ embeds: [embed] });
 
-      // Define all channels
+      // Define community channels (log channels already created in Phase 2)
       const channelsToCreate = [
-        // Log channels
-        { key: 'modLog', name: '🔨-mod-log', parent: 'logs', find: 'mod-log' },
-        { key: 'alertLog', name: '🚨-alert-log', parent: 'logs', find: 'alert-log' },
-        { key: 'joinLog', name: '📥-join-log', parent: 'logs', find: 'join-log' },
-        { key: 'botStatus', name: '🤖-bot-status', parent: 'logs', find: 'bot-status' },
-        { key: 'messageLog', name: '💬-message-log', parent: 'logs', find: 'message-log' },
-        { key: 'voiceLog', name: '🔊-voice-log', parent: 'logs', find: 'voice-log' },
-        { key: 'memberLog', name: '👤-member-log', parent: 'logs', find: 'member-log' },
-        { key: 'serverLog', name: '⚙️-server-log', parent: 'logs', find: 'server-log' },
-        { key: 'ticketLog', name: '📝-ticket-logs', parent: 'logs', find: 'ticket-log' },
         // Community channels
         { key: 'birthday', name: '🎂-birthdays', parent: null, find: 'birthday' },
         { key: 'events', name: '📅-events', parent: null, find: 'events' },
@@ -293,7 +321,7 @@ export default {
 
       await queue.onIdle();
 
-      // ==================== PHASE 5: CREATE EMBEDS & REACTIONS ====================
+      // ==================== PHASE 7: CREATE EMBEDS & REACTIONS ====================
       embed.setDescription(`${GLYPHS.LOADING} Setting up panels and reactions...`);
       await setupMsg.edit({ embeds: [embed] });
 
@@ -356,7 +384,7 @@ export default {
 
       await queue.onIdle();
 
-      // ==================== PHASE 6: SAVE CONFIGURATION ====================
+      // ==================== PHASE 8: SAVE CONFIGURATION ====================
       embed.setDescription(`${GLYPHS.LOADING} Saving configuration...`);
       await setupMsg.edit({ embeds: [embed] });
 
@@ -444,7 +472,7 @@ export default {
 
       await guild.save();
 
-      // ==================== PHASE 7: SUCCESS MESSAGE ====================
+      // ==================== PHASE 9: SUCCESS MESSAGE ====================
       const successMsg = await successEmbed(message.guild.id, 'Setup Complete!',
         `${GLYPHS.SUCCESS} RAPHAEL has been successfully set up!\n\n` +
         `**Created ${createdItems.length} items:**\n${createdItems.slice(0, 10).map(i => `${GLYPHS.ARROW_RIGHT} ${i}`).join('\n')}` +

@@ -1,6 +1,7 @@
 import { EmbedBuilder, PermissionFlagsBits } from 'discord.js';
 import Guild from '../../models/Guild.js';
 import { successEmbed, errorEmbed, infoEmbed, GLYPHS } from '../../utils/embeds.js';
+import { getPrefix } from '../../utils/helpers.js';
 
 export default {
     name: 'xpmultiplier',
@@ -52,6 +53,7 @@ export default {
     async showHelp(message, guildId, guildConfig) {
         const multipliers = guildConfig.features.levelSystem.xpMultipliers || [];
         const boosterMult = guildConfig.features.levelSystem.boosterMultiplier || 1.5;
+        const prefix = await getPrefix(guildId);
         
         const embed = new EmbedBuilder()
             .setColor('#5865F2')
@@ -60,14 +62,14 @@ export default {
                 `**Role Multipliers:** ${multipliers.length}\n` +
                 `**Booster Multiplier:** ${boosterMult}x\n\n` +
                 `**Commands:**\n` +
-                `${GLYPHS.ARROW_RIGHT} \`!xpmultiplier add @role <mult>\` - Add multiplier\n` +
-                `${GLYPHS.ARROW_RIGHT} \`!xpmultiplier remove @role\` - Remove multiplier\n` +
-                `${GLYPHS.ARROW_RIGHT} \`!xpmultiplier list\` - View all multipliers\n` +
-                `${GLYPHS.ARROW_RIGHT} \`!xpmultiplier booster <mult>\` - Set booster bonus\n` +
-                `${GLYPHS.ARROW_RIGHT} \`!xpmultiplier clear\` - Remove all\n\n` +
+                `${GLYPHS.ARROW_RIGHT} \`${prefix}xpmultiplier add @role <mult>\` - Add multiplier\n` +
+                `${GLYPHS.ARROW_RIGHT} \`${prefix}xpmultiplier remove @role\` - Remove multiplier\n` +
+                `${GLYPHS.ARROW_RIGHT} \`${prefix}xpmultiplier list\` - View all multipliers\n` +
+                `${GLYPHS.ARROW_RIGHT} \`${prefix}xpmultiplier booster <mult>\` - Set booster bonus\n` +
+                `${GLYPHS.ARROW_RIGHT} \`${prefix}xpmultiplier clear\` - Remove all\n\n` +
                 `**Example:**\n` +
-                `\`!xpmultiplier add @VIP 2.0\` - VIPs get 2x XP\n` +
-                `\`!xpmultiplier booster 1.5\` - Boosters get 1.5x XP`
+                `\`${prefix}xpmultiplier add @VIP 2.0\` - VIPs get 2x XP\n` +
+                `\`${prefix}xpmultiplier booster 1.5\` - Boosters get 1.5x XP`
             )
             .setFooter({ text: 'Multipliers stack! VIP + Booster = 2.0 + 0.5 = 2.5x' })
             .setTimestamp();
@@ -78,11 +80,12 @@ export default {
     async addMultiplier(message, args, guildConfig, guildId) {
         const role = message.mentions.roles.first();
         const multiplier = parseFloat(args[1] || args[0]);
+        const prefix = await getPrefix(guildId);
 
         if (!role) {
             const embed = await errorEmbed(guildId, 'No Role',
                 `${GLYPHS.ERROR} Please mention a role.\n\n` +
-                `**Usage:** \`!xpmultiplier add @role <multiplier>\``
+                `**Usage:** \`${prefix}xpmultiplier add @role <multiplier>\``
             );
             return message.reply({ embeds: [embed] });
         }
@@ -90,8 +93,8 @@ export default {
         if (!multiplier || isNaN(multiplier) || multiplier < 0.1 || multiplier > 10) {
             const embed = await errorEmbed(guildId, 'Invalid Multiplier',
                 `${GLYPHS.ERROR} Please provide a valid multiplier (0.1 - 10).\n\n` +
-                `**Usage:** \`!xpmultiplier add @role <multiplier>\`\n` +
-                `**Example:** \`!xpmultiplier add @VIP 2.0\``
+                `**Usage:** \`${prefix}xpmultiplier add @role <multiplier>\`\n` +
+                `**Example:** \`${prefix}xpmultiplier add @VIP 2.0\``
             );
             return message.reply({ embeds: [embed] });
         }
@@ -125,11 +128,12 @@ export default {
     async removeMultiplier(message, args, guildConfig, guildId) {
         const role = message.mentions.roles.first() || 
             message.guild.roles.cache.get(args[0]);
+        const prefix = await getPrefix(guildId);
 
         if (!role) {
             const embed = await errorEmbed(guildId, 'No Role',
                 `${GLYPHS.ERROR} Please mention a role or provide a role ID.\n\n` +
-                `**Usage:** \`!xpmultiplier remove @role\``
+                `**Usage:** \`${prefix}xpmultiplier remove @role\``
             );
             return message.reply({ embeds: [embed] });
         }
@@ -160,11 +164,12 @@ export default {
     async listMultipliers(message, guildConfig, guildId) {
         const multipliers = guildConfig.features.levelSystem.xpMultipliers || [];
         const boosterMult = guildConfig.features.levelSystem.boosterMultiplier || 1.5;
+        const prefix = await getPrefix(guildId);
 
         let description = `**🚀 Server Booster Bonus:** ${boosterMult}x\n\n`;
 
         if (multipliers.length === 0) {
-            description += `**Role Multipliers:**\nNo role multipliers set.\n\nUse \`!xpmultiplier add @role <mult>\` to add one!`;
+            description += `**Role Multipliers:**\nNo role multipliers set.\n\nUse \`${prefix}xpmultiplier add @role <mult>\` to add one!`;
         } else {
             description += `**Role Multipliers:**\n`;
             description += multipliers.map(m => {
@@ -185,12 +190,13 @@ export default {
 
     async setBoosterMultiplier(message, args, guildConfig, guildId) {
         const multiplier = parseFloat(args[0]);
+        const prefix = await getPrefix(guildId);
 
         if (!multiplier || isNaN(multiplier) || multiplier < 1 || multiplier > 5) {
             const embed = await errorEmbed(guildId, 'Invalid Multiplier',
                 `${GLYPHS.ERROR} Please provide a valid multiplier (1.0 - 5.0).\n\n` +
-                `**Usage:** \`!xpmultiplier booster <multiplier>\`\n` +
-                `**Example:** \`!xpmultiplier booster 1.5\``
+                `**Usage:** \`${prefix}xpmultiplier booster <multiplier>\`\n` +
+                `**Example:** \`${prefix}xpmultiplier booster 1.5\``
             );
             return message.reply({ embeds: [embed] });
         }

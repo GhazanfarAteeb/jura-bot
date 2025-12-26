@@ -1,6 +1,7 @@
 import { EmbedBuilder, PermissionFlagsBits, ChannelType } from 'discord.js';
 import Guild from '../../models/Guild.js';
 import { successEmbed, errorEmbed, infoEmbed, GLYPHS } from '../../utils/embeds.js';
+import { getPrefix } from '../../utils/helpers.js';
 
 // Default color options
 const DEFAULT_COLORS = [
@@ -32,6 +33,7 @@ export default {
     async execute(message, args) {
         const guildId = message.guild.id;
         const subCommand = args[0]?.toLowerCase();
+        const prefix = await getPrefix(guildId);
 
         try {
             const guildConfig = await Guild.getGuild(guildId);
@@ -85,6 +87,7 @@ export default {
 
     async showHelp(message, guildId, guildConfig) {
         const hasPanel = !!guildConfig.settings?.colorRoles?.messageId;
+        const prefix = await getPrefix(guildId);
         
         const embed = new EmbedBuilder()
             .setColor('#667eea')
@@ -92,20 +95,20 @@ export default {
             .setDescription(
                 `**Status:** ${hasPanel ? '✅ Active' : '❌ Not Setup'}\n\n` +
                 `**Commands:**\n` +
-                `${GLYPHS.ARROW_RIGHT} \`!colorroles setup\` - Create channel & panel\n` +
-                `${GLYPHS.ARROW_RIGHT} \`!colorroles settings\` - View current settings\n` +
-                `${GLYPHS.ARROW_RIGHT} \`!colorroles preview\` - Preview the panel\n` +
-                `${GLYPHS.ARROW_RIGHT} \`!colorroles refresh\` - Update existing panel\n` +
-                `${GLYPHS.ARROW_RIGHT} \`!colorroles delete\` - Delete panel & channel\n\n` +
+                `${GLYPHS.ARROW_RIGHT} \`${prefix}colorroles setup\` - Create channel & panel\n` +
+                `${GLYPHS.ARROW_RIGHT} \`${prefix}colorroles settings\` - View current settings\n` +
+                `${GLYPHS.ARROW_RIGHT} \`${prefix}colorroles preview\` - Preview the panel\n` +
+                `${GLYPHS.ARROW_RIGHT} \`${prefix}colorroles refresh\` - Update existing panel\n` +
+                `${GLYPHS.ARROW_RIGHT} \`${prefix}colorroles delete\` - Delete panel & channel\n\n` +
                 `**Customization:**\n` +
-                `${GLYPHS.ARROW_RIGHT} \`!colorroles set title <text>\`\n` +
-                `${GLYPHS.ARROW_RIGHT} \`!colorroles set description <text>\`\n` +
-                `${GLYPHS.ARROW_RIGHT} \`!colorroles set color <hex>\`\n` +
-                `${GLYPHS.ARROW_RIGHT} \`!colorroles set image <url>\`\n` +
-                `${GLYPHS.ARROW_RIGHT} \`!colorroles set thumbnail <url>\`\n` +
-                `${GLYPHS.ARROW_RIGHT} \`!colorroles set footer <text>\``
+                `${GLYPHS.ARROW_RIGHT} \`${prefix}colorroles set title <text>\`\n` +
+                `${GLYPHS.ARROW_RIGHT} \`${prefix}colorroles set description <text>\`\n` +
+                `${GLYPHS.ARROW_RIGHT} \`${prefix}colorroles set color <hex>\`\n` +
+                `${GLYPHS.ARROW_RIGHT} \`${prefix}colorroles set image <url>\`\n` +
+                `${GLYPHS.ARROW_RIGHT} \`${prefix}colorroles set thumbnail <url>\`\n` +
+                `${GLYPHS.ARROW_RIGHT} \`${prefix}colorroles set footer <text>\``
             )
-            .setFooter({ text: 'Use !colorroles setup to get started!' })
+            .setFooter({ text: `Use ${prefix}colorroles setup to get started!` })
             .setTimestamp();
 
         return message.reply({ embeds: [embed] });
@@ -116,10 +119,11 @@ export default {
 
         // Check if already setup
         if (guildConfig.settings?.colorRoles?.messageId) {
+            const prefix = await getPrefix(guildId);
             const embed = await errorEmbed(guildId, 'Already Setup',
                 `${GLYPHS.ERROR} Color roles panel already exists!\n\n` +
-                `Use \`!colorroles refresh\` to update it, or\n` +
-                `Use \`!colorroles delete\` to remove it first.`
+                `Use \`${prefix}colorroles refresh\` to update it, or\n` +
+                `Use \`${prefix}colorroles delete\` to remove it first.`
             );
             return message.reply({ embeds: [embed] });
         }
@@ -246,13 +250,14 @@ export default {
 
             await guildConfig.save();
 
+            const prefix = await getPrefix(guildId);
             // Update status
             const successEmb = await successEmbed(guildId, '🎨 Color Roles Setup Complete!',
                 `${GLYPHS.SUCCESS} Color roles system is now active!\n\n` +
                 `**Channel:** ${colorChannel}\n` +
                 `**Roles Created:** ${createdRoles.length}\n` +
                 `**Roles Existing:** ${existingRoles.length}\n\n` +
-                `Use \`!colorroles set\` to customize the panel!`
+                `Use \`${prefix}colorroles set\` to customize the panel!`
             );
 
             await statusMsg.edit({ embeds: [successEmb] });
@@ -272,6 +277,7 @@ export default {
         const value = args.slice(1).join(' ');
 
         if (!option) {
+            const prefix = await getPrefix(guildId);
             const embed = await infoEmbed(guildId, 'Set Preference',
                 `**Available Options:**\n\n` +
                 `${GLYPHS.ARROW_RIGHT} \`title\` - Panel title\n` +
@@ -281,16 +287,17 @@ export default {
                 `${GLYPHS.ARROW_RIGHT} \`thumbnail\` - Small image URL\n` +
                 `${GLYPHS.ARROW_RIGHT} \`footer\` - Footer text\n\n` +
                 `**Example:**\n` +
-                `\`!colorroles set title 🌈 Pick Your Color!\`\n` +
-                `\`!colorroles set image https://example.com/banner.gif\``
+                `\`${prefix}colorroles set title 🌈 Pick Your Color!\`\n` +
+                `\`${prefix}colorroles set image https://example.com/banner.gif\``
             );
             return message.reply({ embeds: [embed] });
         }
 
         if (!value && option !== 'image' && option !== 'thumbnail') {
+            const prefix = await getPrefix(guildId);
             const embed = await errorEmbed(guildId, 'Missing Value',
                 `${GLYPHS.ERROR} Please provide a value for \`${option}\`.\n\n` +
-                `Use \`!colorroles set ${option} none\` to reset to default.`
+                `Use \`${prefix}colorroles set ${option} none\` to reset to default.`
             );
             return message.reply({ embeds: [embed] });
         }
@@ -384,10 +391,11 @@ export default {
 
         await guildConfig.save();
 
+        const prefixForMsg = await getPrefix(guildId);
         const embed = await successEmbed(guildId, 'Setting Updated',
             `${GLYPHS.SUCCESS} **${settingName}** has been updated!\n\n` +
             `**New Value:** ${displayValue.length > 100 ? displayValue.substring(0, 100) + '...' : displayValue}\n\n` +
-            `${settings.messageId ? 'Use `!colorroles refresh` to apply changes.' : 'Use `!colorroles setup` to create the panel.'}`
+            `${settings.messageId ? `Use \`${prefixForMsg}colorroles refresh\` to apply changes.` : `Use \`${prefixForMsg}colorroles setup\` to create the panel.`}`
         );
         return message.reply({ embeds: [embed] });
     },
@@ -423,9 +431,10 @@ export default {
         const settings = guildConfig.settings?.colorRoles;
 
         if (!settings?.messageId || !settings?.channelId) {
+            const prefix = await getPrefix(guildId);
             const embed = await errorEmbed(guildId, 'No Panel Found',
                 `${GLYPHS.ERROR} No color roles panel exists.\n\n` +
-                `Use \`!colorroles setup\` to create one.`
+                `Use \`${prefix}colorroles setup\` to create one.`
             );
             return message.reply({ embeds: [embed] });
         }
@@ -433,18 +442,20 @@ export default {
         try {
             const channel = message.guild.channels.cache.get(settings.channelId);
             if (!channel) {
+                const prefix = await getPrefix(guildId);
                 const embed = await errorEmbed(guildId, 'Channel Not Found',
                     `${GLYPHS.ERROR} The color roles channel was deleted.\n\n` +
-                    `Use \`!colorroles delete\` then \`!colorroles setup\` to recreate.`
+                    `Use \`${prefix}colorroles delete\` then \`${prefix}colorroles setup\` to recreate.`
                 );
                 return message.reply({ embeds: [embed] });
             }
 
             const panelMessage = await channel.messages.fetch(settings.messageId).catch(() => null);
             if (!panelMessage) {
+                const prefix = await getPrefix(guildId);
                 const embed = await errorEmbed(guildId, 'Message Not Found',
                     `${GLYPHS.ERROR} The panel message was deleted.\n\n` +
-                    `Use \`!colorroles delete\` then \`!colorroles setup\` to recreate.`
+                    `Use \`${prefix}colorroles delete\` then \`${prefix}colorroles setup\` to recreate.`
                 );
                 return message.reply({ embeds: [embed] });
             }
@@ -516,10 +527,11 @@ export default {
 
             await guildConfig.save();
 
+            const prefix = await getPrefix(guildId);
             const embed = await successEmbed(guildId, 'Panel Deleted',
                 `${GLYPHS.SUCCESS} Color roles panel and channel have been deleted.\n\n` +
                 `Your customization settings are preserved.\n` +
-                `Use \`!colorroles setup\` to create a new panel.`
+                `Use \`${prefix}colorroles setup\` to create a new panel.`
             );
             return message.reply({ embeds: [embed] });
 

@@ -3,6 +3,7 @@ import Economy from '../../models/Economy.js';
 import Level from '../../models/Level.js';
 import Guild from '../../models/Guild.js';
 import { infoEmbed, GLYPHS } from '../../utils/embeds.js';
+import { getPrefix } from '../../utils/helpers.js';
 
 export default {
     name: 'top',
@@ -74,13 +75,14 @@ export default {
                     break;
                     
                 default:
+                    const prefix = await getPrefix(guildId);
                     const helpEmbed = await infoEmbed(guildId, 'Leaderboard Types',
                         `**Available Leaderboards:**\n\n` +
-                        `${GLYPHS.ARROW_RIGHT} \`!top coins\` - Richest members\n` +
-                        `${GLYPHS.ARROW_RIGHT} \`!top rep\` - Most reputable members\n` +
-                        `${GLYPHS.ARROW_RIGHT} \`!top level\` - Highest level members\n\n` +
-                        `**Usage:** \`!top <type> [page]\`\n` +
-                        `**Example:** \`!top coins 2\``
+                        `${GLYPHS.ARROW_RIGHT} \`${prefix}top coins\` - Richest members\n` +
+                        `${GLYPHS.ARROW_RIGHT} \`${prefix}top rep\` - Most reputable members\n` +
+                        `${GLYPHS.ARROW_RIGHT} \`${prefix}top level\` - Highest level members\n\n` +
+                        `**Usage:** \`${prefix}top <type> [page]\`\n` +
+                        `**Example:** \`${prefix}top coins 2\``
                     );
                     return message.reply({ embeds: [helpEmbed] });
             }

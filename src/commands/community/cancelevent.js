@@ -1,6 +1,6 @@
 import Event from '../../models/Event.js';
 import { successEmbed, errorEmbed } from '../../utils/embeds.js';
-import { hasPermission } from '../../utils/helpers.js';
+import { hasPermission, getPrefix } from '../../utils/helpers.js';
 
 export default {
   name: 'cancelevent',
@@ -19,8 +19,9 @@ export default {
     }
 
     if (!args[0]) {
+      const prefix = await getPrefix(guildId);
       return message.reply({
-        embeds: [await errorEmbed(guildId, 'Please provide an event ID!\n\nUsage: `!cancelevent <event_id>`')]
+        embeds: [await errorEmbed(guildId, `Please provide an event ID!\n\nUsage: \`${prefix}cancelevent <event_id>\``)]
       });
     }
 

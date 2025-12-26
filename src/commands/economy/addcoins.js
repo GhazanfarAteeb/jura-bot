@@ -2,6 +2,7 @@ import { PermissionFlagsBits } from 'discord.js';
 import Economy from '../../models/Economy.js';
 import Guild from '../../models/Guild.js';
 import { successEmbed, errorEmbed } from '../../utils/embeds.js';
+import { getPrefix } from '../../utils/helpers.js';
 
 export default {
     name: 'addcoins',
@@ -20,14 +21,16 @@ export default {
             const amount = parseInt(args[1]);
             
             if (!targetUser) {
+                const prefix = await getPrefix(guildId);
                 return message.reply({
-                    embeds: [await errorEmbed(guildId, 'Please mention a user!\n\nUsage: `!addcoins @user <amount>`')]
+                    embeds: [await errorEmbed(guildId, `Please mention a user!\n\nUsage: \`${prefix}addcoins @user <amount>\``)]
                 });
             }
             
             if (!amount || isNaN(amount) || amount <= 0) {
+                const prefix = await getPrefix(guildId);
                 return message.reply({
-                    embeds: [await errorEmbed(guildId, 'Please provide a valid amount!\n\nUsage: `!addcoins @user <amount>`')]
+                    embeds: [await errorEmbed(guildId, `Please provide a valid amount!\n\nUsage: \`${prefix}addcoins @user <amount>\``)]
                 });
             }
             

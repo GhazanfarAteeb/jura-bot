@@ -326,5 +326,5 @@ export default {
 
 async function getPrefix(guildId) {
   const guildConfig = await Guild.getGuild(guildId);
-  return guildConfig.prefix || '!';
+  return guildConfig?.prefix || process.env.DEFAULT_PREFIX || '!';
 }

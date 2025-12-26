@@ -1,6 +1,7 @@
 import { Events, ChannelType, PermissionFlagsBits } from 'discord.js';
 import Guild from '../../models/Guild.js';
 import TempVoice from '../../models/TempVoice.js';
+import { getPrefix } from '../../utils/helpers.js';
 
 export default {
   name: Events.VoiceStateUpdate,
@@ -188,8 +189,9 @@ async function transferOwnership(channel, tempData, guild) {
 
     // Notify the new owner (optional - send DM)
     try {
+      const prefix = await getPrefix(guild.id);
       await newOwner.send({
-        content: `🎙️ You are now the owner of **${newChannelName}** in **${guild.name}**!\n\nUse \`!tempvc\` commands to manage your channel.`
+        content: `🎙️ You are now the owner of **${newChannelName}** in **${guild.name}**!\n\nUse \`${prefix}tempvc\` commands to manage your channel.`
       });
     } catch (e) {
       // DM might be disabled, ignore

@@ -1,6 +1,7 @@
 import { EmbedBuilder, PermissionFlagsBits, ChannelType } from 'discord.js';
 import Guild from '../../models/Guild.js';
 import { successEmbed, errorEmbed, infoEmbed, GLYPHS } from '../../utils/embeds.js';
+import { getPrefix } from '../../utils/helpers.js';
 
 const LOG_TYPES = {
     mod: { name: 'Moderation Log', emoji: '🔨', field: 'modLog', description: 'Bans, kicks, warns, timeouts' },
@@ -57,6 +58,7 @@ export default {
     },
 
     async showConfig(message, guildConfig, guildId) {
+        const prefix = await getPrefix(guildId);
         const logStatus = Object.entries(LOG_TYPES).map(([key, log]) => {
             const channelId = guildConfig.channels[log.field];
             const channel = channelId ? message.guild.channels.cache.get(channelId) : null;
@@ -70,12 +72,12 @@ export default {
             .setDescription(
                 `**Current Log Channels:**\n\n${logStatus}\n\n` +
                 `**Commands:**\n` +
-                `${GLYPHS.ARROW_RIGHT} \`!logs set <type> #channel\`\n` +
-                `${GLYPHS.ARROW_RIGHT} \`!logs disable <type>\`\n` +
-                `${GLYPHS.ARROW_RIGHT} \`!logs all #channel\` - Set all to one channel\n` +
-                `${GLYPHS.ARROW_RIGHT} \`!logs list\` - View all log types`
+                `${GLYPHS.ARROW_RIGHT} \`${prefix}logs set <type> #channel\`\n` +
+                `${GLYPHS.ARROW_RIGHT} \`${prefix}logs disable <type>\`\n` +
+                `${GLYPHS.ARROW_RIGHT} \`${prefix}logs all #channel\` - Set all to one channel\n` +
+                `${GLYPHS.ARROW_RIGHT} \`${prefix}logs list\` - View all log types`
             )
-            .setFooter({ text: 'Use !setup to auto-create all log channels' })
+            .setFooter({ text: `Use ${prefix}setup to auto-create all log channels` })
             .setTimestamp();
 
         return message.reply({ embeds: [embed] });
@@ -85,13 +87,14 @@ export default {
         const logType = args[0]?.toLowerCase();
         const channel = message.mentions.channels.first() || 
             message.guild.channels.cache.get(args[1]);
+        const prefix = await getPrefix(guildId);
 
         if (!logType || !LOG_TYPES[logType]) {
             const types = Object.keys(LOG_TYPES).join(', ');
             const embed = await errorEmbed(guildId, 'Invalid Log Type',
                 `${GLYPHS.ERROR} Please specify a valid log type.\n\n` +
                 `**Available types:** ${types}\n\n` +
-                `**Usage:** \`!logs set <type> #channel\``
+                `**Usage:** \`${prefix}logs set <type> #channel\``
             );
             return message.reply({ embeds: [embed] });
         }
@@ -99,7 +102,7 @@ export default {
         if (!channel) {
             const embed = await errorEmbed(guildId, 'No Channel',
                 `${GLYPHS.ERROR} Please mention a channel.\n\n` +
-                `**Usage:** \`!logs set ${logType} #channel\``
+                `**Usage:** \`${prefix}logs set ${logType} #channel\``
             );
             return message.reply({ embeds: [embed] });
         }
@@ -127,13 +130,14 @@ export default {
 
     async disableLog(message, args, guildConfig, guildId) {
         const logType = args[0]?.toLowerCase();
+        const prefix = await getPrefix(guildId);
 
         if (!logType || !LOG_TYPES[logType]) {
             const types = Object.keys(LOG_TYPES).join(', ');
             const embed = await errorEmbed(guildId, 'Invalid Log Type',
                 `${GLYPHS.ERROR} Please specify a valid log type.\n\n` +
                 `**Available types:** ${types}\n\n` +
-                `**Usage:** \`!logs disable <type>\``
+                `**Usage:** \`${prefix}logs disable <type>\``
             );
             return message.reply({ embeds: [embed] });
         }
@@ -154,11 +158,12 @@ export default {
     async setAllLogs(message, args, guildConfig, guildId) {
         const channel = message.mentions.channels.first() || 
             message.guild.channels.cache.get(args[0]);
+        const prefix = await getPrefix(guildId);
 
         if (!channel) {
             const embed = await errorEmbed(guildId, 'No Channel',
                 `${GLYPHS.ERROR} Please mention a channel.\n\n` +
-                `**Usage:** \`!logs all #channel\``
+                `**Usage:** \`${prefix}logs all #channel\``
             );
             return message.reply({ embeds: [embed] });
         }
@@ -188,6 +193,7 @@ export default {
     },
 
     async listTypes(message, guildId) {
+        const prefix = await getPrefix(guildId);
         const typeList = Object.entries(LOG_TYPES).map(([key, log]) => 
             `${log.emoji} **${key}** - ${log.name}\n   └ ${log.description}`
         ).join('\n\n');
@@ -196,7 +202,7 @@ export default {
             .setColor('#5865F2')
             .setTitle('📋 Log Types')
             .setDescription(typeList)
-            .setFooter({ text: 'Use !logs set <type> #channel to configure' })
+            .setFooter({ text: `Use ${prefix}logs set <type> #channel to configure` })
             .setTimestamp();
 
         return message.reply({ embeds: [embed] });

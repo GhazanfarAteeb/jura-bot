@@ -3,6 +3,7 @@ import Economy from '../../models/Economy.js';
 import Guild from '../../models/Guild.js';
 import { REPUTATION_COOLDOWN, REPUTATION_AMOUNT } from '../../utils/gameConfig.js';
 import { successEmbed, errorEmbed } from '../../utils/embeds.js';
+import { getPrefix } from '../../utils/helpers.js';
 
 export default {
     name: 'rep',
@@ -20,8 +21,9 @@ export default {
             const targetUser = message.mentions.users.first();
             
             if (!targetUser) {
+                const prefix = await getPrefix(guildId);
                 return message.reply({
-                    embeds: [await errorEmbed(guildId, 'Please mention a user to give reputation to!\n\nUsage: `!rep @user`')]
+                    embeds: [await errorEmbed(guildId, `Please mention a user to give reputation to!\n\nUsage: \`${prefix}rep @user\``)]
                 });
             }
             

@@ -1,5 +1,6 @@
 import { EmbedBuilder } from 'discord.js';
 import Economy from '../../models/Economy.js';
+import { getPrefix } from '../../utils/helpers.js';
 
 export default {
     name: 'setprofile',
@@ -17,22 +18,23 @@ export default {
         const value = args.slice(1).join(' ');
         
         if (!setting) {
+            const prefix = await getPrefix(guildId);
             return message.reply({
                 embeds: [new EmbedBuilder()
                     .setColor('#5865F2')
                     .setTitle('⚙️ Profile Customization')
                     .setDescription('Customize your profile with these settings:')
                     .addFields(
-                        { name: '📝 Bio', value: '`!setprofile bio <text>`\nSet your profile bio (max 200 chars)', inline: false },
-                        { name: '📄 Description', value: '`!setprofile description <text>`\nSet profile description (max 500 chars)', inline: false },
-                        { name: '👑 Title', value: '`!setprofile title <text>`\nSet a custom title', inline: false },
-                        { name: '🎨 Background Color', value: '`!setprofile color <hex>`\nSet background color (e.g., #FF0000)', inline: false },
-                        { name: '✨ Accent Color', value: '`!setprofile accent <hex>`\nSet accent color for borders', inline: false },
-                        { name: '💫 Blur Color', value: '`!setprofile blurcolor <rgba>`\nSet description blur (e.g., rgba(0,0,0,0.7))', inline: false },
-                        { name: '🔘 Toggle Stats', value: '`!setprofile stats on/off`\nShow/hide stats on profile', inline: false },
-                        { name: '🏅 Toggle Badges', value: '`!setprofile badges on/off`\nShow/hide badges on profile', inline: false }
+                        { name: '📝 Bio', value: `\`${prefix}setprofile bio <text>\`\nSet your profile bio (max 200 chars)`, inline: false },
+                        { name: '📄 Description', value: `\`${prefix}setprofile description <text>\`\nSet profile description (max 500 chars)`, inline: false },
+                        { name: '👑 Title', value: `\`${prefix}setprofile title <text>\`\nSet a custom title`, inline: false },
+                        { name: '🎨 Background Color', value: `\`${prefix}setprofile color <hex>\`\nSet background color (e.g., #FF0000)`, inline: false },
+                        { name: '✨ Accent Color', value: `\`${prefix}setprofile accent <hex>\`\nSet accent color for borders`, inline: false },
+                        { name: '💫 Blur Color', value: `\`${prefix}setprofile blurcolor <rgba>\`\nSet description blur (e.g., rgba(0,0,0,0.7))`, inline: false },
+                        { name: '🔘 Toggle Stats', value: `\`${prefix}setprofile stats on/off\`\nShow/hide stats on profile`, inline: false },
+                        { name: '🏅 Toggle Badges', value: `\`${prefix}setprofile badges on/off\`\nShow/hide badges on profile`, inline: false }
                     )
-                    .setFooter({ text: 'Use !profile to preview changes' })
+                    .setFooter({ text: `Use ${prefix}profile to preview changes` })
                 ]
             });
         }

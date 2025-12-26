@@ -1,6 +1,7 @@
 import { PermissionFlagsBits } from 'discord.js';
 import EmbedTemplate from '../../models/EmbedTemplate.js';
 import { errorEmbed, successEmbed } from '../../utils/embeds.js';
+import { getPrefix } from '../../utils/helpers.js';
 
 export default {
     name: 'embedset',
@@ -14,10 +15,11 @@ export default {
         const embedName = args[0];
         const property = args[1]?.toLowerCase();
         const value = args.slice(2).join(' ');
+        const prefix = await getPrefix(guildId);
         
         if (!embedName || !property) {
             return message.reply({
-                embeds: [await errorEmbed(guildId, 'Usage: `!embedset <name> <property> <value>`\n\nProperties: title, description, color, content, image, thumbnail, author, authorIcon, footer, footerIcon, addfield, removefield, timestamp')]
+                embeds: [await errorEmbed(guildId, `Usage: \`${prefix}embedset <name> <property> <value>\`\n\nProperties: title, description, color, content, image, thumbnail, author, authorIcon, footer, footerIcon, addfield, removefield, timestamp`)]
             });
         }
         
@@ -25,7 +27,7 @@ export default {
         
         if (!template) {
             return message.reply({
-                embeds: [await errorEmbed(guildId, `Embed "${embedName}" not found! Create it first with \`!embed create ${embedName}\``)]
+                embeds: [await errorEmbed(guildId, `Embed "${embedName}" not found! Create it first with \`${prefix}embed create ${embedName}\``)]
             });
         }
         
@@ -173,11 +175,11 @@ export default {
                 
             case 'addfield':
             case 'field':
-                if (!value) return message.reply({ embeds: [await errorEmbed(guildId, 'Usage: `!embedset <name> addfield <name> | <value> [inline]`')] });
+                if (!value) return message.reply({ embeds: [await errorEmbed(guildId, `Usage: \`${prefix}embedset <name> addfield <name> | <value> [inline]\``)] });
                 
                 const parts = value.split('|');
                 if (parts.length < 2) {
-                    return message.reply({ embeds: [await errorEmbed(guildId, 'Usage: `!embedset <name> addfield <name> | <value> [inline]`')] });
+                    return message.reply({ embeds: [await errorEmbed(guildId, `Usage: \`${prefix}embedset <name> addfield <name> | <value> [inline]\``)] });
                 }
                 
                 const fieldName = parts[0].trim();
@@ -255,7 +257,7 @@ export default {
         await template.save();
         
         return message.reply({
-            embeds: [await successEmbed(guildId, '✅ Embed Updated', `Updated **${property}** for embed "${embedName}"\n\nUse \`!embed preview ${embedName}\` to see changes`)]
+            embeds: [await successEmbed(guildId, '✅ Embed Updated', `Updated **${property}** for embed "${embedName}"\n\nUse \`${prefix}embed preview ${embedName}\` to see changes`)]
         });
     }
 };

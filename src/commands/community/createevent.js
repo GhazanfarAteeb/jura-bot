@@ -1,6 +1,6 @@
 import Event from '../../models/Event.js';
 import { successEmbed, errorEmbed, GLYPHS } from '../../utils/embeds.js';
-import { parseDuration, hasPermission } from '../../utils/helpers.js';
+import { parseDuration, hasPermission, getPrefix } from '../../utils/helpers.js';
 
 export default {
   name: 'createevent',
@@ -20,8 +20,9 @@ export default {
     }
 
     if (args.length === 0) {
+      const prefix = await getPrefix(guildId);
       return message.reply({
-        embeds: [await errorEmbed(guildId, 'Please provide event details!\n\nUsage: `!createevent <time> | <title> | [description]`\n\nExamples:\n• `!createevent 2h | Movie Night | Join us in VC!`\n• `!createevent 1d12h | Tournament | Registration required`\n• `!createevent 30m | Quick Meeting`')]
+        embeds: [await errorEmbed(guildId, `Please provide event details!\n\nUsage: \`${prefix}createevent <time> | <title> | [description]\`\n\nExamples:\n• \`${prefix}createevent 2h | Movie Night | Join us in VC!\`\n• \`${prefix}createevent 1d12h | Tournament | Registration required\`\n• \`${prefix}createevent 30m | Quick Meeting\``)]
       });
     }
 

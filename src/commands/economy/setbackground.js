@@ -1,6 +1,7 @@
 import { EmbedBuilder } from 'discord.js';
 import Economy from '../../models/Economy.js';
 import { getBackground } from '../../utils/shopItems.js';
+import { getPrefix } from '../../utils/helpers.js';
 
 export default {
     name: 'setbackground',
@@ -15,7 +16,8 @@ export default {
         const guildId = message.guild.id;
         
         if (!args[0]) {
-            return message.reply('❌ Please specify a background! Use `!inventory backgrounds` to see your backgrounds.');
+            const prefix = await getPrefix(guildId);
+            return message.reply(`❌ Please specify a background! Use \`${prefix}inventory backgrounds\` to see your backgrounds.`);
         }
         
         try {
@@ -29,7 +31,8 @@ export default {
             );
             
             if (!ownedBg) {
-                return message.reply(`❌ You don't own this background! Use \`!inventory backgrounds\` to see your backgrounds or \`!shop\` to purchase new ones.`);
+                const prefix = await getPrefix(guildId);
+                return message.reply(`❌ You don't own this background! Use \`${prefix}inventory backgrounds\` to see your backgrounds or \`${prefix}shop\` to purchase new ones.`);
             }
             
             // Get background data

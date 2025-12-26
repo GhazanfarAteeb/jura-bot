@@ -1,6 +1,7 @@
 import { EmbedBuilder } from 'discord.js';
 import Birthday from '../../models/Birthday.js';
 import { errorEmbed, infoEmbed } from '../../utils/embeds.js';
+import { getPrefix } from '../../utils/helpers.js';
 
 export default {
   name: 'mybirthday',
@@ -16,12 +17,13 @@ export default {
       const birthday = await Birthday.findOne({ guildId, userId });
 
       if (!birthday) {
+        const prefix = await getPrefix(guildId);
         return message.reply({
           embeds: [await infoEmbed(guildId, '🎂 No Birthday Set',
             'You don\'t have a birthday registered!\n\n' +
             '**To set your birthday:**\n' +
-            '• Ask a staff member to set it using `!setbirthday`\n' +
-            '• Or submit a request using `!requestbirthday <month> <day> [year]`')]
+            `• Ask a staff member to set it using \`${prefix}setbirthday\`\n` +
+            `• Or submit a request using \`${prefix}requestbirthday <month> <day> [year]\``)]
         });
       }
 

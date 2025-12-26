@@ -3,6 +3,7 @@ import Economy from '../../models/Economy.js';
 import Guild from '../../models/Guild.js';
 import { ROULETTE_MIN, ROULETTE_MAX } from '../../utils/gameConfig.js';
 import { errorEmbed } from '../../utils/embeds.js';
+import { getPrefix } from '../../utils/helpers.js';
 
 export default {
     name: 'roulette',
@@ -21,28 +22,30 @@ export default {
             const bet = args[1]?.toLowerCase();
             
             if (!amount || isNaN(amount)) {
+                const prefix = await getPrefix(guildId);
                 return message.reply({
                     embeds: [await errorEmbed(guildId, 
                         `Please provide a valid bet amount!\n\n` +
-                        `**Usage:** \`!roulette <amount> <bet>\`\n` +
+                        `**Usage:** \`${prefix}roulette <amount> <bet>\`\n` +
                         `**Color Bets:** red, black, green (2x payout)\n` +
                         `**Number Bets:** 0-36 (35x payout)\n\n` +
                         `**Examples:**\n` +
-                        `\`!roulette 100 red\`\n` +
-                        `\`!roulette 50 17\``
+                        `\`${prefix}roulette 100 red\`\n` +
+                        `\`${prefix}roulette 50 17\``
                     )]
                 });
             }
             
             if (!bet) {
+                const prefix = await getPrefix(guildId);
                 return message.reply({
                     embeds: [await errorEmbed(guildId, 
                         `Please provide a bet!\n\n` +
                         `**Color Bets:** red, black, green (2x payout)\n` +
                         `**Number Bets:** 0-36 (35x payout)\n\n` +
                         `**Examples:**\n` +
-                        `\`!roulette 100 red\`\n` +
-                        `\`!roulette 50 17\``
+                        `\`${prefix}roulette 100 red\`\n` +
+                        `\`${prefix}roulette 50 17\``
                     )]
                 });
             }

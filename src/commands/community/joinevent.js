@@ -1,5 +1,6 @@
 import Event from '../../models/Event.js';
 import { successEmbed, errorEmbed, GLYPHS } from '../../utils/embeds.js';
+import { getPrefix } from '../../utils/helpers.js';
 
 export default {
   name: 'joinevent',
@@ -12,8 +13,9 @@ export default {
     const userId = message.author.id;
 
     if (!args[0]) {
+      const prefix = await getPrefix(guildId);
       return message.reply({
-        embeds: [await errorEmbed(guildId, 'Please provide an event ID!\n\nUsage: `!joinevent <event_id>`\n\nFind event IDs with: `!events`')]
+        embeds: [await errorEmbed(guildId, `Please provide an event ID!\n\nUsage: \`${prefix}joinevent <event_id>\`\n\nFind event IDs with: \`${prefix}events\``)]
       });
     }
 

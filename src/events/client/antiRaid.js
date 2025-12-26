@@ -1,6 +1,7 @@
 import { Events, Collection, PermissionFlagsBits, ChannelType } from 'discord.js';
 import Guild from '../../models/Guild.js';
 import { errorEmbed, infoEmbed, GLYPHS } from '../../utils/embeds.js';
+import { getPrefix } from '../../utils/helpers.js';
 
 // Cache for tracking joins
 const joinCache = new Collection(); // guildId -> { joins: [{ userId, timestamp }], raidMode: boolean }
@@ -93,12 +94,13 @@ export default {
       // DM server owner
       try {
         const owner = await guild.fetchOwner();
+        const prefix = await getPrefix(guild.id);
         const dmEmbed = await errorEmbed(guild.id, '🚨 Raid Detected on Your Server',
           `**Server:** ${guild.name}\n` +
           `**Members Joined:** ${recentJoins.length}\n\n` +
           `**Action Taken:** ${action.toUpperCase()}\n\n` +
-          `Use \`!antiraid disable\` if this was a false positive.\n` +
-          `Use \`!lockdown off\` to end lockdown mode.`
+          `Use \`${prefix}antiraid disable\` if this was a false positive.\n` +
+          `Use \`${prefix}lockdown off\` to end lockdown mode.`
         );
         await owner.send({ embeds: [dmEmbed] }).catch(() => { });
       } catch (error) {
@@ -203,10 +205,11 @@ export default {
       if (guildConfig.channels.alertLog) {
         const alertChannel = guild.channels.cache.get(guildConfig.channels.alertLog);
         if (alertChannel) {
+          const prefix = await getPrefix(guild.id);
           const embed = await infoEmbed(guild.id, '🔒 SERVER LOCKDOWN ENABLED',
             `The server has been locked down due to:\n**${reason}**\n\n` +
             `Regular members cannot send messages until lockdown is lifted.\n\n` +
-            `Staff: Use \`!lockdown off\` to disable lockdown.`
+            `Staff: Use \`${prefix}lockdown off\` to disable lockdown.`
           );
           embed.setColor('#FF9900');
           await alertChannel.send({ embeds: [embed] });

@@ -1,5 +1,6 @@
 import { EmbedBuilder } from 'discord.js';
 import logger from '../../utils/logger.js';
+import { getPrefix } from '../../utils/helpers.js';
 
 const reactions = {
   // Positive reactions
@@ -765,8 +766,9 @@ export default {
     const targetUser = message.mentions.users.first();
 
     if (!reactions[action]) {
+      const prefix = await getPrefix(message.guild.id);
       return message.reply(
-        `❌ Unknown reaction: **${action}**\n\n💡 **Tip:** Use \`!react\` without arguments to see all available reactions!`
+        `❌ Unknown reaction: **${action}**\n\n💡 **Tip:** Use \`${prefix}react\` without arguments to see all available reactions!`
       );
     }
 

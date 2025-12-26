@@ -1,6 +1,7 @@
 import { PermissionFlagsBits, EmbedBuilder } from 'discord.js';
 import EmbedTemplate from '../../models/EmbedTemplate.js';
 import { errorEmbed, successEmbed } from '../../utils/embeds.js';
+import { getPrefix } from '../../utils/helpers.js';
 
 export default {
     name: 'embed',
@@ -22,10 +23,11 @@ export default {
         // List all embeds
         if (action === 'list') {
             const templates = await EmbedTemplate.find({ guildId });
+            const prefix = await getPrefix(guildId);
             
             if (templates.length === 0) {
                 return message.reply({
-                    embeds: [await errorEmbed(guildId, 'No custom embeds found! Create one with `!embed create`')]
+                    embeds: [await errorEmbed(guildId, `No custom embeds found! Create one with \`${prefix}embed create\``)]
                 });
             }
             
@@ -40,10 +42,11 @@ export default {
         if (action === 'send') {
             const embedName = args[1];
             const targetChannel = message.mentions.channels.first() || message.channel;
+            const prefix = await getPrefix(guildId);
             
             if (!embedName) {
                 return message.reply({
-                    embeds: [await errorEmbed(guildId, 'Please specify an embed name! Usage: `!embed send <name> [#channel]`')]
+                    embeds: [await errorEmbed(guildId, `Please specify an embed name! Usage: \`${prefix}embed send <name> [#channel]\``)]
                 });
             }
             
@@ -86,10 +89,11 @@ export default {
         // Preview embed
         if (action === 'preview') {
             const embedName = args[1];
+            const prefix = await getPrefix(guildId);
             
             if (!embedName) {
                 return message.reply({
-                    embeds: [await errorEmbed(guildId, 'Please specify an embed name! Usage: `!embed preview <name>`')]
+                    embeds: [await errorEmbed(guildId, `Please specify an embed name! Usage: \`${prefix}embed preview <name>\``)]
                 });
             }
             
@@ -119,10 +123,11 @@ export default {
         // Delete embed
         if (action === 'delete' || action === 'remove') {
             const embedName = args[1];
+            const prefix = await getPrefix(guildId);
             
             if (!embedName) {
                 return message.reply({
-                    embeds: [await errorEmbed(guildId, 'Please specify an embed name! Usage: `!embed delete <name>`')]
+                    embeds: [await errorEmbed(guildId, `Please specify an embed name! Usage: \`${prefix}embed delete <name>\``)]
                 });
             }
             
@@ -142,10 +147,11 @@ export default {
         // Create/Edit - Interactive setup
         if (action === 'create' || action === 'edit') {
             const embedName = args[1];
+            const prefix = await getPrefix(guildId);
             
             if (!embedName) {
                 return message.reply({
-                    embeds: [await errorEmbed(guildId, `Please specify an embed name! Usage: \`!embed ${action} <name>\``)]
+                    embeds: [await errorEmbed(guildId, `Please specify an embed name! Usage: \`${prefix}embed ${action} <name>\``)]
                 });
             }
             
@@ -153,13 +159,13 @@ export default {
             
             if (action === 'create' && existingTemplate) {
                 return message.reply({
-                    embeds: [await errorEmbed(guildId, `Embed "${embedName}" already exists! Use \`!embed edit ${embedName}\` to modify it.`)]
+                    embeds: [await errorEmbed(guildId, `Embed "${embedName}" already exists! Use \`${prefix}embed edit ${embedName}\` to modify it.`)]
                 });
             }
             
             if (action === 'edit' && !existingTemplate) {
                 return message.reply({
-                    embeds: [await errorEmbed(guildId, `Embed "${embedName}" not found! Use \`!embed create ${embedName}\` to create it.`)]
+                    embeds: [await errorEmbed(guildId, `Embed "${embedName}" not found! Use \`${prefix}embed create ${embedName}\` to create it.`)]
                 });
             }
             
@@ -167,30 +173,30 @@ export default {
             const setupEmbed = new EmbedBuilder()
                 .setColor('#5865F2')
                 .setTitle(`📝 ${action === 'create' ? 'Creating' : 'Editing'} Embed: ${embedName}`)
-                .setDescription('Use the `!embedset` command to configure this embed:\n\n' +
+                .setDescription(`Use the \`${prefix}embedset\` command to configure this embed:\n\n` +
                     '**Basic Setup:**\n' +
-                    `\`!embedset ${embedName} title <text>\` - Set title\n` +
-                    `\`!embedset ${embedName} description <text>\` - Set description\n` +
-                    `\`!embedset ${embedName} color <hex>\` - Set color (e.g., #FF0000)\n` +
-                    `\`!embedset ${embedName} content <text>\` - Set message content\n\n` +
+                    `\`${prefix}embedset ${embedName} title <text>\` - Set title\n` +
+                    `\`${prefix}embedset ${embedName} description <text>\` - Set description\n` +
+                    `\`${prefix}embedset ${embedName} color <hex>\` - Set color (e.g., #FF0000)\n` +
+                    `\`${prefix}embedset ${embedName} content <text>\` - Set message content\n\n` +
                     '**Images:**\n' +
-                    `\`!embedset ${embedName} image <url>\` - Set large image\n` +
-                    `\`!embedset ${embedName} thumbnail <url>\` - Set thumbnail\n` +
-                    `\`!embedset ${embedName} thumbnail userAvatar\` - Use user\'s avatar\n\n` +
+                    `\`${prefix}embedset ${embedName} image <url>\` - Set large image\n` +
+                    `\`${prefix}embedset ${embedName} thumbnail <url>\` - Set thumbnail\n` +
+                    `\`${prefix}embedset ${embedName} thumbnail userAvatar\` - Use user\'s avatar\n\n` +
                     '**Author Section:**\n' +
-                    `\`!embedset ${embedName} author <text>\` - Set author name\n` +
-                    `\`!embedset ${embedName} authorIcon <url>\` - Set author icon\n` +
-                    `\`!embedset ${embedName} authorIcon userAvatar\` - Use user\'s avatar\n\n` +
+                    `\`${prefix}embedset ${embedName} author <text>\` - Set author name\n` +
+                    `\`${prefix}embedset ${embedName} authorIcon <url>\` - Set author icon\n` +
+                    `\`${prefix}embedset ${embedName} authorIcon userAvatar\` - Use user\'s avatar\n\n` +
                     '**Footer:**\n' +
-                    `\`!embedset ${embedName} footer <text>\` - Set footer text\n` +
-                    `\`!embedset ${embedName} footerIcon <url>\` - Set footer icon\n` +
-                    `\`!embedset ${embedName} footerIcon userAvatar\` - Use user\'s avatar\n` +
-                    `\`!embedset ${embedName} footerIcon botAvatar\` - Use bot\'s avatar\n\n` +
+                    `\`${prefix}embedset ${embedName} footer <text>\` - Set footer text\n` +
+                    `\`${prefix}embedset ${embedName} footerIcon <url>\` - Set footer icon\n` +
+                    `\`${prefix}embedset ${embedName} footerIcon userAvatar\` - Use user\'s avatar\n` +
+                    `\`${prefix}embedset ${embedName} footerIcon botAvatar\` - Use bot\'s avatar\n\n` +
                     '**Fields:**\n' +
-                    `\`!embedset ${embedName} addfield <name> | <value> [inline]\` - Add field\n\n` +
+                    `\`${prefix}embedset ${embedName} addfield <name> | <value> [inline]\` - Add field\n\n` +
                     '**Variables:** `{user}` `{user.name}` `{user.tag}` `{server}` `{server.members}` `{channel}` `{date}` `{time}`\n\n' +
-                    `**Preview:** \`!embed preview ${embedName}\`\n` +
-                    `**Send:** \`!embed send ${embedName} [#channel]\``
+                    `**Preview:** \`${prefix}embed preview ${embedName}\`\n` +
+                    `**Send:** \`${prefix}embed send ${embedName} [#channel]\``
                 )
                 .setTimestamp();
             

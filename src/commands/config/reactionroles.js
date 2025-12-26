@@ -1,6 +1,7 @@
 import { EmbedBuilder, PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } from 'discord.js';
 import Guild from '../../models/Guild.js';
 import { successEmbed, errorEmbed, infoEmbed, GLYPHS } from '../../utils/embeds.js';
+import { getPrefix } from '../../utils/helpers.js';
 
 export default {
     name: 'reactionroles',
@@ -16,6 +17,7 @@ export default {
     async execute(message, args) {
         const guildId = message.guild.id;
         const subCommand = args[0]?.toLowerCase();
+        const prefix = await getPrefix(guildId);
 
         try {
             const guildConfig = await Guild.getGuild(guildId);
@@ -27,8 +29,8 @@ export default {
                 if (panels.length === 0) {
                     const embed = await infoEmbed(guildId, '📋 Reaction Roles',
                         `${GLYPHS.INFO} No reaction role panels set up.\n\n` +
-                        `Use \`!colorroles\` to set up a color roles panel, or\n` +
-                        `Use \`!reactionroles add\` to create a custom panel.`
+                        `Use \`${prefix}colorroles\` to set up a color roles panel, or\n` +
+                        `Use \`${prefix}reactionroles add\` to create a custom panel.`
                     );
                     return message.reply({ embeds: [embed] });
                 }
@@ -45,7 +47,7 @@ export default {
                                    `${GLYPHS.DOT} Roles: ${panel.roles.length}`;
                         }).join('\n\n')
                     )
-                    .setFooter({ text: 'Use !reactionroles remove <number> to remove a panel' })
+                    .setFooter({ text: `Use ${prefix}reactionroles remove <number> to remove a panel` })
                     .setTimestamp();
 
                 return message.reply({ embeds: [embed] });
@@ -58,7 +60,7 @@ export default {
                 if (isNaN(panelIndex) || panelIndex < 0 || panelIndex >= panels.length) {
                     const embed = await errorEmbed(guildId, 'Invalid Panel',
                         `${GLYPHS.ERROR} Please provide a valid panel number.\n\n` +
-                        `Use \`!reactionroles list\` to see all panels.`
+                        `Use \`${prefix}reactionroles list\` to see all panels.`
                     );
                     return message.reply({ embeds: [embed] });
                 }
@@ -176,7 +178,7 @@ export default {
                 // Custom reaction role setup (simplified)
                 const embed = await infoEmbed(guildId, '➕ Add Reaction Role',
                     `**Quick Setup Commands:**\n\n` +
-                    `${GLYPHS.ARROW_RIGHT} \`!colorroles [#channel]\` - Color roles panel\n\n` +
+                    `${GLYPHS.ARROW_RIGHT} \`${prefix}colorroles [#channel]\` - Color roles panel\n\n` +
                     `**Custom Setup (Coming Soon):**\n` +
                     `A full custom reaction role builder will be added soon!`
                 );
@@ -186,10 +188,10 @@ export default {
             // Unknown subcommand
             const embed = await infoEmbed(guildId, '📋 Reaction Roles Help',
                 `**Available Commands:**\n\n` +
-                `${GLYPHS.ARROW_RIGHT} \`!reactionroles list\` - List all panels\n` +
-                `${GLYPHS.ARROW_RIGHT} \`!reactionroles remove <#>\` - Remove a panel\n` +
-                `${GLYPHS.ARROW_RIGHT} \`!reactionroles clear\` - Remove all panels\n` +
-                `${GLYPHS.ARROW_RIGHT} \`!colorroles [#channel]\` - Create color roles panel`
+                `${GLYPHS.ARROW_RIGHT} \`${prefix}reactionroles list\` - List all panels\n` +
+                `${GLYPHS.ARROW_RIGHT} \`${prefix}reactionroles remove <#>\` - Remove a panel\n` +
+                `${GLYPHS.ARROW_RIGHT} \`${prefix}reactionroles clear\` - Remove all panels\n` +
+                `${GLYPHS.ARROW_RIGHT} \`${prefix}colorroles [#channel]\` - Create color roles panel`
             );
             return message.reply({ embeds: [embed] });
 

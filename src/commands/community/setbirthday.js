@@ -2,6 +2,7 @@ import { PermissionFlagsBits } from 'discord.js';
 import Birthday from '../../models/Birthday.js';
 import Guild from '../../models/Guild.js';
 import { successEmbed, errorEmbed, GLYPHS } from '../../utils/embeds.js';
+import { getPrefix } from '../../utils/helpers.js';
 
 export default {
   name: 'setbirthday',
@@ -28,8 +29,9 @@ export default {
     }
 
     if (args.length < 3) {
+      const prefix = await getPrefix(guildId);
       return message.reply({
-        embeds: [await errorEmbed(guildId, 'Please provide a user and their birthday!\n\nUsage: `!setbirthday <@user> <month> <day> [year] [--fake] [--private]`\n\nExamples:\n• `!setbirthday @User 12 25` - December 25th\n• `!setbirthday @User 12 25 2000` - December 25th, 2000\n• `!setbirthday @User 12 25 --fake` - Fake birthday (for privacy)\n• `!setbirthday @User 12 25 --private` - No age will be shown')]
+        embeds: [await errorEmbed(guildId, `Please provide a user and their birthday!\n\nUsage: \`${prefix}setbirthday <@user> <month> <day> [year] [--fake] [--private]\`\n\nExamples:\n• \`${prefix}setbirthday @User 12 25\` - December 25th\n• \`${prefix}setbirthday @User 12 25 2000\` - December 25th, 2000\n• \`${prefix}setbirthday @User 12 25 --fake\` - Fake birthday (for privacy)\n• \`${prefix}setbirthday @User 12 25 --private\` - No age will be shown`)]
       });
     }
 

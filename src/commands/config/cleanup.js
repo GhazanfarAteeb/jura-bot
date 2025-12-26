@@ -2,6 +2,7 @@ import { PermissionFlagsBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, But
 import Guild from '../../models/Guild.js';
 import { successEmbed, errorEmbed, warningEmbed, GLYPHS } from '../../utils/embeds.js';
 import RateLimitQueue from '../../utils/RateLimitQueue.js';
+import { getPrefix } from '../../utils/helpers.js';
 
 export default {
   name: 'cleanup',
@@ -271,6 +272,7 @@ export default {
 
         // Send success message
         const stats = queue.stats;
+        const prefix = await getPrefix(guildId);
         const resultEmbed = new EmbedBuilder()
           .setColor(failedItems.length > 0 ? '#FEE75C' : '#57F287')
           .setTitle(failedItems.length > 0 ? '⚠️ Cleanup Completed with Errors' : '✅ Cleanup Complete!')
@@ -282,7 +284,7 @@ export default {
               `**Failed operations:**\n` +
               `${failedItems.map(i => `${GLYPHS.ERROR} ${i}`).join('\n')}\n\n` : '') +
             `${GLYPHS.SUCCESS} Bot configuration has been reset.\n` +
-            `Use \`!setup\` to set up the bot again.`
+            `Use \`${prefix}setup\` to set up the bot again.`
           )
           .setFooter({ text: `Queue stats: ${stats.completed} completed, ${stats.failed} failed` })
           .setTimestamp();

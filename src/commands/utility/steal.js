@@ -1,5 +1,6 @@
 import { PermissionFlagsBits } from 'discord.js';
 import { successEmbed, errorEmbed, GLYPHS } from '../../utils/embeds.js';
+import { getPrefix } from '../../utils/helpers.js';
 
 export default {
     name: 'steal',
@@ -27,13 +28,14 @@ export default {
         }
         
         if (!args[0]) {
+            const prefix = await getPrefix(guildId);
             return message.reply({
                 embeds: [await errorEmbed(guildId, 
                     'Please provide an emoji or image URL!\n\n' +
                     '**Usage:**\n' +
-                    '`!steal :emoji:` - Steal an emoji from another server\n' +
-                    '`!steal :emoji: newname` - Steal with a custom name\n' +
-                    '`!steal <url> name` - Add emoji from image URL'
+                    `\`${prefix}steal :emoji:\` - Steal an emoji from another server\n` +
+                    `\`${prefix}steal :emoji: newname\` - Steal with a custom name\n` +
+                    `\`${prefix}steal <url> name\` - Add emoji from image URL`
                 )]
             });
         }
@@ -58,8 +60,9 @@ export default {
             isAnimated = args[0].toLowerCase().endsWith('.gif');
             
             if (!emojiName) {
+                const prefix = await getPrefix(guildId);
                 return message.reply({
-                    embeds: [await errorEmbed(guildId, 'Please provide a name for the emoji!\n\n`!steal <url> <name>`')]
+                    embeds: [await errorEmbed(guildId, `Please provide a name for the emoji!\n\n\`${prefix}steal <url> <name>\``)]
                 });
             }
         }

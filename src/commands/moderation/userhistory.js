@@ -1,6 +1,7 @@
 import { EmbedBuilder, PermissionFlagsBits } from 'discord.js';
 import Member from '../../models/Member.js';
 import { errorEmbed } from '../../utils/embeds.js';
+import { getPrefix } from '../../utils/helpers.js';
 
 export default {
   name: 'userhistory',
@@ -124,9 +125,10 @@ export default {
 
     // Staff Notes Count
     if (memberData.notes && memberData.notes.length > 0) {
+      const prefix = await getPrefix(guildId);
       embed.addFields({
         name: '📋 Staff Notes',
-        value: `${memberData.notes.length} note(s) on file. Use \`!notes @user\` to view.`,
+        value: `${memberData.notes.length} note(s) on file. Use \`${prefix}notes @user\` to view.`,
         inline: false
       });
     }

@@ -3,6 +3,7 @@ import ModLog from '../../models/ModLog.js';
 import Guild from '../../models/Guild.js';
 import { successEmbed, errorEmbed, modLogEmbed, GLYPHS } from '../../utils/embeds.js';
 import logger from '../../utils/logger.js';
+import { getPrefix } from '../../utils/helpers.js';
 
 export default {
   name: 'untimeout',
@@ -31,12 +32,13 @@ export default {
     .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
 
   async execute(message, args) {
+    const prefix = await getPrefix(message.guild.id);
     if (!args[0]) {
       const embed = await errorEmbed(message.guild.id, 'Invalid Usage',
         `${GLYPHS.ARROW_RIGHT} Usage: \`untimeout <@user|user_id> [reason]\`\n\n` +
         `**Examples:**\n` +
-        `${GLYPHS.DOT} \`!untimeout @User\`\n` +
-        `${GLYPHS.DOT} \`!unmute @User Appeal accepted\``
+        `${GLYPHS.DOT} \`${prefix}untimeout @User\`\n` +
+        `${GLYPHS.DOT} \`${prefix}unmute @User Appeal accepted\``
       );
       return message.reply({ embeds: [embed] });
     }

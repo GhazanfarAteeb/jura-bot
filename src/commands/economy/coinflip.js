@@ -3,6 +3,7 @@ import Economy from '../../models/Economy.js';
 import Guild from '../../models/Guild.js';
 import { COINFLIP_MIN, COINFLIP_MAX } from '../../utils/gameConfig.js';
 import { errorEmbed } from '../../utils/embeds.js';
+import { getPrefix } from '../../utils/helpers.js';
 
 export default {
     name: 'coinflip',
@@ -21,21 +22,23 @@ export default {
             const choice = args[1]?.toLowerCase();
             
             if (!amount || isNaN(amount)) {
+                const prefix = await getPrefix(guildId);
                 return message.reply({
                     embeds: [await errorEmbed(guildId, 
                         `Please provide a valid bet amount!\n\n` +
-                        `Usage: \`!coinflip <amount> <heads|tails>\`\n` +
-                        `Example: \`!coinflip 100 heads\``
+                        `Usage: \`${prefix}coinflip <amount> <heads|tails>\`\n` +
+                        `Example: \`${prefix}coinflip 100 heads\``
                     )]
                 });
             }
             
             if (!choice || (choice !== 'heads' && choice !== 'h' && choice !== 'tails' && choice !== 't')) {
+                const prefix = await getPrefix(guildId);
                 return message.reply({
                     embeds: [await errorEmbed(guildId, 
                         `Please choose heads or tails!\n\n` +
-                        `Usage: \`!coinflip <amount> <heads|tails>\`\n` +
-                        `Example: \`!coinflip 100 heads\``
+                        `Usage: \`${prefix}coinflip <amount> <heads|tails>\`\n` +
+                        `Example: \`${prefix}coinflip 100 heads\``
                     )]
                 });
             }

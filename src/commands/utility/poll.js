@@ -1,5 +1,6 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, PermissionFlagsBits } from 'discord.js';
 import { successEmbed, errorEmbed, GLYPHS } from '../../utils/embeds.js';
+import { getPrefix } from '../../utils/helpers.js';
 
 const activePolls = new Map();
 
@@ -24,11 +25,12 @@ export default {
         const parts = input.split('|').map(p => p.trim()).filter(p => p);
 
         if (parts.length < 3) {
+            const prefix = await getPrefix(guildId);
             const embed = await errorEmbed(guildId, 'Invalid Format',
                 `${GLYPHS.ERROR} Please provide a question and at least 2 options.\n\n` +
-                `**Usage:** \`!poll Question | Option 1 | Option 2\`\n` +
-                `**Example:** \`!poll Best pizza topping? | Pepperoni | Cheese | Mushrooms\`\n\n` +
-                `**To end a poll:** \`!poll end <messageId>\``
+                `**Usage:** \`${prefix}poll Question | Option 1 | Option 2\`\n` +
+                `**Example:** \`${prefix}poll Best pizza topping? | Pepperoni | Cheese | Mushrooms\`\n\n` +
+                `**To end a poll:** \`${prefix}poll end <messageId>\``
             );
             return message.reply({ embeds: [embed] });
         }

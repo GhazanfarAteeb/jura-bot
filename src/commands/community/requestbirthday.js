@@ -2,6 +2,7 @@ import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'disc
 import Birthday, { BirthdayRequest } from '../../models/Birthday.js';
 import Guild from '../../models/Guild.js';
 import { successEmbed, errorEmbed, infoEmbed, GLYPHS } from '../../utils/embeds.js';
+import { getPrefix } from '../../utils/helpers.js';
 
 // Simple ID generator
 function generateRequestId() {
@@ -188,13 +189,14 @@ export default {
     const userId = message.author.id;
 
     if (args.length < 2) {
+      const prefix = await getPrefix(guildId);
       return message.reply({
         embeds: [await errorEmbed(guildId, 'Please provide your birthday!\n\n' +
-          'Usage: `!requestbirthday <month> <day> [year] [reason]`\n\n' +
+          `Usage: \`${prefix}requestbirthday <month> <day> [year] [reason]\`\n\n` +
           'Examples:\n' +
-          '• `!requestbirthday 12 25` - December 25th\n' +
-          '• `!requestbirthday 12 25 2000` - December 25th, 2000\n' +
-          '• `!requestbirthday 12 25 2000 My birthday was entered incorrectly`')]
+          `• \`${prefix}requestbirthday 12 25\` - December 25th\n` +
+          `• \`${prefix}requestbirthday 12 25 2000\` - December 25th, 2000\n` +
+          `• \`${prefix}requestbirthday 12 25 2000 My birthday was entered incorrectly\``)]
       });
     }
 
@@ -246,12 +248,13 @@ export default {
 
       if (existingRequest) {
         const ticketNum = existingRequest.getFormattedTicketNumber();
+        const prefix = await getPrefix(guildId);
         return message.reply({
           embeds: [await errorEmbed(guildId, `You already have an open ticket (${ticketNum})!\n\n` +
             `Requested: **${existingRequest.requestedBirthday.month}/${existingRequest.requestedBirthday.day}` +
             `${existingRequest.requestedBirthday.year ? `/${existingRequest.requestedBirthday.year}` : ''}**\n\n` +
             'Please wait for staff to review your request.\n' +
-            'Use `!cancelbirthday` to cancel your request.')]
+            `Use \`${prefix}cancelbirthday\` to cancel your request.`)]
         });
       }
 
@@ -318,6 +321,7 @@ export default {
       }
 
       // Confirm to user
+      const prefix = await getPrefix(guildId);
       const confirmEmbed = new EmbedBuilder()
         .setColor(0x57F287)
         .setTitle(`🎫 Ticket Created ${ticketNum}`)
@@ -327,7 +331,7 @@ export default {
           `**Requested Birthday:** ${MONTH_NAMES[month - 1]} ${day}${year ? `, ${year}` : ''}\n` +
           `**Reason:** ${reason || 'No reason provided'}\n\n` +
           `You will be notified when staff reviews your request.\n` +
-          `Use \`!cancelbirthday\` to cancel this request.`
+          `Use \`${prefix}cancelbirthday\` to cancel this request.`
         )
         .setFooter({ text: 'Birthday Ticket System' })
         .setTimestamp();

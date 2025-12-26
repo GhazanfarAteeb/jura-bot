@@ -1,6 +1,7 @@
 import { EmbedBuilder, PermissionFlagsBits, ChannelType } from 'discord.js';
 import Guild from '../../models/Guild.js';
 import { successEmbed, errorEmbed, infoEmbed, GLYPHS } from '../../utils/embeds.js';
+import { getPrefix } from '../../utils/helpers.js';
 
 export default {
     name: 'noxp',
@@ -47,6 +48,7 @@ export default {
 
     async showHelp(message, guildId, guildConfig) {
         const channels = guildConfig.features.levelSystem.noXpChannels || [];
+        const prefix = await getPrefix(guildId);
         
         const embed = new EmbedBuilder()
             .setColor('#5865F2')
@@ -55,13 +57,13 @@ export default {
                 `**Blacklisted Channels:** ${channels.length}\n\n` +
                 `Messages in these channels won't earn XP.\n\n` +
                 `**Commands:**\n` +
-                `${GLYPHS.ARROW_RIGHT} \`!noxp add #channel\` - Blacklist channel\n` +
-                `${GLYPHS.ARROW_RIGHT} \`!noxp remove #channel\` - Remove from blacklist\n` +
-                `${GLYPHS.ARROW_RIGHT} \`!noxp list\` - View blacklisted channels\n` +
-                `${GLYPHS.ARROW_RIGHT} \`!noxp clear\` - Clear all\n\n` +
+                `${GLYPHS.ARROW_RIGHT} \`${prefix}noxp add #channel\` - Blacklist channel\n` +
+                `${GLYPHS.ARROW_RIGHT} \`${prefix}noxp remove #channel\` - Remove from blacklist\n` +
+                `${GLYPHS.ARROW_RIGHT} \`${prefix}noxp list\` - View blacklisted channels\n` +
+                `${GLYPHS.ARROW_RIGHT} \`${prefix}noxp clear\` - Clear all\n\n` +
                 `**Example:**\n` +
-                `\`!noxp add #spam\`\n` +
-                `\`!noxp add #bot-commands\``
+                `\`${prefix}noxp add #spam\`\n` +
+                `\`${prefix}noxp add #bot-commands\``
             )
             .setFooter({ text: 'Great for spam/bot command channels!' })
             .setTimestamp();
@@ -72,11 +74,12 @@ export default {
     async addChannel(message, args, guildConfig, guildId) {
         const channel = message.mentions.channels.first() || 
             message.guild.channels.cache.get(args[0]);
+        const prefix = await getPrefix(guildId);
 
         if (!channel) {
             const embed = await errorEmbed(guildId, 'No Channel',
                 `${GLYPHS.ERROR} Please mention a channel or provide a channel ID.\n\n` +
-                `**Usage:** \`!noxp add #channel\``
+                `**Usage:** \`${prefix}noxp add #channel\``
             );
             return message.reply({ embeds: [embed] });
         }
@@ -112,11 +115,12 @@ export default {
     async removeChannel(message, args, guildConfig, guildId) {
         const channel = message.mentions.channels.first() || 
             message.guild.channels.cache.get(args[0]);
+        const prefix = await getPrefix(guildId);
 
         if (!channel) {
             const embed = await errorEmbed(guildId, 'No Channel',
                 `${GLYPHS.ERROR} Please mention a channel or provide a channel ID.\n\n` +
-                `**Usage:** \`!noxp remove #channel\``
+                `**Usage:** \`${prefix}noxp remove #channel\``
             );
             return message.reply({ embeds: [embed] });
         }
@@ -145,11 +149,12 @@ export default {
 
     async listChannels(message, guildConfig, guildId) {
         const channels = guildConfig.features.levelSystem.noXpChannels || [];
+        const prefix = await getPrefix(guildId);
 
         if (channels.length === 0) {
             const embed = await infoEmbed(guildId, 'No Blacklisted Channels',
                 `${GLYPHS.INFO} No channels are blacklisted from earning XP.\n\n` +
-                `Use \`!noxp add #channel\` to add one!`
+                `Use \`${prefix}noxp add #channel\` to add one!`
             );
             return message.reply({ embeds: [embed] });
         }

@@ -3,6 +3,7 @@ import Economy from '../../models/Economy.js';
 import Guild from '../../models/Guild.js';
 import { DICE_MIN, DICE_MAX } from '../../utils/gameConfig.js';
 import { errorEmbed } from '../../utils/embeds.js';
+import { getPrefix } from '../../utils/helpers.js';
 
 export default {
     name: 'dice',
@@ -21,21 +22,23 @@ export default {
             const guess = parseInt(args[1]);
             
             if (!amount || isNaN(amount)) {
+                const prefix = await getPrefix(guildId);
                 return message.reply({
                     embeds: [await errorEmbed(guildId, 
                         `Please provide a valid bet amount!\n\n` +
-                        `Usage: \`!dice <amount> <number 1-6>\`\n` +
-                        `Example: \`!dice 100 5\``
+                        `Usage: \`${prefix}dice <amount> <number 1-6>\`\n` +
+                        `Example: \`${prefix}dice 100 5\``
                     )]
                 });
             }
             
             if (!guess || isNaN(guess) || guess < 1 || guess > 6) {
+                const prefix = await getPrefix(guildId);
                 return message.reply({
                     embeds: [await errorEmbed(guildId, 
                         `Please choose a number between 1 and 6!\n\n` +
-                        `Usage: \`!dice <amount> <number 1-6>\`\n` +
-                        `Example: \`!dice 100 5\``
+                        `Usage: \`${prefix}dice <amount> <number 1-6>\`\n` +
+                        `Example: \`${prefix}dice 100 5\``
                     )]
                 });
             }

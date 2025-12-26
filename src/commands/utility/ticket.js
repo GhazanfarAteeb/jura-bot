@@ -12,6 +12,7 @@ import {
 import Guild from '../../models/Guild.js';
 import Ticket from '../../models/Ticket.js';
 import { successEmbed, errorEmbed, infoEmbed, GLYPHS } from '../../utils/embeds.js';
+import { getPrefix } from '../../utils/helpers.js';
 
 export default {
     name: 'ticket',
@@ -29,9 +30,10 @@ export default {
 
         // Check if ticket system is enabled
         if (!guildConfig.features.ticketSystem.enabled) {
+            const prefix = await getPrefix(guildId);
             const embed = await errorEmbed(guildId, 'Tickets Disabled',
                 `${GLYPHS.ERROR} The ticket system is not enabled.\n\n` +
-                `Use \`!setup\` to set up the ticket system.`
+                `Use \`${prefix}setup\` to set up the ticket system.`
             );
             return message.reply({ embeds: [embed] });
         }
@@ -64,19 +66,20 @@ export default {
     },
 
     async showHelp(message, guildId, guildConfig) {
+        const prefix = await getPrefix(guildId);
         const embed = new EmbedBuilder()
             .setColor('#5865F2')
             .setTitle('🎫 Ticket System')
             .setDescription(
                 `**Commands:**\n` +
-                `${GLYPHS.ARROW_RIGHT} \`!ticket create [subject]\` - Create a new ticket\n` +
-                `${GLYPHS.ARROW_RIGHT} \`!ticket close [reason]\` - Close current ticket\n` +
-                `${GLYPHS.ARROW_RIGHT} \`!ticket add @user\` - Add user to ticket\n` +
-                `${GLYPHS.ARROW_RIGHT} \`!ticket remove @user\` - Remove user from ticket\n` +
-                `${GLYPHS.ARROW_RIGHT} \`!ticket claim\` - Claim the ticket (staff)\n` +
-                `${GLYPHS.ARROW_RIGHT} \`!ticket rename <name>\` - Rename ticket\n\n` +
+                `${GLYPHS.ARROW_RIGHT} \`${prefix}ticket create [subject]\` - Create a new ticket\n` +
+                `${GLYPHS.ARROW_RIGHT} \`${prefix}ticket close [reason]\` - Close current ticket\n` +
+                `${GLYPHS.ARROW_RIGHT} \`${prefix}ticket add @user\` - Add user to ticket\n` +
+                `${GLYPHS.ARROW_RIGHT} \`${prefix}ticket remove @user\` - Remove user from ticket\n` +
+                `${GLYPHS.ARROW_RIGHT} \`${prefix}ticket claim\` - Claim the ticket (staff)\n` +
+                `${GLYPHS.ARROW_RIGHT} \`${prefix}ticket rename <name>\` - Rename ticket\n\n` +
                 `**Admin Commands:**\n` +
-                `${GLYPHS.ARROW_RIGHT} \`!ticket panel\` - Create ticket panel`
+                `${GLYPHS.ARROW_RIGHT} \`${prefix}ticket panel\` - Create ticket panel`
             )
             .setFooter({ text: 'Create tickets for support!' })
             .setTimestamp();
@@ -306,9 +309,10 @@ export default {
 
         const user = message.mentions.users.first();
         if (!user) {
+            const prefix = await getPrefix(guildId);
             const embed = await errorEmbed(guildId, 'No User',
                 `${GLYPHS.ERROR} Please mention a user to add.\n\n` +
-                `**Usage:** \`!ticket add @user\``
+                `**Usage:** \`${prefix}ticket add @user\``
             );
             return message.reply({ embeds: [embed] });
         }
@@ -348,9 +352,10 @@ export default {
 
         const user = message.mentions.users.first();
         if (!user) {
+            const prefix = await getPrefix(guildId);
             const embed = await errorEmbed(guildId, 'No User',
                 `${GLYPHS.ERROR} Please mention a user to remove.\n\n` +
-                `**Usage:** \`!ticket remove @user\``
+                `**Usage:** \`${prefix}ticket remove @user\``
             );
             return message.reply({ embeds: [embed] });
         }
@@ -420,9 +425,10 @@ export default {
 
         const newName = args.join('-').toLowerCase().replace(/[^a-z0-9-]/g, '');
         if (!newName) {
+            const prefix = await getPrefix(guildId);
             const embed = await errorEmbed(guildId, 'Invalid Name',
                 `${GLYPHS.ERROR} Please provide a valid name.\n\n` +
-                `**Usage:** \`!ticket rename <name>\``
+                `**Usage:** \`${prefix}ticket rename <name>\``
             );
             return message.reply({ embeds: [embed] });
         }

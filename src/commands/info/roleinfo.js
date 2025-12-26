@@ -1,5 +1,6 @@
 import { EmbedBuilder, PermissionsBitField } from 'discord.js';
 import { errorEmbed, GLYPHS } from '../../utils/embeds.js';
+import { getPrefix } from '../../utils/helpers.js';
 
 export default {
     name: 'roleinfo',
@@ -11,10 +12,11 @@ export default {
     
     async execute(message, args, client) {
         const guildId = message.guild.id;
+        const prefix = await getPrefix(guildId);
         
         if (!args[0]) {
             return message.reply({
-                embeds: [await errorEmbed(guildId, 'Please mention a role or provide a role name!\n\n`!roleinfo @role` or `!roleinfo Admin`')]
+                embeds: [await errorEmbed(guildId, `Please mention a role or provide a role name!\n\n\`${prefix}roleinfo @role\` or \`${prefix}roleinfo Admin\``)]
             });
         }
         

@@ -3,6 +3,7 @@ import { BirthdayRequest } from '../../models/Birthday.js';
 import Guild from '../../models/Guild.js';
 import { successEmbed, errorEmbed, infoEmbed } from '../../utils/embeds.js';
 import { createTicketEmbed, createTicketButtons } from './requestbirthday.js';
+import { getPrefix } from '../../utils/helpers.js';
 
 export default {
   name: 'cancelbirthday',
@@ -58,12 +59,13 @@ export default {
         }
       }
 
+      const prefix = await getPrefix(guildId);
       const embed = new EmbedBuilder()
         .setColor(0x95A5A6)
         .setTitle(`🚫 Ticket Cancelled ${ticketNum}`)
         .setDescription(
           `Your birthday request has been cancelled.\n\n` +
-          `You can submit a new request anytime using \`!requestbirthday\`.`
+          `You can submit a new request anytime using \`${prefix}requestbirthday\`.`
         )
         .setFooter({ text: 'Birthday Ticket System' })
         .setTimestamp();

@@ -1,6 +1,7 @@
 import { PermissionFlagsBits } from 'discord.js';
 import Guild from '../../models/Guild.js';
 import { successEmbed, errorEmbed, infoEmbed, GLYPHS } from '../../utils/embeds.js';
+import { getPrefix } from '../../utils/helpers.js';
 
 export default {
     name: 'setcoin',
@@ -19,17 +20,18 @@ export default {
                 const guild = await Guild.getGuild(guildId);
                 const currentEmoji = guild.economy?.coinEmoji || '💰';
                 const currentName = guild.economy?.coinName || 'coins';
+                const prefix = await getPrefix(guildId);
                 
                 const embed = await infoEmbed(guildId, 'Coin Configuration',
                     `**Current Settings:**\n` +
                     `${GLYPHS.ARROW_RIGHT} Emoji: ${currentEmoji}\n` +
                     `${GLYPHS.ARROW_RIGHT} Name: ${currentName}\n\n` +
                     `**Usage:**\n` +
-                    `${GLYPHS.ARROW_RIGHT} \`!setcoin emoji <emoji>\` - Change coin emoji\n` +
-                    `${GLYPHS.ARROW_RIGHT} \`!setcoin name <name>\` - Change coin name\n\n` +
+                    `${GLYPHS.ARROW_RIGHT} \`${prefix}setcoin emoji <emoji>\` - Change coin emoji\n` +
+                    `${GLYPHS.ARROW_RIGHT} \`${prefix}setcoin name <name>\` - Change coin name\n\n` +
                     `**Examples:**\n` +
-                    `${GLYPHS.ARROW_RIGHT} \`!setcoin emoji 🪙\`\n` +
-                    `${GLYPHS.ARROW_RIGHT} \`!setcoin name credits\``
+                    `${GLYPHS.ARROW_RIGHT} \`${prefix}setcoin emoji 🪙\`\n` +
+                    `${GLYPHS.ARROW_RIGHT} \`${prefix}setcoin name credits\``
                 );
                 
                 return message.reply({ embeds: [embed] });
@@ -39,8 +41,9 @@ export default {
             const value = args.slice(1).join(' ');
             
             if (!value) {
+                const prefix = await getPrefix(guildId);
                 return message.reply({
-                    embeds: [await errorEmbed(guildId, 'Please provide a value!\n\nUsage: `!setcoin <emoji|name> <value>`')]
+                    embeds: [await errorEmbed(guildId, `Please provide a value!\n\nUsage: \`${prefix}setcoin <emoji|name> <value>\``)]
                 });
             }
             
@@ -88,10 +91,11 @@ export default {
                 return message.reply({ embeds: [embed] });
                 
             } else {
+                const prefix = await getPrefix(guildId);
                 return message.reply({
                     embeds: [await errorEmbed(guildId, 
-                        'Invalid type! Use `emoji` or `name`.\n\n' +
-                        'Usage: `!setcoin <emoji|name> <value>`'
+                        `Invalid type! Use \`emoji\` or \`name\`.\n\n` +
+                        `Usage: \`${prefix}setcoin <emoji|name> <value>\``
                     )]
                 });
             }

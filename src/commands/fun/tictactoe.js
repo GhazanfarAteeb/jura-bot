@@ -1,5 +1,6 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } from 'discord.js';
 import { successEmbed, errorEmbed, infoEmbed, GLYPHS } from '../../utils/embeds.js';
+import { getPrefix } from '../../utils/helpers.js';
 
 const activeGames = new Map();
 
@@ -18,8 +19,9 @@ export default {
 
         // Check if opponent is mentioned
         if (!opponent) {
+            const prefix = await getPrefix(guildId);
             const embed = await errorEmbed(guildId, 'No Opponent',
-                `${GLYPHS.ERROR} Please mention a user to challenge!\n\n**Usage:** \`!tictactoe @user\``
+                `${GLYPHS.ERROR} Please mention a user to challenge!\n\n**Usage:** \`${prefix}tictactoe @user\``
             );
             return message.reply({ embeds: [embed] });
         }

@@ -1,6 +1,7 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } from 'discord.js';
 import Economy from '../../models/Economy.js';
 import { getBackground, RARITY_EMOJIS } from '../../utils/shopItems.js';
+import { getPrefix } from '../../utils/helpers.js';
 
 export default {
     name: 'inventory',
@@ -21,7 +22,8 @@ export default {
             
             if (category === 'backgrounds' || category === 'bg') {
                 if (economy.inventory.backgrounds.length === 0) {
-                    return message.reply('📦 You don\'t have any backgrounds yet! Check out `!shop` to purchase some.');
+                    const prefix = await getPrefix(guildId);
+                    return message.reply(`📦 You don't have any backgrounds yet! Check out \`${prefix}shop\` to purchase some.`);
                 }
                 
                 let currentPage = 0;

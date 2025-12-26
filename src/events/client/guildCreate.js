@@ -91,9 +91,9 @@ export default {
                 `✅ **Recorded ${recordedCount} member profiles**\n` +
                 `🤖 **Skipped ${skippedBots} bot accounts**\n\n` +
                 `**Quick Setup:**\n` +
-                `• Run \`!setup\` to auto-configure your server\n` +
-                `• Use \`!help\` to explore all commands\n` +
-                `• Configure with \`!config\`\n\n` +
+                `• Run \`${process.env.DEFAULT_PREFIX || '!'}setup\` to auto-configure your server\n` +
+                `• Use \`${process.env.DEFAULT_PREFIX || '!'}help\` to explore all commands\n` +
+                `• Configure with \`${process.env.DEFAULT_PREFIX || '!'}config\`\n\n` +
                 `**Features:**\n` +
                 `⚙️ Auto-setup wizard\n` +
                 `🛡️ Advanced moderation & security\n` +
@@ -102,7 +102,7 @@ export default {
                 `🎉 Birthdays & events\n` +
                 `📊 Detailed statistics\n` +
                 `🎨 Customizable profiles\n\n` +
-                `Need help? Use \`!help\` to get started!`,
+                `Need help? Use \`${process.env.DEFAULT_PREFIX || '!'}help\` to get started!`,
               thumbnail: {
                 url: guild.client.user.displayAvatarURL({ size: 256 })
               },

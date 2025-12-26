@@ -35,7 +35,7 @@ function createInterfaceEmbed() {
     .setTitle('🎙️ Raphael Temp Voice')
     .setDescription(
       'This **interface** can be used to manage temporary voice channels.\n' +
-      'More options are available with `!tempvc` commands.\n\n' +
+      `More options are available with \`${process.env.DEFAULT_PREFIX || '!'}tempvc\` commands.\n\n` +
       '**Available Controls:**\n' +
       '`✏️ NAME` - Rename your channel\n' +
       '`👥 LIMIT` - Set user limit\n' +

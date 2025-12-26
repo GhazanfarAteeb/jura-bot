@@ -1,5 +1,6 @@
 import { AttachmentBuilder, EmbedBuilder } from 'discord.js';
 import { createCanvas, loadImage } from '@napi-rs/canvas';
+import { getPrefix } from '../../utils/helpers.js';
 
 const memeTemplates = {
   // Meme templates with overlay positions
@@ -65,12 +66,13 @@ export default {
 
   execute: async (message, args) => {
     if (!args.length) {
+      const prefix = await getPrefix(message.guild.id);
       const templateList = Object.keys(memeTemplates).join(', ');
       return message.reply(
         `🎨 **Meme Generator**\n\n` +
         `**Available templates:**\n${templateList}\n\n` +
-        `**Usage:** \`!meme <template> [@user]\`\n` +
-        `**Example:** \`!meme spongebob @user\` or \`!meme drake\` (uses your avatar)`
+        `**Usage:** \`${prefix}meme <template> [@user]\`\n` +
+        `**Example:** \`${prefix}meme spongebob @user\` or \`${prefix}meme drake\` (uses your avatar)`
       );
     }
 
