@@ -1,3 +1,5 @@
+// COMMAND DISABLED - Commented out by request
+/*
 import { EmbedBuilder } from 'discord.js';
 import { infoEmbed, errorEmbed, GLYPHS } from '../../utils/embeds.js';
 
@@ -87,3 +89,4 @@ export default {
 };
 
 export { deletedMessages };
+*/

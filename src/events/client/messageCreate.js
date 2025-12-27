@@ -64,16 +64,16 @@ class MessageCreate extends Event {
       this.client.commands.get(cmd) ||
       this.client.commands.get(this.client.aliases.get(cmd));
     if (!command) return;
-    
+
     // Check channel restrictions (skip for config commands to prevent lockout)
     const guildConfig = await this.client.db.getGuild(message.guildId);
     if (guildConfig?.commandChannels?.enabled && command.category !== 'config') {
       const isAllowedChannel = guildConfig.commandChannels.channels.includes(message.channel.id);
-      const hasBypassRole = guildConfig.commandChannels.bypassRoles?.some(roleId => 
+      const hasBypassRole = guildConfig.commandChannels.bypassRoles?.some(roleId =>
         message.member.roles.cache.has(roleId)
       );
       const isAdmin = message.member.permissions.has(PermissionFlagsBits.Administrator);
-      
+
       if (!isAllowedChannel && !hasBypassRole && !isAdmin) {
         // Silently ignore commands in non-allowed channels
         // Or optionally send a warning (delete after 5 seconds)
@@ -84,11 +84,11 @@ class MessageCreate extends Event {
         const msg = await safeReply({
           content: `⚠️ Commands are only allowed in: ${allowedChannelsList}${guildConfig.commandChannels.channels.length > 3 ? '...' : ''}`
         });
-        if (msg) setTimeout(() => msg.delete().catch(() => {}), 5000);
+        if (msg) setTimeout(() => msg.delete().catch(() => { }), 5000);
         return;
       }
     }
-    
+
     // Cache bot member for permission checks
     const botMember = message.guild.members.me;
     const botPerms = botMember.permissions;

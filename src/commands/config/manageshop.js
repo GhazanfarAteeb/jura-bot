@@ -26,16 +26,16 @@ export default {
   async execute(message, args, client) {
     const prefix = await getPrefix(message.guild.id);
     const guildConfig = await Guild.getGuild(message.guild.id, message.guild.name);
-    
+
     // Initialize if not exists
     if (!guildConfig.customShopItems) {
       guildConfig.customShopItems = [];
     }
-    
+
     const subcommand = args[0]?.toLowerCase();
     const coinEmoji = guildConfig.economy?.coinEmoji || '💰';
     const coinName = guildConfig.economy?.coinName || 'coins';
-    
+
     if (!subcommand) {
       const embed = new EmbedBuilder()
         .setTitle('🛒 Shop Management')
@@ -55,21 +55,21 @@ export default {
           value: `${guildConfig.customShopItems.length} custom item(s) in shop`
         })
         .setFooter({ text: `Item types: ${ITEM_TYPES.join(', ')} | Rarities: ${RARITIES.join(', ')}` });
-      
+
       return message.reply({ embeds: [embed] });
     }
-    
+
     switch (subcommand) {
       case 'add': {
         // Parse: manageshop add "Item Name" 1000 [type] [rarity]
         // Or: manageshop add ItemName 1000 [type] [rarity]
-        
+
         let itemName, price, type, rarity;
-        
+
         // Check for quoted name
         const quotedMatch = args.slice(1).join(' ').match(/^"([^"]+)"\s+(\d+)(?:\s+(\w+))?(?:\s+(\w+))?/);
         const unquotedMatch = args.slice(1).join(' ').match(/^(\S+)\s+(\d+)(?:\s+(\w+))?(?:\s+(\w+))?/);
-        
+
         if (quotedMatch) {
           [, itemName, price, type, rarity] = quotedMatch;
         } else if (unquotedMatch) {
@@ -83,35 +83,35 @@ export default {
           );
           return message.reply({ embeds: [embed] });
         }
-        
+
         price = parseInt(price);
         type = type?.toLowerCase() || 'item';
         rarity = rarity?.toLowerCase() || 'common';
-        
+
         if (isNaN(price) || price < 0) {
           const embed = await errorEmbed(message.guild.id, 'Invalid Price',
             `${GLYPHS.ERROR} Price must be a positive number!`
           );
           return message.reply({ embeds: [embed] });
         }
-        
+
         if (!ITEM_TYPES.includes(type)) {
           const embed = await errorEmbed(message.guild.id, 'Invalid Type',
             `${GLYPHS.ERROR} Valid types: ${ITEM_TYPES.join(', ')}`
           );
           return message.reply({ embeds: [embed] });
         }
-        
+
         if (!RARITIES.includes(rarity)) {
           const embed = await errorEmbed(message.guild.id, 'Invalid Rarity',
             `${GLYPHS.ERROR} Valid rarities: ${RARITIES.join(', ')}`
           );
           return message.reply({ embeds: [embed] });
         }
-        
+
         // Generate unique ID
         const itemId = `custom_${Date.now().toString(36)}_${Math.random().toString(36).substr(2, 4)}`;
-        
+
         const newItem = {
           id: itemId,
           name: itemName,
@@ -123,10 +123,10 @@ export default {
           createdBy: message.author.id,
           createdAt: new Date()
         };
-        
+
         guildConfig.customShopItems.push(newItem);
         await guildConfig.save();
-        
+
         const embed = new EmbedBuilder()
           .setColor(RARITY_COLORS[rarity])
           .setTitle('✅ Item Added to Shop')
@@ -139,20 +139,20 @@ export default {
             { name: '📊 Stock', value: 'Unlimited', inline: true }
           )
           .setFooter({ text: `Use ${prefix}manageshop edit ${itemId} description "Your description" to add a description` });
-        
+
         return message.reply({ embeds: [embed] });
       }
-      
+
       case 'remove': {
         const itemId = args[1];
-        
+
         if (!itemId) {
           const embed = await errorEmbed(message.guild.id, 'Missing Item ID',
             `${GLYPHS.ERROR} Please provide the item ID!\n\n**Usage:** \`${prefix}manageshop remove <id>\`\n**Tip:** Use \`${prefix}manageshop list\` to see item IDs`
           );
           return message.reply({ embeds: [embed] });
         }
-        
+
         const index = guildConfig.customShopItems.findIndex(item => item.id === itemId);
         if (index === -1) {
           const embed = await errorEmbed(message.guild.id, 'Item Not Found',
@@ -160,17 +160,17 @@ export default {
           );
           return message.reply({ embeds: [embed] });
         }
-        
+
         const removedItem = guildConfig.customShopItems[index];
         guildConfig.customShopItems.splice(index, 1);
         await guildConfig.save();
-        
+
         const embed = await successEmbed(message.guild.id, 'Item Removed',
           `${GLYPHS.SUCCESS} Removed **${removedItem.name}** from the shop.`
         );
         return message.reply({ embeds: [embed] });
       }
-      
+
       case 'list': {
         if (guildConfig.customShopItems.length === 0) {
           const embed = await infoEmbed(message.guild.id, 'No Custom Items',
@@ -178,20 +178,20 @@ export default {
           );
           return message.reply({ embeds: [embed] });
         }
-        
+
         const itemsPerPage = 5;
         let currentPage = 0;
         const maxPages = Math.ceil(guildConfig.customShopItems.length / itemsPerPage);
-        
+
         const generateListEmbed = (page) => {
           const start = page * itemsPerPage;
           const items = guildConfig.customShopItems.slice(start, start + itemsPerPage);
-          
+
           const embed = new EmbedBuilder()
             .setTitle('🛒 Custom Shop Items')
             .setColor(guildConfig.embedStyle?.color || '#5865F2')
             .setFooter({ text: `Page ${page + 1}/${maxPages} | Total: ${guildConfig.customShopItems.length} items` });
-          
+
           items.forEach(item => {
             const stockText = item.stock === -1 ? '∞' : item.stock;
             embed.addFields({
@@ -200,14 +200,14 @@ export default {
               inline: false
             });
           });
-          
+
           return embed;
         };
-        
+
         if (maxPages === 1) {
           return message.reply({ embeds: [generateListEmbed(0)] });
         }
-        
+
         const buttons = new ActionRowBuilder()
           .addComponents(
             new ButtonBuilder()
@@ -221,24 +221,24 @@ export default {
               .setStyle(ButtonStyle.Primary)
               .setDisabled(maxPages <= 1)
           );
-        
-        const listMessage = await message.reply({ 
-          embeds: [generateListEmbed(0)], 
-          components: [buttons] 
+
+        const listMessage = await message.reply({
+          embeds: [generateListEmbed(0)],
+          components: [buttons]
         });
-        
+
         const collector = listMessage.createMessageComponentCollector({
           filter: i => i.user.id === message.author.id,
           time: 60000
         });
-        
+
         collector.on('collect', async (interaction) => {
           if (interaction.customId === 'prev') {
             currentPage = Math.max(0, currentPage - 1);
           } else if (interaction.customId === 'next') {
             currentPage = Math.min(maxPages - 1, currentPage + 1);
           }
-          
+
           const newButtons = new ActionRowBuilder()
             .addComponents(
               new ButtonBuilder()
@@ -252,38 +252,38 @@ export default {
                 .setStyle(ButtonStyle.Primary)
                 .setDisabled(currentPage === maxPages - 1)
             );
-          
-          await interaction.update({ 
-            embeds: [generateListEmbed(currentPage)], 
-            components: [newButtons] 
+
+          await interaction.update({
+            embeds: [generateListEmbed(currentPage)],
+            components: [newButtons]
           });
         });
-        
+
         collector.on('end', () => {
-          listMessage.edit({ components: [] }).catch(() => {});
+          listMessage.edit({ components: [] }).catch(() => { });
         });
-        
+
         return;
       }
-      
+
       case 'setprice': {
         const itemId = args[1];
         const newPrice = parseInt(args[2]);
-        
+
         if (!itemId || isNaN(newPrice)) {
           const embed = await errorEmbed(message.guild.id, 'Invalid Usage',
             `${GLYPHS.ERROR} **Usage:** \`${prefix}manageshop setprice <id> <price>\`\n\n**Example:** \`${prefix}manageshop setprice custom_abc123 2500\``
           );
           return message.reply({ embeds: [embed] });
         }
-        
+
         if (newPrice < 0) {
           const embed = await errorEmbed(message.guild.id, 'Invalid Price',
             `${GLYPHS.ERROR} Price must be 0 or greater!`
           );
           return message.reply({ embeds: [embed] });
         }
-        
+
         const item = guildConfig.customShopItems.find(i => i.id === itemId);
         if (!item) {
           const embed = await errorEmbed(message.guild.id, 'Item Not Found',
@@ -291,11 +291,11 @@ export default {
           );
           return message.reply({ embeds: [embed] });
         }
-        
+
         const oldPrice = item.price;
         item.price = newPrice;
         await guildConfig.save();
-        
+
         const embed = await successEmbed(message.guild.id, 'Price Updated',
           `${GLYPHS.SUCCESS} Updated **${item.name}** price:\n\n` +
           `**Old Price:** ${formatNumber(oldPrice)} ${coinEmoji}\n` +
@@ -303,12 +303,12 @@ export default {
         );
         return message.reply({ embeds: [embed] });
       }
-      
+
       case 'edit': {
         const itemId = args[1];
         const field = args[2]?.toLowerCase();
         const value = args.slice(3).join(' ');
-        
+
         if (!itemId || !field) {
           const embed = await errorEmbed(message.guild.id, 'Invalid Usage',
             `${GLYPHS.ERROR} **Usage:** \`${prefix}manageshop edit <id> <field> <value>\`\n\n` +
@@ -317,7 +317,7 @@ export default {
           );
           return message.reply({ embeds: [embed] });
         }
-        
+
         const item = guildConfig.customShopItems.find(i => i.id === itemId);
         if (!item) {
           const embed = await errorEmbed(message.guild.id, 'Item Not Found',
@@ -325,10 +325,10 @@ export default {
           );
           return message.reply({ embeds: [embed] });
         }
-        
+
         // Remove quotes if present
         const cleanValue = value.replace(/^["']|["']$/g, '');
-        
+
         switch (field) {
           case 'name':
             if (!cleanValue) {
@@ -361,26 +361,26 @@ export default {
           default:
             return message.reply({ embeds: [await errorEmbed(message.guild.id, 'Unknown Field', `${GLYPHS.ERROR} Valid fields: name, description, rarity, type, image`)] });
         }
-        
+
         await guildConfig.save();
-        
+
         const embed = await successEmbed(message.guild.id, 'Item Updated',
           `${GLYPHS.SUCCESS} Updated **${item.name}**'s ${field} to: **${cleanValue}**`
         );
         return message.reply({ embeds: [embed] });
       }
-      
+
       case 'role': {
         const itemId = args[1];
         const role = message.mentions.roles.first() || message.guild.roles.cache.get(args[2]);
-        
+
         if (!itemId) {
           const embed = await errorEmbed(message.guild.id, 'Missing Item ID',
             `${GLYPHS.ERROR} **Usage:** \`${prefix}manageshop role <id> @role\`\n\nThis sets a role to be given when the item is purchased.`
           );
           return message.reply({ embeds: [embed] });
         }
-        
+
         const item = guildConfig.customShopItems.find(i => i.id === itemId);
         if (!item) {
           const embed = await errorEmbed(message.guild.id, 'Item Not Found',
@@ -388,33 +388,33 @@ export default {
           );
           return message.reply({ embeds: [embed] });
         }
-        
+
         if (!role) {
           // Remove role from item
           item.roleId = undefined;
           item.type = 'item';
           await guildConfig.save();
-          
+
           const embed = await successEmbed(message.guild.id, 'Role Removed',
             `${GLYPHS.SUCCESS} Removed role from **${item.name}**.`
           );
           return message.reply({ embeds: [embed] });
         }
-        
+
         item.roleId = role.id;
         item.type = 'role';
         await guildConfig.save();
-        
+
         const embed = await successEmbed(message.guild.id, 'Role Set',
           `${GLYPHS.SUCCESS} **${item.name}** will now give ${role} when purchased.`
         );
         return message.reply({ embeds: [embed] });
       }
-      
+
       case 'stock': {
         const itemId = args[1];
         const stock = parseInt(args[2]);
-        
+
         if (!itemId || isNaN(stock)) {
           const embed = await errorEmbed(message.guild.id, 'Invalid Usage',
             `${GLYPHS.ERROR} **Usage:** \`${prefix}manageshop stock <id> <amount>\`\n\n` +
@@ -423,7 +423,7 @@ export default {
           );
           return message.reply({ embeds: [embed] });
         }
-        
+
         const item = guildConfig.customShopItems.find(i => i.id === itemId);
         if (!item) {
           const embed = await errorEmbed(message.guild.id, 'Item Not Found',
@@ -431,17 +431,17 @@ export default {
           );
           return message.reply({ embeds: [embed] });
         }
-        
+
         item.stock = stock;
         await guildConfig.save();
-        
+
         const stockText = stock === -1 ? 'Unlimited' : stock.toString();
         const embed = await successEmbed(message.guild.id, 'Stock Updated',
           `${GLYPHS.SUCCESS} **${item.name}** stock set to: **${stockText}**`
         );
         return message.reply({ embeds: [embed] });
       }
-      
+
       default: {
         const embed = await errorEmbed(message.guild.id, 'Unknown Subcommand',
           `${GLYPHS.ERROR} Unknown subcommand: \`${subcommand}\`\n\nUse \`${prefix}manageshop\` to see available options.`

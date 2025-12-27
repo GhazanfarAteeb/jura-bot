@@ -11,7 +11,7 @@ export default {
   permissions: [PermissionFlagsBits.Administrator],
   category: 'config',
   cooldown: 3,
-  
+
   async execute(message, args, client) {
     const prefix = await getPrefix(message.guild.id);
     const guildConfig = await Guild.getGuild(message.guild.id, message.guild.name);
@@ -29,7 +29,7 @@ export default {
         whitelistedUsers: []
       };
     }
-    
+
     const antiNuke = guildConfig.features.autoMod.antiNuke;
     const subCommand = args[0]?.toLowerCase();
 
@@ -38,7 +38,7 @@ export default {
       case 'on':
         antiNuke.enabled = true;
         await guildConfig.save();
-        
+
         return message.reply({
           embeds: [new EmbedBuilder()
             .setColor('#00FF00')
@@ -54,7 +54,7 @@ export default {
       case 'off':
         antiNuke.enabled = false;
         await guildConfig.save();
-        
+
         return message.reply({
           embeds: [new EmbedBuilder()
             .setColor('#FF9900')
@@ -89,7 +89,7 @@ export default {
           }
           antiNuke.action = value.toLowerCase();
           await guildConfig.save();
-          
+
           return message.reply({
             embeds: [await successEmbed(message.guild.id, 'Action Updated',
               `${GLYPHS.SUCCESS} Anti-nuke action set to: **${value}**`)]
@@ -104,10 +104,10 @@ export default {
                 `${GLYPHS.ERROR} Time window must be between 5 and 60 seconds.`)]
             });
           }
-          
+
           antiNuke.timeWindow = seconds;
           await guildConfig.save();
-          
+
           return message.reply({
             embeds: [await successEmbed(message.guild.id, 'Time Window Updated',
               `${GLYPHS.SUCCESS} Time window set to **${seconds} seconds**`)]
@@ -204,12 +204,12 @@ export default {
                 `${GLYPHS.INFO} No users are whitelisted from anti-nuke.`)]
             });
           }
-          
+
           const users = await Promise.all(
             antiNuke.whitelistedUsers.map(id => client.users.fetch(id).catch(() => null))
           );
           const userList = users.filter(u => u).map(u => `${GLYPHS.DOT} ${u.tag} (${u.id})`).join('\n');
-          
+
           return message.reply({
             embeds: [new EmbedBuilder()
               .setColor('#5865F2')
@@ -236,10 +236,10 @@ export default {
                 `${GLYPHS.ERROR} ${user.tag} is already whitelisted.`)]
             });
           }
-          
+
           antiNuke.whitelistedUsers.push(user.id);
           await guildConfig.save();
-          
+
           return message.reply({
             embeds: [await successEmbed(message.guild.id, 'User Whitelisted',
               `${GLYPHS.SUCCESS} Added **${user.tag}** to anti-nuke whitelist.`)]
@@ -254,10 +254,10 @@ export default {
                 `${GLYPHS.ERROR} ${user.tag} is not whitelisted.`)]
             });
           }
-          
+
           antiNuke.whitelistedUsers.splice(index, 1);
           await guildConfig.save();
-          
+
           return message.reply({
             embeds: [await successEmbed(message.guild.id, 'User Removed',
               `${GLYPHS.SUCCESS} Removed **${user.tag}** from anti-nuke whitelist.`)]
@@ -269,7 +269,7 @@ export default {
       default:
         const whitelistCount = antiNuke.whitelistedUsers?.length || 0;
         let whitelistUsers = 'None';
-        
+
         if (whitelistCount > 0) {
           const users = await Promise.all(
             antiNuke.whitelistedUsers.slice(0, 5).map(id => client.users.fetch(id).catch(() => null))

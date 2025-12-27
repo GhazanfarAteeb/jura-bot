@@ -153,21 +153,23 @@ const reactions = {
     endpoints: ['otaku'],
     titles: ['Stabby Stabby! 🔪', 'Yandere Mode! 😈', 'Dangerous! ⚠️', 'Knife-kun Says Hi! 🗡️']
   },
-  spank: {
-    queries: ['spank'],
-    endpoints: ['rndm'],
-    titles: ['*SPANK!* 🍑', 'Naughty! 😈', 'Spanking Time! 👋', 'Bad Behavior! 😤', 'Punishment! 💥', 'Spank Attack! ✋', 'Discipline! 😠', 'Booty Slap! 🍑']
-  },
+  // DISABLED - spank reaction commented out
+  // spank: {
+  //   queries: ['spank'],
+  //   endpoints: ['rndm'],
+  //   titles: ['*SPANK!* 🍑', 'Naughty! 😈', 'Spanking Time! 👋', 'Bad Behavior! 😤', 'Punishment! 💥', 'Spank Attack! ✋', 'Discipline! 😠', 'Booty Slap! 🍑']
+  // },
   spit: {
     queries: ['spit'],
     endpoints: ['rndm'],
     titles: ['*SPIT!* 💦', 'Gross! 🤢', 'Spitting Mad! 😤', 'Disgusted! 🤮', 'Ptooey! 💧', 'Disrespect! 😠', 'Spit Take! 😲', 'Rejection! 🚫']
   },
-  steal: {
-    queries: ['steal'],
-    endpoints: ['rndm'],
-    titles: ['Yoink! 🤏', 'Stealing! 😈', 'Mine Now! 😏', 'Thief Mode! 🦝', 'Sneaky Steal! 🥷', 'Got Your Stuff! 😼', 'Kleptomaniac! 💰', 'Stolen! 🏃💨']
-  },
+  // DISABLED - steal reaction commented out
+  // steal: {
+  //   queries: ['steal'],
+  //   endpoints: ['rndm'],
+  //   titles: ['Yoink! 🤏', 'Stealing! 😈', 'Mine Now! 😏', 'Thief Mode! 🦝', 'Sneaky Steal! 🥷', 'Got Your Stuff! 😼', 'Kleptomaniac! 💰', 'Stolen! 🏃💨']
+  // },
   bite: {
     queries: ['bite', 'nom'],
     endpoints: ['otaku', 'rndm'],
@@ -693,7 +695,7 @@ export default {
         },
         '😠 Aggressive': {
           subtitle: 'Express your anger (playfully!)',
-          reactions: ['slap', 'punch', 'kick', 'push', 'throw', 'tackle', 'grab', 'headbutt', 'stab', 'bite', 'kill', 'spank', 'spit', 'steal', 'angry', 'angrystare', 'rage', 'triggered', 'bully', 'smack']
+          reactions: ['slap', 'punch', 'kick', 'push', 'throw', 'tackle', 'grab', 'headbutt', 'stab', 'bite', 'kill', 'spit', 'angry', 'angrystare', 'rage', 'triggered', 'bully', 'smack'] // Removed: spank, steal
         },
         '💦 Physical Actions': {
           subtitle: 'Get physical with these moves',

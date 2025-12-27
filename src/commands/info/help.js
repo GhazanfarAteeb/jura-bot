@@ -18,7 +18,7 @@ const COMMANDS_BY_CATEGORY = {
   social: ['marry', 'divorce', 'badges'],
   fun: ['tictactoe', 'trivia'],
   info: ['help', 'ping', 'serverinfo', 'userinfo', 'checkuser', 'roleinfo', 'channelinfo'],
-  utility: ['rank', 'leaderboard', 'top', 'stats', 'embed', 'embedset', 'embedhelp', 'afk', 'gif', 'meme', 'react', 
+  utility: ['rank', 'leaderboard', 'top', 'stats', 'embed', 'embedset', 'embedhelp', 'afk', 'gif', 'meme', 'react',
     'remind', 'tempvc', 'snipe', 'editsnipe', 'avatar', 'banner', 'steal', 'firstmessage', 'poll', 'ticket']
 };
 
