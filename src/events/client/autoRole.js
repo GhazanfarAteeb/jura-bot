@@ -1,5 +1,5 @@
 import Guild from '../../models/Guild.js';
-import { logToChannel } from '../../utils/BotLog.js';
+import { EmbedBuilder } from 'discord.js';
 
 export default {
   name: 'guildMemberAdd',
@@ -56,20 +56,21 @@ export default {
             .map(id => member.guild.roles.cache.get(id)?.name || 'Unknown')
             .join(', ');
 
-          await logToChannel(member.guild, 'member', {
-            title: '🎭 Auto Role Assigned',
-            description: `**Member:** ${freshMember.user.tag}\n**Roles:** ${roleNames}`,
-            color: '#00FF00'
-          });
+          // Log to member log channel if configured
+          if (guildConfig.channels?.memberLog) {
+            const logChannel = member.guild.channels.cache.get(guildConfig.channels.memberLog);
+            if (logChannel) {
+              const embed = new EmbedBuilder()
+                .setTitle('🎭 Auto Role Assigned')
+                .setDescription(`**Member:** ${freshMember.user.tag}\n**Roles:** ${roleNames}`)
+                .setColor('#00FF00')
+                .setTimestamp();
+              logChannel.send({ embeds: [embed] }).catch(() => {});
+            }
+          }
 
         } catch (error) {
           console.error(`[AutoRole] Failed to assign roles to ${member.user.tag}:`, error.message);
-
-          await logToChannel(member.guild, 'member', {
-            title: '⚠️ Auto Role Failed',
-            description: `**Member:** ${member.user.tag}\n**Error:** ${error.message}`,
-            color: '#FF0000'
-          });
         }
       };
 
