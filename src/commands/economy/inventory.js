@@ -1,6 +1,5 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } from 'discord.js';
 import Economy from '../../models/Economy.js';
-import { getBackground } from '../../utils/shopItems.js';
 import { getPrefix } from '../../utils/helpers.js';
 
 export default {
@@ -21,37 +20,39 @@ export default {
             const category = args[0]?.toLowerCase() || 'backgrounds';
             
             if (category === 'backgrounds' || category === 'bg') {
-                if (economy.inventory.backgrounds.length === 0) {
+                // Filter out the default background from display
+                const ownedBackgrounds = economy.inventory.backgrounds.filter(bg => bg.id !== 'default');
+                
+                if (ownedBackgrounds.length === 0) {
                     const prefix = await getPrefix(guildId);
                     return message.reply(`📦 You don't have any backgrounds yet! Check out \`${prefix}shop\` to purchase some.`);
                 }
                 
                 let currentPage = 0;
                 const itemsPerPage = 5;
-                const maxPages = Math.ceil(economy.inventory.backgrounds.length / itemsPerPage);
+                const maxPages = Math.ceil(ownedBackgrounds.length / itemsPerPage);
                 
                 const generateEmbed = (page) => {
                     const start = page * itemsPerPage;
                     const end = start + itemsPerPage;
-                    const pageItems = economy.inventory.backgrounds.slice(start, end);
+                    const pageItems = ownedBackgrounds.slice(start, end);
                     
                     const embed = new EmbedBuilder()
-                        .setColor('#9B59B6')
+                        .setColor('#667eea')
                         .setAuthor({ 
                             name: `${message.author.tag}'s Inventory`, 
                             iconURL: message.author.displayAvatarURL({ dynamic: true }) 
                         })
-                        .setTitle('🎨 Backgrounds')
+                        .setTitle('🖼️ Backgrounds')
                         .setDescription(
                             pageItems.map((bg, index) => {
-                                const bgData = getBackground(bg.id);
                                 const isEquipped = economy.profile.background === bg.id;
                                 const equippedText = isEquipped ? ' **[EQUIPPED]**' : '';
-                                return `${start + index + 1}. 🎨 **${bg.name}**${equippedText}\nPurchased: <t:${Math.floor(bg.purchasedAt.getTime() / 1000)}:R>`;
+                                return `${start + index + 1}. 🖼️ **${bg.name}**${equippedText}\nPurchased: <t:${Math.floor(bg.purchasedAt.getTime() / 1000)}:R>`;
                             }).join('\n\n')
                         )
                         .setFooter({ 
-                            text: `Page ${page + 1}/${maxPages} | Total: ${economy.inventory.backgrounds.length} backgrounds | Use !setbg to equip` 
+                            text: `Page ${page + 1}/${maxPages} | Total: ${ownedBackgrounds.length} backgrounds | Use !setbg to equip` 
                         })
                         .setTimestamp();
                     
@@ -64,12 +65,12 @@ export default {
                             new ButtonBuilder()
                                 .setCustomId('previous')
                                 .setLabel('◀️ Previous')
-                                .setStyle(ButtonStyle.Primary)
+                                .setStyle(ButtonStyle.Secondary)
                                 .setDisabled(page === 0),
                             new ButtonBuilder()
                                 .setCustomId('next')
                                 .setLabel('Next ▶️')
-                                .setStyle(ButtonStyle.Primary)
+                                .setStyle(ButtonStyle.Secondary)
                                 .setDisabled(page === maxPages - 1),
                             new ButtonBuilder()
                                 .setCustomId('close')
