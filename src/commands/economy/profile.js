@@ -186,7 +186,7 @@ export default {
       try {
         const avatarURL = targetUser.displayAvatarURL({ extension: 'png', size: 256 });
         const avatar = await loadImage(avatarURL);
-        
+
         // Draw circular avatar with glow
         ctx.shadowColor = '#667eea';
         ctx.shadowBlur = 20;
@@ -198,7 +198,7 @@ export default {
         ctx.drawImage(avatar, avatarX, avatarY - avatarSize / 2, avatarSize, avatarSize);
         ctx.restore();
         ctx.shadowBlur = 0;
-        
+
         // Avatar border
         ctx.strokeStyle = '#667eea';
         ctx.lineWidth = 5;
@@ -401,7 +401,7 @@ export default {
             { name: '💰 Coins', value: `${economy.coins.toLocaleString()}`, inline: true },
             { name: '🔥 Streak', value: `${economy.daily.streak || 0} days`, inline: true },
             { name: '⭐ Reputation', value: `${economy.reputation || 0}`, inline: true },
-            { name: '📊 Total Earned', value: `${economy.stats.totalEarned.toLocaleString()}`, inline: true }
+            // { name: '📊 Total Earned', value: `${economy.stats.totalEarned.toLocaleString()}`, inline: true }
           )
           .setFooter({ text: 'Use !setprofile to customize your profile' })
           .setTimestamp();

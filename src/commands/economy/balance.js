@@ -31,16 +31,16 @@ export default {
                 })
                 .setTitle(`${coinEmoji} Balance`)
                 .addFields(
-                    { 
-                        name: '💵 Wallet', 
-                        value: `**${economy.coins.toLocaleString()}** ${coinName}`, 
-                        inline: true 
-                    },
-                    { 
-                        name: '🏦 Bank', 
-                        value: `**${economy.bank.toLocaleString()}** ${coinName}`, 
-                        inline: true 
-                    },
+                    // { 
+                    //     name: '💵 Wallet', 
+                    //     value: `**${economy.coins.toLocaleString()}** ${coinName}`, 
+                    //     inline: true 
+                    // },
+                    // { 
+                    //     name: '🏦 Bank', 
+                    //     value: `**${economy.bank.toLocaleString()}** ${coinName}`, 
+                    //     inline: true 
+                    // },
                     { 
                         name: '💎 Total', 
                         value: `**${(economy.coins + economy.bank).toLocaleString()}** ${coinName}`, 

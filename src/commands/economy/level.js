@@ -8,206 +8,206 @@ import { getBackground } from '../../utils/shopItems.js';
 
 // Register fonts if available
 try {
-    GlobalFonts.registerFromPath('./assets/fonts/Poppins-Bold.ttf', 'Poppins Bold');
-    GlobalFonts.registerFromPath('./assets/fonts/Poppins-Regular.ttf', 'Poppins');
+  GlobalFonts.registerFromPath('./assets/fonts/Poppins-Bold.ttf', 'Poppins Bold');
+  GlobalFonts.registerFromPath('./assets/fonts/Poppins-Regular.ttf', 'Poppins');
 } catch (error) {
-    console.log('Custom fonts not found, using system fonts');
+  console.log('Custom fonts not found, using system fonts');
 }
 
 export default {
-    name: 'level',
-    aliases: ['lvl', 'rank', 'xp', 'card', 'me'],
-    description: 'View your or another user\'s rank card',
-    usage: 'level [@user]',
-    category: 'economy',
-    cooldown: 5,
-    
-    async execute(message, args) {
-        const guildId = message.guild.id;
-        const targetUser = message.mentions.users.first() || message.author;
-        
-        try {
-            await message.channel.sendTyping();
-            
-            // Get level data
-            let levelData = await Level.findOne({
-                userId: targetUser.id,
-                guildId: message.guild.id
-            });
-            
-            if (!levelData) {
-                // Create default level data if doesn't exist
-                levelData = await Level.create({
-                    userId: targetUser.id,
-                    guildId: message.guild.id,
-                    username: targetUser.username,
-                    level: 0,
-                    xp: 0,
-                    totalXP: 0,
-                    messageCount: 0,
-                    dailyXP: 0
-                });
-            }
-            
-            // Get economy for profile settings (background)
-            const economy = await Economy.getEconomy(targetUser.id, guildId);
-            
-            // Get guild config for fallback background
-            const guildConfig = await Guild.getGuild(guildId);
-            const fallbackBg = guildConfig.economy?.fallbackBackground;
-            
-            // Get background - check user's background, then custom shop items, then fallback
-            let background = getBackground(economy.profile.background || 'default');
-            
-            // If user has a custom background from shop, find it in custom items
-            if (!background || !background.image) {
-                const customBg = (guildConfig.customShopItems || []).find(
-                    item => item.type === 'background' && item.id === economy.profile.background
-                );
-                if (customBg) {
-                    background = {
-                        id: customBg.id,
-                        name: customBg.name,
-                        image: customBg.image || '',
-                        color: customBg.color || '#2C2F33'
-                    };
-                }
-            }
-            
-            // Use fallback if no image
-            const bgImage = background?.image || fallbackBg?.image || '';
-            
-            // Get rank
-            const leaderboard = await Level.getLeaderboard(guildId, 1000);
-            const rank = leaderboard.findIndex(u => u.userId === targetUser.id) + 1 || 1;
-            
-            // Create rank card
-            const canvas = createCanvas(900, 300);
-            const ctx = canvas.getContext('2d');
-            
-            // Draw background
-            if (bgImage) {
-                try {
-                    const loadedBg = await loadImage(bgImage).catch(() => null);
-                    if (loadedBg) {
-                        ctx.drawImage(loadedBg, 0, 0, canvas.width, canvas.height);
-                        // Add overlay for readability
-                        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-                        ctx.fillRect(0, 0, canvas.width, canvas.height);
-                    } else {
-                        // Background gradient fallback
-                        const gradient = ctx.createLinearGradient(0, 0, 900, 300);
-                        gradient.addColorStop(0, '#2C2F33');
-                        gradient.addColorStop(1, '#23272A');
-                        ctx.fillStyle = gradient;
-                        ctx.fillRect(0, 0, 900, 300);
-                    }
-                } catch {
-                    // Background gradient fallback
-                    const gradient = ctx.createLinearGradient(0, 0, 900, 300);
-                    gradient.addColorStop(0, '#2C2F33');
-                    gradient.addColorStop(1, '#23272A');
-                    ctx.fillStyle = gradient;
-                    ctx.fillRect(0, 0, 900, 300);
-                }
-            } else {
-                // Background gradient
-                const gradient = ctx.createLinearGradient(0, 0, 900, 300);
-                gradient.addColorStop(0, '#2C2F33');
-                gradient.addColorStop(1, '#23272A');
-                ctx.fillStyle = gradient;
-                ctx.fillRect(0, 0, 900, 300);
-            }
-            
-            // Accent bar at TOP with gradient
-            const accentGradient = ctx.createLinearGradient(0, 0, 900, 0);
-            accentGradient.addColorStop(0, '#667eea');
-            accentGradient.addColorStop(1, '#764ba2');
-            ctx.fillStyle = accentGradient;
-            ctx.fillRect(0, 0, 900, 10);
-            
-            // Load and draw avatar
-            try {
-                const avatarURL = targetUser.displayAvatarURL({ extension: 'png', size: 256 });
-                const avatar = await loadImage(avatarURL);
-                
-                // Draw circular avatar with glow
-                ctx.shadowColor = '#667eea';
-                ctx.shadowBlur = 20;
-                ctx.save();
-                ctx.beginPath();
-                ctx.arc(120, 150, 70, 0, Math.PI * 2);
-                ctx.closePath();
-                ctx.clip();
-                ctx.drawImage(avatar, 50, 80, 140, 140);
-                ctx.restore();
-                ctx.shadowBlur = 0;
-                
-                // Avatar border
-                ctx.strokeStyle = '#667eea';
-                ctx.lineWidth = 5;
-                ctx.beginPath();
-                ctx.arc(120, 150, 70, 0, Math.PI * 2);
-                ctx.stroke();
-            } catch (error) {
-                console.error('Error loading avatar:', error);
-            }
-            
-            // Username
-            ctx.font = 'bold 36px "Poppins Bold", Arial';
-            ctx.fillStyle = '#ffffff';
-            ctx.textAlign = 'left';
-            ctx.fillText(targetUser.username, 230, 90);
-            
-            // Rank and Level
-            ctx.font = 'bold 24px "Poppins Bold", Arial';
-            ctx.fillStyle = '#b9bbbe';
-            ctx.fillText(`Rank #${rank}`, 230, 130);
-            ctx.fillText(`Level ${levelData.level}`, 230, 165);
-            
-            // XP Progress
-            const xpForNext = levelData.xpForNextLevel ? levelData.xpForNextLevel() : Math.floor(100 + (levelData.level * 50) + Math.pow(levelData.level, 1.5) * 25);
-            ctx.font = '20px "Poppins", Arial';
-            ctx.fillStyle = '#b9bbbe';
-            ctx.fillText(`${levelData.xp} / ${xpForNext} XP`, 230, 200);
-            
-            // Progress bar background
-            ctx.fillStyle = '#40444b';
-            ctx.beginPath();
-            ctx.roundRect(230, 215, 620, 35, 17.5);
-            ctx.fill();
-            
-            // Progress bar fill with gradient
-            const progress = Math.min(levelData.xp / xpForNext, 1);
-            if (progress > 0) {
-                const progressGradient = ctx.createLinearGradient(230, 0, 850, 0);
-                progressGradient.addColorStop(0, '#667eea');
-                progressGradient.addColorStop(1, '#764ba2');
-                ctx.fillStyle = progressGradient;
-                ctx.beginPath();
-                ctx.roundRect(230, 215, Math.max(620 * progress, 35), 35, 17.5);
-                ctx.fill();
-            }
-            
-            // Stats at bottom
-            ctx.font = '18px "Poppins", Arial';
-            ctx.fillStyle = '#72767d';
-            ctx.fillText(`Messages: ${levelData.messageCount || 0}`, 230, 280);
-            ctx.fillText(`Total XP: ${levelData.totalXP || 0}`, 450, 280);
-            ctx.fillText(`Daily XP: ${levelData.dailyXP || 0}`, 670, 280);
-            
-            // Create attachment
-            const attachment = new AttachmentBuilder(canvas.toBuffer('image/png'), {
-                name: 'rank.png'
-            });
-            
-            await message.reply({ files: [attachment] });
-            
-        } catch (error) {
-            console.error('Error creating rank card:', error);
-            return message.reply({
-                embeds: [await errorEmbed(guildId, 'Failed to create rank card. Please try again later.')]
-            });
+  name: 'level',
+  aliases: ['lvl', 'rank', 'xp', 'card', 'me'],
+  description: 'View your or another user\'s rank card',
+  usage: 'level [@user]',
+  category: 'economy',
+  cooldown: 5,
+
+  async execute(message, args) {
+    const guildId = message.guild.id;
+    const targetUser = message.mentions.users.first() || message.author;
+
+    try {
+      await message.channel.sendTyping();
+
+      // Get level data
+      let levelData = await Level.findOne({
+        userId: targetUser.id,
+        guildId: message.guild.id
+      });
+
+      if (!levelData) {
+        // Create default level data if doesn't exist
+        levelData = await Level.create({
+          userId: targetUser.id,
+          guildId: message.guild.id,
+          username: targetUser.username,
+          level: 0,
+          xp: 0,
+          totalXP: 0,
+          messageCount: 0,
+          dailyXP: 0
+        });
+      }
+
+      // Get economy for profile settings (background)
+      const economy = await Economy.getEconomy(targetUser.id, guildId);
+
+      // Get guild config for fallback background
+      const guildConfig = await Guild.getGuild(guildId);
+      const fallbackBg = guildConfig.economy?.fallbackBackground;
+
+      // Get background - check user's background, then custom shop items, then fallback
+      let background = getBackground(economy.profile.background || 'default');
+
+      // If user has a custom background from shop, find it in custom items
+      if (!background || !background.image) {
+        const customBg = (guildConfig.customShopItems || []).find(
+          item => item.type === 'background' && item.id === economy.profile.background
+        );
+        if (customBg) {
+          background = {
+            id: customBg.id,
+            name: customBg.name,
+            image: customBg.image || '',
+            color: customBg.color || '#2C2F33'
+          };
         }
+      }
+
+      // Use fallback if no image
+      const bgImage = background?.image || fallbackBg?.image || '';
+
+      // Get rank
+      const leaderboard = await Level.getLeaderboard(guildId, 1000);
+      const rank = leaderboard.findIndex(u => u.userId === targetUser.id) + 1 || 1;
+
+      // Create rank card
+      const canvas = createCanvas(900, 300);
+      const ctx = canvas.getContext('2d');
+
+      // Draw background
+      if (bgImage) {
+        try {
+          const loadedBg = await loadImage(bgImage).catch(() => null);
+          if (loadedBg) {
+            ctx.drawImage(loadedBg, 0, 0, canvas.width, canvas.height);
+            // Add overlay for readability
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+          } else {
+            // Background gradient fallback
+            const gradient = ctx.createLinearGradient(0, 0, 900, 300);
+            gradient.addColorStop(0, '#2C2F33');
+            gradient.addColorStop(1, '#23272A');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 900, 300);
+          }
+        } catch {
+          // Background gradient fallback
+          const gradient = ctx.createLinearGradient(0, 0, 900, 300);
+          gradient.addColorStop(0, '#2C2F33');
+          gradient.addColorStop(1, '#23272A');
+          ctx.fillStyle = gradient;
+          ctx.fillRect(0, 0, 900, 300);
+        }
+      } else {
+        // Background gradient
+        const gradient = ctx.createLinearGradient(0, 0, 900, 300);
+        gradient.addColorStop(0, '#2C2F33');
+        gradient.addColorStop(1, '#23272A');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 900, 300);
+      }
+
+      // Accent bar at TOP with gradient
+      const accentGradient = ctx.createLinearGradient(0, 0, 900, 0);
+      accentGradient.addColorStop(0, '#667eea');
+      accentGradient.addColorStop(1, '#764ba2');
+      ctx.fillStyle = accentGradient;
+      ctx.fillRect(0, 0, 900, 10);
+
+      // Load and draw avatar
+      try {
+        const avatarURL = targetUser.displayAvatarURL({ extension: 'png', size: 256 });
+        const avatar = await loadImage(avatarURL);
+
+        // Draw circular avatar with glow
+        ctx.shadowColor = '#667eea';
+        ctx.shadowBlur = 20;
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(120, 150, 70, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.clip();
+        ctx.drawImage(avatar, 50, 80, 140, 140);
+        ctx.restore();
+        ctx.shadowBlur = 0;
+
+        // Avatar border
+        ctx.strokeStyle = '#667eea';
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.arc(120, 150, 70, 0, Math.PI * 2);
+        ctx.stroke();
+      } catch (error) {
+        console.error('Error loading avatar:', error);
+      }
+
+      // Username
+      ctx.font = 'bold 36px "Poppins Bold", Arial';
+      ctx.fillStyle = '#ffffff';
+      ctx.textAlign = 'left';
+      ctx.fillText(targetUser.username, 230, 90);
+
+      // Rank and Level
+      ctx.font = 'bold 24px "Poppins Bold", Arial';
+      ctx.fillStyle = '#b9bbbe';
+      ctx.fillText(`Rank #${rank}`, 230, 130);
+      ctx.fillText(`Level ${levelData.level}`, 230, 165);
+
+      // XP Progress
+      const xpForNext = levelData.xpForNextLevel ? levelData.xpForNextLevel() : Math.floor(100 + (levelData.level * 50) + Math.pow(levelData.level, 1.5) * 25);
+      ctx.font = '20px "Poppins", Arial';
+      ctx.fillStyle = '#b9bbbe';
+      ctx.fillText(`${levelData.xp} / ${xpForNext} XP`, 230, 200);
+
+      // Progress bar background
+      ctx.fillStyle = '#40444b';
+      ctx.beginPath();
+      ctx.roundRect(230, 215, 620, 35, 17.5);
+      ctx.fill();
+
+      // Progress bar fill with gradient
+      const progress = Math.min(levelData.xp / xpForNext, 1);
+      if (progress > 0) {
+        const progressGradient = ctx.createLinearGradient(230, 0, 850, 0);
+        progressGradient.addColorStop(0, '#667eea');
+        progressGradient.addColorStop(1, '#764ba2');
+        ctx.fillStyle = progressGradient;
+        ctx.beginPath();
+        ctx.roundRect(230, 215, Math.max(620 * progress, 35), 35, 17.5);
+        ctx.fill();
+      }
+
+      // Stats at bottom
+      ctx.font = '18px "Poppins", Arial';
+      ctx.fillStyle = '#72767d';
+      ctx.fillText(`Messages: ${levelData.messageCount || 0}`, 230, 280);
+      ctx.fillText(`Total XP: ${levelData.totalXP || 0}`, 450, 280);
+      ctx.fillText(`Daily XP: ${levelData.dailyXP || 0}`, 670, 280);
+
+      // Create attachment
+      const attachment = new AttachmentBuilder(canvas.toBuffer('image/png'), {
+        name: 'rank.png'
+      });
+
+      await message.reply({ files: [attachment] });
+
+    } catch (error) {
+      console.error('Error creating rank card:', error);
+      return message.reply({
+        embeds: [await errorEmbed(guildId, 'Failed to create rank card. Please try again later.')]
+      });
     }
+  }
 };
