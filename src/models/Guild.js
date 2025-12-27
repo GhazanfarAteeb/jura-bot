@@ -228,7 +228,50 @@ const guildSchema = new mongoose.Schema({
     coinEmoji: { type: String, default: '💰' },
     coinName: { type: String, default: 'coins' },
     adventureNPCs: [String] // Custom NPC list
-  }
+  },
+  // Voice XP settings
+  voiceXP: {
+    enabled: { type: Boolean, default: true },
+    xpPerMinute: { type: Number, default: 5 },
+    minUsersRequired: { type: Number, default: 1 }, // Min users in channel
+    afkChannelExcluded: { type: Boolean, default: true },
+    mutedExcluded: { type: Boolean, default: true }, // Exclude muted users
+    deafenedExcluded: { type: Boolean, default: true }, // Exclude deafened users
+    excludedChannels: [String]
+  },
+  // Auto-publish announcements
+  autoPublish: {
+    enabled: { type: Boolean, default: false },
+    channels: [String] // Announcement channel IDs
+  },
+  // Auto-role on join
+  autoRole: {
+    enabled: { type: Boolean, default: false },
+    roles: [String], // Role IDs to give on join
+    delay: { type: Number, default: 0 }, // Seconds delay before giving role
+    botRoles: [String], // Different roles for bots
+    requireVerification: { type: Boolean, default: false }
+  },
+  // Command channel restrictions
+  commandChannels: {
+    enabled: { type: Boolean, default: false },
+    channels: [String], // Channel IDs where commands are allowed
+    bypassRoles: [String] // Roles that bypass channel restrictions
+  },
+  // Custom shop items
+  customShopItems: [{
+    id: String,
+    name: String,
+    description: String,
+    price: { type: Number, default: 100 },
+    type: { type: String, enum: ['role', 'item', 'background', 'other'], default: 'item' },
+    roleId: String, // For role type items
+    image: String,
+    rarity: { type: String, default: 'common' },
+    stock: { type: Number, default: -1 }, // -1 = unlimited
+    createdBy: String,
+    createdAt: { type: Date, default: Date.now }
+  }]
 }, {
   timestamps: true
 });

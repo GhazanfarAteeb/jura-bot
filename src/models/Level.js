@@ -31,6 +31,20 @@ const levelSchema = new mongoose.Schema({
     default: 0
   },
 
+  // Voice stats
+  voiceTime: {
+    type: Number,
+    default: 0 // Total seconds in voice
+  },
+  voiceXP: {
+    type: Number,
+    default: 0
+  },
+  currentVoiceSession: {
+    channelId: String,
+    joinedAt: Date
+  },
+
   // Last message time (for cooldown)
   lastMessageTime: Date,
 

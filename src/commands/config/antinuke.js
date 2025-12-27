@@ -1,5 +1,7 @@
 import { EmbedBuilder, PermissionFlagsBits } from 'discord.js';
 import Guild from '../../models/Guild.js';
+import { getPrefix } from '../../utils/helpers.js';
+import { successEmbed, errorEmbed, infoEmbed, GLYPHS } from '../../utils/embeds.js';
 
 export default {
   name: 'antinuke',
@@ -11,33 +13,30 @@ export default {
   cooldown: 3,
   
   async execute(message, args, client) {
-    const guildConfig = await Guild.findOne({ guildId: message.guild.id }) || 
-      await Guild.create({ guildId: message.guild.id });
+    const prefix = await getPrefix(message.guild.id);
+    const guildConfig = await Guild.getGuild(message.guild.id, message.guild.name);
 
-    if (!guildConfig.security) guildConfig.security = {};
-    if (!guildConfig.security.antiNuke) {
-      guildConfig.security.antiNuke = {
+    // Use the same path as automod antinuke for consistency
+    if (!guildConfig.features.autoMod.antiNuke) {
+      guildConfig.features.autoMod.antiNuke = {
         enabled: false,
-        action: 'kick', // ban, kick, removePerms
-        timeWindow: 10000, // 10 seconds
-        whitelist: [],
-        limits: {
-          channelDelete: 3,
-          channelCreate: 5,
-          roleDelete: 3,
-          roleCreate: 5,
-          ban: 3,
-          kick: 5,
-          memberRemove: 10
-        }
+        banThreshold: 5,
+        kickThreshold: 5,
+        roleDeleteThreshold: 3,
+        channelDeleteThreshold: 3,
+        timeWindow: 60,
+        action: 'removeRoles',
+        whitelistedUsers: []
       };
     }
-
+    
+    const antiNuke = guildConfig.features.autoMod.antiNuke;
     const subCommand = args[0]?.toLowerCase();
 
     switch (subCommand) {
       case 'enable':
-        guildConfig.security.antiNuke.enabled = true;
+      case 'on':
+        antiNuke.enabled = true;
         await guildConfig.save();
         
         return message.reply({
@@ -46,13 +45,14 @@ export default {
             .setTitle('✅ Anti-Nuke Enabled')
             .setDescription('Server protection is now active. The bot will monitor for suspicious mass actions.')
             .addFields(
-              { name: 'Current Action', value: guildConfig.security.antiNuke.action, inline: true },
-              { name: 'Time Window', value: `${guildConfig.security.antiNuke.timeWindow / 1000}s`, inline: true }
+              { name: 'Current Action', value: antiNuke.action, inline: true },
+              { name: 'Time Window', value: `${antiNuke.timeWindow}s`, inline: true }
             )]
         });
 
       case 'disable':
-        guildConfig.security.antiNuke.enabled = false;
+      case 'off':
+        antiNuke.enabled = false;
         await guildConfig.save();
         
         return message.reply({
@@ -67,131 +67,234 @@ export default {
         const value = args[2];
 
         if (!setting) {
-          return message.reply('Please specify a setting: `action`, `limit`, or `timewindow`');
-        }
-
-        if (setting === 'action') {
-          if (!['ban', 'kick', 'removeperms'].includes(value?.toLowerCase())) {
-            return message.reply('Action must be: `ban`, `kick`, or `removePerms`');
-          }
-          guildConfig.security.antiNuke.action = value.toLowerCase();
-          await guildConfig.save();
-          
           return message.reply({
-            embeds: [new EmbedBuilder()
-              .setColor('#00FF00')
-              .setDescription(`✅ Anti-nuke action set to: **${value}**`)]
+            embeds: [await infoEmbed(message.guild.id, 'Anti-Nuke Config',
+              `**Available settings:**\n` +
+              `${GLYPHS.DOT} \`${prefix}antinuke config action <removeRoles|kick|ban>\`\n` +
+              `${GLYPHS.DOT} \`${prefix}antinuke config timewindow <5-60>\` (seconds)\n` +
+              `${GLYPHS.DOT} \`${prefix}antinuke config ban <1-20>\`\n` +
+              `${GLYPHS.DOT} \`${prefix}antinuke config kick <1-20>\`\n` +
+              `${GLYPHS.DOT} \`${prefix}antinuke config roledelete <1-10>\`\n` +
+              `${GLYPHS.DOT} \`${prefix}antinuke config channeldelete <1-10>\``
+            )]
           });
         }
 
-        if (setting === 'limit') {
-          const limitType = value;
-          const limitValue = parseInt(args[3]);
-          
-          if (!limitType || isNaN(limitValue) || limitValue < 1) {
-            return message.reply('Usage: `antinuke config limit <type> <number>`\nTypes: channelDelete, channelCreate, roleDelete, roleCreate, ban, kick, memberRemove');
+        if (setting === 'action') {
+          if (!['ban', 'kick', 'removeroles'].includes(value?.toLowerCase())) {
+            return message.reply({
+              embeds: [await errorEmbed(message.guild.id, 'Invalid Action',
+                `${GLYPHS.ERROR} Action must be: \`removeRoles\`, \`kick\`, or \`ban\``)]
+            });
           }
-
-          if (!guildConfig.security.antiNuke.limits[limitType]) {
-            return message.reply('Invalid limit type. Types: channelDelete, channelCreate, roleDelete, roleCreate, ban, kick, memberRemove');
-          }
-
-          guildConfig.security.antiNuke.limits[limitType] = limitValue;
+          antiNuke.action = value.toLowerCase();
           await guildConfig.save();
           
           return message.reply({
-            embeds: [new EmbedBuilder()
-              .setColor('#00FF00')
-              .setDescription(`✅ ${limitType} limit set to **${limitValue}** actions`)]
+            embeds: [await successEmbed(message.guild.id, 'Action Updated',
+              `${GLYPHS.SUCCESS} Anti-nuke action set to: **${value}**`)]
           });
         }
 
         if (setting === 'timewindow') {
           const seconds = parseInt(value);
           if (isNaN(seconds) || seconds < 5 || seconds > 60) {
-            return message.reply('Time window must be between 5 and 60 seconds.');
+            return message.reply({
+              embeds: [await errorEmbed(message.guild.id, 'Invalid Time',
+                `${GLYPHS.ERROR} Time window must be between 5 and 60 seconds.`)]
+            });
           }
           
-          guildConfig.security.antiNuke.timeWindow = seconds * 1000;
+          antiNuke.timeWindow = seconds;
           await guildConfig.save();
           
           return message.reply({
-            embeds: [new EmbedBuilder()
-              .setColor('#00FF00')
-              .setDescription(`✅ Time window set to **${seconds} seconds**`)]
+            embeds: [await successEmbed(message.guild.id, 'Time Window Updated',
+              `${GLYPHS.SUCCESS} Time window set to **${seconds} seconds**`)]
           });
         }
 
-        return message.reply('Invalid setting. Use: `action`, `limit`, or `timewindow`');
+        if (setting === 'ban') {
+          const threshold = parseInt(value);
+          if (isNaN(threshold) || threshold < 1 || threshold > 20) {
+            return message.reply({
+              embeds: [await errorEmbed(message.guild.id, 'Invalid Threshold',
+                `${GLYPHS.ERROR} Ban threshold must be between 1 and 20.`)]
+            });
+          }
+          antiNuke.banThreshold = threshold;
+          await guildConfig.save();
+          return message.reply({
+            embeds: [await successEmbed(message.guild.id, 'Ban Threshold Updated',
+              `${GLYPHS.SUCCESS} Ban threshold set to **${threshold}** actions`)]
+          });
+        }
+
+        if (setting === 'kick') {
+          const threshold = parseInt(value);
+          if (isNaN(threshold) || threshold < 1 || threshold > 20) {
+            return message.reply({
+              embeds: [await errorEmbed(message.guild.id, 'Invalid Threshold',
+                `${GLYPHS.ERROR} Kick threshold must be between 1 and 20.`)]
+            });
+          }
+          antiNuke.kickThreshold = threshold;
+          await guildConfig.save();
+          return message.reply({
+            embeds: [await successEmbed(message.guild.id, 'Kick Threshold Updated',
+              `${GLYPHS.SUCCESS} Kick threshold set to **${threshold}** actions`)]
+          });
+        }
+
+        if (setting === 'roledelete') {
+          const threshold = parseInt(value);
+          if (isNaN(threshold) || threshold < 1 || threshold > 10) {
+            return message.reply({
+              embeds: [await errorEmbed(message.guild.id, 'Invalid Threshold',
+                `${GLYPHS.ERROR} Role delete threshold must be between 1 and 10.`)]
+            });
+          }
+          antiNuke.roleDeleteThreshold = threshold;
+          await guildConfig.save();
+          return message.reply({
+            embeds: [await successEmbed(message.guild.id, 'Role Delete Threshold Updated',
+              `${GLYPHS.SUCCESS} Role delete threshold set to **${threshold}** actions`)]
+          });
+        }
+
+        if (setting === 'channeldelete') {
+          const threshold = parseInt(value);
+          if (isNaN(threshold) || threshold < 1 || threshold > 10) {
+            return message.reply({
+              embeds: [await errorEmbed(message.guild.id, 'Invalid Threshold',
+                `${GLYPHS.ERROR} Channel delete threshold must be between 1 and 10.`)]
+            });
+          }
+          antiNuke.channelDeleteThreshold = threshold;
+          await guildConfig.save();
+          return message.reply({
+            embeds: [await successEmbed(message.guild.id, 'Channel Delete Threshold Updated',
+              `${GLYPHS.SUCCESS} Channel delete threshold set to **${threshold}** actions`)]
+          });
+        }
+
+        return message.reply({
+          embeds: [await errorEmbed(message.guild.id, 'Invalid Setting',
+            `${GLYPHS.ERROR} Unknown setting: \`${setting}\`\n\nUse \`${prefix}antinuke config\` to see available options.`)]
+        });
 
       case 'whitelist':
         const whitelistAction = args[1]?.toLowerCase();
         const user = message.mentions.users.first() || await client.users.fetch(args[2]).catch(() => null);
 
-        if (!user) {
-          return message.reply('Please mention a user or provide their ID.');
+        if (!whitelistAction || !['add', 'remove', 'list'].includes(whitelistAction)) {
+          return message.reply({
+            embeds: [await infoEmbed(message.guild.id, 'Whitelist Commands',
+              `**Usage:**\n` +
+              `${GLYPHS.DOT} \`${prefix}antinuke whitelist add @user\` - Add user to whitelist\n` +
+              `${GLYPHS.DOT} \`${prefix}antinuke whitelist remove @user\` - Remove user from whitelist\n` +
+              `${GLYPHS.DOT} \`${prefix}antinuke whitelist list\` - View whitelisted users`)]
+          });
         }
 
-        if (whitelistAction === 'add') {
-          if (guildConfig.security.antiNuke.whitelist.includes(user.id)) {
-            return message.reply('This user is already whitelisted.');
+        if (whitelistAction === 'list') {
+          if (!antiNuke.whitelistedUsers || antiNuke.whitelistedUsers.length === 0) {
+            return message.reply({
+              embeds: [await infoEmbed(message.guild.id, 'Whitelist Empty',
+                `${GLYPHS.INFO} No users are whitelisted from anti-nuke.`)]
+            });
           }
           
-          guildConfig.security.antiNuke.whitelist.push(user.id);
-          await guildConfig.save();
+          const users = await Promise.all(
+            antiNuke.whitelistedUsers.map(id => client.users.fetch(id).catch(() => null))
+          );
+          const userList = users.filter(u => u).map(u => `${GLYPHS.DOT} ${u.tag} (${u.id})`).join('\n');
           
           return message.reply({
             embeds: [new EmbedBuilder()
-              .setColor('#00FF00')
-              .setDescription(`✅ Added **${user.tag}** to anti-nuke whitelist`)]
+              .setColor('#5865F2')
+              .setTitle('🛡️ Anti-Nuke Whitelist')
+              .setDescription(userList || 'No valid users found')]
+          });
+        }
+
+        if (!user) {
+          return message.reply({
+            embeds: [await errorEmbed(message.guild.id, 'User Not Found',
+              `${GLYPHS.ERROR} Please mention a user or provide their ID.`)]
+          });
+        }
+
+        if (!antiNuke.whitelistedUsers) {
+          antiNuke.whitelistedUsers = [];
+        }
+
+        if (whitelistAction === 'add') {
+          if (antiNuke.whitelistedUsers.includes(user.id)) {
+            return message.reply({
+              embeds: [await errorEmbed(message.guild.id, 'Already Whitelisted',
+                `${GLYPHS.ERROR} ${user.tag} is already whitelisted.`)]
+            });
+          }
+          
+          antiNuke.whitelistedUsers.push(user.id);
+          await guildConfig.save();
+          
+          return message.reply({
+            embeds: [await successEmbed(message.guild.id, 'User Whitelisted',
+              `${GLYPHS.SUCCESS} Added **${user.tag}** to anti-nuke whitelist.`)]
           });
         }
 
         if (whitelistAction === 'remove') {
-          const index = guildConfig.security.antiNuke.whitelist.indexOf(user.id);
+          const index = antiNuke.whitelistedUsers.indexOf(user.id);
           if (index === -1) {
-            return message.reply('This user is not whitelisted.');
+            return message.reply({
+              embeds: [await errorEmbed(message.guild.id, 'Not Whitelisted',
+                `${GLYPHS.ERROR} ${user.tag} is not whitelisted.`)]
+            });
           }
           
-          guildConfig.security.antiNuke.whitelist.splice(index, 1);
+          antiNuke.whitelistedUsers.splice(index, 1);
           await guildConfig.save();
           
           return message.reply({
-            embeds: [new EmbedBuilder()
-              .setColor('#00FF00')
-              .setDescription(`✅ Removed **${user.tag}** from anti-nuke whitelist`)]
+            embeds: [await successEmbed(message.guild.id, 'User Removed',
+              `${GLYPHS.SUCCESS} Removed **${user.tag}** from anti-nuke whitelist.`)]
           });
         }
-
-        return message.reply('Use: `antinuke whitelist add @user` or `antinuke whitelist remove @user`');
+        break;
 
       case 'status':
       default:
-        const config = guildConfig.security.antiNuke;
-        const whitelistUsers = config.whitelist.length > 0 
-          ? (await Promise.all(config.whitelist.map(id => client.users.fetch(id).catch(() => null))))
-              .filter(u => u)
-              .map(u => u.tag)
-              .join(', ')
-          : 'None';
+        const whitelistCount = antiNuke.whitelistedUsers?.length || 0;
+        let whitelistUsers = 'None';
+        
+        if (whitelistCount > 0) {
+          const users = await Promise.all(
+            antiNuke.whitelistedUsers.slice(0, 5).map(id => client.users.fetch(id).catch(() => null))
+          );
+          whitelistUsers = users.filter(u => u).map(u => u.tag).join(', ');
+          if (whitelistCount > 5) {
+            whitelistUsers += ` +${whitelistCount - 5} more`;
+          }
+        }
 
         return message.reply({
           embeds: [new EmbedBuilder()
-            .setColor(config.enabled ? '#00FF00' : '#FF0000')
+            .setColor(antiNuke.enabled ? '#00FF00' : '#FF0000')
             .setTitle('🛡️ Anti-Nuke Configuration')
             .addFields(
-              { name: 'Status', value: config.enabled ? '✅ Enabled' : '❌ Disabled', inline: true },
-              { name: 'Action', value: config.action, inline: true },
-              { name: 'Time Window', value: `${config.timeWindow / 1000}s`, inline: true },
-              { name: 'Channel Delete Limit', value: `${config.limits.channelDelete}`, inline: true },
-              { name: 'Channel Create Limit', value: `${config.limits.channelCreate}`, inline: true },
-              { name: 'Role Delete Limit', value: `${config.limits.roleDelete}`, inline: true },
-              { name: 'Role Create Limit', value: `${config.limits.roleCreate}`, inline: true },
-              { name: 'Ban Limit', value: `${config.limits.ban}`, inline: true },
-              { name: 'Kick Limit', value: `${config.limits.kick}`, inline: true },
-              { name: 'Whitelisted Users', value: whitelistUsers }
+              { name: 'Status', value: antiNuke.enabled ? '✅ Enabled' : '❌ Disabled', inline: true },
+              { name: 'Action', value: antiNuke.action || 'removeRoles', inline: true },
+              { name: 'Time Window', value: `${antiNuke.timeWindow || 60}s`, inline: true },
+              { name: 'Ban Threshold', value: `${antiNuke.banThreshold || 5}`, inline: true },
+              { name: 'Kick Threshold', value: `${antiNuke.kickThreshold || 5}`, inline: true },
+              { name: 'Role Delete Threshold', value: `${antiNuke.roleDeleteThreshold || 3}`, inline: true },
+              { name: 'Channel Delete Threshold', value: `${antiNuke.channelDeleteThreshold || 3}`, inline: true },
+              { name: `Whitelisted Users (${whitelistCount})`, value: whitelistUsers, inline: false }
             )
-            .setFooter({ text: 'Use antinuke enable/disable to toggle protection' })]
+            .setFooter({ text: `Use ${prefix}antinuke enable/disable to toggle protection` })]
         });
     }
   }

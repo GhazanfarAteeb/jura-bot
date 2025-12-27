@@ -55,6 +55,16 @@ export default class ServerData {
     }
   }
 
+  async getGuild(guildId, guildName = null) {
+    const cacheKey = `guild:${guildId}`;
+    const cached = this.getCached(cacheKey);
+    if (cached) return cached;
+
+    const guild = await this.Guild.getGuild(guildId, guildName);
+    this.setCache(cacheKey, guild);
+    return guild;
+  }
+
   async get(guildId) {
     let data = await this.Music.findOne({ guildId, type: 'guild' });
 

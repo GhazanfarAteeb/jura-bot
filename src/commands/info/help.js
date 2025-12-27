@@ -4,17 +4,22 @@ import { getPrefix } from '../../utils/helpers.js';
 
 const COMMANDS_BY_CATEGORY = {
   admin: ['deployment', 'logs'],
-  config: ['setup', 'config', 'setprefix', 'setchannel', 'setrole', 'setcoin', 'automod', 'welcome'],
-  moderation: ['warn', 'kick', 'ban', 'purge', 'userhistory', 'timeout', 'lockdown'],
-  economy: ['daily', 'balance', 'profile', 'level', 'shop', 'inventory', 'setprofile', 'setbackground',
-    'adventure', 'rep', 'addcoins', 'coinflip', 'slots', 'dice', 'roulette', 'claim'],
+  config: ['setup', 'config', 'setprefix', 'setchannel', 'setrole', 'setcoin', 'automod', 'welcome',
+    'antinuke', 'autopublish', 'autorole', 'cmdchannels', 'manageshop', 'colorroles', 'levelroles',
+    'noxp', 'reactionroles', 'xpmultiplier', 'cleanup'],
+  moderation: ['warn', 'kick', 'ban', 'purge', 'userhistory', 'timeout', 'untimeout', 'lockdown', 'verify'],
+  economy: ['daily', 'balance', 'level', 'shop', 'inventory', 'setprofile', 'setbackground',
+    'adventure', 'rep', 'addcoins', 'coinflip', 'slots', 'dice', 'roulette', 'claim', 'blackjack'],
   music: ['play', 'pause', 'resume', 'skip', 'stop', 'queue', 'nowplaying', 'volume', 'shuffle',
     'loop', 'seek', 'remove', 'clear', 'skipto'],
-  community: ['setbirthday', 'birthdays', 'removebirthday', 'birthdaypreference',
+  community: ['setbirthday', 'birthdays', 'removebirthday', 'birthdaypreference', 'mybirthday',
+    'requestbirthday', 'approvebday', 'rejectbday', 'birthdayrequests', 'cancelbirthday',
     'createevent', 'events', 'joinevent', 'cancelevent', 'giveaway', 'starboard'],
+  social: ['marry', 'divorce', 'badges'],
+  fun: ['tictactoe', 'trivia'],
   info: ['help', 'ping', 'serverinfo', 'userinfo', 'checkuser', 'roleinfo', 'channelinfo'],
   utility: ['rank', 'leaderboard', 'top', 'stats', 'embed', 'embedset', 'embedhelp', 'afk', 'gif', 'meme', 'react', 
-    'remind', 'tempvc', 'snipe', 'editsnipe', 'avatar', 'banner', 'steal', 'firstmessage']
+    'remind', 'tempvc', 'snipe', 'editsnipe', 'avatar', 'banner', 'steal', 'firstmessage', 'poll', 'ticket']
 };
 
 const CATEGORY_INFO = {
@@ -23,8 +28,10 @@ const CATEGORY_INFO = {
   moderation: { emoji: '🛡️', name: 'Moderation', description: 'Moderation and security commands' },
   economy: { emoji: '💰', name: 'Economy', description: 'Coins, profile, and gambling commands' },
   music: { emoji: '🎵', name: 'Music', description: 'Music playback and queue controls' },
-  community: { emoji: '🎉', name: 'Community', description: 'Birthdays, events, giveaways, and community features' },
-  info: { emoji: 'ℹ️', name: 'Information', description: 'Bot and server information commands' },
+  community: { emoji: '🎉', name: 'Community', description: 'Birthdays, events, giveaways' },
+  social: { emoji: '💕', name: 'Social', description: 'Marriage, badges, and social features' },
+  fun: { emoji: '🎮', name: 'Fun', description: 'Games and fun commands' },
+  info: { emoji: 'ℹ️', name: 'Information', description: 'Bot and server info commands' },
   utility: { emoji: '🔧', name: 'Utility', description: 'Useful utility commands' }
 };
 

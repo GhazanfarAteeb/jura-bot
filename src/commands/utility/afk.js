@@ -2,6 +2,7 @@ import { EmbedBuilder } from 'discord.js';
 import Afk from '../../models/Afk.js';
 import Guild from '../../models/Guild.js';
 import { successEmbed, infoEmbed, GLYPHS } from '../../utils/embeds.js';
+import { getPrefix, parseDuration } from '../../utils/helpers.js';
 
 // URL regex pattern
 const urlRegex = /(https?:\/\/[^\s]+)/gi;
@@ -11,17 +12,49 @@ const imageUrlPattern = /\.(png|jpg|jpeg|gif|webp)($|\?)/i;
 
 export default {
   name: 'afk',
-  description: 'Set your AFK status with an optional reason',
-  usage: '[reason]',
+  description: 'Set your AFK status with an optional reason and options',
+  usage: '[reason] [--time <duration>] [--sticky]',
   aliases: ['away', 'brb'],
   cooldown: 5,
 
   async execute(message, args) {
     const guildConfig = await Guild.getGuild(message.guild.id, message.guild.name);
-    const reason = args.join(' ') || 'AFK';
+    const prefix = await getPrefix(message.guild.id);
+
+    // Parse options
+    const options = {
+      autoRemove: true,
+      scheduledReturn: null,
+      originalNickname: message.member.displayName
+    };
+
+    // Filter out flags
+    let reasonArgs = [];
+    let i = 0;
+    while (i < args.length) {
+      if (args[i] === '--time' || args[i] === '-t') {
+        const duration = args[i + 1];
+        if (duration) {
+          const ms = parseDuration(duration);
+          if (ms) {
+            options.scheduledReturn = new Date(Date.now() + ms);
+          }
+          i += 2;
+          continue;
+        }
+      } else if (args[i] === '--sticky' || args[i] === '-s') {
+        options.autoRemove = false;
+        i++;
+        continue;
+      }
+      reasonArgs.push(args[i]);
+      i++;
+    }
+
+    const reason = reasonArgs.join(' ') || 'AFK';
 
     // Set AFK status
-    await Afk.setAfk(message.guild.id, message.author.id, reason);
+    await Afk.setAfk(message.guild.id, message.author.id, reason, options);
 
     // Check if reason contains links
     const links = reason.match(urlRegex);
@@ -67,12 +100,31 @@ export default {
         embed.setImage(imageLink);
       }
 
+      // Add options info
+      let footerText = '';
+      if (options.scheduledReturn) {
+        footerText += `Auto-return: <t:${Math.floor(options.scheduledReturn.getTime() / 1000)}:R>`;
+      }
+      if (!options.autoRemove) {
+        footerText += (footerText ? ' | ' : '') + 'Sticky mode enabled';
+      }
+      if (footerText) {
+        embed.setFooter({ text: footerText });
+      }
+
       await message.reply({ embeds: [embed] });
     } else {
       // No links - just text
-      const embed = await successEmbed(message.guild.id, 'AFK Set',
-        `${GLYPHS.SUCCESS} ${message.author} is now AFK: **${reason}**`
-      );
+      let description = `${GLYPHS.SUCCESS} ${message.author} is now AFK: **${reason}**`;
+
+      if (options.scheduledReturn) {
+        description += `\n\n⏰ Auto-return: <t:${Math.floor(options.scheduledReturn.getTime() / 1000)}:R>`;
+      }
+      if (!options.autoRemove) {
+        description += `\n🔒 Sticky mode: Use \`${prefix}afk off\` to remove`;
+      }
+
+      const embed = await successEmbed(message.guild.id, 'AFK Set', description);
       await message.reply({ embeds: [embed] });
     }
 
