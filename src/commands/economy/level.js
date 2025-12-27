@@ -159,23 +159,29 @@ export default {
                 
                 ctx.font = '18px "Poppins", sans-serif';
                 
-                // Coins
+                // Coins - colored circle indicator
+                ctx.beginPath();
+                ctx.arc(textX + 8, textY - 5, 8, 0, Math.PI * 2);
                 ctx.fillStyle = '#FFD700';
-                ctx.fillText('💰', textX, textY);
+                ctx.fill();
                 ctx.fillStyle = '#FFFFFF';
-                ctx.fillText(`${economy.coins.toLocaleString()}`, textX + 30, textY);
+                ctx.fillText(`${economy.coins.toLocaleString()}`, textX + 25, textY);
                 
-                // Streak
+                // Streak - colored circle indicator
+                ctx.beginPath();
+                ctx.arc(textX + 158, textY - 5, 8, 0, Math.PI * 2);
                 ctx.fillStyle = '#FF6B6B';
-                ctx.fillText('🔥', textX + 150, textY);
+                ctx.fill();
                 ctx.fillStyle = '#FFFFFF';
-                ctx.fillText(`${economy.daily.streak || 0} days`, textX + 180, textY);
+                ctx.fillText(`${economy.daily.streak || 0} days`, textX + 175, textY);
                 
-                // Rep
+                // Rep - colored circle indicator
+                ctx.beginPath();
+                ctx.arc(textX + 308, textY - 5, 8, 0, Math.PI * 2);
                 ctx.fillStyle = '#FFC0CB';
-                ctx.fillText('⭐', textX + 300, textY);
+                ctx.fill();
                 ctx.fillStyle = '#FFFFFF';
-                ctx.fillText(`${economy.reputation || 0}`, textX + 330, textY);
+                ctx.fillText(`${economy.reputation || 0}`, textX + 325, textY);
                 
                 textY += 35;
                 
@@ -193,22 +199,29 @@ export default {
             // Draw badges if enabled
             if (economy.profile.showBadges !== false && economy.inventory.badges.length > 0) {
                 const badgeY = 40;
-                const badgeSize = 32;
-                const badgeSpacing = 40;
+                const badgeSize = 28;
+                const badgeSpacing = 36;
                 let badgeX = canvas.width - 60;
                 
                 // Draw up to 5 badges
                 for (let i = 0; i < Math.min(economy.inventory.badges.length, 5); i++) {
                     const badge = economy.inventory.badges[i];
                     
-                    // Draw badge background
-                    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-                    ctx.fillRect(badgeX - badgeSize / 2 - 2, badgeY - badgeSize / 2 - 2, badgeSize + 4, badgeSize + 4);
-                    
-                    // Draw badge emoji/icon (simplified)
-                    ctx.font = '24px sans-serif';
+                    // Draw badge as golden circle
+                    ctx.beginPath();
+                    ctx.arc(badgeX, badgeY, badgeSize / 2, 0, Math.PI * 2);
                     ctx.fillStyle = '#FFD700';
-                    ctx.fillText('🏅', badgeX - badgeSize / 2, badgeY + badgeSize / 4);
+                    ctx.fill();
+                    ctx.strokeStyle = '#B8860B';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    
+                    // Draw star character in center
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.font = 'bold 14px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('★', badgeX, badgeY + 5);
+                    ctx.textAlign = 'left';
                     
                     badgeX -= badgeSpacing;
                 }

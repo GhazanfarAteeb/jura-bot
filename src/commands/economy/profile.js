@@ -219,8 +219,11 @@ export default {
 
       // Draw "About Me" label
       ctx.font = 'bold 20px "Poppins Bold", sans-serif';
-      ctx.fillStyle = '#FFFFFF';
-      ctx.fillText('📝 About Me', descPadding, descStartY);
+      ctx.fillStyle = accentColor;
+      ctx.fillText('About Me', descPadding, descStartY);
+      
+      // Draw underline for About Me
+      ctx.fillRect(descPadding, descStartY + 5, 100, 2);
 
       // Draw bio/description
       ctx.font = '16px "Poppins", sans-serif';
@@ -242,23 +245,29 @@ export default {
       ctx.font = '14px "Poppins", sans-serif';
       ctx.fillStyle = '#72767D';
 
-      // Coins
+      // Coins - draw colored dot indicator
+      ctx.beginPath();
+      ctx.arc(descPadding + 6, bottomY - 5, 6, 0, Math.PI * 2);
       ctx.fillStyle = '#FFD700';
-      ctx.fillText('💰', descPadding, bottomY);
+      ctx.fill();
       ctx.fillStyle = '#DCDDDE';
-      ctx.fillText(`${economy.coins.toLocaleString()} coins`, descPadding + 25, bottomY);
+      ctx.fillText(`${economy.coins.toLocaleString()} coins`, descPadding + 20, bottomY);
 
-      // Streak
+      // Streak - draw colored dot indicator
+      ctx.beginPath();
+      ctx.arc(descPadding + 186, bottomY - 5, 6, 0, Math.PI * 2);
       ctx.fillStyle = '#FF6B6B';
-      ctx.fillText('🔥', descPadding + 180, bottomY);
+      ctx.fill();
       ctx.fillStyle = '#DCDDDE';
-      ctx.fillText(`${economy.daily.streak || 0} day streak`, descPadding + 205, bottomY);
+      ctx.fillText(`${economy.daily.streak || 0} day streak`, descPadding + 200, bottomY);
 
-      // Reputation
+      // Reputation - draw colored dot indicator
+      ctx.beginPath();
+      ctx.arc(descPadding + 386, bottomY - 5, 6, 0, Math.PI * 2);
       ctx.fillStyle = '#FFC0CB';
-      ctx.fillText('⭐', descPadding + 360, bottomY);
+      ctx.fill();
       ctx.fillStyle = '#DCDDDE';
-      ctx.fillText(`${economy.reputation || 0} rep`, descPadding + 385, bottomY);
+      ctx.fillText(`${economy.reputation || 0} rep`, descPadding + 400, bottomY);
 
       // Total Earned
       ctx.fillStyle = '#72767D';
@@ -267,14 +276,27 @@ export default {
       // Draw badges in top right if enabled
       if (economy.profile.showBadges !== false && economy.inventory.badges.length > 0) {
         const badgeY = 50;
-        const badgeSize = 28;
-        const badgeSpacing = 35;
+        const badgeSize = 24;
+        const badgeSpacing = 32;
         let badgeX = canvas.width - 50;
 
         for (let i = 0; i < Math.min(economy.inventory.badges.length, 5); i++) {
-          ctx.font = '22px sans-serif';
+          // Draw badge as a golden circle with star shape
+          ctx.beginPath();
+          ctx.arc(badgeX, badgeY, badgeSize / 2, 0, Math.PI * 2);
           ctx.fillStyle = '#FFD700';
-          ctx.fillText('🏅', badgeX - badgeSize / 2, badgeY);
+          ctx.fill();
+          ctx.strokeStyle = '#B8860B';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          
+          // Draw star in center
+          ctx.fillStyle = '#FFFFFF';
+          ctx.font = 'bold 12px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('★', badgeX, badgeY + 4);
+          ctx.textAlign = 'left';
+          
           badgeX -= badgeSpacing;
         }
       }
