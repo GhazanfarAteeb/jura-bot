@@ -54,8 +54,15 @@ export default {
             }
             
             if (type === 'emoji' || type === 'emote') {
-                // Validate emoji (basic check)
-                if (value.length > 10) {
+                // Validate emoji - use spread operator to count actual characters (handles Unicode properly)
+                const emojiChars = [...value];
+                
+                // Check for custom Discord emoji format <:name:id> or <a:name:id>
+                const customEmojiRegex = /^<a?:\w+:\d+>$/;
+                const isCustomEmoji = customEmojiRegex.test(value);
+                
+                // Allow single emoji or custom Discord emoji
+                if (!isCustomEmoji && emojiChars.length > 2) {
                     return message.reply({
                         embeds: [await errorEmbed(guildId, 'Emoji is too long! Please use a single emoji.')]
                     });
