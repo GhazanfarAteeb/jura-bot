@@ -29,7 +29,7 @@ export default {
     );
 
     // Handle special slash commands that need custom handling
-    const specialCommands = ['automod', 'lockdown', 'setrole', 'setchannel', 'slashcommands', 'refreshcache', 'birthdaysettings', 'setbirthday', 'config', 'setup', 'welcome'];
+    const specialCommands = ['automod', 'lockdown', 'setrole', 'setchannel', 'slashcommands', 'refreshcache', 'birthdaysettings', 'setbirthday', 'config', 'setup', 'welcome', 'manageshop'];
     if (specialCommands.includes(interaction.commandName)) {
       return handleSpecialCommand(interaction, client, guildConfig, hasAdminRole);
     }
@@ -224,6 +224,9 @@ async function handleSpecialCommand(interaction, client, guildConfig, hasAdminRo
         break;
       case 'welcome':
         await handleWelcomeCommand(interaction, guildConfig);
+        break;
+      case 'manageshop':
+        await handleManageshopCommand(interaction, guildConfig);
         break;
     }
   } catch (error) {
@@ -1099,6 +1102,349 @@ async function handleWelcomeCommand(interaction, guildConfig) {
           `• \`{server}\` - Server name\n` +
           `• \`{memberCount}\` - Member count`)]
       });
+      break;
+    }
+  }
+}
+
+// Handle manageshop slash command
+async function handleManageshopCommand(interaction, guildConfig) {
+  const { successEmbed, errorEmbed, infoEmbed, GLYPHS } = await import('../../utils/embeds.js');
+  const { formatNumber } = await import('../../utils/helpers.js');
+  const { EmbedBuilder } = await import('discord.js');
+  
+  const subcommand = interaction.options.getSubcommand();
+  const coinEmoji = guildConfig.economy?.coinEmoji || '💰';
+  const coinName = guildConfig.economy?.coinName || 'coins';
+  
+  const ITEM_TYPES = ['role', 'item', 'background', 'other'];
+  const RARITIES = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic'];
+  const RARITY_COLORS = {
+    common: '#95A5A6',
+    uncommon: '#2ECC71',
+    rare: '#3498DB',
+    epic: '#9B59B6',
+    legendary: '#F39C12',
+    mythic: '#E74C3C'
+  };
+
+  // Initialize if not exists
+  if (!guildConfig.customShopItems) {
+    guildConfig.customShopItems = [];
+  }
+
+  switch (subcommand) {
+    case 'add': {
+      const itemName = interaction.options.getString('name');
+      const price = interaction.options.getInteger('price');
+      const type = interaction.options.getString('type') || 'item';
+      const rarity = interaction.options.getString('rarity') || 'common';
+
+      // Generate unique ID
+      const itemId = `custom_${Date.now().toString(36)}_${Math.random().toString(36).substr(2, 4)}`;
+
+      const newItem = {
+        id: itemId,
+        name: itemName,
+        description: `A custom ${rarity} ${type}`,
+        price: price,
+        type: type,
+        rarity: rarity,
+        stock: -1,
+        createdBy: interaction.user.id,
+        createdAt: new Date()
+      };
+
+      guildConfig.customShopItems.push(newItem);
+      await guildConfig.save();
+
+      const embed = new EmbedBuilder()
+        .setColor(RARITY_COLORS[rarity])
+        .setTitle('✅ Item Added to Shop')
+        .addFields(
+          { name: '📦 Name', value: itemName, inline: true },
+          { name: '💰 Price', value: `${formatNumber(price)} ${coinEmoji}`, inline: true },
+          { name: '🎨 Rarity', value: rarity.charAt(0).toUpperCase() + rarity.slice(1), inline: true },
+          { name: '📋 Type', value: type.charAt(0).toUpperCase() + type.slice(1), inline: true },
+          { name: '🆔 ID', value: `\`${itemId}\``, inline: true },
+          { name: '📊 Stock', value: 'Unlimited', inline: true }
+        )
+        .setFooter({ text: `Use /manageshop edit to add a description or image` });
+
+      await interaction.editReply({ embeds: [embed] });
+      break;
+    }
+
+    case 'remove': {
+      const itemId = interaction.options.getString('id');
+
+      const index = guildConfig.customShopItems.findIndex(item => item.id === itemId);
+      if (index === -1) {
+        await interaction.editReply({
+          embeds: [await errorEmbed(interaction.guild.id, 'Item Not Found',
+            `${GLYPHS.ERROR} No item found with ID: \`${itemId}\``)]
+        });
+        return;
+      }
+
+      const removedItem = guildConfig.customShopItems[index];
+      guildConfig.customShopItems.splice(index, 1);
+      await guildConfig.save();
+
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, 'Item Removed',
+          `${GLYPHS.SUCCESS} Removed **${removedItem.name}** from the shop.`)]
+      });
+      break;
+    }
+
+    case 'list': {
+      if (guildConfig.customShopItems.length === 0) {
+        await interaction.editReply({
+          embeds: [await infoEmbed(interaction.guild.id, 'No Custom Items',
+            `${GLYPHS.INFO} No custom items in the shop yet.\n\nUse \`/manageshop add\` to add items!`)]
+        });
+        return;
+      }
+
+      const embed = new EmbedBuilder()
+        .setTitle('🛒 Custom Shop Items')
+        .setColor(guildConfig.embedStyle?.color || '#5865F2')
+        .setFooter({ text: `Total: ${guildConfig.customShopItems.length} items` });
+
+      guildConfig.customShopItems.slice(0, 10).forEach(item => {
+        const stockText = item.stock === -1 ? '∞' : item.stock;
+        embed.addFields({
+          name: `${item.name} (${item.rarity})`,
+          value: `**ID:** \`${item.id}\`\n**Price:** ${formatNumber(item.price)} ${coinEmoji}\n**Type:** ${item.type} | **Stock:** ${stockText}${item.roleId ? `\n**Role:** <@&${item.roleId}>` : ''}`,
+          inline: false
+        });
+      });
+
+      if (guildConfig.customShopItems.length > 10) {
+        embed.setDescription(`Showing 10 of ${guildConfig.customShopItems.length} items`);
+      }
+
+      await interaction.editReply({ embeds: [embed] });
+      break;
+    }
+
+    case 'setprice': {
+      const itemId = interaction.options.getString('id');
+      const newPrice = interaction.options.getInteger('price');
+
+      const item = guildConfig.customShopItems.find(i => i.id === itemId);
+      if (!item) {
+        await interaction.editReply({
+          embeds: [await errorEmbed(interaction.guild.id, 'Item Not Found',
+            `${GLYPHS.ERROR} No item found with ID: \`${itemId}\``)]
+        });
+        return;
+      }
+
+      const oldPrice = item.price;
+      item.price = newPrice;
+      await guildConfig.save();
+
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, 'Price Updated',
+          `${GLYPHS.SUCCESS} Updated **${item.name}** price:\n\n` +
+          `**Old Price:** ${formatNumber(oldPrice)} ${coinEmoji}\n` +
+          `**New Price:** ${formatNumber(newPrice)} ${coinEmoji}`)]
+      });
+      break;
+    }
+
+    case 'edit': {
+      const itemId = interaction.options.getString('id');
+      const field = interaction.options.getString('field');
+      const value = interaction.options.getString('value');
+
+      const item = guildConfig.customShopItems.find(i => i.id === itemId);
+      if (!item) {
+        await interaction.editReply({
+          embeds: [await errorEmbed(interaction.guild.id, 'Item Not Found',
+            `${GLYPHS.ERROR} No item found with ID: \`${itemId}\``)]
+        });
+        return;
+      }
+
+      switch (field) {
+        case 'name':
+          item.name = value;
+          break;
+        case 'description':
+          item.description = value;
+          break;
+        case 'rarity':
+          if (!RARITIES.includes(value.toLowerCase())) {
+            await interaction.editReply({
+              embeds: [await errorEmbed(interaction.guild.id, 'Invalid Rarity',
+                `${GLYPHS.ERROR} Valid rarities: ${RARITIES.join(', ')}`)]
+            });
+            return;
+          }
+          item.rarity = value.toLowerCase();
+          break;
+        case 'type':
+          if (!ITEM_TYPES.includes(value.toLowerCase())) {
+            await interaction.editReply({
+              embeds: [await errorEmbed(interaction.guild.id, 'Invalid Type',
+                `${GLYPHS.ERROR} Valid types: ${ITEM_TYPES.join(', ')}`)]
+            });
+            return;
+          }
+          item.type = value.toLowerCase();
+          break;
+        case 'image':
+          item.image = value;
+          break;
+      }
+
+      await guildConfig.save();
+
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, 'Item Updated',
+          `${GLYPHS.SUCCESS} Updated **${item.name}**'s ${field} to: **${value}**`)]
+      });
+      break;
+    }
+
+    case 'role': {
+      const itemId = interaction.options.getString('id');
+      const role = interaction.options.getRole('role');
+
+      const item = guildConfig.customShopItems.find(i => i.id === itemId);
+      if (!item) {
+        await interaction.editReply({
+          embeds: [await errorEmbed(interaction.guild.id, 'Item Not Found',
+            `${GLYPHS.ERROR} No item found with ID: \`${itemId}\``)]
+        });
+        return;
+      }
+
+      if (!role) {
+        // Remove role from item
+        item.roleId = undefined;
+        item.type = 'item';
+        await guildConfig.save();
+
+        await interaction.editReply({
+          embeds: [await successEmbed(interaction.guild.id, 'Role Removed',
+            `${GLYPHS.SUCCESS} Removed role from **${item.name}**.`)]
+        });
+        return;
+      }
+
+      item.roleId = role.id;
+      item.type = 'role';
+      await guildConfig.save();
+
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, 'Role Set',
+          `${GLYPHS.SUCCESS} **${item.name}** will now give ${role} when purchased.`)]
+      });
+      break;
+    }
+
+    case 'stock': {
+      const itemId = interaction.options.getString('id');
+      const stock = interaction.options.getInteger('amount');
+
+      const item = guildConfig.customShopItems.find(i => i.id === itemId);
+      if (!item) {
+        await interaction.editReply({
+          embeds: [await errorEmbed(interaction.guild.id, 'Item Not Found',
+            `${GLYPHS.ERROR} No item found with ID: \`${itemId}\``)]
+        });
+        return;
+      }
+
+      item.stock = stock;
+      await guildConfig.save();
+
+      const stockText = stock === -1 ? 'Unlimited' : stock.toString();
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, 'Stock Updated',
+          `${GLYPHS.SUCCESS} **${item.name}** stock set to: **${stockText}**`)]
+      });
+      break;
+    }
+
+    case 'fallback': {
+      const type = interaction.options.getString('type');
+      const value = interaction.options.getString('value');
+
+      // Initialize economy if not exists
+      if (!guildConfig.economy) {
+        guildConfig.economy = {};
+      }
+      if (!guildConfig.economy.fallbackBackground) {
+        guildConfig.economy.fallbackBackground = { image: '', color: '#2C2F33' };
+      }
+
+      if (type === 'url') {
+        if (!value) {
+          await interaction.editReply({
+            embeds: [await errorEmbed(interaction.guild.id, 'Missing URL',
+              `${GLYPHS.ERROR} Please provide an image URL.`)]
+          });
+          return;
+        }
+
+        if (!value.startsWith('http://') && !value.startsWith('https://')) {
+          await interaction.editReply({
+            embeds: [await errorEmbed(interaction.guild.id, 'Invalid URL',
+              `${GLYPHS.ERROR} Please provide a valid image URL starting with http:// or https://`)]
+          });
+          return;
+        }
+
+        guildConfig.economy.fallbackBackground.image = value;
+        await guildConfig.save();
+
+        const embed = new EmbedBuilder()
+          .setColor('#00FF00')
+          .setTitle('✅ Fallback Background Updated')
+          .setDescription(`${GLYPHS.SUCCESS} Default background image set!`)
+          .setImage(value);
+        await interaction.editReply({ embeds: [embed] });
+
+      } else if (type === 'color') {
+        if (!value) {
+          await interaction.editReply({
+            embeds: [await errorEmbed(interaction.guild.id, 'Missing Color',
+              `${GLYPHS.ERROR} Please provide a hex color (e.g., #FF0000).`)]
+          });
+          return;
+        }
+
+        if (!/^#[0-9A-F]{6}$/i.test(value)) {
+          await interaction.editReply({
+            embeds: [await errorEmbed(interaction.guild.id, 'Invalid Color',
+              `${GLYPHS.ERROR} Please provide a valid hex color (e.g., #FF0000)`)]
+          });
+          return;
+        }
+
+        guildConfig.economy.fallbackBackground.color = value;
+        await guildConfig.save();
+
+        const embed = new EmbedBuilder()
+          .setColor(value)
+          .setTitle('✅ Fallback Color Updated')
+          .setDescription(`${GLYPHS.SUCCESS} Default background color set to: **${value}**`);
+        await interaction.editReply({ embeds: [embed] });
+
+      } else if (type === 'clear') {
+        guildConfig.economy.fallbackBackground = { image: '', color: '#2C2F33' };
+        await guildConfig.save();
+
+        await interaction.editReply({
+          embeds: [await successEmbed(interaction.guild.id, 'Fallback Reset',
+            `${GLYPHS.SUCCESS} Default background reset to default dark theme.`)]
+        });
+      }
       break;
     }
   }

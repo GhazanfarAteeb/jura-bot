@@ -427,6 +427,129 @@ const slashCommands = [
       subcommand.setName('status')
         .setDescription('View welcome settings'))
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+
+  // Shop Management Command
+  new SlashCommandBuilder()
+    .setName('manageshop')
+    .setDescription('Add, remove, or modify custom shop items')
+    .addSubcommand(subcommand =>
+      subcommand.setName('add')
+        .setDescription('Add a new item to the shop')
+        .addStringOption(option =>
+          option.setName('name')
+            .setDescription('Item name')
+            .setRequired(true))
+        .addIntegerOption(option =>
+          option.setName('price')
+            .setDescription('Item price')
+            .setRequired(true)
+            .setMinValue(0))
+        .addStringOption(option =>
+          option.setName('type')
+            .setDescription('Item type')
+            .setRequired(false)
+            .addChoices(
+              { name: 'Role', value: 'role' },
+              { name: 'Item', value: 'item' },
+              { name: 'Background', value: 'background' },
+              { name: 'Other', value: 'other' }
+            ))
+        .addStringOption(option =>
+          option.setName('rarity')
+            .setDescription('Item rarity')
+            .setRequired(false)
+            .addChoices(
+              { name: 'Common', value: 'common' },
+              { name: 'Uncommon', value: 'uncommon' },
+              { name: 'Rare', value: 'rare' },
+              { name: 'Epic', value: 'epic' },
+              { name: 'Legendary', value: 'legendary' },
+              { name: 'Mythic', value: 'mythic' }
+            )))
+    .addSubcommand(subcommand =>
+      subcommand.setName('remove')
+        .setDescription('Remove an item from the shop')
+        .addStringOption(option =>
+          option.setName('id')
+            .setDescription('Item ID to remove')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('list')
+        .setDescription('List all custom shop items'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('setprice')
+        .setDescription('Change item price')
+        .addStringOption(option =>
+          option.setName('id')
+            .setDescription('Item ID')
+            .setRequired(true))
+        .addIntegerOption(option =>
+          option.setName('price')
+            .setDescription('New price')
+            .setRequired(true)
+            .setMinValue(0)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('edit')
+        .setDescription('Edit item properties')
+        .addStringOption(option =>
+          option.setName('id')
+            .setDescription('Item ID')
+            .setRequired(true))
+        .addStringOption(option =>
+          option.setName('field')
+            .setDescription('Field to edit')
+            .setRequired(true)
+            .addChoices(
+              { name: 'Name', value: 'name' },
+              { name: 'Description', value: 'description' },
+              { name: 'Rarity', value: 'rarity' },
+              { name: 'Type', value: 'type' },
+              { name: 'Image URL', value: 'image' }
+            ))
+        .addStringOption(option =>
+          option.setName('value')
+            .setDescription('New value')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('role')
+        .setDescription('Set role for an item')
+        .addStringOption(option =>
+          option.setName('id')
+            .setDescription('Item ID')
+            .setRequired(true))
+        .addRoleOption(option =>
+          option.setName('role')
+            .setDescription('Role to give when purchased (leave empty to remove)')
+            .setRequired(false)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('stock')
+        .setDescription('Set stock amount')
+        .addStringOption(option =>
+          option.setName('id')
+            .setDescription('Item ID')
+            .setRequired(true))
+        .addIntegerOption(option =>
+          option.setName('amount')
+            .setDescription('Stock amount (-1 for unlimited)')
+            .setRequired(true)
+            .setMinValue(-1)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('fallback')
+        .setDescription('Set default background for profiles')
+        .addStringOption(option =>
+          option.setName('type')
+            .setDescription('Fallback type')
+            .setRequired(true)
+            .addChoices(
+              { name: 'Image URL', value: 'url' },
+              { name: 'Solid Color', value: 'color' },
+              { name: 'Clear/Reset', value: 'clear' }
+            ))
+        .addStringOption(option =>
+          option.setName('value')
+            .setDescription('URL or hex color (e.g., #FF0000)')
+            .setRequired(false)))
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
 ];
 
 export async function registerSlashCommands(client) {
