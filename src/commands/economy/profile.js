@@ -148,8 +148,8 @@ export default {
       const textX = avatarX + avatarSize + 30;
       let textY = 50;
 
-      // Draw username (bold italic like rank card)
-      ctx.font = 'italic bold 32px "Poppins Bold", sans-serif';
+      // Draw username (bold)
+      ctx.font = 'bold 32px "Poppins Bold", sans-serif';
       ctx.fillStyle = '#FFFFFF';
       ctx.fillText(targetUser.username, textX, textY);
 
