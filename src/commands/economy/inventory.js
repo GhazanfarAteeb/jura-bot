@@ -1,6 +1,6 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } from 'discord.js';
 import Economy from '../../models/Economy.js';
-import { getBackground, RARITY_EMOJIS } from '../../utils/shopItems.js';
+import { getBackground } from '../../utils/shopItems.js';
 import { getPrefix } from '../../utils/helpers.js';
 
 export default {
@@ -46,9 +46,8 @@ export default {
                             pageItems.map((bg, index) => {
                                 const bgData = getBackground(bg.id);
                                 const isEquipped = economy.profile.background === bg.id;
-                                const emoji = bgData ? RARITY_EMOJIS[bgData.rarity] : '⚪';
                                 const equippedText = isEquipped ? ' **[EQUIPPED]**' : '';
-                                return `${start + index + 1}. ${emoji} **${bg.name}**${equippedText}\nPurchased: <t:${Math.floor(bg.purchasedAt.getTime() / 1000)}:R>`;
+                                return `${start + index + 1}. 🎨 **${bg.name}**${equippedText}\nPurchased: <t:${Math.floor(bg.purchasedAt.getTime() / 1000)}:R>`;
                             }).join('\n\n')
                         )
                         .setFooter({ 

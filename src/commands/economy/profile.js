@@ -345,8 +345,8 @@ export default {
       ctx.fillText(`${economy.reputation || 0} rep`, descPadding + 400, bottomY);
 
       // Total Earned
-      ctx.fillStyle = '#72767D';
-      ctx.fillText(`Total Earned: ${economy.stats.totalEarned.toLocaleString()}`, descPadding + 520, bottomY);
+      // ctx.fillStyle = '#72767D';
+      // ctx.fillText(`Total Earned: ${economy.stats.totalEarned.toLocaleString()}`, descPadding + 520, bottomY);
 
       // Draw badges in top right if enabled
       if (economy.profile.showBadges !== false && economy.inventory.badges.length > 0) {
