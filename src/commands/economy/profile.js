@@ -112,7 +112,7 @@ export default {
 
       // Get background - check user's background, then custom shop items, then fallback
       let background = getBackground(economy.profile.background || 'default');
-      
+
       // If user has a custom background from shop, find it in custom items
       if (!background || !background.image) {
         const customBg = (guildConfig.customShopItems || []).find(
@@ -127,7 +127,7 @@ export default {
           };
         }
       }
-      
+
       // Use fallback if no image
       const bgImage = background?.image || fallbackBg?.image || '';
       const bgColor = background?.color || fallbackBg?.color || economy.profile.backgroundColor || '#2C2F33';
