@@ -141,7 +141,7 @@ function createButtons(disabled = false) {
 async function endGame(game, message, guildConfig, result) {
   activeGames.delete(game.odId);
 
-  const economy = await Economy.getEconomy(message.guild.id, game.odId);
+  const economy = await Economy.getEconomy(game.odId, message.guild.id);
   const currencyName = guildConfig.economy?.currencyName || 'coins';
   let winnings = 0;
   let resultText = '';
@@ -236,7 +236,7 @@ export default {
     }
 
     // Handle 'all' bet
-    const economy = await Economy.getEconomy(message.guild.id, message.author.id);
+    const economy = await Economy.getEconomy(message.author.id, message.guild.id);
     if (args[0].toLowerCase() === 'all' || args[0].toLowerCase() === 'max') {
       bet = economy.coins;
     }
@@ -333,7 +333,7 @@ export default {
         return;
       }
 
-      const economy = await Economy.getEconomy(message.guild.id, message.author.id);
+      const economy = await Economy.getEconomy(message.author.id, message.guild.id);
 
       switch (interaction.customId) {
         case 'blackjack_hit':
@@ -452,7 +452,7 @@ export default {
         if (game) {
           activeGames.delete(message.author.id);
           // Refund bet on timeout
-          const economy = await Economy.getEconomy(message.guild.id, message.author.id);
+          const economy = await Economy.getEconomy(message.author.id, message.guild.id);
           await economy.addCoins(game.bet);
 
           const timeoutEmbed = new EmbedBuilder()
