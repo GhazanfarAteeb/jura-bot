@@ -130,8 +130,6 @@ export default {
 
       // Use fallback if no image
       const bgImage = background?.image || fallbackBg?.image || '';
-      const bgColor = background?.color || fallbackBg?.color || economy.profile.backgroundColor || '#2C2F33';
-      const accentColor = economy.profile.accentColor || '#7289DA';
 
       // Create canvas - taller for profile (rank is ~220, profile is ~420)
       const canvas = createCanvas(900, 420);
@@ -147,44 +145,69 @@ export default {
             ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
           } else {
-            ctx.fillStyle = bgColor;
+            // Background gradient fallback
+            const bgGradient = ctx.createLinearGradient(0, 0, 900, 420);
+            bgGradient.addColorStop(0, '#2C2F33');
+            bgGradient.addColorStop(1, '#23272A');
+            ctx.fillStyle = bgGradient;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
           }
         } catch {
-          ctx.fillStyle = bgColor;
+          // Background gradient fallback
+          const bgGradient = ctx.createLinearGradient(0, 0, 900, 420);
+          bgGradient.addColorStop(0, '#2C2F33');
+          bgGradient.addColorStop(1, '#23272A');
+          ctx.fillStyle = bgGradient;
           ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
       } else {
-        ctx.fillStyle = bgColor;
+        // Background gradient
+        const bgGradient = ctx.createLinearGradient(0, 0, 900, 420);
+        bgGradient.addColorStop(0, '#2C2F33');
+        bgGradient.addColorStop(1, '#23272A');
+        ctx.fillStyle = bgGradient;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
 
-      // Draw accent line at TOP (like rank card)
-      ctx.fillStyle = accentColor;
-      ctx.fillRect(0, 0, canvas.width, 5);
+      // Accent bar at TOP with gradient (same as rank card)
+      const accentGradient = ctx.createLinearGradient(0, 0, 900, 0);
+      accentGradient.addColorStop(0, '#667eea');
+      accentGradient.addColorStop(1, '#764ba2');
+      ctx.fillStyle = accentGradient;
+      ctx.fillRect(0, 0, canvas.width, 10);
 
       // ========== RANK CARD SECTION (TOP) ==========
 
-      // Draw avatar border
+      // Draw avatar with glow (same style as rank card)
       const avatarX = 40;
       const avatarY = 110;
       const avatarSize = 140;
 
-      ctx.beginPath();
-      ctx.arc(avatarX + avatarSize / 2, avatarY, avatarSize / 2 + 4, 0, Math.PI * 2);
-      ctx.closePath();
-      ctx.fillStyle = accentColor;
-      ctx.fill();
-
-      // Draw avatar
-      const avatar = await loadImage(targetUser.displayAvatarURL({ extension: 'png', size: 256 }));
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(avatarX + avatarSize / 2, avatarY, avatarSize / 2, 0, Math.PI * 2);
-      ctx.closePath();
-      ctx.clip();
-      ctx.drawImage(avatar, avatarX, avatarY - avatarSize / 2, avatarSize, avatarSize);
-      ctx.restore();
+      try {
+        const avatarURL = targetUser.displayAvatarURL({ extension: 'png', size: 256 });
+        const avatar = await loadImage(avatarURL);
+        
+        // Draw circular avatar with glow
+        ctx.shadowColor = '#667eea';
+        ctx.shadowBlur = 20;
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(avatarX + avatarSize / 2, avatarY, avatarSize / 2, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.clip();
+        ctx.drawImage(avatar, avatarX, avatarY - avatarSize / 2, avatarSize, avatarSize);
+        ctx.restore();
+        ctx.shadowBlur = 0;
+        
+        // Avatar border
+        ctx.strokeStyle = '#667eea';
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.arc(avatarX + avatarSize / 2, avatarY, avatarSize / 2, 0, Math.PI * 2);
+        ctx.stroke();
+      } catch (error) {
+        console.error('Error loading avatar:', error);
+      }
 
       // Text area starting position
       const textX = avatarX + avatarSize + 30;
@@ -204,9 +227,9 @@ export default {
 
       textY += 30;
 
-      // Draw Level in accent color
+      // Draw Level in accent gradient color
       ctx.font = 'bold 22px "Poppins Bold", sans-serif';
-      ctx.fillStyle = accentColor;
+      ctx.fillStyle = '#667eea';
       ctx.fillText(`Level ${currentLevel}`, textX, textY);
 
       textY += 30;
@@ -226,14 +249,17 @@ export default {
       const progress = Math.min(currentXP / neededXP, 1);
 
       // Bar background
-      ctx.fillStyle = '#4F545C';
+      ctx.fillStyle = '#40444b';
       roundedRect(ctx, barX, barY, barWidth, barHeight, 10);
       ctx.fill();
 
-      // Bar progress
+      // Bar progress with gradient
       if (progress > 0) {
-        ctx.fillStyle = accentColor;
-        roundedRect(ctx, barX, barY, barWidth * progress, barHeight, 10);
+        const progressGradient = ctx.createLinearGradient(barX, 0, barX + barWidth, 0);
+        progressGradient.addColorStop(0, '#667eea');
+        progressGradient.addColorStop(1, '#764ba2');
+        ctx.fillStyle = progressGradient;
+        roundedRect(ctx, barX, barY, Math.max(barWidth * progress, 20), barHeight, 10);
         ctx.fill();
       }
 
@@ -250,9 +276,12 @@ export default {
 
       // ========== DESCRIPTION SECTION (BOTTOM) ==========
 
-      // Draw separator line
-      const separatorY = 225;
-      ctx.fillStyle = accentColor;
+      // Draw separator line with gradient
+      const separatorY = 230;
+      const sepGradient = ctx.createLinearGradient(30, 0, canvas.width - 30, 0);
+      sepGradient.addColorStop(0, '#667eea');
+      sepGradient.addColorStop(1, '#764ba2');
+      ctx.fillStyle = sepGradient;
       ctx.fillRect(30, separatorY, canvas.width - 60, 3);
 
       // Description area
@@ -261,10 +290,14 @@ export default {
 
       // Draw "About Me" label
       ctx.font = 'bold 20px "Poppins Bold", sans-serif';
-      ctx.fillStyle = accentColor;
+      ctx.fillStyle = '#667eea';
       ctx.fillText('About Me', descPadding, descStartY);
 
-      // Draw underline for About Me
+      // Draw underline for About Me with gradient
+      const underlineGradient = ctx.createLinearGradient(descPadding, 0, descPadding + 100, 0);
+      underlineGradient.addColorStop(0, '#667eea');
+      underlineGradient.addColorStop(1, '#764ba2');
+      ctx.fillStyle = underlineGradient;
       ctx.fillRect(descPadding, descStartY + 5, 100, 2);
 
       // Draw bio/description
