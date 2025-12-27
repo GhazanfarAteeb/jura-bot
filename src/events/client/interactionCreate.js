@@ -1107,26 +1107,14 @@ async function handleWelcomeCommand(interaction, guildConfig) {
   }
 }
 
-// Handle manageshop slash command
+// Handle manageshop slash command (Backgrounds only)
 async function handleManageshopCommand(interaction, guildConfig) {
   const { successEmbed, errorEmbed, infoEmbed, GLYPHS } = await import('../../utils/embeds.js');
   const { formatNumber } = await import('../../utils/helpers.js');
   const { EmbedBuilder } = await import('discord.js');
-  
+
   const subcommand = interaction.options.getSubcommand();
   const coinEmoji = guildConfig.economy?.coinEmoji || '💰';
-  const coinName = guildConfig.economy?.coinName || 'coins';
-  
-  const ITEM_TYPES = ['role', 'item', 'background', 'other'];
-  const RARITIES = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic'];
-  const RARITY_COLORS = {
-    common: '#95A5A6',
-    uncommon: '#2ECC71',
-    rare: '#3498DB',
-    epic: '#9B59B6',
-    legendary: '#F39C12',
-    mythic: '#E74C3C'
-  };
 
   // Initialize if not exists
   if (!guildConfig.customShopItems) {
@@ -1137,8 +1125,8 @@ async function handleManageshopCommand(interaction, guildConfig) {
     case 'add': {
       const itemName = interaction.options.getString('name');
       const price = interaction.options.getInteger('price');
-      const type = interaction.options.getString('type') || 'item';
-      const rarity = interaction.options.getString('rarity') || 'common';
+      const image = interaction.options.getString('image');
+      const description = interaction.options.getString('description');
 
       // Generate unique ID
       const itemId = `custom_${Date.now().toString(36)}_${Math.random().toString(36).substr(2, 4)}`;
@@ -1146,10 +1134,10 @@ async function handleManageshopCommand(interaction, guildConfig) {
       const newItem = {
         id: itemId,
         name: itemName,
-        description: `A custom ${rarity} ${type}`,
+        description: description || 'A custom background',
         price: price,
-        type: type,
-        rarity: rarity,
+        type: 'background',
+        image: image,
         stock: -1,
         createdBy: interaction.user.id,
         createdAt: new Date()
@@ -1159,17 +1147,15 @@ async function handleManageshopCommand(interaction, guildConfig) {
       await guildConfig.save();
 
       const embed = new EmbedBuilder()
-        .setColor(RARITY_COLORS[rarity])
-        .setTitle('✅ Item Added to Shop')
+        .setColor('#667eea')
+        .setTitle('✅ Background Added to Shop')
         .addFields(
-          { name: '📦 Name', value: itemName, inline: true },
+          { name: '🖼️ Name', value: itemName, inline: true },
           { name: '💰 Price', value: `${formatNumber(price)} ${coinEmoji}`, inline: true },
-          { name: '🎨 Rarity', value: rarity.charAt(0).toUpperCase() + rarity.slice(1), inline: true },
-          { name: '📋 Type', value: type.charAt(0).toUpperCase() + type.slice(1), inline: true },
-          { name: '🆔 ID', value: `\`${itemId}\``, inline: true },
-          { name: '📊 Stock', value: 'Unlimited', inline: true }
+          { name: '🆔 ID', value: `\`${itemId}\``, inline: true }
         )
-        .setFooter({ text: `Use /manageshop edit to add a description or image` });
+        .setImage(image)
+        .setFooter({ text: 'Background preview shown above' });
 
       await interaction.editReply({ embeds: [embed] });
       break;
@@ -1201,28 +1187,28 @@ async function handleManageshopCommand(interaction, guildConfig) {
     case 'list': {
       if (guildConfig.customShopItems.length === 0) {
         await interaction.editReply({
-          embeds: [await infoEmbed(interaction.guild.id, 'No Custom Items',
-            `${GLYPHS.INFO} No custom items in the shop yet.\n\nUse \`/manageshop add\` to add items!`)]
+          embeds: [await infoEmbed(interaction.guild.id, 'No Backgrounds',
+            `${GLYPHS.INFO} No custom backgrounds in the shop yet.\n\nUse \`/manageshop add\` to add backgrounds!`)]
         });
         return;
       }
 
       const embed = new EmbedBuilder()
-        .setTitle('🛒 Custom Shop Items')
-        .setColor(guildConfig.embedStyle?.color || '#5865F2')
-        .setFooter({ text: `Total: ${guildConfig.customShopItems.length} items` });
+        .setTitle('🖼️ Shop Backgrounds')
+        .setColor(guildConfig.embedStyle?.color || '#667eea')
+        .setFooter({ text: `Total: ${guildConfig.customShopItems.length} backgrounds` });
 
       guildConfig.customShopItems.slice(0, 10).forEach(item => {
         const stockText = item.stock === -1 ? '∞' : item.stock;
         embed.addFields({
-          name: `${item.name} (${item.rarity})`,
-          value: `**ID:** \`${item.id}\`\n**Price:** ${formatNumber(item.price)} ${coinEmoji}\n**Type:** ${item.type} | **Stock:** ${stockText}${item.roleId ? `\n**Role:** <@&${item.roleId}>` : ''}`,
+          name: `🖼️ ${item.name}`,
+          value: `**ID:** \`${item.id}\`\n**Price:** ${formatNumber(item.price)} ${coinEmoji}\n**Stock:** ${stockText}${item.image ? `\n**Image:** [Preview](${item.image})` : ''}`,
           inline: false
         });
       });
 
       if (guildConfig.customShopItems.length > 10) {
-        embed.setDescription(`Showing 10 of ${guildConfig.customShopItems.length} items`);
+        embed.setDescription(`Showing 10 of ${guildConfig.customShopItems.length} backgrounds`);
       }
 
       await interaction.editReply({ embeds: [embed] });
@@ -1276,26 +1262,6 @@ async function handleManageshopCommand(interaction, guildConfig) {
         case 'description':
           item.description = value;
           break;
-        case 'rarity':
-          if (!RARITIES.includes(value.toLowerCase())) {
-            await interaction.editReply({
-              embeds: [await errorEmbed(interaction.guild.id, 'Invalid Rarity',
-                `${GLYPHS.ERROR} Valid rarities: ${RARITIES.join(', ')}`)]
-            });
-            return;
-          }
-          item.rarity = value.toLowerCase();
-          break;
-        case 'type':
-          if (!ITEM_TYPES.includes(value.toLowerCase())) {
-            await interaction.editReply({
-              embeds: [await errorEmbed(interaction.guild.id, 'Invalid Type',
-                `${GLYPHS.ERROR} Valid types: ${ITEM_TYPES.join(', ')}`)]
-            });
-            return;
-          }
-          item.type = value.toLowerCase();
-          break;
         case 'image':
           item.image = value;
           break;
@@ -1304,45 +1270,8 @@ async function handleManageshopCommand(interaction, guildConfig) {
       await guildConfig.save();
 
       await interaction.editReply({
-        embeds: [await successEmbed(interaction.guild.id, 'Item Updated',
+        embeds: [await successEmbed(interaction.guild.id, 'Background Updated',
           `${GLYPHS.SUCCESS} Updated **${item.name}**'s ${field} to: **${value}**`)]
-      });
-      break;
-    }
-
-    case 'role': {
-      const itemId = interaction.options.getString('id');
-      const role = interaction.options.getRole('role');
-
-      const item = guildConfig.customShopItems.find(i => i.id === itemId);
-      if (!item) {
-        await interaction.editReply({
-          embeds: [await errorEmbed(interaction.guild.id, 'Item Not Found',
-            `${GLYPHS.ERROR} No item found with ID: \`${itemId}\``)]
-        });
-        return;
-      }
-
-      if (!role) {
-        // Remove role from item
-        item.roleId = undefined;
-        item.type = 'item';
-        await guildConfig.save();
-
-        await interaction.editReply({
-          embeds: [await successEmbed(interaction.guild.id, 'Role Removed',
-            `${GLYPHS.SUCCESS} Removed role from **${item.name}**.`)]
-        });
-        return;
-      }
-
-      item.roleId = role.id;
-      item.type = 'role';
-      await guildConfig.save();
-
-      await interaction.editReply({
-        embeds: [await successEmbed(interaction.guild.id, 'Role Set',
-          `${GLYPHS.SUCCESS} **${item.name}** will now give ${role} when purchased.`)]
       });
       break;
     }

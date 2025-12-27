@@ -428,44 +428,30 @@ const slashCommands = [
         .setDescription('View welcome settings'))
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
-  // Shop Management Command
+  // Shop Management Command (Backgrounds only)
   new SlashCommandBuilder()
     .setName('manageshop')
-    .setDescription('Add, remove, or modify custom shop items')
+    .setDescription('Add, remove, or modify shop backgrounds')
     .addSubcommand(subcommand =>
       subcommand.setName('add')
-        .setDescription('Add a new item to the shop')
+        .setDescription('Add a new background to the shop')
         .addStringOption(option =>
           option.setName('name')
-            .setDescription('Item name')
+            .setDescription('Background name')
             .setRequired(true))
         .addIntegerOption(option =>
           option.setName('price')
-            .setDescription('Item price')
+            .setDescription('Background price')
             .setRequired(true)
             .setMinValue(0))
         .addStringOption(option =>
-          option.setName('type')
-            .setDescription('Item type')
-            .setRequired(false)
-            .addChoices(
-              { name: 'Role', value: 'role' },
-              { name: 'Item', value: 'item' },
-              { name: 'Background', value: 'background' },
-              { name: 'Other', value: 'other' }
-            ))
+          option.setName('image')
+            .setDescription('Background image URL')
+            .setRequired(true))
         .addStringOption(option =>
-          option.setName('rarity')
-            .setDescription('Item rarity')
-            .setRequired(false)
-            .addChoices(
-              { name: 'Common', value: 'common' },
-              { name: 'Uncommon', value: 'uncommon' },
-              { name: 'Rare', value: 'rare' },
-              { name: 'Epic', value: 'epic' },
-              { name: 'Legendary', value: 'legendary' },
-              { name: 'Mythic', value: 'mythic' }
-            )))
+          option.setName('description')
+            .setDescription('Background description')
+            .setRequired(false)))
     .addSubcommand(subcommand =>
       subcommand.setName('remove')
         .setDescription('Remove an item from the shop')
@@ -490,10 +476,10 @@ const slashCommands = [
             .setMinValue(0)))
     .addSubcommand(subcommand =>
       subcommand.setName('edit')
-        .setDescription('Edit item properties')
+        .setDescription('Edit background properties')
         .addStringOption(option =>
           option.setName('id')
-            .setDescription('Item ID')
+            .setDescription('Background ID')
             .setRequired(true))
         .addStringOption(option =>
           option.setName('field')
@@ -502,25 +488,12 @@ const slashCommands = [
             .addChoices(
               { name: 'Name', value: 'name' },
               { name: 'Description', value: 'description' },
-              { name: 'Rarity', value: 'rarity' },
-              { name: 'Type', value: 'type' },
               { name: 'Image URL', value: 'image' }
             ))
         .addStringOption(option =>
           option.setName('value')
             .setDescription('New value')
             .setRequired(true)))
-    .addSubcommand(subcommand =>
-      subcommand.setName('role')
-        .setDescription('Set role for an item')
-        .addStringOption(option =>
-          option.setName('id')
-            .setDescription('Item ID')
-            .setRequired(true))
-        .addRoleOption(option =>
-          option.setName('role')
-            .setDescription('Role to give when purchased (leave empty to remove)')
-            .setRequired(false)))
     .addSubcommand(subcommand =>
       subcommand.setName('stock')
         .setDescription('Set stock amount')
