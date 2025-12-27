@@ -3,6 +3,7 @@ import { createCanvas, loadImage, GlobalFonts } from '@napi-rs/canvas';
 import Economy from '../../models/Economy.js';
 import Member from '../../models/Member.js';
 import Level from '../../models/Level.js';
+import Guild from '../../models/Guild.js';
 import { getBackground } from '../../utils/shopItems.js';
 
 // Register fonts if available
@@ -105,17 +106,58 @@ export default {
       const messagesCount = levelData?.messageCount || memberData?.messages || economy.stats.messagesCount || 0;
       const neededXP = xpForLevel(currentLevel);
 
-      // Get background
-      const background = getBackground(economy.profile.background || 'default');
+      // Get guild config for fallback background
+      const guildConfig = await Guild.getGuild(guildId);
+      const fallbackBg = guildConfig.economy?.fallbackBackground;
+
+      // Get background - check user's background, then custom shop items, then fallback
+      let background = getBackground(economy.profile.background || 'default');
+      
+      // If user has a custom background from shop, find it in custom items
+      if (!background || !background.image) {
+        const customBg = (guildConfig.customShopItems || []).find(
+          item => item.type === 'background' && item.id === economy.profile.background
+        );
+        if (customBg) {
+          background = {
+            id: customBg.id,
+            name: customBg.name,
+            image: customBg.image || '',
+            color: customBg.color || '#2C2F33'
+          };
+        }
+      }
+      
+      // Use fallback if no image
+      const bgImage = background?.image || fallbackBg?.image || '';
+      const bgColor = background?.color || fallbackBg?.color || economy.profile.backgroundColor || '#2C2F33';
       const accentColor = economy.profile.accentColor || '#7289DA';
 
       // Create canvas - taller for profile (rank is ~220, profile is ~420)
       const canvas = createCanvas(900, 420);
       const ctx = canvas.getContext('2d');
 
-      // Draw solid background
-      ctx.fillStyle = economy.profile.backgroundColor || '#2C2F33';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      // Draw background
+      if (bgImage) {
+        try {
+          const loadedBg = await loadImage(bgImage).catch(() => null);
+          if (loadedBg) {
+            ctx.drawImage(loadedBg, 0, 0, canvas.width, canvas.height);
+            // Add overlay for readability
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+          } else {
+            ctx.fillStyle = bgColor;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+          }
+        } catch {
+          ctx.fillStyle = bgColor;
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+      } else {
+        ctx.fillStyle = bgColor;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
 
       // Draw accent line at TOP (like rank card)
       ctx.fillStyle = accentColor;
@@ -221,7 +263,7 @@ export default {
       ctx.font = 'bold 20px "Poppins Bold", sans-serif';
       ctx.fillStyle = accentColor;
       ctx.fillText('About Me', descPadding, descStartY);
-      
+
       // Draw underline for About Me
       ctx.fillRect(descPadding, descStartY + 5, 100, 2);
 
@@ -289,14 +331,14 @@ export default {
           ctx.strokeStyle = '#B8860B';
           ctx.lineWidth = 2;
           ctx.stroke();
-          
+
           // Draw star in center
           ctx.fillStyle = '#FFFFFF';
           ctx.font = 'bold 12px sans-serif';
           ctx.textAlign = 'center';
           ctx.fillText('★', badgeX, badgeY + 4);
           ctx.textAlign = 'left';
-          
+
           badgeX -= badgeSpacing;
         }
       }

@@ -227,7 +227,11 @@ const guildSchema = new mongoose.Schema({
   economy: {
     coinEmoji: { type: String, default: '💰' },
     coinName: { type: String, default: 'coins' },
-    adventureNPCs: [String] // Custom NPC list
+    adventureNPCs: [String], // Custom NPC list
+    fallbackBackground: {
+      image: { type: String, default: '' },
+      color: { type: String, default: '#2C2F33' }
+    }
   },
   // Voice XP settings
   voiceXP: {

@@ -1,7 +1,7 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } from 'discord.js';
 import Economy from '../../models/Economy.js';
 import Guild from '../../models/Guild.js';
-import { BACKGROUNDS, RARITY_COLORS, RARITY_EMOJIS } from '../../utils/shopItems.js';
+import { BACKGROUNDS } from '../../utils/shopItems.js';
 
 export default {
     name: 'shop',
@@ -23,13 +23,31 @@ export default {
             const coinEmoji = guildConfig.economy?.coinEmoji || '💰';
             const coinName = guildConfig.economy?.coinName || 'coins';
             
-            // Filter backgrounds
-            const category = args[0]?.toLowerCase();
-            let filteredBackgrounds = BACKGROUNDS;
+            // Combine default backgrounds with custom shop backgrounds
+            const customBackgrounds = (guildConfig.customShopItems || []).filter(item => item.type === 'background');
+            let allBackgrounds = [...BACKGROUNDS, ...customBackgrounds.map(item => ({
+                id: item.id,
+                name: item.name,
+                description: item.description || 'A custom background',
+                price: item.price,
+                image: item.image || '',
+                color: item.color || '#2C2F33'
+            }))];
             
-            if (category && ['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic'].includes(category)) {
-                filteredBackgrounds = BACKGROUNDS.filter(bg => bg.rarity === category);
+            // Check if shop is empty
+            if (allBackgrounds.length === 0 || (allBackgrounds.length === 1 && allBackgrounds[0].id === 'default')) {
+                const embed = new EmbedBuilder()
+                    .setColor('#FF6B6B')
+                    .setTitle('🛍️ Shop is Empty')
+                    .setDescription('There are no backgrounds available in the shop yet!\n\nAsk an admin to add some using the `manageshop` command.')
+                    .setFooter({ text: 'Check back later!' });
+                
+                return message.reply({ embeds: [embed] });
             }
+            
+            // Filter backgrounds by category if provided
+            const category = args[0]?.toLowerCase();
+            let filteredBackgrounds = allBackgrounds;
             
             let currentPage = 0;
             const itemsPerPage = 1; // Show one item at a time for better visibility
@@ -41,17 +59,20 @@ export default {
                 const canAfford = economy.coins >= item.price;
                 
                 const embed = new EmbedBuilder()
-                    .setColor(RARITY_COLORS[item.rarity] || '#5865F2')
+                    .setColor(item.color || '#5865F2')
                     .setTitle('🛍️ Background Shop')
-                    .setDescription(`**${RARITY_EMOJIS[item.rarity]} ${item.name}**\n${item.description}`)
+                    .setDescription(`**${item.name}**\n${item.description || 'A profile background'}`)
                     .addFields(
                         { name: '💎 Price', value: `**${item.price.toLocaleString()}** ${coinEmoji} ${coinName}`, inline: true },
-                        { name: '🎨 Rarity', value: item.rarity.charAt(0).toUpperCase() + item.rarity.slice(1), inline: true },
                         { name: `${coinEmoji} Your Balance`, value: `**${economy.coins.toLocaleString()}** ${coinName}`, inline: true }
                     )
-                    .setImage(item.image)
                     .setFooter({ text: `Page ${page + 1}/${maxPages} | ${owned ? '✅ Owned' : canAfford ? '💳 Can purchase' : '❌ Insufficient funds'}` })
                     .setTimestamp();
+                
+                // Only set image if URL exists
+                if (item.image) {
+                    embed.setImage(item.image);
+                }
                 
                 if (owned) {
                     embed.addFields({ 
@@ -192,11 +213,22 @@ export default {
                         const item = filteredBackgrounds[currentPage];
                         
                         const previewEmbed = new EmbedBuilder()
-                            .setColor(RARITY_COLORS[item.rarity])
+                            .setColor(item.color || '#5865F2')
                             .setTitle(`🔍 Preview: ${item.name}`)
-                            .setDescription(item.description)
-                            .setImage(item.image)
-                            .setFooter({ text: 'This is how the background will look!' });
+                            .setDescription(item.description || 'A profile background');
+                        
+                        // Only set image if URL exists
+                        if (item.image) {
+                            previewEmbed.setImage(item.image);
+                        } else {
+                            previewEmbed.addFields({
+                                name: '🎨 Color',
+                                value: `This background uses solid color: \`${item.color || '#2C2F33'}\``,
+                                inline: false
+                            });
+                        }
+                        
+                        previewEmbed.setFooter({ text: 'This is how the background will look!' });
                         
                         await interaction.reply({
                             embeds: [previewEmbed],

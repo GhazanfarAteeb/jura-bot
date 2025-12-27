@@ -2,6 +2,7 @@ import { AttachmentBuilder, EmbedBuilder } from 'discord.js';
 import { createCanvas, loadImage, GlobalFonts } from '@napi-rs/canvas';
 import Economy from '../../models/Economy.js';
 import Member from '../../models/Member.js';
+import Guild from '../../models/Guild.js';
 import { getBackground } from '../../utils/shopItems.js';
 
 // Register fonts if available
@@ -39,30 +40,52 @@ export default {
                 createdAt: targetUser.createdAt
             });
             
-            // Get background
-            const background = getBackground(economy.profile.background || 'default');
+            // Get guild config for fallback background
+            const guildConfig = await Guild.getGuild(guildId);
+            const fallbackBg = guildConfig.economy?.fallbackBackground;
+            
+            // Get background - check user's background, then custom shop items, then fallback
+            let background = getBackground(economy.profile.background || 'default');
+            
+            // If user has a custom background from shop, find it in custom items
+            if (!background || !background.image) {
+                const customBg = (guildConfig.customShopItems || []).find(
+                    item => item.type === 'background' && item.id === economy.profile.background
+                );
+                if (customBg) {
+                    background = {
+                        id: customBg.id,
+                        name: customBg.name,
+                        image: customBg.image || '',
+                        color: customBg.color || '#2C2F33'
+                    };
+                }
+            }
+            
+            // Use fallback if no image
+            const bgImage = background?.image || fallbackBg?.image || '';
+            const bgColor = background?.color || fallbackBg?.color || economy.profile.backgroundColor || '#2C2F33';
             
             // Create canvas
             const canvas = createCanvas(900, 300);
             const ctx = canvas.getContext('2d');
             
             // Draw background
-            if (background && background.image) {
+            if (bgImage) {
                 try {
-                    const bgImage = await loadImage(background.image).catch(() => null);
-                    if (bgImage) {
-                        ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
+                    const loadedBg = await loadImage(bgImage).catch(() => null);
+                    if (loadedBg) {
+                        ctx.drawImage(loadedBg, 0, 0, canvas.width, canvas.height);
                     } else {
-                        // Fallback to solid color
-                        ctx.fillStyle = background.color || economy.profile.backgroundColor || '#2C2F33';
+                        ctx.fillStyle = bgColor;
                         ctx.fillRect(0, 0, canvas.width, canvas.height);
                     }
                 } catch {
-                    ctx.fillStyle = background.color || economy.profile.backgroundColor || '#2C2F33';
+                    ctx.fillStyle = bgColor;
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
                 }
             } else {
-                ctx.fillStyle = economy.profile.backgroundColor || '#2C2F33';
+                ctx.fillStyle = bgColor;
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
             }
             

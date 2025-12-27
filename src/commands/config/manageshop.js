@@ -37,6 +37,7 @@ export default {
     const coinName = guildConfig.economy?.coinName || 'coins';
 
     if (!subcommand) {
+      const fallbackBg = guildConfig.economy?.fallbackBackground;
       const embed = new EmbedBuilder()
         .setTitle('🛒 Shop Management')
         .setColor(guildConfig.embedStyle?.color || '#5865F2')
@@ -48,12 +49,19 @@ export default {
           { name: `${prefix}manageshop setprice <id> <price>`, value: 'Change item price', inline: false },
           { name: `${prefix}manageshop edit <id> <field> <value>`, value: 'Edit item properties', inline: false },
           { name: `${prefix}manageshop role <id> @role`, value: 'Set role for item', inline: true },
-          { name: `${prefix}manageshop stock <id> <amount>`, value: 'Set stock (-1 = unlimited)', inline: true }
+          { name: `${prefix}manageshop stock <id> <amount>`, value: 'Set stock (-1 = unlimited)', inline: true },
+          { name: `${prefix}manageshop fallback <url|color> <value>`, value: 'Set default background', inline: false }
         )
-        .addFields({
-          name: '📊 Current Items',
-          value: `${guildConfig.customShopItems.length} custom item(s) in shop`
-        })
+        .addFields(
+          {
+            name: '📊 Current Items',
+            value: `${guildConfig.customShopItems.length} custom item(s) in shop`
+          },
+          {
+            name: '🖼️ Fallback Background',
+            value: fallbackBg?.image ? `Image: ${fallbackBg.image.substring(0, 50)}...` : `Color: ${fallbackBg?.color || '#2C2F33'}`
+          }
+        )
         .setFooter({ text: `Item types: ${ITEM_TYPES.join(', ')} | Rarities: ${RARITIES.join(', ')}` });
 
       return message.reply({ embeds: [embed] });
@@ -440,6 +448,86 @@ export default {
           `${GLYPHS.SUCCESS} **${item.name}** stock set to: **${stockText}**`
         );
         return message.reply({ embeds: [embed] });
+      }
+
+      case 'fallback': {
+        const type = args[1]?.toLowerCase();
+        const value = args.slice(2).join(' ') || args[2];
+
+        if (!type || !value) {
+          const currentFallback = guildConfig.economy?.fallbackBackground;
+          const embed = await infoEmbed(message.guild.id, 'Fallback Background',
+            `${GLYPHS.INFO} Set the default background for profiles.\n\n` +
+            `**Usage:**\n` +
+            `\`${prefix}manageshop fallback url <image_url>\` - Set image URL\n` +
+            `\`${prefix}manageshop fallback color <hex_color>\` - Set solid color\n` +
+            `\`${prefix}manageshop fallback clear\` - Reset to default\n\n` +
+            `**Current Settings:**\n` +
+            `Image: ${currentFallback?.image || 'None'}\n` +
+            `Color: ${currentFallback?.color || '#2C2F33'}`
+          );
+          return message.reply({ embeds: [embed] });
+        }
+
+        // Initialize economy if not exists
+        if (!guildConfig.economy) {
+          guildConfig.economy = {};
+        }
+        if (!guildConfig.economy.fallbackBackground) {
+          guildConfig.economy.fallbackBackground = { image: '', color: '#2C2F33' };
+        }
+
+        if (type === 'url' || type === 'image') {
+          // Validate URL format
+          if (!value.startsWith('http://') && !value.startsWith('https://')) {
+            const embed = await errorEmbed(message.guild.id, 'Invalid URL',
+              `${GLYPHS.ERROR} Please provide a valid image URL starting with http:// or https://`
+            );
+            return message.reply({ embeds: [embed] });
+          }
+
+          guildConfig.economy.fallbackBackground.image = value;
+          await guildConfig.save();
+
+          const embed = await successEmbed(message.guild.id, 'Fallback Background Updated',
+            `${GLYPHS.SUCCESS} Default background image set!\n\nURL: ${value.substring(0, 60)}...`
+          );
+          embed.setImage(value);
+          return message.reply({ embeds: [embed] });
+
+        } else if (type === 'color') {
+          // Validate hex color
+          if (!/^#[0-9A-F]{6}$/i.test(value)) {
+            const embed = await errorEmbed(message.guild.id, 'Invalid Color',
+              `${GLYPHS.ERROR} Please provide a valid hex color (e.g., #FF0000)`
+            );
+            return message.reply({ embeds: [embed] });
+          }
+
+          guildConfig.economy.fallbackBackground.color = value;
+          await guildConfig.save();
+
+          const embed = new EmbedBuilder()
+            .setColor(value)
+            .setTitle('✅ Fallback Color Updated')
+            .setDescription(`${GLYPHS.SUCCESS} Default background color set to: **${value}**`);
+          return message.reply({ embeds: [embed] });
+
+        } else if (type === 'clear' || type === 'reset') {
+          guildConfig.economy.fallbackBackground = { image: '', color: '#2C2F33' };
+          await guildConfig.save();
+
+          const embed = await successEmbed(message.guild.id, 'Fallback Reset',
+            `${GLYPHS.SUCCESS} Default background reset to default dark theme.`
+          );
+          return message.reply({ embeds: [embed] });
+
+        } else {
+          const embed = await errorEmbed(message.guild.id, 'Invalid Type',
+            `${GLYPHS.ERROR} Use \`url\`, \`color\`, or \`clear\``
+          );
+          return message.reply({ embeds: [embed] });
+        }
       }
 
       default: {
