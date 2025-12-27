@@ -2,6 +2,7 @@ import { AttachmentBuilder, EmbedBuilder } from 'discord.js';
 import { createCanvas, loadImage, GlobalFonts } from '@napi-rs/canvas';
 import Economy from '../../models/Economy.js';
 import Member from '../../models/Member.js';
+import Level from '../../models/Level.js';
 import { getBackground } from '../../utils/shopItems.js';
 
 // Register fonts if available
@@ -52,6 +53,12 @@ function roundedRect(ctx, x, y, width, height, radius) {
     ctx.closePath();
 }
 
+// Calculate XP needed for level (same formula as Level model)
+// Formula: 100 + (level * 50) + (level^1.5 * 25)
+function xpForLevel(level) {
+    return Math.floor(100 + (level * 50) + Math.pow(level, 1.5) * 25);
+}
+
 export default {
     name: 'profile',
     description: 'View your full profile card with bio and description',
@@ -79,59 +86,50 @@ export default {
                 createdAt: targetUser.createdAt
             });
             
-            // Get background
-            const background = getBackground(economy.profile.background || 'default');
-            
-            // Create canvas - taller for profile to accommodate description
-            const canvas = createCanvas(900, 500);
-            const ctx = canvas.getContext('2d');
-            
-            // Draw background (full height, will be "cut" visually)
-            if (background && background.image) {
-                try {
-                    const bgImage = await loadImage(background.image).catch(() => null);
-                    if (bgImage) {
-                        // Draw background covering entire canvas
-                        ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
-                    } else {
-                        ctx.fillStyle = background.color || economy.profile.backgroundColor || '#2C2F33';
-                        ctx.fillRect(0, 0, canvas.width, canvas.height);
-                    }
-                } catch {
-                    ctx.fillStyle = background.color || economy.profile.backgroundColor || '#2C2F33';
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+            // Try to get level data
+            let levelData = null;
+            let rank = 1;
+            try {
+                levelData = await Level.findOne({ userId: userId, guildId });
+                if (levelData) {
+                    rank = await Level.getUserRank(userId, guildId) || 1;
                 }
-            } else {
-                ctx.fillStyle = economy.profile.backgroundColor || '#2C2F33';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            } catch (e) {
+                // Level system might not be set up
             }
             
-            // Draw gradient overlay for the top section (rank card area)
-            const gradientTop = ctx.createLinearGradient(0, 0, 0, 300);
-            gradientTop.addColorStop(0, 'rgba(0, 0, 0, 0.4)');
-            gradientTop.addColorStop(1, 'rgba(0, 0, 0, 0.6)');
-            ctx.fillStyle = gradientTop;
-            ctx.fillRect(0, 0, canvas.width, 300);
+            const currentLevel = levelData?.level || 1;
+            const currentXP = levelData?.xp || 0;
+            const totalXP = levelData?.totalXP || 0;
+            const dailyXP = levelData?.dailyXP || 0;
+            const messagesCount = levelData?.messageCount || memberData?.messages || economy.stats.messagesCount || 0;
+            const neededXP = xpForLevel(currentLevel);
             
-            // Draw a separator line between rank section and description section
+            // Get background
+            const background = getBackground(economy.profile.background || 'default');
             const accentColor = economy.profile.accentColor || '#7289DA';
+            
+            // Create canvas - taller for profile (rank is ~220, profile is ~420)
+            const canvas = createCanvas(900, 420);
+            const ctx = canvas.getContext('2d');
+            
+            // Draw solid background
+            ctx.fillStyle = economy.profile.backgroundColor || '#2C2F33';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw accent line at TOP (like rank card)
             ctx.fillStyle = accentColor;
-            ctx.fillRect(0, 295, canvas.width, 5);
+            ctx.fillRect(0, 0, canvas.width, 5);
             
-            // Draw darker overlay for description area (bottom section)
-            const blurColor = economy.profile.blurColor || 'rgba(0, 0, 0, 0.7)';
-            ctx.fillStyle = blurColor;
-            ctx.fillRect(0, 300, canvas.width, 200);
-            
-            // ========== TOP SECTION (RANK CARD - Same as level.js) ==========
+            // ========== RANK CARD SECTION (TOP) ==========
             
             // Draw avatar border
-            const avatarX = 50;
-            const avatarY = 150;
-            const avatarSize = 180;
+            const avatarX = 40;
+            const avatarY = 110;
+            const avatarSize = 140;
             
             ctx.beginPath();
-            ctx.arc(avatarX + avatarSize / 2, avatarY, avatarSize / 2 + 5, 0, Math.PI * 2);
+            ctx.arc(avatarX + avatarSize / 2, avatarY, avatarSize / 2 + 4, 0, Math.PI * 2);
             ctx.closePath();
             ctx.fillStyle = accentColor;
             ctx.fill();
@@ -146,163 +144,140 @@ export default {
             ctx.drawImage(avatar, avatarX, avatarY - avatarSize / 2, avatarSize, avatarSize);
             ctx.restore();
             
-            // Text area starting position (top section)
-            const textX = avatarX + avatarSize + 40;
-            let textY = 60;
+            // Text area starting position
+            const textX = avatarX + avatarSize + 30;
+            let textY = 50;
             
-            // Draw username
-            ctx.font = 'bold 36px "Poppins Bold", sans-serif';
+            // Draw username (bold italic like rank card)
+            ctx.font = 'italic bold 32px "Poppins Bold", sans-serif';
             ctx.fillStyle = '#FFFFFF';
-            ctx.fillText(targetUser.displayName || targetUser.username, textX, textY);
-            
-            textY += 40;
-            
-            // Draw handle/tag
-            ctx.font = '20px "Poppins", sans-serif';
-            ctx.fillStyle = '#B9BBBE';
-            ctx.fillText(`@${targetUser.username}`, textX, textY);
+            ctx.fillText(targetUser.username, textX, textY);
             
             textY += 35;
             
-            // Draw title if set
-            if (economy.profile.title) {
-                ctx.font = 'italic 18px "Poppins", sans-serif';
-                ctx.fillStyle = accentColor;
-                ctx.fillText(`"${economy.profile.title}"`, textX, textY);
-                textY += 30;
-            }
+            // Draw Rank
+            ctx.font = '18px "Poppins", sans-serif';
+            ctx.fillStyle = '#B9BBBE';
+            ctx.fillText(`Rank #${rank}`, textX, textY);
             
-            // Draw bio (short version) in top section
-            if (economy.profile.bio) {
-                ctx.font = '16px "Poppins", sans-serif';
-                ctx.fillStyle = '#DCDDDE';
-                const bioLines = wrapText(ctx, economy.profile.bio, 500);
-                const maxBioLines = 2; // Only show 2 lines in top section
-                
-                for (let i = 0; i < Math.min(bioLines.length, maxBioLines); i++) {
-                    ctx.fillText(bioLines[i] + (i === maxBioLines - 1 && bioLines.length > maxBioLines ? '...' : ''), textX, textY);
-                    textY += 22;
-                }
-            }
+            textY += 30;
             
-            // Draw stats in top section
-            if (economy.profile.showStats !== false) {
-                const statsY = 240;
-                
-                // Stats background
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-                roundedRect(ctx, textX - 10, statsY - 20, 550, 60, 10);
-                ctx.fill();
-                
-                ctx.font = '18px "Poppins", sans-serif';
-                
-                // Coins
-                ctx.fillStyle = '#FFD700';
-                ctx.fillText('💰', textX + 10, statsY + 10);
-                ctx.fillStyle = '#FFFFFF';
-                ctx.fillText(`${economy.coins.toLocaleString()}`, textX + 45, statsY + 10);
-                
-                // Streak
-                ctx.fillStyle = '#FF6B6B';
-                ctx.fillText('🔥', textX + 170, statsY + 10);
-                ctx.fillStyle = '#FFFFFF';
-                ctx.fillText(`${economy.daily.streak || 0} days`, textX + 205, statsY + 10);
-                
-                // Rep
-                ctx.fillStyle = '#FFC0CB';
-                ctx.fillText('⭐', textX + 340, statsY + 10);
-                ctx.fillStyle = '#FFFFFF';
-                ctx.fillText(`${economy.reputation || 0}`, textX + 375, statsY + 10);
-            }
-            
-            // ========== BOTTOM SECTION (DESCRIPTION AREA) ==========
-            
-            const descSectionY = 320;
-            const descPadding = 30;
-            
-            // Draw section label
-            ctx.font = 'bold 18px "Poppins Bold", sans-serif';
+            // Draw Level in accent color
+            ctx.font = 'bold 22px "Poppins Bold", sans-serif';
             ctx.fillStyle = accentColor;
-            ctx.fillText('📝 About Me', descPadding, descSectionY);
+            ctx.fillText(`Level ${currentLevel}`, textX, textY);
             
-            // Draw description
+            textY += 30;
+            
+            // Draw XP text
+            ctx.font = '16px "Poppins", sans-serif';
+            ctx.fillStyle = '#B9BBBE';
+            ctx.fillText(`${currentXP} / ${neededXP} XP`, textX, textY);
+            
+            textY += 20;
+            
+            // Draw XP progress bar
+            const barWidth = 500;
+            const barHeight = 20;
+            const barX = textX;
+            const barY = textY;
+            const progress = Math.min(currentXP / neededXP, 1);
+            
+            // Bar background
+            ctx.fillStyle = '#4F545C';
+            roundedRect(ctx, barX, barY, barWidth, barHeight, 10);
+            ctx.fill();
+            
+            // Bar progress
+            if (progress > 0) {
+                ctx.fillStyle = accentColor;
+                roundedRect(ctx, barX, barY, barWidth * progress, barHeight, 10);
+                ctx.fill();
+            }
+            
+            textY += 45;
+            
+            // Draw bottom stats (Messages, Total XP, Daily XP) - like rank card
+            ctx.font = '14px "Poppins", sans-serif';
+            ctx.fillStyle = '#72767D';
+            
+            const statsSpacing = 180;
+            ctx.fillText(`Messages: ${messagesCount.toLocaleString()}`, textX, textY);
+            ctx.fillText(`Total XP: ${totalXP.toLocaleString()}`, textX + statsSpacing, textY);
+            ctx.fillText(`Daily XP: ${dailyXP.toLocaleString()}`, textX + statsSpacing * 2, textY);
+            
+            // ========== DESCRIPTION SECTION (BOTTOM) ==========
+            
+            // Draw separator line
+            const separatorY = 225;
+            ctx.fillStyle = accentColor;
+            ctx.fillRect(30, separatorY, canvas.width - 60, 3);
+            
+            // Description area
+            const descStartY = separatorY + 30;
+            const descPadding = 40;
+            
+            // Draw "About Me" label
+            ctx.font = 'bold 20px "Poppins Bold", sans-serif';
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillText('📝 About Me', descPadding, descStartY);
+            
+            // Draw bio/description
             ctx.font = '16px "Poppins", sans-serif';
             ctx.fillStyle = '#DCDDDE';
             
-            const description = economy.profile.description || 'No description set. Use `setprofile description <text>` to add one!';
+            const description = economy.profile.description || economy.profile.bio || 'No description set. Use `setprofile description <text>` to add one!';
             const descLines = wrapText(ctx, description, canvas.width - (descPadding * 2));
-            const maxDescLines = 6;
-            let descY = descSectionY + 35;
+            const maxDescLines = 5;
+            let descY = descStartY + 35;
             
             for (let i = 0; i < Math.min(descLines.length, maxDescLines); i++) {
                 const line = descLines[i] + (i === maxDescLines - 1 && descLines.length > maxDescLines ? '...' : '');
                 ctx.fillText(line, descPadding, descY);
-                descY += 24;
+                descY += 26;
             }
             
-            // Draw badges in bottom right corner if enabled
+            // Draw economy stats at bottom
+            const bottomY = canvas.height - 30;
+            ctx.font = '14px "Poppins", sans-serif';
+            ctx.fillStyle = '#72767D';
+            
+            // Coins
+            ctx.fillStyle = '#FFD700';
+            ctx.fillText('💰', descPadding, bottomY);
+            ctx.fillStyle = '#DCDDDE';
+            ctx.fillText(`${economy.coins.toLocaleString()} coins`, descPadding + 25, bottomY);
+            
+            // Streak
+            ctx.fillStyle = '#FF6B6B';
+            ctx.fillText('🔥', descPadding + 180, bottomY);
+            ctx.fillStyle = '#DCDDDE';
+            ctx.fillText(`${economy.daily.streak || 0} day streak`, descPadding + 205, bottomY);
+            
+            // Reputation
+            ctx.fillStyle = '#FFC0CB';
+            ctx.fillText('⭐', descPadding + 360, bottomY);
+            ctx.fillStyle = '#DCDDDE';
+            ctx.fillText(`${economy.reputation || 0} rep`, descPadding + 385, bottomY);
+            
+            // Total Earned
+            ctx.fillStyle = '#72767D';
+            ctx.fillText(`Total Earned: ${economy.stats.totalEarned.toLocaleString()}`, descPadding + 520, bottomY);
+            
+            // Draw badges in top right if enabled
             if (economy.profile.showBadges !== false && economy.inventory.badges.length > 0) {
-                const badgeY = 460;
-                const badgeSize = 32;
-                const badgeSpacing = 40;
-                let badgeX = canvas.width - 60;
+                const badgeY = 50;
+                const badgeSize = 28;
+                const badgeSpacing = 35;
+                let badgeX = canvas.width - 50;
                 
-                // Badge section background
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-                roundedRect(ctx, badgeX - (Math.min(economy.inventory.badges.length, 5) * badgeSpacing), badgeY - badgeSize / 2 - 5, 
-                           Math.min(economy.inventory.badges.length, 5) * badgeSpacing + 30, badgeSize + 10, 8);
-                ctx.fill();
-                
-                // Draw up to 5 badges
                 for (let i = 0; i < Math.min(economy.inventory.badges.length, 5); i++) {
-                    ctx.font = '24px sans-serif';
+                    ctx.font = '22px sans-serif';
                     ctx.fillStyle = '#FFD700';
-                    ctx.fillText('🏅', badgeX - badgeSize / 2, badgeY + badgeSize / 4);
+                    ctx.fillText('🏅', badgeX - badgeSize / 2, badgeY);
                     badgeX -= badgeSpacing;
                 }
             }
-            
-            // Draw footer with stats
-            const footerY = 480;
-            ctx.font = '12px "Poppins", sans-serif';
-            ctx.fillStyle = '#72767D';
-            ctx.fillText(`Total Earned: ${economy.stats.totalEarned.toLocaleString()} coins`, descPadding, footerY);
-            
-            if (economy.stats.messagesCount > 0) {
-                ctx.fillText(`Messages: ${economy.stats.messagesCount.toLocaleString()}`, 230, footerY);
-            }
-            
-            // Draw decorative accent corners
-            ctx.strokeStyle = accentColor;
-            ctx.lineWidth = 3;
-            
-            // Top left corner
-            ctx.beginPath();
-            ctx.moveTo(10, 30);
-            ctx.lineTo(10, 10);
-            ctx.lineTo(30, 10);
-            ctx.stroke();
-            
-            // Top right corner
-            ctx.beginPath();
-            ctx.moveTo(canvas.width - 30, 10);
-            ctx.lineTo(canvas.width - 10, 10);
-            ctx.lineTo(canvas.width - 10, 30);
-            ctx.stroke();
-            
-            // Bottom left corner
-            ctx.beginPath();
-            ctx.moveTo(10, canvas.height - 30);
-            ctx.lineTo(10, canvas.height - 10);
-            ctx.lineTo(30, canvas.height - 10);
-            ctx.stroke();
-            
-            // Bottom right corner
-            ctx.beginPath();
-            ctx.moveTo(canvas.width - 30, canvas.height - 10);
-            ctx.lineTo(canvas.width - 10, canvas.height - 10);
-            ctx.lineTo(canvas.width - 10, canvas.height - 30);
-            ctx.stroke();
             
             const attachment = new AttachmentBuilder(canvas.toBuffer('image/png'), { name: 'profile.png' });
             
