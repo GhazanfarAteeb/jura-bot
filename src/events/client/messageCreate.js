@@ -72,9 +72,8 @@ class MessageCreate extends Event {
       const hasBypassRole = guildConfig.commandChannels.bypassRoles?.some(roleId =>
         message.member.roles.cache.has(roleId)
       );
-      const isAdmin = message.member.permissions.has(PermissionFlagsBits.Administrator);
 
-      if (!isAllowedChannel && !hasBypassRole && !isAdmin) {
+      if (!isAllowedChannel && !hasBypassRole) {
         // Silently ignore commands in non-allowed channels
         // Or optionally send a warning (delete after 5 seconds)
         const allowedChannelsList = guildConfig.commandChannels.channels

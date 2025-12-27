@@ -35,6 +35,9 @@ export default {
 
   async checkForKick(client, member) {
     try {
+      // Verify guild still exists and bot is in it
+      if (!member.guild || !client.guilds.cache.has(member.guild.id)) return;
+      
       const fetchedLogs = await member.guild.fetchAuditLogs({
         limit: 1,
         type: AuditLogEvent.MemberKick,
@@ -50,12 +53,18 @@ export default {
         await this.trackAction(client, member.guild, 'kick', null, executor);
       }
     } catch (error) {
-      // Likely missing audit log permissions
+      // Likely missing audit log permissions or guild unavailable
+      if (error.code !== 10004) { // Ignore "Unknown Guild" errors
+        console.error('checkForKick error:', error.message);
+      }
     }
   },
 
   async trackAction(client, guild, actionType, item = null, executor = null) {
     try {
+      // Verify guild still exists and bot is in it
+      if (!guild || !client.guilds.cache.has(guild.id)) return;
+      
       const guildConfig = await Guild.getGuild(guild.id, guild.name);
       const antiNuke = guildConfig.features.autoMod.antiNuke;
 
@@ -64,6 +73,9 @@ export default {
       // Get executor from audit logs if not provided
       if (!executor) {
         try {
+          // Double-check guild is still accessible
+          if (!client.guilds.cache.has(guild.id)) return;
+          
           const auditLogType = {
             ban: AuditLogEvent.MemberBanAdd,
             kick: AuditLogEvent.MemberKick,
@@ -81,7 +93,9 @@ export default {
             executor = logEntry.executor;
           }
         } catch (error) {
-          console.error('Failed to fetch audit log:', error);
+          // Ignore "Unknown Guild" errors (bot removed from guild)
+          if (error.code === 10004) return;
+          console.error('Failed to fetch audit log:', error.message);
           return;
         }
       }
