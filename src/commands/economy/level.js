@@ -94,11 +94,11 @@ export default {
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       // Draw bottom gradient to create "cut-off" effect (indicates there's more in profile)
-      const bottomGradient = ctx.createLinearGradient(0, canvas.height - 50, 0, canvas.height);
-      bottomGradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
-      bottomGradient.addColorStop(1, 'rgba(0, 0, 0, 0.8)');
-      ctx.fillStyle = bottomGradient;
-      ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
+      // const bottomGradient = ctx.createLinearGradient(0, canvas.height - 50, 0, canvas.height);
+      // bottomGradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
+      // bottomGradient.addColorStop(1, 'rgba(0, 0, 0, 0.8)');
+      // ctx.fillStyle = bottomGradient;
+      // ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
 
       // Draw accent line at bottom to indicate continuation
       const accentColor = economy.profile.accentColor || '#7289DA';
