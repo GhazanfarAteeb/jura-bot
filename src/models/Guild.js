@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import redis from '../utils/redis.js';
 
 const guildSchema = new mongoose.Schema({
   guildId: {
@@ -282,8 +283,14 @@ const guildSchema = new mongoose.Schema({
 
 // Method to get or create guild configuration
 guildSchema.statics.getGuild = async function (guildId, guildName = null) {
-  // Check cache first (if client.db exists)
-  if (global.guildCache) {
+  // Check Redis cache first
+  if (redis.isAvailable()) {
+    const cached = await redis.getGuildConfig(guildId);
+    if (cached) {
+      return cached;
+    }
+  } else if (global.guildCache) {
+    // Fallback to in-memory cache if Redis unavailable
     const cached = global.guildCache.get(guildId);
     if (cached && Date.now() - cached.timestamp < 15 * 60 * 1000) {
       return cached.data;
@@ -292,19 +299,52 @@ guildSchema.statics.getGuild = async function (guildId, guildName = null) {
 
   // Use findOneAndUpdate with upsert to avoid race conditions and duplicate key errors
   const updateData = guildName ? { $setOnInsert: { guildId }, $set: { guildName } } : { $setOnInsert: { guildId, guildName } };
-  
+
   const guild = await this.findOneAndUpdate(
     { guildId },
     updateData,
     { upsert: true, new: true, setDefaultsOnInsert: true }
-  );
+  ).lean(); // Use lean() for faster queries when we don't need mongoose document methods
 
-  // Cache the result
-  if (!global.guildCache) global.guildCache = new Map();
-  global.guildCache.set(guildId, {
-    data: guild,
-    timestamp: Date.now()
-  });
+  // Cache the result in Redis (30 min TTL)
+  if (redis.isAvailable()) {
+    await redis.setGuildConfig(guildId, guild, 1800);
+  } else {
+    // Fallback to in-memory cache
+    if (!global.guildCache) global.guildCache = new Map();
+    global.guildCache.set(guildId, {
+      data: guild,
+      timestamp: Date.now()
+    });
+  }
+
+  return guild;
+};
+
+// Method to invalidate cache when config is updated
+guildSchema.statics.invalidateCache = async function (guildId) {
+  if (redis.isAvailable()) {
+    await redis.invalidateGuildConfig(guildId);
+  }
+  if (global.guildCache) {
+    global.guildCache.delete(guildId);
+  }
+};
+
+// Method to update guild config and invalidate cache
+guildSchema.statics.updateGuild = async function (guildId, updateData) {
+  const guild = await this.findOneAndUpdate(
+    { guildId },
+    updateData,
+    { new: true, upsert: true }
+  ).lean();
+
+  // Invalidate and re-cache
+  await this.invalidateCache(guildId);
+  
+  if (redis.isAvailable()) {
+    await redis.setGuildConfig(guildId, guild, 1800);
+  }
 
   return guild;
 };

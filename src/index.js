@@ -13,6 +13,7 @@ import logger from './utils/logger.js';
 import ServerData from './database/server.js';
 import Utils from './structures/Utils.js';
 import RiffyManager from './music/RiffyManager.js';
+import redis from './utils/redis.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -129,6 +130,22 @@ async function connectDatabase() {
     logger.error('MongoDB connection error', error);
     console.error('❌ MongoDB connection error:', error);
     process.exit(1);
+  }
+}
+
+// Connect to Redis
+async function connectRedis() {
+  try {
+    const connected = await redis.connect();
+    if (connected) {
+      client.redis = redis;
+      logger.startup('Redis cache initialized');
+    } else {
+      console.log('⚠️ Redis unavailable, using in-memory cache fallback');
+    }
+  } catch (error) {
+    console.log('⚠️ Redis connection failed, using in-memory cache fallback');
+    logger.error('Redis connection error', error);
   }
 }
 
@@ -295,6 +312,7 @@ async function initialize() {
   console.log('🚀 Starting RAPHAEL...');
 
   await connectDatabase();
+  await connectRedis();
   await loadCommands();
 
   // Login to Discord first
