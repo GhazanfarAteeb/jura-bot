@@ -39,7 +39,7 @@ export default {
         const generateEmbed = (page) => {
           const bg = ownedBackgrounds[page];
           const isEquipped = economy.profile.background === bg.id;
-          
+
           // Find the image from shop items
           const shopItem = shopItems.find(item => item.id === bg.id);
           const imageUrl = shopItem?.image || bg.image || '';
@@ -70,7 +70,7 @@ export default {
         const generateButtons = (page) => {
           const bg = ownedBackgrounds[page];
           const isEquipped = economy.profile.background === bg.id;
-          
+
           return new ActionRowBuilder()
             .addComponents(
               new ButtonBuilder()
@@ -122,7 +122,7 @@ export default {
             const bg = ownedBackgrounds[currentPage];
             economy.profile.background = bg.id;
             await economy.save();
-            
+
             await interaction.update({
               embeds: [generateEmbed(currentPage)],
               components: [generateButtons(currentPage)]

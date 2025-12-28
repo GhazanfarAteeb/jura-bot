@@ -290,17 +290,14 @@ guildSchema.statics.getGuild = async function (guildId, guildName = null) {
     }
   }
 
-  let guild = await this.findOne({ guildId });
-
-  if (!guild) {
-    guild = await this.create({
-      guildId,
-      guildName
-    });
-  } else if (guildName && guild.guildName !== guildName) {
-    guild.guildName = guildName;
-    await guild.save();
-  }
+  // Use findOneAndUpdate with upsert to avoid race conditions and duplicate key errors
+  const updateData = guildName ? { $setOnInsert: { guildId }, $set: { guildName } } : { $setOnInsert: { guildId, guildName } };
+  
+  const guild = await this.findOneAndUpdate(
+    { guildId },
+    updateData,
+    { upsert: true, new: true, setDefaultsOnInsert: true }
+  );
 
   // Cache the result
   if (!global.guildCache) global.guildCache = new Map();

@@ -1,6 +1,9 @@
 import { Events } from 'discord.js';
 import Guild from '../../models/Guild.js';
 
+// Lock map to prevent race conditions with color roles
+const colorRoleLocks = new Map();
+
 export default {
     name: Events.MessageReactionAdd,
     
@@ -30,7 +33,21 @@ export default {
             // Check for color roles first
             if (guildConfig.settings?.colorRoles?.enabled && 
                 guildConfig.settings.colorRoles.messageId === message.id) {
-                return this.handleColorRole(reaction, user, guild, guildConfig, emoji, message);
+                
+                // Use lock to prevent race conditions when user reacts quickly
+                const lockKey = `${guild.id}-${user.id}`;
+                if (colorRoleLocks.has(lockKey)) {
+                    // Already processing a color role for this user, ignore this reaction
+                    await reaction.users.remove(user.id).catch(() => {});
+                    return;
+                }
+                
+                colorRoleLocks.set(lockKey, true);
+                try {
+                    return await this.handleColorRole(reaction, user, guild, guildConfig, emoji, message);
+                } finally {
+                    colorRoleLocks.delete(lockKey);
+                }
             }
             
             // Then check regular reaction roles

@@ -23,7 +23,7 @@ export default {
       // Check if voice XP is enabled
       if (!guildConfig.voiceXP?.enabled && !guildConfig.features?.levelSystem?.enabled) return;
 
-      const sessionKey = `${guildId}-${odId}`;
+      const sessionKey = `${guildId}-${userId}`;
 
       // User joined a voice channel
       if (!oldState.channelId && newState.channelId) {
