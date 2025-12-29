@@ -143,11 +143,11 @@ export default {
           }
           results.roles[roleData.key] = role;
           rolesCreated++;
-          
+
           // Update progress
           const progress = Math.round((rolesCreated / totalRoles) * 100);
           embed.setDescription(`${GLYPHS.LOADING} Creating roles... (${progress}%)\n\n${role.name} ✓`);
-          await setupMsg.edit({ embeds: [embed] }).catch(() => {});
+          await setupMsg.edit({ embeds: [embed] }).catch(() => { });
         }, `role:${roleData.name}`);
       }
 
@@ -281,7 +281,7 @@ export default {
       }
 
       // Special channels with custom permissions
-      
+
       // Ticket panel channel
       queue.add(async () => {
         let channel = message.guild.channels.cache.find(c => c.name.includes('create-ticket') || c.name.includes('ticket-panel'));
@@ -416,25 +416,25 @@ export default {
         'channels.welcomeChannel': results.channels.welcome?.id,
         'channels.ticketCategory': results.categories.tickets?.id,
         'channels.ticketPanelChannel': results.channels.ticketPanel?.id,
-        
+
         // Birthday system
         'features.birthdaySystem.channel': results.channels.birthday?.id,
-        
+
         // Event system
         'features.eventSystem.channel': results.channels.events?.id,
-        
+
         // Level system
         'features.levelSystem.enabled': true,
         'features.levelSystem.levelUpChannel': results.channels.levelUp?.id,
-        
+
         // Welcome system
         'features.welcomeSystem.channel': results.channels.welcome?.id,
-        
+
         // Ticket system
         'features.ticketSystem.enabled': true,
         'features.ticketSystem.category': results.categories.tickets?.id,
         'features.ticketSystem.logChannel': results.channels.ticketLog?.id,
-        
+
         // AutoMod settings
         'features.autoMod': {
           enabled: true,
@@ -447,7 +447,7 @@ export default {
           antiLinks: { enabled: false, whitelistedDomains: [], action: 'delete' },
           antiInvites: { enabled: true, action: 'delete' }
         },
-        
+
         // Color roles settings
         'settings.colorRoles': {
           enabled: true,
@@ -458,7 +458,7 @@ export default {
           roles: colorRolesMap
         }
       };
-      
+
       // Add level rewards
       const levelRewards = [];
       for (const roleData of levelRoles) {

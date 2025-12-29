@@ -4,6 +4,7 @@ import { readdir, stat } from 'fs/promises';
 import { join } from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import Guild from '../../models/Guild.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -13,8 +14,24 @@ export default {
     description: 'View bot logs and statistics',
     usage: 'logs [stats|clean|types]',
     category: 'admin',
-    permissions: ['Administrator'],
+    permissions: [], // Custom permission check below
     execute: async (message, args) => {
+        // Check for Administrator OR staff/moderator roles
+        const hasAdmin = message.member.permissions.has('Administrator');
+        
+        if (!hasAdmin) {
+            const guildConfig = await Guild.getGuild(message.guild.id);
+            const memberRoles = message.member.roles.cache.map(r => r.id);
+            const staffRoles = guildConfig?.roles?.staffRoles || [];
+            const modRoles = guildConfig?.roles?.moderatorRoles || [];
+            
+            const hasStaffRole = staffRoles.some(roleId => memberRoles.includes(roleId));
+            const hasModRole = modRoles.some(roleId => memberRoles.includes(roleId));
+            
+            if (!hasStaffRole && !hasModRole) {
+                return message.reply('❌ You need Administrator permission or a staff/moderator role to use this command.');
+            }
+        }
         const action = args[0]?.toLowerCase() || 'stats';
         
         try {
