@@ -37,7 +37,7 @@ export default {
 
         // Use Redis lock to prevent race conditions when user reacts quickly
         const lockKey = `colorRole:${guild.id}:${user.id}`;
-        
+
         // Try to acquire lock (Redis or fallback to Map)
         let lockAcquired = false;
         if (redis.isAvailable()) {
@@ -99,6 +99,14 @@ export default {
         const colorRoleIds = reactionMessage.roles.map(r => r.roleId);
         const memberColorRoles = member.roles.cache.filter(r => colorRoleIds.includes(r.id));
 
+        // Fetch the message to ensure reactions cache is populated
+        let fetchedMessage = message;
+        try {
+          fetchedMessage = await message.fetch();
+        } catch (err) {
+          console.error('Failed to fetch message for reactions:', err);
+        }
+
         for (const [roleId, existingRole] of memberColorRoles) {
           if (roleId !== role.id) {
             try {
@@ -107,7 +115,7 @@ export default {
               // Remove their reaction from the old color
               const oldRoleConfig = reactionMessage.roles.find(r => r.roleId === roleId);
               if (oldRoleConfig) {
-                const reactions = message.reactions.cache.find(r =>
+                const reactions = fetchedMessage.reactions.cache.find(r =>
                   r.emoji.name === oldRoleConfig.emoji ||
                   `<:${r.emoji.name}:${r.emoji.id}>` === oldRoleConfig.emoji
                 );
@@ -170,6 +178,14 @@ export default {
       const allColorRoles = guild.roles.cache.filter(r => r.name.startsWith('🎨 '));
       const memberColorRoles = member.roles.cache.filter(r => r.name.startsWith('🎨 '));
 
+      // Fetch the message to ensure reactions cache is populated
+      let fetchedMessage = message;
+      try {
+        fetchedMessage = await message.fetch();
+      } catch (err) {
+        console.error('Failed to fetch message for reactions:', err);
+      }
+
       for (const [roleId, existingRole] of memberColorRoles) {
         if (roleId !== role.id) {
           try {
@@ -186,7 +202,7 @@ export default {
             const oldEmoji = emojiToColor[colorName];
 
             if (oldEmoji) {
-              const oldReaction = message.reactions.cache.find(r => r.emoji.name === oldEmoji);
+              const oldReaction = fetchedMessage.reactions.cache.find(r => r.emoji.name === oldEmoji);
               if (oldReaction) {
                 await oldReaction.users.remove(user.id).catch(() => { });
               }

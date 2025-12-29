@@ -341,7 +341,7 @@ guildSchema.statics.updateGuild = async function (guildId, updateData) {
 
   // Invalidate and re-cache
   await this.invalidateCache(guildId);
-  
+
   if (redis.isAvailable()) {
     await redis.setGuildConfig(guildId, guild, 1800);
   }
