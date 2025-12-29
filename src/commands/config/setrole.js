@@ -37,40 +37,45 @@ export default {
         
         const guild = await Guild.getGuild(message.guild.id, message.guild.name);
         
+        let updateData = {};
+        
         switch (type) {
             case 'sus':
             case 'suspicious':
             case 'radar':
-                guild.roles.susRole = roleId;
-                guild.features.memberTracking.susRole = roleId;
-                await guild.save();
+                updateData = {
+                    'roles.susRole': roleId,
+                    'features.memberTracking.susRole': roleId
+                };
                 break;
                 
             case 'newaccount':
             case 'new':
             case 'egg':
             case 'baby':
-                guild.roles.newAccountRole = roleId;
-                guild.features.accountAge.newAccountRole = roleId;
-                await guild.save();
+                updateData = {
+                    'roles.newAccountRole': roleId,
+                    'features.accountAge.newAccountRole': roleId
+                };
                 break;
                 
             case 'muted':
             case 'mute':
-                guild.roles.mutedRole = roleId;
-                await guild.save();
+                updateData = {
+                    'roles.mutedRole': roleId
+                };
                 break;
                 
             case 'staff':
             case 'mod':
             case 'moderator':
-                if (!guild.roles.staffRoles) {
-                    guild.roles.staffRoles = [];
+                const staffRoles = guild.roles?.staffRoles || [];
+                if (!staffRoles.includes(roleId)) {
+                    staffRoles.push(roleId);
                 }
-                if (!guild.roles.staffRoles.includes(roleId)) {
-                    guild.roles.staffRoles.push(roleId);
-                }
-                await guild.save();
+                updateData = {
+                    'roles.staffRoles': staffRoles
+                };
                 break;
                 
             default:
@@ -79,6 +84,9 @@ export default {
                 );
                 return message.reply({ embeds: [embed] });
         }
+        
+        // Apply the update
+        await Guild.updateGuild(message.guild.id, { $set: updateData });
         
         const typeNames = {
             sus: 'Sus/Radar',
