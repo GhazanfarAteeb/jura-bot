@@ -398,79 +398,80 @@ export default {
       guild.features.accountAge.newAccountRole = results.roles.newAccountRole?.id;
       guild.features.accountAge.alertChannel = results.channels.alertLog?.id;
 
-      // Assign channel IDs
-      guild.channels.modLog = results.channels.modLog?.id;
-      guild.channels.alertLog = results.channels.alertLog?.id;
-      guild.channels.joinLog = results.channels.joinLog?.id;
-      guild.channels.botStatus = results.channels.botStatus?.id;
-      guild.channels.messageLog = results.channels.messageLog?.id;
-      guild.channels.voiceLog = results.channels.voiceLog?.id;
-      guild.channels.memberLog = results.channels.memberLog?.id;
-      guild.channels.serverLog = results.channels.serverLog?.id;
-      guild.channels.ticketLog = results.channels.ticketLog?.id;
-      guild.channels.birthdayChannel = results.channels.birthday?.id;
-      guild.channels.eventChannel = results.channels.events?.id;
-      guild.channels.levelUpChannel = results.channels.levelUp?.id;
-      guild.channels.welcomeChannel = results.channels.welcome?.id;
-      guild.channels.ticketCategory = results.categories.tickets?.id;
-      guild.channels.ticketPanelChannel = results.channels.ticketPanel?.id;
-
-      // Birthday system
-      guild.features.birthdaySystem.channel = results.channels.birthday?.id;
-
-      // Event system
-      guild.features.eventSystem.channel = results.channels.events?.id;
-
-      // Level system
-      guild.features.levelSystem.enabled = true;
-      guild.features.levelSystem.levelUpChannel = results.channels.levelUp?.id;
+      // Build update data object
+      const updateData = {
+        // Channels
+        'channels.modLog': results.channels.modLog?.id,
+        'channels.alertLog': results.channels.alertLog?.id,
+        'channels.joinLog': results.channels.joinLog?.id,
+        'channels.botStatus': results.channels.botStatus?.id,
+        'channels.messageLog': results.channels.messageLog?.id,
+        'channels.voiceLog': results.channels.voiceLog?.id,
+        'channels.memberLog': results.channels.memberLog?.id,
+        'channels.serverLog': results.channels.serverLog?.id,
+        'channels.ticketLog': results.channels.ticketLog?.id,
+        'channels.birthdayChannel': results.channels.birthday?.id,
+        'channels.eventChannel': results.channels.events?.id,
+        'channels.levelUpChannel': results.channels.levelUp?.id,
+        'channels.welcomeChannel': results.channels.welcome?.id,
+        'channels.ticketCategory': results.categories.tickets?.id,
+        'channels.ticketPanelChannel': results.channels.ticketPanel?.id,
+        
+        // Birthday system
+        'features.birthdaySystem.channel': results.channels.birthday?.id,
+        
+        // Event system
+        'features.eventSystem.channel': results.channels.events?.id,
+        
+        // Level system
+        'features.levelSystem.enabled': true,
+        'features.levelSystem.levelUpChannel': results.channels.levelUp?.id,
+        
+        // Welcome system
+        'features.welcomeSystem.channel': results.channels.welcome?.id,
+        
+        // Ticket system
+        'features.ticketSystem.enabled': true,
+        'features.ticketSystem.category': results.categories.tickets?.id,
+        'features.ticketSystem.logChannel': results.channels.ticketLog?.id,
+        
+        // AutoMod settings
+        'features.autoMod': {
+          enabled: true,
+          antiSpam: { enabled: true, messageLimit: 5, timeWindow: 5, action: 'warn' },
+          antiRaid: { enabled: true, joinThreshold: 10, timeWindow: 30, action: 'lockdown' },
+          antiNuke: { enabled: true, banThreshold: 5, kickThreshold: 5, roleDeleteThreshold: 3, channelDeleteThreshold: 3, timeWindow: 60, action: 'removeRoles', whitelistedUsers: [] },
+          antiMassMention: { enabled: true, limit: 5, action: 'delete' },
+          badWords: { enabled: true, useBuiltInList: true, words: [], ignoredWords: [], action: 'delete', timeoutDuration: 300, autoEscalate: true },
+          antiRoleSpam: { enabled: true, cooldown: 60 },
+          antiLinks: { enabled: false, whitelistedDomains: [], action: 'delete' },
+          antiInvites: { enabled: true, action: 'delete' }
+        },
+        
+        // Color roles settings
+        'settings.colorRoles': {
+          enabled: true,
+          channelId: results.channels.colorRoles?.id,
+          messageId: results.colorMessage?.id,
+          allowMultiple: false,
+          rolePrefix: '🎨 ',
+          roles: colorRolesMap
+        }
+      };
       
-      // Level rewards
+      // Add level rewards
+      const levelRewards = [];
       for (const roleData of levelRoles) {
         const role = results.roles[roleData.key];
         if (role) {
-          const existing = guild.features.levelSystem.rewards.find(r => r.level === roleData.level);
-          if (!existing) {
-            guild.features.levelSystem.rewards.push({ level: roleData.level, roleId: role.id });
-          }
+          levelRewards.push({ level: roleData.level, roleId: role.id });
         }
       }
+      if (levelRewards.length > 0) {
+        updateData['features.levelSystem.rewards'] = levelRewards;
+      }
 
-      // Welcome system
-      guild.features.welcomeSystem.channel = results.channels.welcome?.id;
-
-      // Ticket system
-      guild.features.ticketSystem.enabled = true;
-      guild.features.ticketSystem.category = results.categories.tickets?.id;
-      guild.features.ticketSystem.logChannel = results.channels.ticketLog?.id;
-
-      // AutoMod settings
-      guild.features.autoMod = {
-        enabled: true,
-        antiSpam: { enabled: true, messageLimit: 5, timeWindow: 5, action: 'warn' },
-        antiRaid: { enabled: true, joinThreshold: 10, timeWindow: 30, action: 'lockdown' },
-        antiNuke: { enabled: true, banThreshold: 5, kickThreshold: 5, roleDeleteThreshold: 3, channelDeleteThreshold: 3, timeWindow: 60, action: 'removeRoles', whitelistedUsers: [] },
-        antiMassMention: { enabled: true, limit: 5, action: 'delete' },
-        badWords: { enabled: true, useBuiltInList: true, words: [], ignoredWords: [], action: 'delete', timeoutDuration: 300, autoEscalate: true },
-        antiRoleSpam: { enabled: true, cooldown: 60 },
-        antiLinks: { enabled: false, whitelistedDomains: [], action: 'delete' },
-        antiInvites: { enabled: true, action: 'delete' }
-      };
-      guild.markModified('features.autoMod');
-
-      // Color roles settings
-      if (!guild.settings) guild.settings = {};
-      guild.settings.colorRoles = {
-        enabled: true,
-        channelId: results.channels.colorRoles?.id,
-        messageId: results.colorMessage?.id,
-        allowMultiple: false,
-        rolePrefix: '🎨 ',
-        roles: colorRolesMap
-      };
-      guild.markModified('settings.colorRoles');
-
-      await guild.save();
+      await Guild.updateGuild(message.guild.id, { $set: updateData });
 
       // ==================== PHASE 9: SUCCESS MESSAGE ====================
       const successMsg = await successEmbed(message.guild.id, 'Setup Complete!',

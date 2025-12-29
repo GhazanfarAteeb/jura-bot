@@ -276,7 +276,37 @@ const guildSchema = new mongoose.Schema({
     stock: { type: Number, default: -1 }, // -1 = unlimited
     createdBy: String,
     createdAt: { type: Date, default: Date.now }
-  }]
+  }],
+  // Settings for reaction roles and color roles (used by colorroles command)
+  settings: {
+    reactionRoles: {
+      enabled: { type: Boolean, default: false },
+      messages: [{
+        messageId: String,
+        channelId: String,
+        roles: [{
+          emoji: String,
+          roleId: String
+        }]
+      }]
+    },
+    colorRoles: {
+      enabled: { type: Boolean, default: false },
+      channelId: String,
+      messageId: String,
+      title: { type: String, default: '🎨 Color Roles' },
+      description: { type: String, default: '**React to get a color role!**\nYou can only have one color at a time.' },
+      embedColor: { type: String, default: '#667eea' },
+      image: String,
+      thumbnail: String,
+      footerText: { type: String, default: 'Click a reaction to get/remove a color role' },
+      roles: [{
+        emoji: String,
+        roleId: String,
+        name: String
+      }]
+    }
+  }
 }, {
   timestamps: true
 });
@@ -332,11 +362,11 @@ guildSchema.statics.invalidateCache = async function (guildId) {
 };
 
 // Method to update guild config and invalidate cache
-guildSchema.statics.updateGuild = async function (guildId, updateData) {
+guildSchema.statics.updateGuild = async function (guildId, updateData, options = {}) {
   const guild = await this.findOneAndUpdate(
     { guildId },
     updateData,
-    { new: true, upsert: true }
+    { new: true, upsert: true, ...options }
   ).lean();
 
   // Invalidate and re-cache

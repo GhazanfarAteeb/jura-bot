@@ -230,25 +230,22 @@ export default {
             }
 
             // 8. Save to database
-            if (!guildConfig.settings.reactionRoles) {
-                guildConfig.settings.reactionRoles = { enabled: true, messages: [] };
-            }
-
-            guildConfig.settings.reactionRoles.enabled = true;
-            guildConfig.settings.reactionRoles.messages.push({
+            const existingMessages = guildConfig.settings?.reactionRoles?.messages || [];
+            existingMessages.push({
                 messageId: colorMessage.id,
                 channelId: colorChannel.id,
                 roles: rolesMapping
             });
 
-            // Save color roles settings
-            if (!guildConfig.settings.colorRoles) {
-                guildConfig.settings.colorRoles = {};
-            }
-            guildConfig.settings.colorRoles.channelId = colorChannel.id;
-            guildConfig.settings.colorRoles.messageId = colorMessage.id;
-
-            await guildConfig.save();
+            await Guild.updateGuild(guildId, {
+                $set: {
+                    'settings.reactionRoles.enabled': true,
+                    'settings.reactionRoles.messages': existingMessages,
+                    'settings.colorRoles.enabled': true,
+                    'settings.colorRoles.channelId': colorChannel.id,
+                    'settings.colorRoles.messageId': colorMessage.id
+                }
+            });
 
             const prefix = await getPrefix(guildId);
             // Update status
@@ -389,7 +386,7 @@ export default {
                 return message.reply({ embeds: [embed] });
         }
 
-        await guildConfig.save();
+        await Guild.updateGuild(guildId, { $set: { 'settings.colorRoles': settings } });
 
         const prefixForMsg = await getPrefix(guildId);
         const embed = await successEmbed(guildId, 'Setting Updated',
@@ -513,19 +510,17 @@ export default {
                 await channel.delete('Color roles panel deleted');
             }
 
-            // Remove from reaction roles
-            if (guildConfig.settings.reactionRoles?.messages) {
-                guildConfig.settings.reactionRoles.messages = 
-                    guildConfig.settings.reactionRoles.messages.filter(
-                        m => m.messageId !== settings.messageId
-                    );
-            }
+            // Remove from reaction roles and clear color roles settings
+            const filteredMessages = (guildConfig.settings?.reactionRoles?.messages || [])
+                .filter(m => m.messageId !== settings.messageId);
 
-            // Clear color roles settings (but keep customizations)
-            guildConfig.settings.colorRoles.channelId = null;
-            guildConfig.settings.colorRoles.messageId = null;
-
-            await guildConfig.save();
+            await Guild.updateGuild(guildId, {
+                $set: {
+                    'settings.reactionRoles.messages': filteredMessages,
+                    'settings.colorRoles.channelId': null,
+                    'settings.colorRoles.messageId': null
+                }
+            });
 
             const prefix = await getPrefix(guildId);
             const embed = await successEmbed(guildId, 'Panel Deleted',

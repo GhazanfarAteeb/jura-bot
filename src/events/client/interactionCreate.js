@@ -243,8 +243,7 @@ async function handleAutomodCommand(interaction, guildConfig) {
 
   switch (subcommand) {
     case 'enable':
-      guildConfig.features.autoMod.enabled = true;
-      await guildConfig.save();
+      await Guild.updateGuild(interaction.guild.id, { $set: { 'features.autoMod.enabled': true } });
       await interaction.editReply({
         embeds: [await successEmbed(interaction.guild.id, 'AutoMod Enabled',
           `${GLYPHS.SUCCESS} AutoMod has been enabled for this server.`)]
@@ -252,8 +251,7 @@ async function handleAutomodCommand(interaction, guildConfig) {
       break;
 
     case 'disable':
-      guildConfig.features.autoMod.enabled = false;
-      await guildConfig.save();
+      await Guild.updateGuild(interaction.guild.id, { $set: { 'features.autoMod.enabled': false } });
       await interaction.editReply({
         embeds: [await successEmbed(interaction.guild.id, 'AutoMod Disabled',
           `${GLYPHS.SUCCESS} AutoMod has been disabled for this server.`)]
@@ -294,25 +292,20 @@ async function handleAutomodCommand(interaction, guildConfig) {
       const timeWindow = interaction.options.getInteger('time_window');
 
       // Ensure antiSpam is an object (fix for legacy boolean values)
-      if (!guildConfig.features.autoMod.antiSpam || typeof guildConfig.features.autoMod.antiSpam === 'boolean') {
-        guildConfig.features.autoMod.antiSpam = {
-          enabled: false,
-          messageLimit: 5,
-          timeWindow: 5,
-          action: 'warn'
-        };
-      }
+      const antiSpamConfig = (!guildConfig.features.autoMod.antiSpam || typeof guildConfig.features.autoMod.antiSpam === 'boolean')
+        ? { enabled: false, messageLimit: 5, timeWindow: 5, action: 'warn' }
+        : { ...guildConfig.features.autoMod.antiSpam };
 
-      guildConfig.features.autoMod.antiSpam.enabled = spamEnabled;
-      if (messageLimit) guildConfig.features.autoMod.antiSpam.messageLimit = messageLimit;
-      if (timeWindow) guildConfig.features.autoMod.antiSpam.timeWindow = timeWindow;
-      await guildConfig.save();
+      antiSpamConfig.enabled = spamEnabled;
+      if (messageLimit) antiSpamConfig.messageLimit = messageLimit;
+      if (timeWindow) antiSpamConfig.timeWindow = timeWindow;
+      await Guild.updateGuild(interaction.guild.id, { $set: { 'features.autoMod.antiSpam': antiSpamConfig } });
 
       await interaction.editReply({
         embeds: [await successEmbed(interaction.guild.id, 'Anti-Spam Updated',
           `${GLYPHS.SUCCESS} Anti-Spam is now ${spamEnabled ? 'enabled' : 'disabled'}.\n` +
-          `${GLYPHS.DOT} Message Limit: ${guildConfig.features.autoMod.antiSpam.messageLimit}\n` +
-          `${GLYPHS.DOT} Time Window: ${guildConfig.features.autoMod.antiSpam.timeWindow}s`)]
+          `${GLYPHS.DOT} Message Limit: ${antiSpamConfig.messageLimit}\n` +
+          `${GLYPHS.DOT} Time Window: ${antiSpamConfig.timeWindow}s`)]
       });
       break;
 
@@ -322,25 +315,20 @@ async function handleAutomodCommand(interaction, guildConfig) {
       const raidAction = interaction.options.getString('action');
 
       // Ensure antiRaid is an object (fix for legacy boolean values)
-      if (!guildConfig.features.autoMod.antiRaid || typeof guildConfig.features.autoMod.antiRaid === 'boolean') {
-        guildConfig.features.autoMod.antiRaid = {
-          enabled: false,
-          joinThreshold: 10,
-          timeWindow: 30,
-          action: 'lockdown'
-        };
-      }
+      const antiRaidConfig = (!guildConfig.features.autoMod.antiRaid || typeof guildConfig.features.autoMod.antiRaid === 'boolean')
+        ? { enabled: false, joinThreshold: 10, timeWindow: 30, action: 'lockdown' }
+        : { ...guildConfig.features.autoMod.antiRaid };
 
-      guildConfig.features.autoMod.antiRaid.enabled = raidEnabled;
-      if (joinThreshold) guildConfig.features.autoMod.antiRaid.joinThreshold = joinThreshold;
-      if (raidAction) guildConfig.features.autoMod.antiRaid.action = raidAction;
-      await guildConfig.save();
+      antiRaidConfig.enabled = raidEnabled;
+      if (joinThreshold) antiRaidConfig.joinThreshold = joinThreshold;
+      if (raidAction) antiRaidConfig.action = raidAction;
+      await Guild.updateGuild(interaction.guild.id, { $set: { 'features.autoMod.antiRaid': antiRaidConfig } });
 
       await interaction.editReply({
         embeds: [await successEmbed(interaction.guild.id, 'Anti-Raid Updated',
           `${GLYPHS.SUCCESS} Anti-Raid is now ${raidEnabled ? 'enabled' : 'disabled'}.\n` +
-          `${GLYPHS.DOT} Join Threshold: ${guildConfig.features.autoMod.antiRaid.joinThreshold}\n` +
-          `${GLYPHS.DOT} Action: ${guildConfig.features.autoMod.antiRaid.action}`)]
+          `${GLYPHS.DOT} Join Threshold: ${antiRaidConfig.joinThreshold}\n` +
+          `${GLYPHS.DOT} Action: ${antiRaidConfig.action}`)]
       });
       break;
 
@@ -349,27 +337,19 @@ async function handleAutomodCommand(interaction, guildConfig) {
       const nukeAction = interaction.options.getString('action');
 
       // Ensure antiNuke is an object (fix for legacy boolean values)
-      if (!guildConfig.features.autoMod.antiNuke || typeof guildConfig.features.autoMod.antiNuke === 'boolean') {
-        guildConfig.features.autoMod.antiNuke = {
-          enabled: false,
-          banThreshold: 5,
-          kickThreshold: 5,
-          roleDeleteThreshold: 3,
-          channelDeleteThreshold: 3,
-          timeWindow: 60,
-          action: 'removeRoles',
-          whitelistedUsers: []
-        };
-      }
+      // Ensure antiNuke is an object (fix for legacy boolean values)
+      const antiNukeConfig = (!guildConfig.features.autoMod.antiNuke || typeof guildConfig.features.autoMod.antiNuke === 'boolean')
+        ? { enabled: false, banThreshold: 5, kickThreshold: 5, roleDeleteThreshold: 3, channelDeleteThreshold: 3, timeWindow: 60, action: 'removeRoles', whitelistedUsers: [] }
+        : { ...guildConfig.features.autoMod.antiNuke };
 
-      guildConfig.features.autoMod.antiNuke.enabled = nukeEnabled;
-      if (nukeAction) guildConfig.features.autoMod.antiNuke.action = nukeAction;
-      await guildConfig.save();
+      antiNukeConfig.enabled = nukeEnabled;
+      if (nukeAction) antiNukeConfig.action = nukeAction;
+      await Guild.updateGuild(interaction.guild.id, { $set: { 'features.autoMod.antiNuke': antiNukeConfig } });
 
       await interaction.editReply({
         embeds: [await successEmbed(interaction.guild.id, 'Anti-Nuke Updated',
           `${GLYPHS.SUCCESS} Anti-Nuke is now ${nukeEnabled ? 'enabled' : 'disabled'}.\n` +
-          `${GLYPHS.DOT} Action: ${guildConfig.features.autoMod.antiNuke.action}`)]
+          `${GLYPHS.DOT} Action: ${antiNukeConfig.action}`)]
       });
       break;
   }
@@ -381,9 +361,8 @@ async function handleBadwordsSubcommand(interaction, guildConfig) {
   const words = interaction.options.getString('words');
   const punishment = interaction.options.getString('punishment');
 
-  if (!guildConfig.features.autoMod.badWords) {
-    guildConfig.features.autoMod.badWords = { enabled: false, words: [], action: 'delete' };
-  }
+  // Get current badWords config or initialize
+  const badWordsConfig = guildConfig.features.autoMod.badWords || { enabled: false, words: [], action: 'delete' };
 
   switch (action) {
     case 'add':
@@ -394,14 +373,14 @@ async function handleBadwordsSubcommand(interaction, guildConfig) {
         });
       }
       const newWords = words.split(',').map(w => w.trim().toLowerCase()).filter(w => w);
-      const existingWords = guildConfig.features.autoMod.badWords.words || [];
-      guildConfig.features.autoMod.badWords.words = [...new Set([...existingWords, ...newWords])];
-      await guildConfig.save();
+      const existingWords = badWordsConfig.words || [];
+      const updatedWords = [...new Set([...existingWords, ...newWords])];
+      await Guild.updateGuild(interaction.guild.id, { $set: { 'features.autoMod.badWords.words': updatedWords } });
 
       await interaction.editReply({
         embeds: [await successEmbed(interaction.guild.id, 'Words Added',
           `${GLYPHS.SUCCESS} Added ${newWords.length} word(s) to the filter.\n` +
-          `Total words: ${guildConfig.features.autoMod.badWords.words.length}`)]
+          `Total words: ${updatedWords.length}`)]
       });
       break;
 
@@ -413,19 +392,19 @@ async function handleBadwordsSubcommand(interaction, guildConfig) {
         });
       }
       const removeWords = words.split(',').map(w => w.trim().toLowerCase());
-      guildConfig.features.autoMod.badWords.words = (guildConfig.features.autoMod.badWords.words || [])
+      const filteredWords = (badWordsConfig.words || [])
         .filter(w => !removeWords.includes(w));
-      await guildConfig.save();
+      await Guild.updateGuild(interaction.guild.id, { $set: { 'features.autoMod.badWords.words': filteredWords } });
 
       await interaction.editReply({
         embeds: [await successEmbed(interaction.guild.id, 'Words Removed',
           `${GLYPHS.SUCCESS} Removed words from the filter.\n` +
-          `Total words: ${guildConfig.features.autoMod.badWords.words.length}`)]
+          `Total words: ${filteredWords.length}`)]
       });
       break;
 
     case 'list':
-      const wordList = guildConfig.features.autoMod.badWords.words || [];
+      const wordList = badWordsConfig.words || [];
       if (wordList.length === 0) {
         return interaction.editReply({
           embeds: [await infoEmbed(interaction.guild.id, 'Bad Words List',
@@ -439,7 +418,7 @@ async function handleBadwordsSubcommand(interaction, guildConfig) {
         embeds: [await infoEmbed(interaction.guild.id, 'Bad Words List',
           `**Total Words:** ${wordList.length}\n\n` +
           `**Preview (masked):**\n${maskedWords.join(', ')}${wordList.length > 20 ? '...' : ''}\n\n` +
-          `**Current Action:** ${guildConfig.features.autoMod.badWords.action}`)]
+          `**Current Action:** ${badWordsConfig.action}`)]
       });
       break;
 
@@ -450,8 +429,7 @@ async function handleBadwordsSubcommand(interaction, guildConfig) {
             'Please select a punishment action.')]
         });
       }
-      guildConfig.features.autoMod.badWords.action = punishment;
-      await guildConfig.save();
+      await Guild.updateGuild(interaction.guild.id, { $set: { 'features.autoMod.badWords.action': punishment } });
 
       await interaction.editReply({
         embeds: [await successEmbed(interaction.guild.id, 'Action Updated',
@@ -460,8 +438,7 @@ async function handleBadwordsSubcommand(interaction, guildConfig) {
       break;
 
     case 'enable':
-      guildConfig.features.autoMod.badWords.enabled = true;
-      await guildConfig.save();
+      await Guild.updateGuild(interaction.guild.id, { $set: { 'features.autoMod.badWords.enabled': true } });
       await interaction.editReply({
         embeds: [await successEmbed(interaction.guild.id, 'Bad Words Filter Enabled',
           `${GLYPHS.SUCCESS} Bad words filter is now enabled.`)]
@@ -469,8 +446,7 @@ async function handleBadwordsSubcommand(interaction, guildConfig) {
       break;
 
     case 'disable':
-      guildConfig.features.autoMod.badWords.enabled = false;
-      await guildConfig.save();
+      await Guild.updateGuild(interaction.guild.id, { $set: { 'features.autoMod.badWords.enabled': false } });
       await interaction.editReply({
         embeds: [await successEmbed(interaction.guild.id, 'Bad Words Filter Disabled',
           `${GLYPHS.SUCCESS} Bad words filter is now disabled.`)]
@@ -488,12 +464,14 @@ async function handleLockdownCommand(interaction, guildConfig) {
 
   if (action === 'on') {
     // Enable lockdown
-    guildConfig.security = guildConfig.security || {};
-    guildConfig.security.lockdownActive = true;
-    guildConfig.security.lockdownReason = reason;
-    guildConfig.security.lockdownBy = interaction.user.id;
-    guildConfig.security.lockdownAt = new Date();
-    await guildConfig.save();
+    await Guild.updateGuild(interaction.guild.id, {
+      $set: {
+        'security.lockdownActive': true,
+        'security.lockdownReason': reason,
+        'security.lockdownBy': interaction.user.id,
+        'security.lockdownAt': new Date()
+      }
+    });
 
     // Lock all text channels
     const textChannels = interaction.guild.channels.cache.filter(
@@ -535,9 +513,9 @@ async function handleLockdownCommand(interaction, guildConfig) {
 
   } else {
     // Disable lockdown
-    guildConfig.security = guildConfig.security || {};
-    guildConfig.security.lockdownActive = false;
-    await guildConfig.save();
+    await Guild.updateGuild(interaction.guild.id, {
+      $set: { 'security.lockdownActive': false }
+    });
 
     // Unlock all text channels
     const textChannels = interaction.guild.channels.cache.filter(
@@ -570,38 +548,39 @@ async function handleSetroleCommand(interaction, guildConfig) {
   const type = interaction.options.getString('type');
   const role = interaction.options.getRole('role');
 
+  let updateData = {};
+
   switch (type) {
     case 'staff':
-      if (!guildConfig.roles.staffRoles) guildConfig.roles.staffRoles = [];
-      if (!guildConfig.roles.staffRoles.includes(role.id)) {
-        guildConfig.roles.staffRoles.push(role.id);
-      }
-      if (!guildConfig.roles.moderatorRoles) guildConfig.roles.moderatorRoles = [];
-      if (!guildConfig.roles.moderatorRoles.includes(role.id)) {
-        guildConfig.roles.moderatorRoles.push(role.id);
-      }
+      const staffRoles = guildConfig.roles?.staffRoles || [];
+      const moderatorRoles = guildConfig.roles?.moderatorRoles || [];
+      if (!staffRoles.includes(role.id)) staffRoles.push(role.id);
+      if (!moderatorRoles.includes(role.id)) moderatorRoles.push(role.id);
+      updateData = {
+        'roles.staffRoles': staffRoles,
+        'roles.moderatorRoles': moderatorRoles
+      };
       break;
     case 'admin':
-      if (!guildConfig.roles.adminRoles) guildConfig.roles.adminRoles = [];
-      if (!guildConfig.roles.adminRoles.includes(role.id)) {
-        guildConfig.roles.adminRoles.push(role.id);
-      }
+      const adminRoles = guildConfig.roles?.adminRoles || [];
+      if (!adminRoles.includes(role.id)) adminRoles.push(role.id);
+      updateData = { 'roles.adminRoles': adminRoles };
       break;
     case 'sus':
-      guildConfig.roles.susRole = role.id;
-      if (guildConfig.features.memberTracking) {
-        guildConfig.features.memberTracking.susRole = role.id;
-      }
+      updateData = {
+        'roles.susRole': role.id,
+        'features.memberTracking.susRole': role.id
+      };
       break;
     case 'newaccount':
-      guildConfig.roles.newAccountRole = role.id;
+      updateData = { 'roles.newAccountRole': role.id };
       break;
     case 'muted':
-      guildConfig.roles.mutedRole = role.id;
+      updateData = { 'roles.mutedRole': role.id };
       break;
   }
 
-  await guildConfig.save();
+  await Guild.updateGuild(interaction.guild.id, { $set: updateData });
 
   const typeNames = {
     staff: 'Staff/Moderator',
@@ -623,28 +602,19 @@ async function handleSetchannelCommand(interaction, guildConfig) {
   const type = interaction.options.getString('type');
   const channel = interaction.options.getChannel('channel');
 
-  switch (type) {
-    case 'modlog':
-      guildConfig.channels.modLog = channel.id;
-      break;
-    case 'alertlog':
-      guildConfig.channels.alertLog = channel.id;
-      break;
-    case 'joinlog':
-      guildConfig.channels.joinLog = channel.id;
-      break;
-    case 'leavelog':
-      guildConfig.channels.leaveLog = channel.id;
-      break;
-    case 'messagelog':
-      guildConfig.channels.messageLog = channel.id;
-      break;
-    case 'staff':
-      guildConfig.channels.staffChannel = channel.id;
-      break;
-  }
+  const channelMap = {
+    'modlog': 'channels.modLog',
+    'alertlog': 'channels.alertLog',
+    'joinlog': 'channels.joinLog',
+    'leavelog': 'channels.leaveLog',
+    'messagelog': 'channels.messageLog',
+    'staff': 'channels.staffChannel'
+  };
 
-  await guildConfig.save();
+  const updateKey = channelMap[type];
+  if (updateKey) {
+    await Guild.updateGuild(interaction.guild.id, { $set: { [updateKey]: channel.id } });
+  }
 
   const typeNames = {
     modlog: 'Mod Log',
@@ -666,16 +636,14 @@ async function handleSlashcommandsCommand(interaction, guildConfig) {
 
   const subcommand = interaction.options.getSubcommand();
 
-  if (!guildConfig.slashCommands) {
-    guildConfig.slashCommands = { enabled: true, disabledCommands: [] };
-  }
+  // Get current slashCommands config or initialize
+  const slashCommandsConfig = guildConfig.slashCommands || { enabled: true, disabledCommands: [] };
 
   switch (subcommand) {
     case 'enable':
       const enableCmd = interaction.options.getString('command').toLowerCase();
-      guildConfig.slashCommands.disabledCommands = guildConfig.slashCommands.disabledCommands
-        .filter(c => c !== enableCmd);
-      await guildConfig.save();
+      const enabledList = (slashCommandsConfig.disabledCommands || []).filter(c => c !== enableCmd);
+      await Guild.updateGuild(interaction.guild.id, { $set: { 'slashCommands.disabledCommands': enabledList } });
 
       await interaction.editReply({
         embeds: [await successEmbed(interaction.guild.id, 'Command Enabled',
@@ -685,10 +653,11 @@ async function handleSlashcommandsCommand(interaction, guildConfig) {
 
     case 'disable':
       const disableCmd = interaction.options.getString('command').toLowerCase();
-      if (!guildConfig.slashCommands.disabledCommands.includes(disableCmd)) {
-        guildConfig.slashCommands.disabledCommands.push(disableCmd);
+      const disabledList = slashCommandsConfig.disabledCommands || [];
+      if (!disabledList.includes(disableCmd)) {
+        disabledList.push(disableCmd);
       }
-      await guildConfig.save();
+      await Guild.updateGuild(interaction.guild.id, { $set: { 'slashCommands.disabledCommands': disabledList } });
 
       await interaction.editReply({
         embeds: [await successEmbed(interaction.guild.id, 'Command Disabled',
@@ -699,7 +668,7 @@ async function handleSlashcommandsCommand(interaction, guildConfig) {
     case 'list':
       const { getSlashCommands } = await import('../../utils/slashCommands.js');
       const allCommands = getSlashCommands();
-      const disabled = guildConfig.slashCommands.disabledCommands || [];
+      const disabled = slashCommandsConfig.disabledCommands || [];
 
       const commandList = allCommands.map(cmd => {
         const name = cmd.name;
@@ -709,7 +678,7 @@ async function handleSlashcommandsCommand(interaction, guildConfig) {
 
       await interaction.editReply({
         embeds: [await infoEmbed(interaction.guild.id, 'Slash Commands',
-          `**Status:** ${guildConfig.slashCommands.enabled ? 'Enabled' : 'Disabled'}\n\n` +
+          `**Status:** ${slashCommandsConfig.enabled ? 'Enabled' : 'Disabled'}\n\n` +
           `**Commands:**\n${commandList}`)]
       });
       break;
@@ -790,9 +759,12 @@ async function handleBirthdaySettingsCommand(interaction, guildConfig) {
   switch (subcommand) {
     case 'channel': {
       const channel = interaction.options.getChannel('channel');
-      guildConfig.features.birthdaySystem.channel = channel.id;
-      guildConfig.channels.birthdayChannel = channel.id;
-      await guildConfig.save();
+      await Guild.updateGuild(interaction.guild.id, {
+        $set: {
+          'features.birthdaySystem.channel': channel.id,
+          'channels.birthdayChannel': channel.id
+        }
+      });
       await interaction.editReply({
         embeds: [await successEmbed(interaction.guild.id, '🎂 Birthday Channel Set',
           `${GLYPHS.SUCCESS} Birthday announcements will be sent to ${channel}`)]
@@ -802,8 +774,7 @@ async function handleBirthdaySettingsCommand(interaction, guildConfig) {
 
     case 'role': {
       const role = interaction.options.getRole('role');
-      guildConfig.features.birthdaySystem.role = role.id;
-      await guildConfig.save();
+      await Guild.updateGuild(interaction.guild.id, { $set: { 'features.birthdaySystem.role': role.id } });
       await interaction.editReply({
         embeds: [await successEmbed(interaction.guild.id, '🎂 Birthday Role Set',
           `${GLYPHS.SUCCESS} Birthday role set to ${role}\n\nThis role will be assigned to users on their birthday.`)]
@@ -813,8 +784,7 @@ async function handleBirthdaySettingsCommand(interaction, guildConfig) {
 
     case 'message': {
       const message = interaction.options.getString('message');
-      guildConfig.features.birthdaySystem.message = message;
-      await guildConfig.save();
+      await Guild.updateGuild(interaction.guild.id, { $set: { 'features.birthdaySystem.message': message } });
       await interaction.editReply({
         embeds: [await successEmbed(interaction.guild.id, '🎂 Birthday Message Set',
           `${GLYPHS.SUCCESS} Custom birthday message set!\n\n**Preview:**\n${message.replace('{user}', interaction.user.toString()).replace('{username}', interaction.user.username).replace('{age}', '25')}`)]
@@ -823,8 +793,7 @@ async function handleBirthdaySettingsCommand(interaction, guildConfig) {
     }
 
     case 'enable': {
-      guildConfig.features.birthdaySystem.enabled = true;
-      await guildConfig.save();
+      await Guild.updateGuild(interaction.guild.id, { $set: { 'features.birthdaySystem.enabled': true } });
       await interaction.editReply({
         embeds: [await successEmbed(interaction.guild.id, '🎂 Birthday System Enabled',
           `${GLYPHS.SUCCESS} Birthday celebrations are now enabled!`)]
@@ -833,8 +802,7 @@ async function handleBirthdaySettingsCommand(interaction, guildConfig) {
     }
 
     case 'disable': {
-      guildConfig.features.birthdaySystem.enabled = false;
-      await guildConfig.save();
+      await Guild.updateGuild(interaction.guild.id, { $set: { 'features.birthdaySystem.enabled': false } });
       await interaction.editReply({
         embeds: [await successEmbed(interaction.guild.id, '🎂 Birthday System Disabled',
           `${GLYPHS.SUCCESS} Birthday celebrations are now disabled.`)]
@@ -998,8 +966,7 @@ async function handleConfigCommand(interaction, guildConfig) {
           embeds: [await errorEmbed(interaction.guild.id, 'Prefix too long (max 5 characters)')]
         });
       }
-      guildConfig.prefix = newPrefix;
-      await guildConfig.save();
+      await Guild.updateGuild(interaction.guild.id, { $set: { prefix: newPrefix } });
       await interaction.editReply({
         embeds: [await successEmbed(interaction.guild.id, 'Prefix Updated',
           `${GLYPHS.SUCCESS} Server prefix changed to \`${newPrefix}\``)]
@@ -1046,9 +1013,12 @@ async function handleWelcomeCommand(interaction, guildConfig) {
   switch (subcommand) {
     case 'channel': {
       const channel = interaction.options.getChannel('channel');
-      guildConfig.features.welcomeSystem.channel = channel.id;
-      guildConfig.channels.welcomeChannel = channel.id;
-      await guildConfig.save();
+      await Guild.updateGuild(interaction.guild.id, {
+        $set: {
+          'features.welcomeSystem.channel': channel.id,
+          'channels.welcomeChannel': channel.id
+        }
+      });
       await interaction.editReply({
         embeds: [await successEmbed(interaction.guild.id, '👋 Welcome Channel Set',
           `${GLYPHS.SUCCESS} Welcome messages will be sent to ${channel}`)]
@@ -1058,8 +1028,7 @@ async function handleWelcomeCommand(interaction, guildConfig) {
 
     case 'message': {
       const message = interaction.options.getString('message');
-      guildConfig.features.welcomeSystem.message = message;
-      await guildConfig.save();
+      await Guild.updateGuild(interaction.guild.id, { $set: { 'features.welcomeSystem.message': message } });
       await interaction.editReply({
         embeds: [await successEmbed(interaction.guild.id, '👋 Welcome Message Set',
           `${GLYPHS.SUCCESS} Welcome message updated!\n\n**Preview:**\n${message.replace('{user}', interaction.user.toString()).replace('{server}', interaction.guild.name).replace('{memberCount}', interaction.guild.memberCount)}`)]
@@ -1068,8 +1037,7 @@ async function handleWelcomeCommand(interaction, guildConfig) {
     }
 
     case 'enable': {
-      guildConfig.features.welcomeSystem.enabled = true;
-      await guildConfig.save();
+      await Guild.updateGuild(interaction.guild.id, { $set: { 'features.welcomeSystem.enabled': true } });
       await interaction.editReply({
         embeds: [await successEmbed(interaction.guild.id, '👋 Welcome System Enabled',
           `${GLYPHS.SUCCESS} Welcome messages are now enabled!`)]
@@ -1078,8 +1046,7 @@ async function handleWelcomeCommand(interaction, guildConfig) {
     }
 
     case 'disable': {
-      guildConfig.features.welcomeSystem.enabled = false;
-      await guildConfig.save();
+      await Guild.updateGuild(interaction.guild.id, { $set: { 'features.welcomeSystem.enabled': false } });
       await interaction.editReply({
         embeds: [await successEmbed(interaction.guild.id, '👋 Welcome System Disabled',
           `${GLYPHS.SUCCESS} Welcome messages are now disabled.`)]
@@ -1143,8 +1110,7 @@ async function handleManageshopCommand(interaction, guildConfig) {
         createdAt: new Date()
       };
 
-      guildConfig.customShopItems.push(newItem);
-      await guildConfig.save();
+      await Guild.updateGuild(interaction.guild.id, { $push: { customShopItems: newItem } });
 
       const embed = new EmbedBuilder()
         .setColor('#667eea')
@@ -1174,8 +1140,7 @@ async function handleManageshopCommand(interaction, guildConfig) {
       }
 
       const removedItem = guildConfig.customShopItems[index];
-      guildConfig.customShopItems.splice(index, 1);
-      await guildConfig.save();
+      await Guild.updateGuild(interaction.guild.id, { $pull: { customShopItems: { id: itemId } } });
 
       await interaction.editReply({
         embeds: [await successEmbed(interaction.guild.id, 'Item Removed',
@@ -1229,8 +1194,9 @@ async function handleManageshopCommand(interaction, guildConfig) {
       }
 
       const oldPrice = item.price;
-      item.price = newPrice;
-      await guildConfig.save();
+      await Guild.updateGuild(interaction.guild.id, {
+        $set: { 'customShopItems.$[elem].price': newPrice }
+      }, { arrayFilters: [{ 'elem.id': itemId }] });
 
       await interaction.editReply({
         embeds: [await successEmbed(interaction.guild.id, 'Price Updated',
@@ -1267,7 +1233,9 @@ async function handleManageshopCommand(interaction, guildConfig) {
           break;
       }
 
-      await guildConfig.save();
+      await Guild.updateGuild(interaction.guild.id, {
+        $set: { [`customShopItems.$[elem].${field}`]: value }
+      }, { arrayFilters: [{ 'elem.id': itemId }] });
 
       await interaction.editReply({
         embeds: [await successEmbed(interaction.guild.id, 'Background Updated',
@@ -1289,8 +1257,9 @@ async function handleManageshopCommand(interaction, guildConfig) {
         return;
       }
 
-      item.stock = stock;
-      await guildConfig.save();
+      await Guild.updateGuild(interaction.guild.id, {
+        $set: { 'customShopItems.$[elem].stock': stock }
+      }, { arrayFilters: [{ 'elem.id': itemId }] });
 
       const stockText = stock === -1 ? 'Unlimited' : stock.toString();
       await interaction.editReply({
@@ -1329,8 +1298,7 @@ async function handleManageshopCommand(interaction, guildConfig) {
           return;
         }
 
-        guildConfig.economy.fallbackBackground.image = value;
-        await guildConfig.save();
+        await Guild.updateGuild(interaction.guild.id, { $set: { 'economy.fallbackBackground.image': value } });
 
         const embed = new EmbedBuilder()
           .setColor('#00FF00')
@@ -1356,8 +1324,7 @@ async function handleManageshopCommand(interaction, guildConfig) {
           return;
         }
 
-        guildConfig.economy.fallbackBackground.color = value;
-        await guildConfig.save();
+        await Guild.updateGuild(interaction.guild.id, { $set: { 'economy.fallbackBackground.color': value } });
 
         const embed = new EmbedBuilder()
           .setColor(value)
@@ -1366,8 +1333,9 @@ async function handleManageshopCommand(interaction, guildConfig) {
         await interaction.editReply({ embeds: [embed] });
 
       } else if (type === 'clear') {
-        guildConfig.economy.fallbackBackground = { image: '', color: '#2C2F33' };
-        await guildConfig.save();
+        await Guild.updateGuild(interaction.guild.id, {
+          $set: { 'economy.fallbackBackground': { image: '', color: '#2C2F33' } }
+        });
 
         await interaction.editReply({
           embeds: [await successEmbed(interaction.guild.id, 'Fallback Reset',

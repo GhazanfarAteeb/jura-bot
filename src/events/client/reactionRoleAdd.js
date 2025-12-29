@@ -31,9 +31,8 @@ export default {
       // Get guild config
       const guildConfig = await Guild.getGuild(guild.id);
 
-      // Check for color roles first
-      if (guildConfig.settings?.colorRoles?.enabled &&
-        guildConfig.settings.colorRoles.messageId === message.id) {
+      // Check for color roles first (check if this message is a color roles panel)
+      if (guildConfig.settings?.colorRoles?.messageId === message.id) {
 
         // Use Redis lock to prevent race conditions when user reacts quickly
         const lockKey = `colorRole:${guild.id}:${user.id}`;
@@ -68,7 +67,7 @@ export default {
       }
 
       // Then check regular reaction roles
-      if (!guildConfig.settings?.reactionRoles?.enabled) return;
+      if (!guildConfig.settings?.reactionRoles?.messages?.length) return;
 
       // Find the message in our reaction roles config
       const reactionMessage = guildConfig.settings.reactionRoles.messages.find(

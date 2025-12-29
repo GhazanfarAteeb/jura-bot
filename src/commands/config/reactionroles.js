@@ -81,8 +81,9 @@ export default {
                 }
 
                 // Remove from database
-                guildConfig.settings.reactionRoles.messages.splice(panelIndex, 1);
-                await guildConfig.save();
+                const updatedMessages = [...guildConfig.settings.reactionRoles.messages];
+                updatedMessages.splice(panelIndex, 1);
+                await Guild.updateGuild(guildId, { $set: { 'settings.reactionRoles.messages': updatedMessages } });
 
                 const embed = await successEmbed(guildId, 'Panel Removed',
                     `${GLYPHS.SUCCESS} Reaction role panel #${panelIndex + 1} has been removed.`
@@ -148,9 +149,12 @@ export default {
                         }
 
                         // Clear from database
-                        guildConfig.settings.reactionRoles.messages = [];
-                        guildConfig.settings.reactionRoles.enabled = false;
-                        await guildConfig.save();
+                        await Guild.updateGuild(guildId, {
+                            $set: {
+                                'settings.reactionRoles.messages': [],
+                                'settings.reactionRoles.enabled': false
+                            }
+                        });
 
                         const embed = await successEmbed(guildId, 'All Panels Cleared',
                             `${GLYPHS.SUCCESS} All ${panels.length} reaction role panels have been removed.`

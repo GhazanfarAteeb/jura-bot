@@ -27,13 +27,12 @@ export default {
             // Get guild config
             const guildConfig = await Guild.getGuild(guild.id);
             
-            // Check for color roles first
-            if (guildConfig.settings?.colorRoles?.enabled && 
-                guildConfig.settings.colorRoles.messageId === message.id) {
+            // Check for color roles first (check if this message is a color roles panel)
+            if (guildConfig.settings?.colorRoles?.messageId === message.id) {
                 return this.handleColorRoleRemove(reaction, user, guild, guildConfig, emoji);
             }
             
-            if (!guildConfig.settings?.reactionRoles?.enabled) return;
+            if (!guildConfig.settings?.reactionRoles?.messages?.length) return;
             
             // Find the message in our reaction roles config
             const reactionMessage = guildConfig.settings.reactionRoles.messages.find(
