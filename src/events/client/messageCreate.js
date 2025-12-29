@@ -72,8 +72,11 @@ class MessageCreate extends Event {
       const hasBypassRole = guildConfig.commandChannels.bypassRoles?.some(roleId =>
         message.member.roles.cache.has(roleId)
       );
+      // Allow music commands in voice channel text chats
+      const isVoiceChannelChat = message.channel.isVoiceBased?.() || message.channel.type === 2;
+      const isMusicCommandInVoice = command.category === 'music' && isVoiceChannelChat;
 
-      if (!isAllowedChannel && !hasBypassRole) {
+      if (!isAllowedChannel && !hasBypassRole && !isMusicCommandInVoice) {
         // Silently ignore commands in non-allowed channels
         // Or optionally send a warning (delete after 5 seconds)
         const allowedChannelsList = guildConfig.commandChannels.channels
