@@ -71,7 +71,7 @@ async function handleVoiceJoin(state, guildConfig, sessionKey) {
 
   // Start tracking session
   voiceSessions.set(sessionKey, {
-    odId: state.member.id,
+    userId: state.member.id,
     guildId: state.guild.id,
     channelId: channel.id,
     joinedAt: Date.now(),
@@ -128,10 +128,10 @@ async function handleVoiceLeave(state, guildConfig, sessionKey, client) {
   }
 
   // Award XP
-  let levelData = await Level.findOne({ odId: session.odId, guildId: session.guildId });
+  let levelData = await Level.findOne({ userId: session.userId, guildId: session.guildId });
   if (!levelData) {
     levelData = new Level({
-      odId: session.odId,
+      userId: session.userId,
       guildId: session.guildId,
       username: member?.user?.username
     });
