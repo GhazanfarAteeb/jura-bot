@@ -1,4 +1,4 @@
-import { Events, Collection, PermissionFlagsBits } from 'discord.js';
+import { Events, Collection, PermissionFlagsBits, MessageFlags } from 'discord.js';
 import logger from '../../utils/logger.js';
 import Guild from '../../models/Guild.js';
 
@@ -14,7 +14,7 @@ export default {
     if (guildConfig.slashCommands?.disabledCommands?.includes(interaction.commandName)) {
       return interaction.reply({
         content: '❌ This slash command has been disabled by an administrator.',
-        ephemeral: true
+        flags: MessageFlags.Ephemeral
       });
     }
 
@@ -29,7 +29,7 @@ export default {
     );
 
     // Handle special slash commands that need custom handling
-    const specialCommands = ['automod', 'lockdown', 'setrole', 'setchannel', 'slashcommands', 'refreshcache', 'birthdaysettings', 'setbirthday', 'config', 'setup', 'welcome', 'manageshop'];
+    const specialCommands = ['automod', 'lockdown', 'setrole', 'setchannel', 'slashcommands', 'refreshcache', 'birthdaysettings', 'setbirthday', 'config', 'setup', 'welcome', 'manageshop', 'verify', 'cmdchannels', 'logs', 'autorole'];
     if (specialCommands.includes(interaction.commandName)) {
       return handleSpecialCommand(interaction, client, guildConfig, hasAdminRole);
     }
@@ -40,7 +40,7 @@ export default {
       console.error(`No command matching ${interaction.commandName} was found.`);
       await interaction.reply({
         content: `Command \`/${interaction.commandName}\` not found! The command may not be implemented yet.`,
-        ephemeral: true
+        flags: MessageFlags.Ephemeral
       }).catch(console.error);
       return;
     }
@@ -130,8 +130,7 @@ export default {
             }
 
             await interaction.editReply({
-              content: `⏰ **Cooldown Active**\n\n⏱️ Please wait **${timeString}** before using \`${command.name}\` again.\n\nAvailable <t:${Math.floor(expirationTime / 1000)}:R>`,
-              ephemeral: true
+              content: `⏰ **Cooldown Active**\n\n⏱️ Please wait **${timeString}** before using \`${command.name}\` again.\n\nAvailable <t:${Math.floor(expirationTime / 1000)}:R>`
             });
             return;
           }
@@ -168,9 +167,9 @@ export default {
       const errorMessage = 'There was an error while executing this command!';
 
       if (interaction.replied || interaction.deferred) {
-        await interaction.followUp({ content: errorMessage, ephemeral: true });
+        await interaction.followUp({ content: errorMessage, flags: MessageFlags.Ephemeral });
       } else {
-        await interaction.reply({ content: errorMessage, ephemeral: true });
+        await interaction.reply({ content: errorMessage, flags: MessageFlags.Ephemeral });
       }
     }
   },
@@ -184,11 +183,11 @@ async function handleSpecialCommand(interaction, client, guildConfig, hasAdminRo
   if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator) && !hasAdminRole) {
     return interaction.reply({
       content: '❌ You need Administrator permissions to use this command.',
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
   }
 
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   try {
     switch (interaction.commandName) {
@@ -227,6 +226,18 @@ async function handleSpecialCommand(interaction, client, guildConfig, hasAdminRo
         break;
       case 'manageshop':
         await handleManageshopCommand(interaction, guildConfig);
+        break;
+      case 'verify':
+        await handleVerifyCommand(interaction, client, guildConfig);
+        break;
+      case 'cmdchannels':
+        await handleCmdchannelsCommand(interaction, guildConfig);
+        break;
+      case 'logs':
+        await handleLogsCommand(interaction, guildConfig);
+        break;
+      case 'autorole':
+        await handleAutoroleCommand(interaction, guildConfig);
         break;
     }
   } catch (error) {
@@ -1342,6 +1353,462 @@ async function handleManageshopCommand(interaction, guildConfig) {
             `${GLYPHS.SUCCESS} Default background reset to default dark theme.`)]
         });
       }
+      break;
+    }
+  }
+}
+// Handle verify command
+async function handleVerifyCommand(interaction, client, guildConfig) {
+  const { successEmbed, errorEmbed, infoEmbed, GLYPHS } = await import('../../utils/embeds.js');
+  const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = await import('discord.js');
+  const subcommand = interaction.options.getSubcommand();
+
+  switch (subcommand) {
+    case 'setup': {
+      const embed = new EmbedBuilder()
+        .setColor('#5865F2')
+        .setTitle('🔐 Verification Setup')
+        .setDescription('To complete setup via slash command, use these subcommands:\n\n' +
+          '`/verify setrole @role` - Set the verified role\n' +
+          '`/verify setchannel #channel` - Set the verification channel\n' +
+          '`/verify enable` - Enable the system\n' +
+          '`/verify panel` - Send the verification panel');
+      await interaction.editReply({ embeds: [embed] });
+      break;
+    }
+
+    case 'panel': {
+      const channel = interaction.options.getChannel('channel') || interaction.channel;
+      
+      if (!guildConfig.features?.verificationSystem?.role) {
+        await interaction.editReply({
+          embeds: [await errorEmbed(interaction.guild.id, 'Setup Required',
+            `${GLYPHS.ERROR} Please set a verified role first with \`/verify setrole @role\``)]
+        });
+        return;
+      }
+
+      const panelEmbed = new EmbedBuilder()
+        .setColor('#5865F2')
+        .setTitle('🔐 Server Verification')
+        .setDescription('Click the button below to verify yourself and gain access to the server!')
+        .setFooter({ text: 'This helps us prevent bots and raiders.' });
+
+      const row = new ActionRowBuilder()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId('verify_button')
+            .setLabel('✅ Verify')
+            .setStyle(ButtonStyle.Success)
+        );
+
+      await channel.send({ embeds: [panelEmbed], components: [row] });
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, 'Verification Panel Sent',
+          `${GLYPHS.SUCCESS} Verification panel has been sent to ${channel}`)]
+      });
+      break;
+    }
+
+    case 'manual': {
+      const user = interaction.options.getUser('user');
+      const member = await interaction.guild.members.fetch(user.id).catch(() => null);
+      
+      if (!member) {
+        await interaction.editReply({
+          embeds: [await errorEmbed(interaction.guild.id, 'User Not Found',
+            `${GLYPHS.ERROR} Could not find that user in this server.`)]
+        });
+        return;
+      }
+
+      const verifiedRoleId = guildConfig.features?.verificationSystem?.role || guildConfig.roles?.verifiedRole;
+      if (!verifiedRoleId) {
+        await interaction.editReply({
+          embeds: [await errorEmbed(interaction.guild.id, 'No Verified Role',
+            `${GLYPHS.ERROR} No verified role is configured. Use \`/verify setrole @role\``)]
+        });
+        return;
+      }
+
+      await member.roles.add(verifiedRoleId);
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, 'User Verified',
+          `${GLYPHS.SUCCESS} ${user} has been manually verified.`)]
+      });
+      break;
+    }
+
+    case 'status': {
+      const vs = guildConfig.features?.verificationSystem || {};
+      const statusEmbed = await infoEmbed(interaction.guild.id, '🔐 Verification Status',
+        `**Enabled:** ${vs.enabled ? '✅ Yes' : '❌ No'}\n` +
+        `**Type:** ${vs.type || 'button'}\n` +
+        `**Role:** ${vs.role ? `<@&${vs.role}>` : 'Not set'}\n` +
+        `**Channel:** ${vs.channel ? `<#${vs.channel}>` : 'Not set'}`);
+      await interaction.editReply({ embeds: [statusEmbed] });
+      break;
+    }
+
+    case 'enable': {
+      await Guild.updateGuild(interaction.guild.id, { $set: { 'features.verificationSystem.enabled': true } });
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, 'Verification Enabled',
+          `${GLYPHS.SUCCESS} The verification system is now enabled.`)]
+      });
+      break;
+    }
+
+    case 'disable': {
+      await Guild.updateGuild(interaction.guild.id, { $set: { 'features.verificationSystem.enabled': false } });
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, 'Verification Disabled',
+          `${GLYPHS.SUCCESS} The verification system is now disabled.`)]
+      });
+      break;
+    }
+
+    case 'setrole': {
+      const role = interaction.options.getRole('role');
+      await Guild.updateGuild(interaction.guild.id, {
+        $set: {
+          'features.verificationSystem.role': role.id,
+          'roles.verifiedRole': role.id
+        }
+      });
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, 'Verified Role Set',
+          `${GLYPHS.SUCCESS} Verified role set to ${role}`)]
+      });
+      break;
+    }
+
+    case 'setchannel': {
+      const channel = interaction.options.getChannel('channel');
+      await Guild.updateGuild(interaction.guild.id, { $set: { 'features.verificationSystem.channel': channel.id } });
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, 'Verification Channel Set',
+          `${GLYPHS.SUCCESS} Verification channel set to ${channel}`)]
+      });
+      break;
+    }
+  }
+}
+
+// Handle cmdchannels command
+async function handleCmdchannelsCommand(interaction, guildConfig) {
+  const { successEmbed, errorEmbed, infoEmbed, GLYPHS } = await import('../../utils/embeds.js');
+  const { EmbedBuilder } = await import('discord.js');
+  const subcommand = interaction.options.getSubcommand();
+
+  // Initialize if not exists
+  const cmdChannels = guildConfig.commandChannels || { enabled: false, channels: [], bypassRoles: [] };
+
+  switch (subcommand) {
+    case 'enable': {
+      if (cmdChannels.channels.length === 0) {
+        await interaction.editReply({
+          embeds: [await errorEmbed(interaction.guild.id, 'No Channels Added',
+            `${GLYPHS.ERROR} Please add at least one channel first with \`/cmdchannels add\``)]
+        });
+        return;
+      }
+      await Guild.updateGuild(interaction.guild.id, { $set: { 'commandChannels.enabled': true } });
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, 'Channel Restrictions Enabled',
+          `${GLYPHS.SUCCESS} Bot commands will now only work in allowed channels.`)]
+      });
+      break;
+    }
+
+    case 'disable': {
+      await Guild.updateGuild(interaction.guild.id, { $set: { 'commandChannels.enabled': false } });
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, 'Channel Restrictions Disabled',
+          `${GLYPHS.SUCCESS} Bot commands can now be used in any channel.`)]
+      });
+      break;
+    }
+
+    case 'add': {
+      const channel = interaction.options.getChannel('channel');
+      if (cmdChannels.channels.includes(channel.id)) {
+        await interaction.editReply({
+          embeds: [await errorEmbed(interaction.guild.id, 'Already Added',
+            `${GLYPHS.ERROR} ${channel} is already in the allowed channels list.`)]
+        });
+        return;
+      }
+      await Guild.updateGuild(interaction.guild.id, { $push: { 'commandChannels.channels': channel.id } });
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, 'Channel Added',
+          `${GLYPHS.SUCCESS} ${channel} has been added to allowed channels.`)]
+      });
+      break;
+    }
+
+    case 'remove': {
+      const channel = interaction.options.getChannel('channel');
+      if (!cmdChannels.channels.includes(channel.id)) {
+        await interaction.editReply({
+          embeds: [await errorEmbed(interaction.guild.id, 'Not Found',
+            `${GLYPHS.ERROR} ${channel} is not in the allowed channels list.`)]
+        });
+        return;
+      }
+      await Guild.updateGuild(interaction.guild.id, { $pull: { 'commandChannels.channels': channel.id } });
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, 'Channel Removed',
+          `${GLYPHS.SUCCESS} ${channel} has been removed from allowed channels.`)]
+      });
+      break;
+    }
+
+    case 'bypass': {
+      const action = interaction.options.getString('action');
+      const role = interaction.options.getRole('role');
+
+      if (action === 'add') {
+        if (cmdChannels.bypassRoles.includes(role.id)) {
+          await interaction.editReply({
+            embeds: [await errorEmbed(interaction.guild.id, 'Already Added',
+              `${GLYPHS.ERROR} ${role} already bypasses channel restrictions.`)]
+          });
+          return;
+        }
+        await Guild.updateGuild(interaction.guild.id, { $push: { 'commandChannels.bypassRoles': role.id } });
+        await interaction.editReply({
+          embeds: [await successEmbed(interaction.guild.id, 'Bypass Role Added',
+            `${GLYPHS.SUCCESS} ${role} can now use commands in any channel.`)]
+        });
+      } else {
+        if (!cmdChannels.bypassRoles.includes(role.id)) {
+          await interaction.editReply({
+            embeds: [await errorEmbed(interaction.guild.id, 'Not Found',
+              `${GLYPHS.ERROR} ${role} is not a bypass role.`)]
+          });
+          return;
+        }
+        await Guild.updateGuild(interaction.guild.id, { $pull: { 'commandChannels.bypassRoles': role.id } });
+        await interaction.editReply({
+          embeds: [await successEmbed(interaction.guild.id, 'Bypass Role Removed',
+            `${GLYPHS.SUCCESS} ${role} no longer bypasses channel restrictions.`)]
+        });
+      }
+      break;
+    }
+
+    case 'list': {
+      const channelsList = cmdChannels.channels.length > 0
+        ? cmdChannels.channels.map(id => `<#${id}>`).join('\n')
+        : '*No channels configured*';
+
+      const bypassList = cmdChannels.bypassRoles.length > 0
+        ? cmdChannels.bypassRoles.map(id => `<@&${id}>`).join('\n')
+        : '*No bypass roles*';
+
+      const embed = new EmbedBuilder()
+        .setTitle('📢 Command Channel Settings')
+        .setColor(guildConfig.embedStyle?.color || '#5865F2')
+        .addFields(
+          { name: '📊 Status', value: cmdChannels.enabled ? '✅ Enabled' : '❌ Disabled', inline: true },
+          { name: '💬 Allowed Channels', value: channelsList, inline: false },
+          { name: '👑 Bypass Roles', value: bypassList, inline: false }
+        );
+      await interaction.editReply({ embeds: [embed] });
+      break;
+    }
+  }
+}
+
+// Handle logs command
+async function handleLogsCommand(interaction, guildConfig) {
+  const { successEmbed, infoEmbed, GLYPHS } = await import('../../utils/embeds.js');
+  const { EmbedBuilder } = await import('discord.js');
+  const subcommand = interaction.options.getSubcommand();
+
+  const logTypes = {
+    message: 'logging.messages',
+    member: 'logging.members',
+    voice: 'logging.voice',
+    moderation: 'logging.moderation',
+    server: 'logging.server'
+  };
+
+  const channelTypes = {
+    message: 'channels.messageLog',
+    member: 'channels.joinLog',
+    voice: 'channels.voiceLog',
+    moderation: 'channels.modLog',
+    server: 'channels.serverLog'
+  };
+
+  switch (subcommand) {
+    case 'enable': {
+      const type = interaction.options.getString('type');
+      if (type === 'all') {
+        await Guild.updateGuild(interaction.guild.id, {
+          $set: {
+            'logging.messages': true,
+            'logging.members': true,
+            'logging.voice': true,
+            'logging.moderation': true,
+            'logging.server': true
+          }
+        });
+        await interaction.editReply({
+          embeds: [await successEmbed(interaction.guild.id, 'All Logs Enabled',
+            `${GLYPHS.SUCCESS} All logging types have been enabled.`)]
+        });
+      } else {
+        await Guild.updateGuild(interaction.guild.id, { $set: { [logTypes[type]]: true } });
+        await interaction.editReply({
+          embeds: [await successEmbed(interaction.guild.id, 'Logging Enabled',
+            `${GLYPHS.SUCCESS} ${type.charAt(0).toUpperCase() + type.slice(1)} logging is now enabled.`)]
+        });
+      }
+      break;
+    }
+
+    case 'disable': {
+      const type = interaction.options.getString('type');
+      if (type === 'all') {
+        await Guild.updateGuild(interaction.guild.id, {
+          $set: {
+            'logging.messages': false,
+            'logging.members': false,
+            'logging.voice': false,
+            'logging.moderation': false,
+            'logging.server': false
+          }
+        });
+        await interaction.editReply({
+          embeds: [await successEmbed(interaction.guild.id, 'All Logs Disabled',
+            `${GLYPHS.SUCCESS} All logging types have been disabled.`)]
+        });
+      } else {
+        await Guild.updateGuild(interaction.guild.id, { $set: { [logTypes[type]]: false } });
+        await interaction.editReply({
+          embeds: [await successEmbed(interaction.guild.id, 'Logging Disabled',
+            `${GLYPHS.SUCCESS} ${type.charAt(0).toUpperCase() + type.slice(1)} logging is now disabled.`)]
+        });
+      }
+      break;
+    }
+
+    case 'channel': {
+      const type = interaction.options.getString('type');
+      const channel = interaction.options.getChannel('channel');
+      await Guild.updateGuild(interaction.guild.id, { $set: { [channelTypes[type]]: channel.id } });
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, 'Log Channel Set',
+          `${GLYPHS.SUCCESS} ${type.charAt(0).toUpperCase() + type.slice(1)} logs will be sent to ${channel}`)]
+      });
+      break;
+    }
+
+    case 'status': {
+      const logging = guildConfig.logging || {};
+      const channels = guildConfig.channels || {};
+      
+      const statusEmbed = new EmbedBuilder()
+        .setTitle('📋 Logging Status')
+        .setColor(guildConfig.embedStyle?.color || '#5865F2')
+        .addFields(
+          { name: '📝 Message Logs', value: `${logging.messages ? '✅' : '❌'} ${channels.messageLog ? `<#${channels.messageLog}>` : 'No channel'}`, inline: true },
+          { name: '👥 Member Logs', value: `${logging.members ? '✅' : '❌'} ${channels.joinLog ? `<#${channels.joinLog}>` : 'No channel'}`, inline: true },
+          { name: '🔊 Voice Logs', value: `${logging.voice ? '✅' : '❌'} ${channels.voiceLog ? `<#${channels.voiceLog}>` : 'No channel'}`, inline: true },
+          { name: '🔨 Moderation Logs', value: `${logging.moderation ? '✅' : '❌'} ${channels.modLog ? `<#${channels.modLog}>` : 'No channel'}`, inline: true },
+          { name: '⚙️ Server Logs', value: `${logging.server ? '✅' : '❌'} ${channels.serverLog ? `<#${channels.serverLog}>` : 'No channel'}`, inline: true }
+        );
+      await interaction.editReply({ embeds: [statusEmbed] });
+      break;
+    }
+  }
+}
+
+// Handle autorole command
+async function handleAutoroleCommand(interaction, guildConfig) {
+  const { successEmbed, errorEmbed, infoEmbed, GLYPHS } = await import('../../utils/embeds.js');
+  const { EmbedBuilder } = await import('discord.js');
+  const subcommand = interaction.options.getSubcommand();
+
+  const autoroles = guildConfig.autorole || { enabled: true, roles: [], humanRoles: [], botRoles: [] };
+
+  switch (subcommand) {
+    case 'add': {
+      const role = interaction.options.getRole('role');
+      const type = interaction.options.getString('type') || 'all';
+
+      let targetArray;
+      let displayType;
+      if (type === 'humans') {
+        targetArray = 'autorole.humanRoles';
+        displayType = 'humans only';
+      } else if (type === 'bots') {
+        targetArray = 'autorole.botRoles';
+        displayType = 'bots only';
+      } else {
+        targetArray = 'autorole.roles';
+        displayType = 'all members';
+      }
+
+      await Guild.updateGuild(interaction.guild.id, {
+        $addToSet: { [targetArray]: role.id },
+        $set: { 'autorole.enabled': true }
+      });
+
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, 'Auto-Role Added',
+          `${GLYPHS.SUCCESS} ${role} will be given to ${displayType} when they join.`)]
+      });
+      break;
+    }
+
+    case 'remove': {
+      const role = interaction.options.getRole('role');
+      await Guild.updateGuild(interaction.guild.id, {
+        $pull: {
+          'autorole.roles': role.id,
+          'autorole.humanRoles': role.id,
+          'autorole.botRoles': role.id
+        }
+      });
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, 'Auto-Role Removed',
+          `${GLYPHS.SUCCESS} ${role} has been removed from auto-roles.`)]
+      });
+      break;
+    }
+
+    case 'list': {
+      const allRoles = (autoroles.roles || []).map(id => `<@&${id}> (all)`);
+      const humanRoles = (autoroles.humanRoles || []).map(id => `<@&${id}> (humans)`);
+      const botRoles = (autoroles.botRoles || []).map(id => `<@&${id}> (bots)`);
+      const combined = [...allRoles, ...humanRoles, ...botRoles];
+
+      const embed = new EmbedBuilder()
+        .setTitle('🎭 Auto-Roles')
+        .setColor(guildConfig.embedStyle?.color || '#5865F2')
+        .setDescription(combined.length > 0 ? combined.join('\n') : '*No auto-roles configured*')
+        .setFooter({ text: `Status: ${autoroles.enabled ? 'Enabled' : 'Disabled'}` });
+
+      await interaction.editReply({ embeds: [embed] });
+      break;
+    }
+
+    case 'clear': {
+      await Guild.updateGuild(interaction.guild.id, {
+        $set: {
+          'autorole.roles': [],
+          'autorole.humanRoles': [],
+          'autorole.botRoles': []
+        }
+      });
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, 'Auto-Roles Cleared',
+          `${GLYPHS.SUCCESS} All auto-roles have been removed.`)]
+      });
       break;
     }
   }

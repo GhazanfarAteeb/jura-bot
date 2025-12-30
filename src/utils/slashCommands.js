@@ -105,6 +105,197 @@ const slashCommands = [
         .setRequired(true))
     .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
 
+  new SlashCommandBuilder()
+    .setName('untimeout')
+    .setDescription('Remove timeout from a member')
+    .addUserOption(option =>
+      option.setName('user')
+        .setDescription('The user to remove timeout from')
+        .setRequired(true))
+    .addStringOption(option =>
+      option.setName('reason')
+        .setDescription('Reason for removing the timeout')
+        .setRequired(false))
+    .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
+
+  new SlashCommandBuilder()
+    .setName('verify')
+    .setDescription('Manage the verification system')
+    .addSubcommand(subcommand =>
+      subcommand.setName('setup')
+        .setDescription('Run the verification setup wizard'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('panel')
+        .setDescription('Send a verification panel to a channel')
+        .addChannelOption(option =>
+          option.setName('channel')
+            .setDescription('Channel to send the panel to')
+            .setRequired(false)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('manual')
+        .setDescription('Manually verify a user')
+        .addUserOption(option =>
+          option.setName('user')
+            .setDescription('The user to verify')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('status')
+        .setDescription('View current verification settings'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('enable')
+        .setDescription('Enable the verification system'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('disable')
+        .setDescription('Disable the verification system'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('setrole')
+        .setDescription('Set the verified role')
+        .addRoleOption(option =>
+          option.setName('role')
+            .setDescription('The role to give verified users')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('setchannel')
+        .setDescription('Set the verification channel')
+        .addChannelOption(option =>
+          option.setName('channel')
+            .setDescription('The channel for verification')
+            .setRequired(true)))
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
+
+  new SlashCommandBuilder()
+    .setName('cmdchannels')
+    .setDescription('Restrict bot commands to specific channels')
+    .addSubcommand(subcommand =>
+      subcommand.setName('enable')
+        .setDescription('Enable channel restrictions'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('disable')
+        .setDescription('Disable channel restrictions'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('add')
+        .setDescription('Add an allowed channel')
+        .addChannelOption(option =>
+          option.setName('channel')
+            .setDescription('The channel to allow commands in')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('remove')
+        .setDescription('Remove an allowed channel')
+        .addChannelOption(option =>
+          option.setName('channel')
+            .setDescription('The channel to remove from allowed list')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('bypass')
+        .setDescription('Add a role that bypasses channel restrictions')
+        .addStringOption(option =>
+          option.setName('action')
+            .setDescription('Add or remove bypass role')
+            .setRequired(true)
+            .addChoices(
+              { name: 'Add bypass role', value: 'add' },
+              { name: 'Remove bypass role', value: 'remove' }
+            ))
+        .addRoleOption(option =>
+          option.setName('role')
+            .setDescription('The role to add/remove from bypass')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('list')
+        .setDescription('View current channel restrictions'))
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
+
+  new SlashCommandBuilder()
+    .setName('logs')
+    .setDescription('Configure server logging')
+    .addSubcommand(subcommand =>
+      subcommand.setName('enable')
+        .setDescription('Enable a log type')
+        .addStringOption(option =>
+          option.setName('type')
+            .setDescription('Type of log to enable')
+            .setRequired(true)
+            .addChoices(
+              { name: 'All logs', value: 'all' },
+              { name: 'Message logs', value: 'message' },
+              { name: 'Member logs', value: 'member' },
+              { name: 'Voice logs', value: 'voice' },
+              { name: 'Moderation logs', value: 'moderation' },
+              { name: 'Server logs', value: 'server' }
+            )))
+    .addSubcommand(subcommand =>
+      subcommand.setName('disable')
+        .setDescription('Disable a log type')
+        .addStringOption(option =>
+          option.setName('type')
+            .setDescription('Type of log to disable')
+            .setRequired(true)
+            .addChoices(
+              { name: 'All logs', value: 'all' },
+              { name: 'Message logs', value: 'message' },
+              { name: 'Member logs', value: 'member' },
+              { name: 'Voice logs', value: 'voice' },
+              { name: 'Moderation logs', value: 'moderation' },
+              { name: 'Server logs', value: 'server' }
+            )))
+    .addSubcommand(subcommand =>
+      subcommand.setName('channel')
+        .setDescription('Set log channel')
+        .addStringOption(option =>
+          option.setName('type')
+            .setDescription('Type of log')
+            .setRequired(true)
+            .addChoices(
+              { name: 'Message logs', value: 'message' },
+              { name: 'Member logs', value: 'member' },
+              { name: 'Voice logs', value: 'voice' },
+              { name: 'Moderation logs', value: 'moderation' },
+              { name: 'Server logs', value: 'server' }
+            ))
+        .addChannelOption(option =>
+          option.setName('channel')
+            .setDescription('The channel for logs')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('status')
+        .setDescription('View current logging settings'))
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
+
+  new SlashCommandBuilder()
+    .setName('autorole')
+    .setDescription('Configure auto-role for new members')
+    .addSubcommand(subcommand =>
+      subcommand.setName('add')
+        .setDescription('Add an auto-role')
+        .addRoleOption(option =>
+          option.setName('role')
+            .setDescription('The role to automatically assign')
+            .setRequired(true))
+        .addStringOption(option =>
+          option.setName('type')
+            .setDescription('Type of members to assign to')
+            .setRequired(false)
+            .addChoices(
+              { name: 'All members', value: 'all' },
+              { name: 'Humans only', value: 'humans' },
+              { name: 'Bots only', value: 'bots' }
+            )))
+    .addSubcommand(subcommand =>
+      subcommand.setName('remove')
+        .setDescription('Remove an auto-role')
+        .addRoleOption(option =>
+          option.setName('role')
+            .setDescription('The role to remove from auto-assign')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('list')
+        .setDescription('View current auto-roles'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('clear')
+        .setDescription('Remove all auto-roles'))
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles),
+
   // AutoMod Configuration Commands
   new SlashCommandBuilder()
     .setName('automod')

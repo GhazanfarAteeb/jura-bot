@@ -134,7 +134,7 @@ class MessageCreate extends Event {
             content: `You must be connected to a voice channel to use this \`${command.name}\` command.`,
           });
         if (
-          !message.guild.members.me.permissions.has(PermissionFlagsBits.Speak)
+          !message.guild.members.me.permissions.has(PermissionFlagsBits.Connect)
         )
           return await safeReply({
             content: `I don't have \`CONNECT\` permissions to execute this \`${command.name}\` command.`,

@@ -55,8 +55,7 @@ export default {
           return message.reply({ embeds: [embed] });
         }
 
-        guildConfig.commandChannels.enabled = true;
-        await guildConfig.save();
+        await Guild.updateGuild(message.guild.id, { $set: { 'commandChannels.enabled': true } });
 
         const embed = await successEmbed(message.guild.id, 'Channel Restrictions Enabled',
           `${GLYPHS.SUCCESS} Bot commands will now only work in the allowed channels.\n\n**Allowed Channels:** ${guildConfig.commandChannels.channels.length}\n**Bypass Roles:** ${guildConfig.commandChannels.bypassRoles.length}`
@@ -65,8 +64,7 @@ export default {
       }
 
       case 'disable': {
-        guildConfig.commandChannels.enabled = false;
-        await guildConfig.save();
+        await Guild.updateGuild(message.guild.id, { $set: { 'commandChannels.enabled': false } });
 
         const embed = await successEmbed(message.guild.id, 'Channel Restrictions Disabled',
           `${GLYPHS.SUCCESS} Bot commands can now be used in any channel.`
@@ -98,11 +96,10 @@ export default {
           return message.reply({ embeds: [embed] });
         }
 
-        guildConfig.commandChannels.channels.push(channel.id);
-        await guildConfig.save();
+        await Guild.updateGuild(message.guild.id, { $push: { 'commandChannels.channels': channel.id } });
 
         const embed = await successEmbed(message.guild.id, 'Channel Added',
-          `${GLYPHS.SUCCESS} ${channel} has been added to allowed channels!\n\n**Total Channels:** ${guildConfig.commandChannels.channels.length}`
+          `${GLYPHS.SUCCESS} ${channel} has been added to allowed channels!\n\n**Total Channels:** ${guildConfig.commandChannels.channels.length + 1}`
         );
         return message.reply({ embeds: [embed] });
       }
@@ -125,11 +122,10 @@ export default {
           return message.reply({ embeds: [embed] });
         }
 
-        guildConfig.commandChannels.channels.splice(index, 1);
-        await guildConfig.save();
+        await Guild.updateGuild(message.guild.id, { $pull: { 'commandChannels.channels': channel.id } });
 
         const embed = await successEmbed(message.guild.id, 'Channel Removed',
-          `${GLYPHS.SUCCESS} ${channel} has been removed from allowed channels.\n\n**Remaining Channels:** ${guildConfig.commandChannels.channels.length}`
+          `${GLYPHS.SUCCESS} ${channel} has been removed from allowed channels.\n\n**Remaining Channels:** ${guildConfig.commandChannels.channels.length - 1}`
         );
         return message.reply({ embeds: [embed] });
       }
@@ -183,8 +179,7 @@ export default {
             return message.reply({ embeds: [embed] });
           }
 
-          guildConfig.commandChannels.bypassRoles.push(role.id);
-          await guildConfig.save();
+          await Guild.updateGuild(message.guild.id, { $push: { 'commandChannels.bypassRoles': role.id } });
 
           const embed = await successEmbed(message.guild.id, 'Bypass Role Added',
             `${GLYPHS.SUCCESS} Members with ${role} can now use commands in any channel.`
@@ -201,8 +196,7 @@ export default {
             return message.reply({ embeds: [embed] });
           }
 
-          guildConfig.commandChannels.bypassRoles.splice(index, 1);
-          await guildConfig.save();
+          await Guild.updateGuild(message.guild.id, { $pull: { 'commandChannels.bypassRoles': role.id } });
 
           const embed = await successEmbed(message.guild.id, 'Bypass Role Removed',
             `${GLYPHS.SUCCESS} ${role} no longer bypasses channel restrictions.`

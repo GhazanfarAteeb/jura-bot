@@ -127,13 +127,18 @@ async function handleVoiceLeave(state, guildConfig, sessionKey, client) {
     }
   }
 
-  // Award XP
+  // Award XP - Validate required fields before database operations
+  if (!session.userId || !session.guildId) {
+    console.error('Voice XP Error: Missing userId or guildId in session', session);
+    return;
+  }
+
   let levelData = await Level.findOne({ userId: session.userId, guildId: session.guildId });
   if (!levelData) {
     levelData = new Level({
       userId: session.userId,
       guildId: session.guildId,
-      username: member?.user?.username
+      username: member?.user?.username || 'Unknown'
     });
   }
 
