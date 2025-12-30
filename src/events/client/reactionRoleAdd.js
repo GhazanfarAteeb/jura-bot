@@ -5,6 +5,9 @@ import redis from '../../utils/redis.js';
 // Fallback lock map when Redis is unavailable
 const colorRoleLocks = new Map();
 
+// Track bot-initiated reaction removals to prevent triggering role removal
+export const botRemovedReactions = new Map();
+
 export default {
   name: Events.MessageReactionAdd,
 
@@ -19,6 +22,16 @@ export default {
           await reaction.fetch();
         } catch (error) {
           console.error('Failed to fetch reaction:', error);
+          return;
+        }
+      }
+
+      // Also fetch partial message if needed
+      if (reaction.message.partial) {
+        try {
+          await reaction.message.fetch();
+        } catch (error) {
+          console.error('Failed to fetch message:', error);
           return;
         }
       }
@@ -119,6 +132,12 @@ export default {
                   `<:${r.emoji.name}:${r.emoji.id}>` === oldRoleConfig.emoji
                 );
                 if (reactions) {
+                  // Mark this as a bot-removed reaction
+                  const oldEmojiName = reactions.emoji.name;
+                  const removeKey = `${message.id}:${user.id}:${oldEmojiName}`;
+                  botRemovedReactions.set(removeKey, Date.now());
+                  setTimeout(() => botRemovedReactions.delete(removeKey), 10000);
+                  
                   await reactions.users.remove(user.id).catch(() => { });
                 }
               }
@@ -144,19 +163,25 @@ export default {
       const colorRolesConfig = guildConfig.settings.colorRoles;
       const emojiName = emoji.name;
 
+      // Map emoji to color name
+      const emojiToColorName = {
+        '❤️': 'Red', '🧡': 'Orange', '💛': 'Yellow', '💚': 'Green',
+        '💙': 'Blue', '💜': 'Purple', '🩷': 'Pink', '🤍': 'White',
+        '🖤': 'Black', '🩵': 'Cyan', '🤎': 'Brown', '💗': 'Hot Pink'
+      };
+
+      const colorNameToEmoji = {
+        'Red': '❤️', 'Orange': '🧡', 'Yellow': '💛', 'Green': '💚',
+        'Blue': '💙', 'Purple': '💜', 'Pink': '🩷', 'White': '🤍',
+        'Black': '🖤', 'Cyan': '🩵', 'Brown': '🤎', 'Hot Pink': '💗'
+      };
+
       // Find the role for this emoji
       let roleConfig = colorRolesConfig.roles?.find(r => r.emoji === emojiName);
 
       // If no roles map, try to find by role name prefix
       if (!roleConfig) {
-        // Map emoji to color name
-        const emojiToColor = {
-          '❤️': 'Red', '🧡': 'Orange', '💛': 'Yellow', '💚': 'Green',
-          '💙': 'Blue', '💜': 'Purple', '🩷': 'Pink', '🤍': 'White',
-          '🖤': 'Black', '🩵': 'Cyan', '🤎': 'Brown', '💗': 'Hot Pink'
-        };
-
-        const colorName = emojiToColor[emojiName];
+        const colorName = emojiToColorName[emojiName];
         if (!colorName) return;
 
         const role = guild.roles.cache.find(r => r.name === `🎨 ${colorName}`);
@@ -174,7 +199,6 @@ export default {
       if (!member) return;
 
       // Remove other color roles first (only one color at a time)
-      const allColorRoles = guild.roles.cache.filter(r => r.name.startsWith('🎨 '));
       const memberColorRoles = member.roles.cache.filter(r => r.name.startsWith('🎨 '));
 
       // Fetch the message to ensure reactions cache is populated
@@ -188,21 +212,23 @@ export default {
       for (const [roleId, existingRole] of memberColorRoles) {
         if (roleId !== role.id) {
           try {
+            // Remove the old color role from member
             await member.roles.remove(existingRole, 'Color role change');
 
             // Remove their reaction from the old color
-            const emojiToColor = {
-              'Red': '❤️', 'Orange': '🧡', 'Yellow': '💛', 'Green': '💚',
-              'Blue': '💙', 'Purple': '💜', 'Pink': '🩷', 'White': '🤍',
-              'Black': '🖤', 'Cyan': '🩵', 'Brown': '🤎', 'Hot Pink': '💗'
-            };
-
             const colorName = existingRole.name.replace('🎨 ', '');
-            const oldEmoji = emojiToColor[colorName];
+            const oldEmoji = colorNameToEmoji[colorName];
 
             if (oldEmoji) {
               const oldReaction = fetchedMessage.reactions.cache.find(r => r.emoji.name === oldEmoji);
               if (oldReaction) {
+                // Mark this as a bot-removed reaction so reactionRoleRemove doesn't try to remove the role again
+                const removeKey = `${message.id}:${user.id}:${oldEmoji}`;
+                botRemovedReactions.set(removeKey, Date.now());
+                
+                // Clean up old entries after 10 seconds
+                setTimeout(() => botRemovedReactions.delete(removeKey), 10000);
+                
                 await oldReaction.users.remove(user.id).catch(() => { });
               }
             }

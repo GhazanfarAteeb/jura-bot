@@ -1,5 +1,6 @@
 import { Events } from 'discord.js';
 import Guild from '../../models/Guild.js';
+import { botRemovedReactions } from './reactionRoleAdd.js';
 
 export default {
   name: Events.MessageReactionRemove,
@@ -19,10 +20,28 @@ export default {
         }
       }
 
+      // Also fetch partial message if needed
+      if (reaction.message.partial) {
+        try {
+          await reaction.message.fetch();
+        } catch (error) {
+          console.error('Failed to fetch message:', error);
+          return;
+        }
+      }
+
       const { message, emoji } = reaction;
       const guild = message.guild;
 
       if (!guild) return;
+
+      // Check if this was a bot-initiated removal (from switching colors)
+      const removeKey = `${message.id}:${user.id}:${emoji.name}`;
+      if (botRemovedReactions.has(removeKey)) {
+        // This reaction was removed by the bot during color switching, don't remove the role
+        botRemovedReactions.delete(removeKey);
+        return;
+      }
 
       // Get guild config
       const guildConfig = await Guild.getGuild(guild.id);
@@ -99,9 +118,9 @@ export default {
       const member = await guild.members.fetch(user.id).catch(() => null);
       if (!member) return;
 
-      // Remove the role
+      // Remove the role only if user manually removed their reaction
       if (member.roles.cache.has(role.id)) {
-        await member.roles.remove(role, 'Color role removed');
+        await member.roles.remove(role, 'Color role removed by user');
       }
 
     } catch (error) {
