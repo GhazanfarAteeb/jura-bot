@@ -55,8 +55,27 @@ export default {
       const guildConfig = await Guild.getGuild(guild.id);
       logger.info(`[ReactionRoleAdd] Guild config loaded. ColorRoles messageId: ${guildConfig.settings?.colorRoles?.messageId}, Current message: ${message.id}`);
 
-      // Check for color roles first (check if this message is a color roles panel)
-      if (guildConfig.settings?.colorRoles?.messageId === message.id) {
+      // Check for color roles - either by stored messageId OR by checking if this looks like a color roles panel
+      const isColorRolesPanel = guildConfig.settings?.colorRoles?.messageId === message.id;
+      
+      // Also check reactionRoles.messages for this message (fallback check)
+      const reactionRoleMessage = guildConfig.settings?.reactionRoles?.messages?.find(
+        m => m.messageId === message.id && m.channelId === message.channel.id
+      );
+      const isColorRoleFromReactionRoles = reactionRoleMessage?.roles?.some(r => {
+        const colorEmojis = ['❤️', '🧡', '💛', '💚', '💙', '💜', '🩷', '🤍', '🖤', '🩵', '🤎', '💗'];
+        return colorEmojis.includes(r.emoji);
+      });
+
+      // Fallback: Check if this message is in the color roles channel and has color emojis
+      const isInColorChannel = guildConfig.settings?.colorRoles?.channelId === message.channel.id;
+      const colorEmojis = ['❤️', '🧡', '💛', '💚', '💙', '💜', '🩷', '🤍', '🖤', '🩵', '🤎', '💗'];
+      const isColorEmoji = colorEmojis.includes(emoji.name);
+      const looksLikeColorPanel = isInColorChannel && isColorEmoji;
+
+      logger.info(`[ReactionRoleAdd] isColorRolesPanel: ${isColorRolesPanel}, isColorRoleFromReactionRoles: ${isColorRoleFromReactionRoles}, looksLikeColorPanel: ${looksLikeColorPanel}`);
+
+      if (isColorRolesPanel || isColorRoleFromReactionRoles || looksLikeColorPanel) {
         logger.info('[ReactionRoleAdd] This is a color roles panel message');
 
         // Use Redis lock to prevent race conditions when user reacts quickly
@@ -94,7 +113,7 @@ export default {
 
       // Then check regular reaction roles
       logger.info(`[ReactionRoleAdd] Checking regular reaction roles. Messages configured: ${guildConfig.settings?.reactionRoles?.messages?.length || 0}`);
-      
+
       if (!guildConfig.settings?.reactionRoles?.messages?.length) {
         logger.info('[ReactionRoleAdd] No reaction role messages configured');
         return;
@@ -115,7 +134,7 @@ export default {
       // Find the role for this emoji
       const emojiKey = emoji.id ? `<:${emoji.name}:${emoji.id}>` : emoji.name;
       logger.info(`[ReactionRoleAdd] Looking for role with emoji: ${emojiKey}`);
-      
+
       const roleConfig = reactionMessage.roles.find(r => r.emoji === emojiKey || r.emoji === emoji.name);
 
       if (!roleConfig) {
@@ -139,7 +158,7 @@ export default {
         logger.error(`[ReactionRoleAdd] Failed to fetch member ${user.id}:`, err);
         return null;
       });
-      
+
       if (!member) {
         logger.error(`[ReactionRoleAdd] Could not fetch member ${user.id}`);
         return;
@@ -242,7 +261,7 @@ export default {
       if (!roleConfig) {
         const colorName = emojiToColorName[emojiName];
         logger.info(`[handleColorRole] Looking up emoji ${emojiName} -> colorName: ${colorName || 'not found'}`);
-        
+
         if (!colorName) {
           logger.info(`[handleColorRole] Emoji ${emojiName} not found in emojiToColorName map`);
           return;
@@ -285,7 +304,7 @@ export default {
         logger.error(`[handleColorRole] Failed to fetch member ${user.id}:`, err);
         return null;
       });
-      
+
       if (!member) {
         logger.error(`[handleColorRole] Could not fetch member ${user.id}`);
         return;

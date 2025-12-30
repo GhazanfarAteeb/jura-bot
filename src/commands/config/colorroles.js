@@ -68,6 +68,11 @@ export default {
         return this.deletePanel(message, guildConfig);
       }
 
+      // Fix position command - moves color roles to top
+      if (subCommand === 'fixposition' || subCommand === 'fixpos' || subCommand === 'position') {
+        return this.fixRolePositions(message, guildConfig);
+      }
+
       // Settings/info command
       if (subCommand === 'settings' || subCommand === 'info') {
         return this.showSettings(message, guildConfig);
@@ -99,6 +104,7 @@ export default {
         `${GLYPHS.ARROW_RIGHT} \`${prefix}colorroles settings\` - View current settings\n` +
         `${GLYPHS.ARROW_RIGHT} \`${prefix}colorroles preview\` - Preview the panel\n` +
         `${GLYPHS.ARROW_RIGHT} \`${prefix}colorroles refresh\` - Update existing panel\n` +
+        `${GLYPHS.ARROW_RIGHT} \`${prefix}colorroles fixposition\` - Move roles to top\n` +
         `${GLYPHS.ARROW_RIGHT} \`${prefix}colorroles delete\` - Delete panel & channel\n\n` +
         `**Customization:**\n` +
         `${GLYPHS.ARROW_RIGHT} \`${prefix}colorroles set title <text>\`\n` +
@@ -112,6 +118,59 @@ export default {
       .setTimestamp();
 
     return message.reply({ embeds: [embed] });
+  },
+
+  async fixRolePositions(message, guildConfig) {
+    const guildId = message.guild.id;
+
+    try {
+      // Get all color roles
+      const allColorRoles = message.guild.roles.cache.filter(r => r.name.startsWith('🎨 '));
+
+      if (allColorRoles.size === 0) {
+        const embed = await errorEmbed(guildId, 'No Color Roles',
+          `${GLYPHS.ERROR} No color roles found in this server.\n\nRun \`${await getPrefix(guildId)}colorroles setup\` first.`
+        );
+        return message.reply({ embeds: [embed] });
+      }
+
+      // Get the bot's highest role position
+      const botMember = await message.guild.members.fetch(message.client.user.id);
+      const botHighestRole = botMember.roles.highest;
+      const targetPosition = Math.max(1, botHighestRole.position - 1);
+
+      const statusMsg = await message.reply({
+        embeds: [new EmbedBuilder()
+          .setColor('#5865F2')
+          .setDescription(`🔄 Moving ${allColorRoles.size} color roles to position ${targetPosition}...`)
+        ]
+      });
+
+      // Build position array
+      const rolePositions = [];
+      let pos = targetPosition;
+
+      for (const [roleId] of allColorRoles) {
+        rolePositions.push({ role: roleId, position: pos });
+        pos = Math.max(1, pos - 1);
+      }
+
+      await message.guild.roles.setPositions(rolePositions);
+
+      const embed = await successEmbed(guildId, 'Roles Repositioned',
+        `${GLYPHS.SUCCESS} Successfully moved ${allColorRoles.size} color roles to the top!\n\n` +
+        `Color roles are now positioned just below the bot's highest role.`
+      );
+      return statusMsg.edit({ embeds: [embed] });
+
+    } catch (error) {
+      console.error('Fix position error:', error);
+      const embed = await errorEmbed(guildId, 'Failed to Reposition',
+        `${GLYPHS.ERROR} Failed to move roles.\n\n**Error:** ${error.message}\n\n` +
+        `Make sure the bot's role is higher than the color roles.`
+      );
+      return message.reply({ embeds: [embed] });
+    }
   },
 
   async setupColorRoles(message, args, guildConfig) {
@@ -162,6 +221,12 @@ export default {
       const createdRoles = [];
       const existingRoles = [];
 
+      // Get the bot's highest role position to determine where to place color roles
+      const botMember = await message.guild.members.fetch(message.client.user.id);
+      const botHighestRole = botMember.roles.highest;
+      // Place color roles just below the bot's highest role
+      const targetPosition = Math.max(1, botHighestRole.position - 1);
+
       for (const colorData of DEFAULT_COLORS) {
         let role = message.guild.roles.cache.find(r => r.name === `🎨 ${colorData.name}`);
 
@@ -171,7 +236,8 @@ export default {
               name: `🎨 ${colorData.name}`,
               color: colorData.color,
               reason: 'Color roles setup',
-              permissions: []
+              permissions: [],
+              position: targetPosition
             });
             createdRoles.push(role);
           } catch (err) {
@@ -181,6 +247,25 @@ export default {
         } else {
           existingRoles.push(role);
         }
+      }
+
+      // 2.5 Reposition all color roles to be near the top (below bot's role)
+      try {
+        const allColorRoles = message.guild.roles.cache.filter(r => r.name.startsWith('🎨 '));
+        const rolePositions = [];
+        let pos = targetPosition;
+        
+        for (const [roleId, role] of allColorRoles) {
+          rolePositions.push({ role: roleId, position: pos });
+          pos = Math.max(1, pos - 1);
+        }
+        
+        if (rolePositions.length > 0) {
+          await message.guild.roles.setPositions(rolePositions);
+        }
+      } catch (err) {
+        console.error('Failed to reposition color roles:', err);
+        // Continue anyway, roles will still work just might not show color
       }
 
       // 3. Get settings or use defaults

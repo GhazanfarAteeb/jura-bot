@@ -56,8 +56,16 @@ export default {
       const guildConfig = await Guild.getGuild(guild.id);
       logger.info(`[ReactionRoleRemove] Guild config loaded. ColorRoles messageId: ${guildConfig.settings?.colorRoles?.messageId}, Current message: ${message.id}`);
 
-      // Check for color roles first (check if this message is a color roles panel)
-      if (guildConfig.settings?.colorRoles?.messageId === message.id) {
+      // Check for color roles - either by stored messageId OR by checking if this looks like a color roles panel
+      const isColorRolesPanel = guildConfig.settings?.colorRoles?.messageId === message.id;
+      
+      // Fallback: Check if this message is in the color roles channel and has color emojis
+      const isInColorChannel = guildConfig.settings?.colorRoles?.channelId === message.channel.id;
+      const colorEmojis = ['❤️', '🧡', '💛', '💚', '💙', '💜', '🩷', '🤍', '🖤', '🩵', '🤎', '💗'];
+      const isColorEmoji = colorEmojis.includes(emoji.name);
+      const looksLikeColorPanel = isInColorChannel && isColorEmoji;
+
+      if (isColorRolesPanel || looksLikeColorPanel) {
         logger.info('[ReactionRoleRemove] This is a color roles panel message');
         return this.handleColorRoleRemove(reaction, user, guild, guildConfig, emoji);
       }
