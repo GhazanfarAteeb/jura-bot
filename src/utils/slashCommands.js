@@ -161,6 +161,18 @@ const slashCommands = [
           option.setName('channel')
             .setDescription('The channel for verification')
             .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('settype')
+        .setDescription('Set the verification type')
+        .addStringOption(option =>
+          option.setName('type')
+            .setDescription('The type of verification')
+            .setRequired(true)
+            .addChoices(
+              { name: 'Button (simple click)', value: 'button' },
+              { name: 'Captcha (image verification)', value: 'captcha' },
+              { name: 'Reaction (react to message)', value: 'reaction' }
+            )))
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
 
   new SlashCommandBuilder()

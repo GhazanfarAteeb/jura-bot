@@ -1379,7 +1379,7 @@ async function handleVerifyCommand(interaction, client, guildConfig) {
 
     case 'panel': {
       const channel = interaction.options.getChannel('channel') || interaction.channel;
-      
+
       if (!guildConfig.features?.verificationSystem?.role) {
         await interaction.editReply({
           embeds: [await errorEmbed(interaction.guild.id, 'Setup Required',
@@ -1389,12 +1389,12 @@ async function handleVerifyCommand(interaction, client, guildConfig) {
       }
 
       const verificationType = guildConfig.features?.verificationSystem?.type || 'button';
-      
+
       const panelEmbed = new EmbedBuilder()
         .setColor('#5865F2')
         .setTitle('🔐 Server Verification')
         .setDescription(
-          verificationType === 'captcha' 
+          verificationType === 'captcha'
             ? 'Click the button below to start captcha verification and gain access to the server!'
             : 'Click the button below to verify yourself and gain access to the server!'
         )
@@ -1419,7 +1419,7 @@ async function handleVerifyCommand(interaction, client, guildConfig) {
     case 'manual': {
       const user = interaction.options.getUser('user');
       const member = await interaction.guild.members.fetch(user.id).catch(() => null);
-      
+
       if (!member) {
         await interaction.editReply({
           embeds: [await errorEmbed(interaction.guild.id, 'User Not Found',
@@ -1495,6 +1495,23 @@ async function handleVerifyCommand(interaction, client, guildConfig) {
       await interaction.editReply({
         embeds: [await successEmbed(interaction.guild.id, 'Verification Channel Set',
           `${GLYPHS.SUCCESS} Verification channel set to ${channel}`)]
+      });
+      break;
+    }
+
+    case 'settype': {
+      const type = interaction.options.getString('type');
+      await Guild.updateGuild(interaction.guild.id, { $set: { 'features.verificationSystem.type': type } });
+      
+      const typeDescriptions = {
+        button: 'Simple button click verification',
+        captcha: 'Image captcha verification (creates private thread)',
+        reaction: 'Reaction-based verification'
+      };
+      
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, 'Verification Type Set',
+          `${GLYPHS.SUCCESS} Verification type set to **${type}**\n\n${typeDescriptions[type]}\n\n⚠️ **Note:** You need to re-send the verification panel with \`/verify panel\` for changes to take effect.`)]
       });
       break;
     }
@@ -1716,7 +1733,7 @@ async function handleLogsCommand(interaction, guildConfig) {
     case 'status': {
       const logging = guildConfig.logging || {};
       const channels = guildConfig.channels || {};
-      
+
       const statusEmbed = new EmbedBuilder()
         .setTitle('📋 Logging Status')
         .setColor(guildConfig.embedStyle?.color || '#5865F2')

@@ -386,7 +386,7 @@ async function handleCaptchaVerification(interaction, verification, verifiedRole
     });
     await interaction.editReply({
       content: `❌ Failed to create verification thread. Error: ${error.message}\n\nPlease ensure the bot has "Create Private Threads" and "Send Messages in Threads" permissions, or contact a moderator.`
-    }).catch(() => {});
+    }).catch(() => { });
   }
 }
 
