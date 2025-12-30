@@ -23,7 +23,8 @@ const verificationSchema = new mongoose.Schema({
     code: String,
     attempts: { type: Number, default: 0 },
     maxAttempts: { type: Number, default: 3 },
-    expiresAt: Date
+    expiresAt: Date,
+    threadId: String // Private thread for captcha verification
   },
 
   // Pending verification
