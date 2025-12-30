@@ -1,9 +1,9 @@
-import { 
-  EmbedBuilder, 
-  ActionRowBuilder, 
-  ButtonBuilder, 
-  ButtonStyle, 
-  ChannelType, 
+import {
+  EmbedBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  ChannelType,
   AttachmentBuilder,
   MessageFlags
 } from 'discord.js';
@@ -75,7 +75,7 @@ async function handleVerifyButton(interaction, client) {
 async function runSecurityChecks(member, guildConfig) {
   const issues = [];
   const settings = guildConfig.features?.verificationSystem?.securityChecks || {};
-  
+
   // Account age check
   if (settings.minAccountAge) {
     const accountAge = Date.now() - member.user.createdTimestamp;
@@ -190,14 +190,26 @@ async function handleCaptchaVerification(interaction, verification, verifiedRole
   await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   try {
-    // Create a private thread for verification
-    const thread = await interaction.channel.threads.create({
-      name: `verify-${interaction.user.username}`,
-      type: ChannelType.PrivateThread,
-      autoArchiveDuration: 60, // Auto archive after 1 hour
-      invitable: false, // Only mods can add people
-      reason: `Verification thread for ${interaction.user.tag}`
-    });
+    // Create a private thread for verification (fallback to public if private fails)
+    let thread;
+    try {
+      thread = await interaction.channel.threads.create({
+        name: `verify-${interaction.user.username}`,
+        type: ChannelType.PrivateThread,
+        autoArchiveDuration: 60, // Auto archive after 1 hour
+        invitable: false, // Only mods can add people
+        reason: `Verification thread for ${interaction.user.tag}`
+      });
+    } catch (privateThreadError) {
+      console.log('Private thread creation failed, trying public thread:', privateThreadError.message);
+      // Fallback to public thread if private threads aren't available (requires Server Boost Level 2)
+      thread = await interaction.channel.threads.create({
+        name: `verify-${interaction.user.username}-${Date.now().toString(36)}`,
+        type: ChannelType.PublicThread,
+        autoArchiveDuration: 60,
+        reason: `Verification thread for ${interaction.user.tag}`
+      });
+    }
 
     // Add the user to the thread
     await thread.members.add(userId);
@@ -247,27 +259,27 @@ async function handleCaptchaVerification(interaction, verification, verifiedRole
       .setImage('attachment://captcha.png')
       .setFooter({ text: `Attempts: 0/3 • Expires in 5 minutes` });
 
-    await thread.send({ 
+    await thread.send({
       content: `${interaction.user}`,
-      embeds: [captchaEmbed], 
+      embeds: [captchaEmbed],
       files: [attachment],
       components: [row]
     });
 
     // Set up message collector for captcha responses
     const filter = m => m.author.id === userId && !m.author.bot;
-    const collector = thread.createMessageCollector({ 
-      filter, 
+    const collector = thread.createMessageCollector({
+      filter,
       time: 5 * 60 * 1000, // 5 minutes
       max: 10 // Max messages to collect
     });
 
     collector.on('collect', async (message) => {
       const input = message.content.trim().toUpperCase();
-      
+
       // Refresh verification data
       const currentVerification = await Verification.getVerification(interaction.guild.id, userId);
-      
+
       if (!currentVerification.captcha?.code) {
         collector.stop('expired');
         return;
@@ -279,7 +291,7 @@ async function handleCaptchaVerification(interaction, verification, verifiedRole
       if (result.valid) {
         // Success!
         collector.stop('success');
-        
+
         try {
           await member.roles.add(verifiedRole);
           await currentVerification.verify('captcha');
@@ -342,7 +354,7 @@ async function handleCaptchaVerification(interaction, verification, verifiedRole
 
       try {
         await thread.send({ content: endMessage });
-        
+
         // Clear pending verification
         const currentVerification = await Verification.getVerification(interaction.guild.id, userId);
         currentVerification.pendingVerification = false;
@@ -365,16 +377,23 @@ async function handleCaptchaVerification(interaction, verification, verifiedRole
 
   } catch (error) {
     console.error('Captcha thread creation error:', error);
-    await interaction.editReply({
-      content: '❌ Failed to create verification thread. Please try again or contact a moderator.'
+    console.error('Error details:', {
+      code: error.code,
+      message: error.message,
+      channelType: interaction.channel?.type,
+      guildId: interaction.guild?.id,
+      permissions: interaction.guild?.members?.me?.permissionsIn(interaction.channel)?.toArray()
     });
+    await interaction.editReply({
+      content: `❌ Failed to create verification thread. Error: ${error.message}\n\nPlease ensure the bot has "Create Private Threads" and "Send Messages in Threads" permissions, or contact a moderator.`
+    }).catch(() => {});
   }
 }
 
 // Handle captcha button interactions (refresh, cancel)
 async function handleCaptchaButton(interaction, client) {
   const [, action, targetUserId] = interaction.customId.split('_');
-  
+
   // Only allow the target user
   if (interaction.user.id !== targetUserId) {
     return interaction.reply({

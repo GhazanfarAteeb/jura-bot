@@ -1388,17 +1388,23 @@ async function handleVerifyCommand(interaction, client, guildConfig) {
         return;
       }
 
+      const verificationType = guildConfig.features?.verificationSystem?.type || 'button';
+      
       const panelEmbed = new EmbedBuilder()
         .setColor('#5865F2')
         .setTitle('🔐 Server Verification')
-        .setDescription('Click the button below to verify yourself and gain access to the server!')
+        .setDescription(
+          verificationType === 'captcha' 
+            ? 'Click the button below to start captcha verification and gain access to the server!'
+            : 'Click the button below to verify yourself and gain access to the server!'
+        )
         .setFooter({ text: 'This helps us prevent bots and raiders.' });
 
       const row = new ActionRowBuilder()
         .addComponents(
           new ButtonBuilder()
-            .setCustomId('verify_button')
-            .setLabel('✅ Verify')
+            .setCustomId(verificationType === 'captcha' ? 'verify_captcha' : 'verify_button')
+            .setLabel(verificationType === 'captcha' ? '🔐 Verify (Captcha)' : '✅ Verify')
             .setStyle(ButtonStyle.Success)
         );
 

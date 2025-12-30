@@ -53,43 +53,43 @@ export async function generateCaptchaImage(code) {
 
   for (let i = 0; i < code.length; i++) {
     const char = code[i];
-    
+
     // Random rotation
     const rotation = (Math.random() - 0.5) * 0.5;
-    
+
     // Random font size
     const fontSize = 36 + Math.random() * 12;
-    
+
     // Random color
     const color = colors[Math.floor(Math.random() * colors.length)];
-    
+
     // Random y offset
     const yOffset = 55 + (Math.random() - 0.5) * 20;
-    
+
     ctx.save();
     ctx.translate(charWidth * (i + 0.8), yOffset);
     ctx.rotate(rotation);
-    
+
     // Shadow for depth
     ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
     ctx.shadowBlur = 4;
     ctx.shadowOffsetX = 2;
     ctx.shadowOffsetY = 2;
-    
+
     // Text styling
     ctx.font = `bold ${fontSize}px Arial, sans-serif`;
     ctx.fillStyle = color;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    
+
     // Draw character outline
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
     ctx.lineWidth = 1;
     ctx.strokeText(char, 0, 0);
-    
+
     // Draw character
     ctx.fillText(char, 0, 0);
-    
+
     ctx.restore();
   }
 
