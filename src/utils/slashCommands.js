@@ -773,22 +773,6 @@ const slashCommands = [
         .setRequired(false))
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
 
-  // Lockdown Command
-  new SlashCommandBuilder()
-    .setName('lockdown')
-    .setDescription('Lock or unlock the server')
-    .addSubcommand(subcommand =>
-      subcommand.setName('start')
-        .setDescription('Start a server lockdown')
-        .addStringOption(option =>
-          option.setName('reason')
-            .setDescription('Reason for the lockdown')
-            .setRequired(false)))
-    .addSubcommand(subcommand =>
-      subcommand.setName('end')
-        .setDescription('End the server lockdown'))
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
-
   // Giveaway Command
   new SlashCommandBuilder()
     .setName('giveaway')
