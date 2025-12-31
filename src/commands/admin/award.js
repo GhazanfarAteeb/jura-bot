@@ -2,7 +2,8 @@ import { PermissionFlagsBits, EmbedBuilder } from 'discord.js';
 import Economy from '../../models/Economy.js';
 import Level from '../../models/Level.js';
 import Guild from '../../models/Guild.js';
-import { successEmbed, errorEmbed, infoEmbed, GLYPHS } from '../../utils/embeds.js';
+import ModLog from '../../models/ModLog.js';
+import { successEmbed, errorEmbed, infoEmbed, GLYPHS, createEmbed } from '../../utils/embeds.js';
 import { getPrefix } from '../../utils/helpers.js';
 
 export default {
@@ -92,6 +93,17 @@ export default {
       );
 
       await message.reply({ embeds: [embed] });
+
+      // Log to mod log channel
+      await logAward(message.guild, guildConfig, {
+        type: type === 'coins' || type === 'coin' || type === 'money' ? 'coins' : (type === 'rep' || type === 'reputation' ? 'rep' : 'xp'),
+        targetUser,
+        moderator: message.author,
+        amount,
+        newValue: result.newValue,
+        emoji: result.emoji,
+        typeName: result.typeName
+      });
 
       // Try to DM the user
       try {
@@ -235,3 +247,61 @@ async function handleRep(user, guildId, amount, admin) {
     newValue: economy.reputation
   };
 }
+
+// Log award action to mod log channel
+async function logAward(guild, guildConfig, data) {
+  try {
+    // Check if mod log channel is configured
+    if (!guildConfig?.channels?.modLog) return;
+
+    const modLogChannel = guild.channels.cache.get(guildConfig.channels.modLog);
+    if (!modLogChannel) return;
+
+    const isAdding = data.amount > 0;
+    const absAmount = Math.abs(data.amount);
+    const actionType = `award_${data.type}`;
+
+    // Get next case number
+    const caseNumber = await ModLog.getNextCaseNumber(guild.id);
+
+    // Create the log embed
+    const embed = await createEmbed(guild.id, isAdding ? 'success' : 'warning');
+    embed.setTitle(`${data.emoji} ${isAdding ? 'AWARD' : 'DEDUCT'} | Case #${caseNumber}`)
+      .setDescription(`**${data.typeName}** has been ${isAdding ? 'awarded to' : 'deducted from'} a member.`)
+      .addFields(
+        { name: `${GLYPHS.ARROW_RIGHT} User`, value: `${data.targetUser.tag}\n\`${data.targetUser.id}\``, inline: true },
+        { name: `${GLYPHS.ARROW_RIGHT} Moderator`, value: `${data.moderator.tag}`, inline: true },
+        { name: `${GLYPHS.ARROW_RIGHT} Amount`, value: `${isAdding ? '+' : '-'}${absAmount.toLocaleString()} ${data.emoji}`, inline: true },
+        { name: `${GLYPHS.ARROW_RIGHT} New Total`, value: `${data.newValue.toLocaleString()} ${data.emoji}`, inline: true }
+      )
+      .setThumbnail(data.targetUser.displayAvatarURL({ dynamic: true }))
+      .setTimestamp();
+
+    const logMessage = await modLogChannel.send({ embeds: [embed] });
+
+    // Save to database
+    await ModLog.create({
+      guildId: guild.id,
+      caseNumber,
+      action: actionType,
+      moderatorId: data.moderator.id,
+      moderatorTag: data.moderator.tag,
+      targetId: data.targetUser.id,
+      targetTag: data.targetUser.tag,
+      reason: `${isAdding ? 'Added' : 'Removed'} ${absAmount.toLocaleString()} ${data.typeName.toLowerCase()}`,
+      details: {
+        type: data.type,
+        amount: data.amount,
+        newValue: data.newValue
+      },
+      messageId: logMessage.id,
+      channelId: modLogChannel.id
+    });
+
+  } catch (error) {
+    console.error('Error logging award to mod log:', error);
+  }
+}
+
+// Export logAward for use in slash command handler
+export { logAward };

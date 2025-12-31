@@ -91,9 +91,9 @@ levelSchema.methods.addXP = function (amount) {
 
   const leveledUp = [];
 
-  // Check for level ups (prevent infinite loop with max 10 level ups per call)
+  // Check for level ups (prevent infinite loop with max 100 level ups per call)
   let iterations = 0;
-  while (this.xp >= this.xpForNextLevel() && iterations < 10) {
+  while (this.xp >= this.xpForNextLevel() && iterations < 100) {
     this.xp -= this.xpForNextLevel();
     this.level++;
     leveledUp.push(this.level);

@@ -18,7 +18,9 @@ const modLogSchema = new mongoose.Schema({
       // AutoMod actions
       'automod_badWords', 'automod_spam', 'automod_caps', 'automod_links', 'automod_invites',
       'automod_mentions', 'automod_emojis', 'automod_zalgo', 'automod_newlines',
-      'automod_massMention', 'automod_invite', 'automod_link'
+      'automod_massMention', 'automod_invite', 'automod_link',
+      // Award actions
+      'award_xp', 'award_coins', 'award_rep'
     ]
   },
   moderatorId: {

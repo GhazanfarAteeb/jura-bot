@@ -2184,10 +2184,11 @@ async function handleGiveawayCommand(interaction, client, guildConfig) {
 }
 
 async function handleAwardCommand(interaction, client, guildConfig) {
-  const { successEmbed, errorEmbed, GLYPHS } = await import('../../utils/embeds.js');
+  const { successEmbed, errorEmbed, GLYPHS, createEmbed } = await import('../../utils/embeds.js');
   const { EmbedBuilder } = await import('discord.js');
   const Economy = (await import('../../models/Economy.js')).default;
   const Level = (await import('../../models/Level.js')).default;
+  const ModLog = (await import('../../models/ModLog.js')).default;
 
   const type = interaction.options.getString('type');
   const targetUser = interaction.options.getUser('user');
@@ -2330,6 +2331,52 @@ async function handleAwardCommand(interaction, client, guildConfig) {
       await targetUser.send({ embeds: [dmEmbed] });
     } catch {
       // User has DMs disabled
+    }
+
+    // Log to mod log channel
+    try {
+      if (guildConfig?.channels?.modLog) {
+        const modLogChannel = interaction.guild.channels.cache.get(guildConfig.channels.modLog);
+        if (modLogChannel) {
+          const caseNumber = await ModLog.getNextCaseNumber(guildId);
+
+          const logEmbed = await createEmbed(guildId, isAdding ? 'success' : 'warning');
+          logEmbed.setTitle(`${result.emoji} ${isAdding ? 'AWARD' : 'DEDUCT'} | Case #${caseNumber}`)
+            .setDescription(`**${result.typeName}** has been ${isAdding ? 'awarded to' : 'deducted from'} a member.`)
+            .addFields(
+              { name: `${GLYPHS.ARROW_RIGHT} User`, value: `${targetUser.tag}\n\`${targetUser.id}\``, inline: true },
+              { name: `${GLYPHS.ARROW_RIGHT} Moderator`, value: `${interaction.user.tag}`, inline: true },
+              { name: `${GLYPHS.ARROW_RIGHT} Amount`, value: `${isAdding ? '+' : '-'}${absAmount.toLocaleString()} ${result.emoji}`, inline: true },
+              { name: `${GLYPHS.ARROW_RIGHT} New Total`, value: `${result.newValue.toLocaleString()} ${result.emoji}`, inline: true },
+              { name: `${GLYPHS.ARROW_RIGHT} Reason`, value: reason, inline: false }
+            )
+            .setThumbnail(targetUser.displayAvatarURL({ dynamic: true }))
+            .setTimestamp();
+
+          const logMessage = await modLogChannel.send({ embeds: [logEmbed] });
+
+          // Save to database
+          await ModLog.create({
+            guildId,
+            caseNumber,
+            action: `award_${type}`,
+            moderatorId: interaction.user.id,
+            moderatorTag: interaction.user.tag,
+            targetId: targetUser.id,
+            targetTag: targetUser.tag,
+            reason: `${reason} | ${isAdding ? 'Added' : 'Removed'} ${absAmount.toLocaleString()} ${result.typeName.toLowerCase()}`,
+            details: {
+              type,
+              amount,
+              newValue: result.newValue
+            },
+            messageId: logMessage.id,
+            channelId: modLogChannel.id
+          });
+        }
+      }
+    } catch (logError) {
+      console.error('Error logging award to mod log:', logError);
     }
 
   } catch (error) {
