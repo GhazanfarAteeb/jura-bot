@@ -35,7 +35,7 @@ export default {
       let leaderboard;
       let title;
       let typeLabel;
-      
+
       // Get guild config for coin settings
       const guildConfig = await Guild.getGuild(guildId);
       const coinEmoji = guildConfig.economy?.coinEmoji || '💰';
@@ -87,7 +87,7 @@ export default {
         const embed = await infoEmbed(guildId, title,
           'No one is on the leaderboard yet! Start chatting to earn XP and levels.'
         );
-        
+
         // Still show disabled pagination buttons
         const row = createPaginationRow(1, 1, type, true);
         return message.reply({ embeds: [embed], components: [row] });
@@ -101,7 +101,7 @@ export default {
 
       // Create leaderboard embed
       const embed = await createLeaderboardEmbed(
-        message, leaderboard, start, end, type, title, 
+        message, leaderboard, start, end, type, title,
         currentPage, maxPage, totalEntries, coinEmoji, coinName, guildConfig
       );
 
@@ -118,7 +118,7 @@ export default {
 
       collector.on('collect', async (i) => {
         const [action, , newPage] = i.customId.split('_');
-        
+
         if (action === 'lb') {
           const targetPage = parseInt(newPage);
           const newStart = (targetPage - 1) * perPage;
@@ -138,7 +138,7 @@ export default {
       collector.on('end', async () => {
         // Disable all buttons when collector ends
         const disabledRow = createPaginationRow(currentPage, maxPage, type, true);
-        await reply.edit({ components: [disabledRow] }).catch(() => {});
+        await reply.edit({ components: [disabledRow] }).catch(() => { });
       });
 
     } catch (error) {
