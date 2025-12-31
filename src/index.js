@@ -407,20 +407,17 @@ async function initializeSecuritySystems(client) {
 // Register slash commands
 async function registerSlashCommandsOnReady(client) {
   try {
-    const { registerSlashCommands, registerGuildSlashCommands } = await import('./utils/slashCommands.js');
+    const { registerSlashCommands, clearGuildSlashCommands } = await import('./utils/slashCommands.js');
+    
+    // Clear guild-specific commands to remove duplicates (one-time cleanup)
+    console.log('🧹 Clearing guild-specific commands to remove duplicates...');
+    for (const guild of client.guilds.cache.values()) {
+      await clearGuildSlashCommands(client, guild.id);
+    }
+    
+    // Register globally only
     const commandCount = await registerSlashCommands(client);
     console.log(`📝 Registered ${commandCount} slash commands globally`);
-    
-    // Also register to all guilds for instant visibility
-    // Global commands can take up to 1 hour to propagate
-    for (const guild of client.guilds.cache.values()) {
-      try {
-        await registerGuildSlashCommands(client, guild.id);
-      } catch (err) {
-        console.error(`Failed to register commands for guild ${guild.id}:`, err.message);
-      }
-    }
-    console.log(`⚡ Instant slash commands registered for ${client.guilds.cache.size} guilds`);
   } catch (error) {
     console.error('Error registering slash commands:', error);
     logger.error('Failed to register slash commands', error);

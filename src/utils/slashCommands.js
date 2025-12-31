@@ -906,8 +906,26 @@ export async function registerGuildSlashCommands(client, guildId) {
   }
 }
 
+// Clear guild-specific commands (use this to remove duplicates)
+export async function clearGuildSlashCommands(client, guildId) {
+  const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
+
+  try {
+    await rest.put(
+      Routes.applicationGuildCommands(client.user.id, guildId),
+      { body: [] }
+    );
+
+    console.log(`🧹 Cleared guild-specific slash commands for ${guildId}`);
+    return true;
+  } catch (error) {
+    console.error(`Error clearing slash commands for guild ${guildId}:`, error);
+    return false;
+  }
+}
+
 export function getSlashCommands() {
   return slashCommands;
 }
 
-export default { registerSlashCommands, registerGuildSlashCommands, getSlashCommands };
+export default { registerSlashCommands, registerGuildSlashCommands, clearGuildSlashCommands, getSlashCommands };
