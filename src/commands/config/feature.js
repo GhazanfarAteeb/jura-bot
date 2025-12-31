@@ -1,0 +1,306 @@
+import { PermissionFlagsBits, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder } from 'discord.js';
+import Guild from '../../models/Guild.js';
+import { successEmbed, errorEmbed, infoEmbed, GLYPHS } from '../../utils/embeds.js';
+
+// Define feature categories and their associated commands
+const featureCategories = {
+  economy: {
+    name: '💰 Economy',
+    commands: ['balance', 'daily', 'shop', 'inventory', 'profile', 'setprofile', 'setbackground', 'claim', 'addcoins', 'rep']
+  },
+  gambling: {
+    name: '🎰 Gambling',
+    commands: ['slots', 'blackjack', 'coinflip', 'dice', 'roulette', 'adventure']
+  },
+  leveling: {
+    name: '📊 Leveling',
+    commands: ['level', 'rank', 'top', 'leaderboard', 'xp']
+  },
+  games: {
+    name: '🎮 Games',
+    commands: ['trivia', 'tictactoe']
+  },
+  fun: {
+    name: '😂 Fun',
+    commands: ['meme', 'gif', 'poll']
+  },
+  birthdays: {
+    name: '🎂 Birthdays',
+    commands: ['birthday', 'setbirthday', 'mybirthday', 'birthdays', 'requestbirthday', 'approvebday', 'rejectbday', 'cancelbirthday', 'removebirthday', 'birthdaypreference', 'birthdayrequests']
+  },
+  giveaways: {
+    name: '🎉 Giveaways',
+    commands: ['giveaway', 'gstart', 'gend', 'greroll']
+  },
+  events: {
+    name: '📅 Events',
+    commands: ['createevent', 'events', 'joinevent', 'cancelevent']
+  },
+  starboard: {
+    name: '⭐ Starboard',
+    commands: ['starboard']
+  },
+  tickets: {
+    name: '🎫 Tickets',
+    commands: ['ticket', 'ticketpanel']
+  },
+  afk: {
+    name: '💤 AFK',
+    commands: ['afk']
+  },
+  reminders: {
+    name: '⏰ Reminders',
+    commands: ['remind', 'reminder']
+  },
+  automod: {
+    name: '🛡️ AutoMod',
+    commands: ['automod']
+  },
+  welcome: {
+    name: '👋 Welcome',
+    commands: ['welcome']
+  }
+};
+
+const protectedCommands = ['help', 'config', 'feature', 'setup'];
+
+export default {
+  name: 'feature',
+  description: 'Enable or disable bot features and commands',
+  usage: '<enable|disable|status> <feature|command>',
+  aliases: ['features', 'toggle', 'cmd', 'command'],
+  category: 'config',
+  permissions: {
+    user: PermissionFlagsBits.ManageGuild,
+    client: ['SendMessages', 'EmbedLinks']
+  },
+  cooldown: 3,
+
+  async execute(message, args, client) {
+    const guildId = message.guild.id;
+    const guildConfig = await Guild.getGuild(guildId);
+
+    // No args - show interactive menu
+    if (!args[0]) {
+      return showFeatureMenu(message, guildConfig);
+    }
+
+    const action = args[0].toLowerCase();
+
+    // List all disabled
+    if (action === 'list' || action === 'disabled') {
+      return showDisabledList(message, guildConfig);
+    }
+
+    // Status of a feature
+    if (action === 'status') {
+      const feature = args[1]?.toLowerCase();
+      if (!feature) {
+        return showFeatureMenu(message, guildConfig);
+      }
+      return showFeatureStatus(message, guildConfig, feature);
+    }
+
+    // Enable/disable
+    if (action === 'enable' || action === 'disable') {
+      const target = args[1]?.toLowerCase();
+      if (!target) {
+        const embed = await errorEmbed(guildId, 'Missing Target',
+          `${GLYPHS.ERROR} Please specify a feature or command.\n\n` +
+          `**Usage:**\n` +
+          `${GLYPHS.ARROW_RIGHT} \`feature ${action} <feature>\` - ${action} a feature category\n` +
+          `${GLYPHS.ARROW_RIGHT} \`feature ${action} <command>\` - ${action} a single command\n\n` +
+          `**Features:** ${Object.keys(featureCategories).map(f => `\`${f}\``).join(', ')}`
+        );
+        return message.reply({ embeds: [embed] });
+      }
+
+      return toggleFeature(message, guildConfig, target, action === 'enable', client);
+    }
+
+    // If first arg is a feature name directly
+    if (featureCategories[action]) {
+      return showFeatureStatus(message, guildConfig, action);
+    }
+
+    // Show help
+    return showFeatureMenu(message, guildConfig);
+  }
+};
+
+async function showFeatureMenu(message, guildConfig) {
+  const guildId = message.guild.id;
+  const disabledText = guildConfig.textCommands?.disabledCommands || [];
+  const disabledSlash = guildConfig.slashCommands?.disabledCommands || [];
+
+  let description = `**Manage bot features and commands**\n\n`;
+  
+  for (const [key, category] of Object.entries(featureCategories)) {
+    const disabledCount = category.commands.filter(cmd => 
+      disabledText.includes(cmd) || disabledSlash.includes(cmd)
+    ).length;
+    const status = disabledCount === 0 ? '✅' : disabledCount === category.commands.length ? '❌' : '⚠️';
+    description += `${status} **${category.name}** - ${category.commands.length} commands\n`;
+  }
+
+  description += `\n**Commands:**\n`;
+  description += `${GLYPHS.ARROW_RIGHT} \`feature enable <feature>\` - Enable a feature\n`;
+  description += `${GLYPHS.ARROW_RIGHT} \`feature disable <feature>\` - Disable a feature\n`;
+  description += `${GLYPHS.ARROW_RIGHT} \`feature status <feature>\` - View feature status\n`;
+  description += `${GLYPHS.ARROW_RIGHT} \`feature list\` - List all disabled commands\n`;
+  description += `${GLYPHS.ARROW_RIGHT} \`feature enable <command>\` - Enable single command\n`;
+  description += `${GLYPHS.ARROW_RIGHT} \`feature disable <command>\` - Disable single command`;
+
+  const embed = new EmbedBuilder()
+    .setTitle('🔧 Feature Management')
+    .setDescription(description)
+    .setColor('#667eea')
+    .setFooter({ text: '✅ Enabled | ❌ Disabled | ⚠️ Partially disabled' });
+
+  return message.reply({ embeds: [embed] });
+}
+
+async function showDisabledList(message, guildConfig) {
+  const guildId = message.guild.id;
+  const disabledText = guildConfig.textCommands?.disabledCommands || [];
+  const disabledSlash = guildConfig.slashCommands?.disabledCommands || [];
+
+  let description = '';
+  
+  if (disabledText.length > 0) {
+    description += `**Disabled Text Commands (${disabledText.length}):**\n`;
+    description += disabledText.map(c => `${GLYPHS.DOT} \`${c}\``).join('\n');
+    description += '\n\n';
+  }
+  
+  if (disabledSlash.length > 0) {
+    description += `**Disabled Slash Commands (${disabledSlash.length}):**\n`;
+    description += disabledSlash.map(c => `${GLYPHS.DOT} \`/${c}\``).join('\n');
+  }
+  
+  if (!description) {
+    description = `${GLYPHS.SUCCESS} No commands are currently disabled!\n\nAll bot features are active.`;
+  }
+
+  const embed = await infoEmbed(guildId, '📋 Disabled Commands', description);
+  return message.reply({ embeds: [embed] });
+}
+
+async function showFeatureStatus(message, guildConfig, feature) {
+  const guildId = message.guild.id;
+  const category = featureCategories[feature];
+  
+  if (!category) {
+    // Check if it's a single command
+    const embed = await errorEmbed(guildId, 'Unknown Feature',
+      `${GLYPHS.ERROR} \`${feature}\` is not a valid feature.\n\n` +
+      `**Available features:**\n${Object.keys(featureCategories).map(f => `\`${f}\``).join(', ')}`
+    );
+    return message.reply({ embeds: [embed] });
+  }
+
+  const disabledText = guildConfig.textCommands?.disabledCommands || [];
+  const disabledSlash = guildConfig.slashCommands?.disabledCommands || [];
+
+  const commandStatus = category.commands.map(cmd => {
+    const textDisabled = disabledText.includes(cmd);
+    const slashDisabled = disabledSlash.includes(cmd);
+    let icon = '✅';
+    if (textDisabled && slashDisabled) icon = '❌';
+    else if (textDisabled || slashDisabled) icon = '⚠️';
+    return `${icon} \`${cmd}\``;
+  });
+
+  const enabledCount = category.commands.filter(cmd => 
+    !disabledText.includes(cmd) && !disabledSlash.includes(cmd)
+  ).length;
+
+  const embed = new EmbedBuilder()
+    .setTitle(`${category.name} Status`)
+    .setDescription(commandStatus.join('\n'))
+    .setColor(enabledCount === category.commands.length ? '#57F287' : enabledCount === 0 ? '#ED4245' : '#FEE75C')
+    .addFields({
+      name: 'Summary',
+      value: `${enabledCount}/${category.commands.length} commands enabled`
+    })
+    .setFooter({ text: '✅ Enabled | ❌ Disabled | ⚠️ Partially disabled' });
+
+  return message.reply({ embeds: [embed] });
+}
+
+async function toggleFeature(message, guildConfig, target, isEnabling, client) {
+  const guildId = message.guild.id;
+  const category = featureCategories[target];
+  
+  let commandsToManage = [];
+  let featureName = '';
+
+  if (category) {
+    // It's a feature category
+    commandsToManage = category.commands;
+    featureName = category.name;
+  } else {
+    // It's a single command - check if it exists
+    const commandExists = client.commands.has(target) || client.aliases?.has(target);
+    if (!commandExists) {
+      const embed = await errorEmbed(guildId, 'Not Found',
+        `${GLYPHS.ERROR} \`${target}\` is not a valid feature or command.\n\n` +
+        `**Features:** ${Object.keys(featureCategories).map(f => `\`${f}\``).join(', ')}\n\n` +
+        `Or use a valid command name.`
+      );
+      return message.reply({ embeds: [embed] });
+    }
+    
+    const actualCommand = client.commands.get(target) || client.commands.get(client.aliases.get(target));
+    commandsToManage = [actualCommand?.name || target];
+    featureName = `Command: ${commandsToManage[0]}`;
+  }
+
+  const disabledText = [...(guildConfig.textCommands?.disabledCommands || [])];
+  const disabledSlash = [...(guildConfig.slashCommands?.disabledCommands || [])];
+  
+  let skippedProtected = [];
+
+  for (const cmd of commandsToManage) {
+    if (!isEnabling && protectedCommands.includes(cmd)) {
+      skippedProtected.push(cmd);
+      continue;
+    }
+
+    if (isEnabling) {
+      // Remove from disabled lists
+      const textIdx = disabledText.indexOf(cmd);
+      if (textIdx > -1) disabledText.splice(textIdx, 1);
+      const slashIdx = disabledSlash.indexOf(cmd);
+      if (slashIdx > -1) disabledSlash.splice(slashIdx, 1);
+    } else {
+      // Add to disabled lists
+      if (!disabledText.includes(cmd)) disabledText.push(cmd);
+      if (!disabledSlash.includes(cmd)) disabledSlash.push(cmd);
+    }
+  }
+
+  await Guild.updateGuild(guildId, {
+    $set: {
+      'textCommands.disabledCommands': disabledText,
+      'slashCommands.disabledCommands': disabledSlash
+    }
+  });
+
+  let description = `${GLYPHS.SUCCESS} **${featureName}** has been ${isEnabling ? 'enabled' : 'disabled'}.\n\n`;
+  description += `**Commands affected:** ${commandsToManage.length - skippedProtected.length}\n`;
+  
+  if (commandsToManage.length <= 10) {
+    description += `**Commands:** ${commandsToManage.filter(c => !skippedProtected.includes(c)).map(c => `\`${c}\``).join(', ')}`;
+  }
+  
+  if (skippedProtected.length > 0) {
+    description += `\n\n⚠️ **Skipped (protected):** ${skippedProtected.map(c => `\`${c}\``).join(', ')}`;
+  }
+
+  const embed = await successEmbed(guildId, 
+    `Feature ${isEnabling ? 'Enabled' : 'Disabled'}`,
+    description
+  );
+  return message.reply({ embeds: [embed] });
+}

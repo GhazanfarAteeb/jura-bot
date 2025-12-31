@@ -208,6 +208,9 @@ const guildSchema = new mongoose.Schema({
     adminOnly: { type: Boolean, default: false }, // Only admins can use slash commands
     disabledCommands: [String] // List of disabled slash command names
   },
+  textCommands: {
+    disabledCommands: [String] // List of disabled text command names
+  },
   security: {
     lockdownActive: { type: Boolean, default: false },
     lockdownReason: String,

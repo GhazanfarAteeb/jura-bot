@@ -29,7 +29,7 @@ export default {
     );
 
     // Handle special slash commands that need custom handling
-    const specialCommands = ['automod', 'lockdown', 'setrole', 'setchannel', 'slashcommands', 'refreshcache', 'birthdaysettings', 'setbirthday', 'config', 'setup', 'welcome', 'manageshop', 'verify', 'cmdchannels', 'logs', 'autorole'];
+    const specialCommands = ['automod', 'lockdown', 'setrole', 'setchannel', 'slashcommands', 'refreshcache', 'birthdaysettings', 'setbirthday', 'config', 'setup', 'welcome', 'manageshop', 'verify', 'cmdchannels', 'logs', 'autorole', 'feature'];
     if (specialCommands.includes(interaction.commandName)) {
       return handleSpecialCommand(interaction, client, guildConfig, hasAdminRole);
     }
@@ -179,7 +179,7 @@ export default {
 async function handleSpecialCommand(interaction, client, guildConfig, hasAdminRole) {
   const { successEmbed, errorEmbed, infoEmbed, GLYPHS } = await import('../../utils/embeds.js');
 
-  // Check admin permission
+  // Check admin permission for other commands
   if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator) && !hasAdminRole) {
     return interaction.reply({
       content: '❌ You need Administrator permissions to use this command.',
@@ -238,6 +238,9 @@ async function handleSpecialCommand(interaction, client, guildConfig, hasAdminRo
         break;
       case 'autorole':
         await handleAutoroleCommand(interaction, guildConfig);
+        break;
+      case 'feature':
+        await handleFeatureCommand(interaction, client, guildConfig);
         break;
     }
   } catch (error) {
@@ -1835,4 +1838,139 @@ async function handleAutoroleCommand(interaction, guildConfig) {
       break;
     }
   }
+}
+
+// Feature management slash command handler
+async function handleFeatureCommand(interaction, client, guildConfig) {
+  const { successEmbed, errorEmbed, infoEmbed, GLYPHS } = await import('../../utils/embeds.js');
+  const { EmbedBuilder } = await import('discord.js');
+  
+  const guildId = interaction.guild.id;
+  const featureType = interaction.options.getString('type');
+  const status = interaction.options.getString('status');
+  const customCommand = interaction.options.getString('command')?.toLowerCase();
+
+  // Define feature categories and their associated commands
+  const featureCategories = {
+    economy: ['balance', 'daily', 'shop', 'inventory', 'profile', 'setprofile', 'setbackground', 'claim', 'addcoins', 'rep'],
+    gambling: ['slots', 'blackjack', 'coinflip', 'dice', 'roulette', 'adventure'],
+    leveling: ['level', 'rank', 'top', 'leaderboard', 'xp'],
+    games: ['trivia', 'tictactoe'],
+    fun: ['meme', 'gif', 'poll'],
+    birthdays: ['birthday', 'setbirthday', 'mybirthday', 'birthdays', 'requestbirthday', 'approvebday', 'rejectbday', 'cancelbirthday', 'removebirthday', 'birthdaypreference', 'birthdayrequests'],
+    giveaways: ['giveaway', 'gstart', 'gend', 'greroll'],
+    events: ['createevent', 'events', 'joinevent', 'cancelevent'],
+    starboard: ['starboard'],
+    tickets: ['ticket', 'ticketpanel'],
+    afk: ['afk'],
+    reminders: ['remind', 'reminder'],
+    automod: ['automod'],
+    welcome: ['welcome']
+  };
+
+  // Get commands for the selected feature
+  let commandsToManage = [];
+  let featureName = '';
+
+  if (featureType === 'custom') {
+    if (!customCommand) {
+      return interaction.editReply({
+        embeds: [await errorEmbed(guildId, 'Missing Command', 
+          `${GLYPHS.ERROR} Please specify a command name using the \`command\` option.`)]
+      });
+    }
+    commandsToManage = [customCommand];
+    featureName = `Command: ${customCommand}`;
+  } else {
+    commandsToManage = featureCategories[featureType] || [];
+    const featureNames = {
+      economy: '💰 Economy',
+      gambling: '🎰 Gambling',
+      leveling: '📊 Leveling',
+      games: '🎮 Games',
+      fun: '😂 Fun',
+      birthdays: '🎂 Birthdays',
+      giveaways: '🎉 Giveaways',
+      events: '📅 Events',
+      starboard: '⭐ Starboard',
+      tickets: '🎫 Tickets',
+      afk: '💤 AFK',
+      reminders: '⏰ Reminders',
+      automod: '🛡️ AutoMod',
+      welcome: '👋 Welcome'
+    };
+    featureName = featureNames[featureType] || featureType;
+  }
+
+  // Handle status view
+  if (status === 'status') {
+    const disabledText = guildConfig.textCommands?.disabledCommands || [];
+    const disabledSlash = guildConfig.slashCommands?.disabledCommands || [];
+    
+    const commandStatus = commandsToManage.map(cmd => {
+      const textDisabled = disabledText.includes(cmd);
+      const slashDisabled = disabledSlash.includes(cmd);
+      const icon = (!textDisabled && !slashDisabled) ? '✅' : (textDisabled && slashDisabled) ? '❌' : '⚠️';
+      return `${icon} \`${cmd}\``;
+    });
+
+    const embed = new EmbedBuilder()
+      .setTitle(`${featureName} Status`)
+      .setDescription(commandStatus.join('\n') || 'No commands in this category')
+      .setColor('#667eea')
+      .setFooter({ text: '✅ Enabled | ❌ Disabled | ⚠️ Partially disabled' });
+
+    return interaction.editReply({ embeds: [embed] });
+  }
+
+  // Enable or disable
+  const isEnabling = status === 'enable';
+  const disabledText = [...(guildConfig.textCommands?.disabledCommands || [])];
+  const disabledSlash = [...(guildConfig.slashCommands?.disabledCommands || [])];
+  
+  // Protected commands that cannot be disabled
+  const protectedCommands = ['help', 'config', 'feature', 'setup'];
+  
+  let modifiedCount = 0;
+  let skippedProtected = [];
+
+  for (const cmd of commandsToManage) {
+    if (!isEnabling && protectedCommands.includes(cmd)) {
+      skippedProtected.push(cmd);
+      continue;
+    }
+
+    if (isEnabling) {
+      // Remove from disabled lists
+      const textIdx = disabledText.indexOf(cmd);
+      if (textIdx > -1) { disabledText.splice(textIdx, 1); modifiedCount++; }
+      const slashIdx = disabledSlash.indexOf(cmd);
+      if (slashIdx > -1) { disabledSlash.splice(slashIdx, 1); modifiedCount++; }
+    } else {
+      // Add to disabled lists
+      if (!disabledText.includes(cmd)) { disabledText.push(cmd); modifiedCount++; }
+      if (!disabledSlash.includes(cmd)) { disabledSlash.push(cmd); modifiedCount++; }
+    }
+  }
+
+  await Guild.updateGuild(guildId, {
+    $set: {
+      'textCommands.disabledCommands': disabledText,
+      'slashCommands.disabledCommands': disabledSlash
+    }
+  });
+
+  let description = `${GLYPHS.SUCCESS} **${featureName}** has been ${isEnabling ? 'enabled' : 'disabled'}.\n\n`;
+  description += `**Commands affected:** ${commandsToManage.length}\n`;
+  description += `**Commands:** ${commandsToManage.map(c => `\`${c}\``).join(', ')}`;
+  
+  if (skippedProtected.length > 0) {
+    description += `\n\n⚠️ **Skipped (protected):** ${skippedProtected.map(c => `\`${c}\``).join(', ')}`;
+  }
+
+  return interaction.editReply({
+    embeds: [await successEmbed(guildId, 
+      `Feature ${isEnabling ? 'Enabled' : 'Disabled'}`,
+      description)]
+  });
 }

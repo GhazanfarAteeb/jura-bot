@@ -67,6 +67,16 @@ class MessageCreate extends Event {
 
     // Check channel restrictions (skip for config commands to prevent lockout)
     const guildConfig = await this.client.db.getGuild(message.guildId);
+    
+    // Check if text command is disabled (skip for 'command' command to prevent lockout)
+    if (command.name !== 'command' && guildConfig?.textCommands?.disabledCommands?.includes(command.name)) {
+      const msg = await message.reply({
+        content: `❌ The \`${command.name}\` command has been disabled by an administrator.`
+      }).catch(() => null);
+      if (msg) setTimeout(() => msg.delete().catch(() => {}), 5000);
+      return;
+    }
+    
     if (guildConfig?.commandChannels?.enabled && command.category !== 'config') {
       const isAllowedChannel = guildConfig.commandChannels.channels.includes(message.channel.id);
       const hasBypassRole = guildConfig.commandChannels.bypassRoles?.some(roleId =>

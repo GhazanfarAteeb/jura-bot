@@ -1,22 +1,22 @@
-import { EmbedBuilder } from 'discord.js';
+import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } from 'discord.js';
 import Economy from '../../models/Economy.js';
 import Level from '../../models/Level.js';
 import Guild from '../../models/Guild.js';
-import { infoEmbed, GLYPHS } from '../../utils/embeds.js';
+import { infoEmbed, errorEmbed, GLYPHS } from '../../utils/embeds.js';
 import { getPrefix } from '../../utils/helpers.js';
 
 export default {
     name: 'top',
-    description: 'View server leaderboards',
-    usage: 'top <coins|rep|level> [page]',
+    description: 'View server leaderboards with pagination',
+    usage: 'top <coins|rep|level>',
     category: 'utility',
-    aliases: ['leaderboards', 'rankings'],
-    cooldown: 10,
+    aliases: ['leaderboards', 'rankings', 'lb'],
+    cooldown: 5,
+    slashCommand: true,
     
-    execute: async (message, args) => {
+    async execute(message, args) {
         const guildId = message.guild.id;
         const type = args[0]?.toLowerCase() || 'coins';
-        const page = parseInt(args[1]) || 1;
         const perPage = 10;
         
         try {
@@ -24,7 +24,7 @@ export default {
             const coinEmoji = guildConfig.economy?.coinEmoji || '💰';
             const coinName = guildConfig.economy?.coinName || 'coins';
             
-            let leaderboard, title, emoji, formatEntry;
+            let leaderboard, title, formatEntry;
             
             switch(type) {
                 case 'coins':
@@ -33,14 +33,13 @@ export default {
                 case 'balance':
                     leaderboard = await Economy.find({ guildId })
                         .sort({ coins: -1 })
-                        .limit(perPage * 10);
+                        .limit(100);
                     
                     title = `${coinEmoji} ${coinName.charAt(0).toUpperCase() + coinName.slice(1)} Leaderboard`;
-                    emoji = coinEmoji;
                     formatEntry = (user, i) => {
                         const pos = i + 1;
-                        const medal = pos === 1 ? '🥇' : pos === 2 ? '🥈' : pos === 3 ? '🥉' : `#${pos}`;
-                        return `${medal} **${user.username || 'Unknown'}**\n${GLYPHS.ARROW_RIGHT} ${user.coins} ${coinEmoji} ${coinName} • Bank: ${user.bank} ${coinEmoji}\n`;
+                        const medal = pos === 1 ? '🥇' : pos === 2 ? '🥈' : pos === 3 ? '🥉' : `\`#${pos}\``;
+                        return `${medal} **${user.username || 'Unknown'}**\n${GLYPHS.ARROW_RIGHT} ${user.coins?.toLocaleString() || 0} ${coinEmoji} • Bank: ${user.bank?.toLocaleString() || 0} ${coinEmoji}\n`;
                     };
                     break;
                     
@@ -48,14 +47,13 @@ export default {
                 case 'reputation':
                     leaderboard = await Economy.find({ guildId })
                         .sort({ reputation: -1 })
-                        .limit(perPage * 10);
+                        .limit(100);
                     
                     title = '⭐ Reputation Leaderboard';
-                    emoji = '⭐';
                     formatEntry = (user, i) => {
                         const pos = i + 1;
-                        const medal = pos === 1 ? '🥇' : pos === 2 ? '🥈' : pos === 3 ? '🥉' : `#${pos}`;
-                        return `${medal} **${user.username || 'Unknown'}**\n${GLYPHS.ARROW_RIGHT} ${user.reputation || 0} ⭐ reputation\n`;
+                        const medal = pos === 1 ? '🥇' : pos === 2 ? '🥈' : pos === 3 ? '🥉' : `\`#${pos}\``;
+                        return `${medal} **${user.username || 'Unknown'}**\n${GLYPHS.ARROW_RIGHT} ${user.reputation?.toLocaleString() || 0} ⭐ reputation\n`;
                     };
                     break;
                     
@@ -63,14 +61,13 @@ export default {
                 case 'levels':
                 case 'xp':
                 case 'rank':
-                    leaderboard = await Level.getLeaderboard(guildId, perPage * 10);
+                    leaderboard = await Level.getLeaderboard(guildId, 100);
                     
                     title = '📊 Level Leaderboard';
-                    emoji = '🏆';
                     formatEntry = (user, i) => {
                         const pos = i + 1;
-                        const medal = pos === 1 ? '🥇' : pos === 2 ? '🥈' : pos === 3 ? '🥉' : `#${pos}`;
-                        return `${medal} **${user.username || 'Unknown'}**\n${GLYPHS.ARROW_RIGHT} Level ${user.level} • ${user.totalXP} Total XP\n`;
+                        const medal = pos === 1 ? '🥇' : pos === 2 ? '🥈' : pos === 3 ? '🥉' : `\`#${pos}\``;
+                        return `${medal} **${user.username || 'Unknown'}**\n${GLYPHS.ARROW_RIGHT} Level ${user.level} • ${user.totalXP?.toLocaleString() || 0} Total XP\n`;
                     };
                     break;
                     
@@ -81,8 +78,9 @@ export default {
                         `${GLYPHS.ARROW_RIGHT} \`${prefix}top coins\` - Richest members\n` +
                         `${GLYPHS.ARROW_RIGHT} \`${prefix}top rep\` - Most reputable members\n` +
                         `${GLYPHS.ARROW_RIGHT} \`${prefix}top level\` - Highest level members\n\n` +
-                        `**Usage:** \`${prefix}top <type> [page]\`\n` +
-                        `**Example:** \`${prefix}top coins 2\``
+                        `**Usage:** \`${prefix}top <type>\`\n` +
+                        `**Example:** \`${prefix}top coins\`\n\n` +
+                        `*Use the arrow buttons to navigate pages!*`
                     );
                     return message.reply({ embeds: [helpEmbed] });
             }
@@ -92,51 +90,138 @@ export default {
                     embeds: [await infoEmbed(guildId, title, 'No data available yet!')]
                 });
             }
-            
-            // Calculate pages
-            const maxPage = Math.ceil(leaderboard.length / perPage);
-            const currentPage = Math.max(1, Math.min(page, maxPage));
-            const start = (currentPage - 1) * perPage;
-            const end = start + perPage;
-            
-            // Create leaderboard text
-            let leaderboardText = '';
-            
-            for (let i = start; i < Math.min(end, leaderboard.length); i++) {
-                const user = leaderboard[i];
-                
-                // Fetch username if not stored
+
+            // Fetch usernames for all entries
+            for (const user of leaderboard) {
                 if (!user.username) {
                     try {
                         const member = await message.guild.members.fetch(user.userId).catch(() => null);
                         if (member) {
                             user.username = member.user.username;
                         }
-                    } catch (error) {
+                    } catch {
                         // Ignore fetch errors
                     }
                 }
-                
-                leaderboardText += formatEntry(user, i);
             }
-            
+
             // Find user's position
             const userPosition = leaderboard.findIndex(u => u.userId === message.author.id) + 1;
             
-            const embed = new EmbedBuilder()
-                .setTitle(title)
-                .setDescription(leaderboardText)
-                .setColor('#667eea')
-                .setFooter({ 
-                    text: `Page ${currentPage}/${maxPage}${userPosition ? ` • Your Rank: #${userPosition}` : ''}`
-                })
-                .setTimestamp();
-            
-            await message.reply({ embeds: [embed] });
+            // Calculate pages
+            const maxPage = Math.ceil(leaderboard.length / perPage);
+            let currentPage = 1;
+
+            // Function to generate embed for a specific page
+            const generateEmbed = (page) => {
+                const start = (page - 1) * perPage;
+                const end = Math.min(start + perPage, leaderboard.length);
+                
+                let leaderboardText = '';
+                for (let i = start; i < end; i++) {
+                    leaderboardText += formatEntry(leaderboard[i], i);
+                }
+
+                return new EmbedBuilder()
+                    .setTitle(title)
+                    .setDescription(leaderboardText || 'No data')
+                    .setColor('#667eea')
+                    .setFooter({ 
+                        text: `Page ${page}/${maxPage}${userPosition ? ` • Your Rank: #${userPosition}` : ''} • ${leaderboard.length} total entries`
+                    })
+                    .setTimestamp();
+            };
+
+            // Function to generate buttons
+            const generateButtons = (page, disabled = false) => {
+                return new ActionRowBuilder()
+                    .addComponents(
+                        new ButtonBuilder()
+                            .setCustomId('lb_first')
+                            .setEmoji('⏮️')
+                            .setStyle(ButtonStyle.Secondary)
+                            .setDisabled(disabled || page === 1),
+                        new ButtonBuilder()
+                            .setCustomId('lb_prev')
+                            .setEmoji('◀️')
+                            .setStyle(ButtonStyle.Primary)
+                            .setDisabled(disabled || page === 1),
+                        new ButtonBuilder()
+                            .setCustomId('lb_page')
+                            .setLabel(`${page}/${maxPage}`)
+                            .setStyle(ButtonStyle.Secondary)
+                            .setDisabled(true),
+                        new ButtonBuilder()
+                            .setCustomId('lb_next')
+                            .setEmoji('▶️')
+                            .setStyle(ButtonStyle.Primary)
+                            .setDisabled(disabled || page === maxPage),
+                        new ButtonBuilder()
+                            .setCustomId('lb_last')
+                            .setEmoji('⏭️')
+                            .setStyle(ButtonStyle.Secondary)
+                            .setDisabled(disabled || page === maxPage)
+                    );
+            };
+
+            // Send initial message
+            const reply = await message.reply({
+                embeds: [generateEmbed(currentPage)],
+                components: maxPage > 1 ? [generateButtons(currentPage)] : []
+            });
+
+            // Only add collector if there are multiple pages
+            if (maxPage <= 1) return;
+
+            // Create button collector
+            const collector = reply.createMessageComponentCollector({
+                componentType: ComponentType.Button,
+                time: 120000 // 2 minutes
+            });
+
+            collector.on('collect', async (interaction) => {
+                // Only allow the command author to use buttons
+                if (interaction.user.id !== message.author.id) {
+                    return interaction.reply({
+                        content: '❌ Only the person who used this command can navigate the leaderboard.',
+                        ephemeral: true
+                    });
+                }
+
+                switch (interaction.customId) {
+                    case 'lb_first':
+                        currentPage = 1;
+                        break;
+                    case 'lb_prev':
+                        currentPage = Math.max(1, currentPage - 1);
+                        break;
+                    case 'lb_next':
+                        currentPage = Math.min(maxPage, currentPage + 1);
+                        break;
+                    case 'lb_last':
+                        currentPage = maxPage;
+                        break;
+                }
+
+                await interaction.update({
+                    embeds: [generateEmbed(currentPage)],
+                    components: [generateButtons(currentPage)]
+                });
+            });
+
+            collector.on('end', async () => {
+                // Disable buttons when collector expires
+                try {
+                    await reply.edit({
+                        components: [generateButtons(currentPage, true)]
+                    });
+                } catch {
+                    // Message may have been deleted
+                }
+            });
             
         } catch (error) {
             console.error('Error fetching leaderboard:', error);
-            const { errorEmbed } = await import('../../utils/embeds.js');
             return message.reply({
                 embeds: [await errorEmbed(guildId, 'Failed to fetch leaderboard. Please try again later.')]
             });

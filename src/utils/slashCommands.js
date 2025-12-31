@@ -726,6 +726,68 @@ const slashCommands = [
             .setDescription('URL or hex color (e.g., #FF0000)')
             .setRequired(false)))
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
+
+  // Feature Management (Enable/Disable commands and features)
+  new SlashCommandBuilder()
+    .setName('feature')
+    .setDescription('Enable or disable bot commands and features')
+    .addStringOption(option =>
+      option.setName('type')
+        .setDescription('Select command/feature to manage')
+        .setRequired(true)
+        .addChoices(
+          // Economy
+          { name: '💰 Economy (balance, daily, shop, etc.)', value: 'economy' },
+          { name: '🎰 Gambling (slots, blackjack, coinflip, etc.)', value: 'gambling' },
+          { name: '📊 Leveling (level, xp, rank)', value: 'leveling' },
+          // Fun
+          { name: '🎮 Games (trivia, tictactoe)', value: 'games' },
+          { name: '😂 Fun (meme, gif)', value: 'fun' },
+          // Community
+          { name: '🎂 Birthdays', value: 'birthdays' },
+          { name: '🎉 Giveaways', value: 'giveaways' },
+          { name: '📅 Events', value: 'events' },
+          { name: '⭐ Starboard', value: 'starboard' },
+          // Utility
+          { name: '🎫 Tickets', value: 'tickets' },
+          { name: '💤 AFK', value: 'afk' },
+          { name: '⏰ Reminders', value: 'reminders' },
+          // Moderation
+          { name: '🛡️ AutoMod', value: 'automod' },
+          { name: '👋 Welcome Messages', value: 'welcome' },
+          // Single commands
+          { name: '🔧 Custom Command (specify name)', value: 'custom' }
+        ))
+    .addStringOption(option =>
+      option.setName('status')
+        .setDescription('Enable or disable')
+        .setRequired(true)
+        .addChoices(
+          { name: '✅ Enable', value: 'enable' },
+          { name: '❌ Disable', value: 'disable' },
+          { name: '📋 View Status', value: 'status' }
+        ))
+    .addStringOption(option =>
+      option.setName('command')
+        .setDescription('Command name (only for "Custom Command" type)')
+        .setRequired(false))
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
+
+  // Lockdown Command
+  new SlashCommandBuilder()
+    .setName('lockdown')
+    .setDescription('Lock or unlock the server')
+    .addSubcommand(subcommand =>
+      subcommand.setName('start')
+        .setDescription('Start a server lockdown')
+        .addStringOption(option =>
+          option.setName('reason')
+            .setDescription('Reason for the lockdown')
+            .setRequired(false)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('end')
+        .setDescription('End the server lockdown'))
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 ];
 
 export async function registerSlashCommands(client) {
