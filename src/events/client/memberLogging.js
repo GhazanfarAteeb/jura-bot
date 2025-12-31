@@ -50,7 +50,7 @@ async function logMemberUpdate(oldMember, newMember) {
             const embed = new EmbedBuilder()
                 .setTitle('📝 Nickname Changed')
                 .setColor('#5865F2')
-                .setDescription(`<@${newMember.id}>'s nickname was changed`)
+                .setDescription(`**${newMember.user.username}**'s nickname was changed`)
                 .addFields(
                     { name: 'Before', value: oldMember.nickname || '*None*', inline: true },
                     { name: 'After', value: newMember.nickname || '*None*', inline: true }
@@ -75,7 +75,7 @@ async function logMemberUpdate(oldMember, newMember) {
             const embed = new EmbedBuilder()
                 .setTitle('➕ Roles Added')
                 .setColor('#57F287')
-                .setDescription(`<@${newMember.id}> received new role(s)`)
+                .setDescription(`**${newMember.user.username}** received new role(s)`)
                 .addFields(
                     { name: 'Member', value: `${newMember.user.username}`, inline: true },
                     { name: 'Roles Added', value: addedRoles.map(r => r.toString()).join(', '), inline: true }
@@ -91,7 +91,7 @@ async function logMemberUpdate(oldMember, newMember) {
             const embed = new EmbedBuilder()
                 .setTitle('➖ Roles Removed')
                 .setColor('#ED4245')
-                .setDescription(`<@${newMember.id}> had role(s) removed`)
+                .setDescription(`**${newMember.user.username}** had role(s) removed`)
                 .addFields(
                     { name: 'Member', value: `${newMember.user.username}`, inline: true },
                     { name: 'Roles Removed', value: removedRoles.map(r => r.toString()).join(', '), inline: true }
@@ -110,7 +110,7 @@ async function logMemberUpdate(oldMember, newMember) {
                 const embed = new EmbedBuilder()
                     .setTitle('⏰ Member Timed Out')
                     .setColor('#FEE75C')
-                    .setDescription(`<@${newMember.id}> was timed out`)
+                    .setDescription(`**${newMember.user.username}** was timed out`)
                     .addFields(
                         { name: 'Member', value: `${newMember.user.username}`, inline: true },
                         { name: 'Until', value: `<t:${until}:F>`, inline: true }
@@ -124,7 +124,7 @@ async function logMemberUpdate(oldMember, newMember) {
                 const embed = new EmbedBuilder()
                     .setTitle('✅ Timeout Removed')
                     .setColor('#57F287')
-                    .setDescription(`<@${newMember.id}>'s timeout was removed`)
+                    .setDescription(`**${newMember.user.username}**'s timeout was removed`)
                     .addFields(
                         { name: 'Member', value: `${newMember.user.username}`, inline: true }
                     )
@@ -141,7 +141,7 @@ async function logMemberUpdate(oldMember, newMember) {
             const embed = new EmbedBuilder()
                 .setTitle('💎 New Server Booster!')
                 .setColor('#F47FFF')
-                .setDescription(`<@${newMember.id}> just boosted the server!`)
+                .setDescription(`**${newMember.user.username}** just boosted the server!`)
                 .addFields(
                     { name: 'Member', value: `${newMember.user.username}`, inline: true },
                     { name: 'Boost Count', value: `${newMember.guild.premiumSubscriptionCount}`, inline: true }
@@ -155,7 +155,7 @@ async function logMemberUpdate(oldMember, newMember) {
             const embed = new EmbedBuilder()
                 .setTitle('💔 Boost Removed')
                 .setColor('#808080')
-                .setDescription(`<@${newMember.id}> is no longer boosting the server`)
+                .setDescription(`**${newMember.user.username}** is no longer boosting the server`)
                 .addFields(
                     { name: 'Member', value: `${newMember.user.username}`, inline: true }
                 )
@@ -171,7 +171,7 @@ async function logMemberUpdate(oldMember, newMember) {
             const embed = new EmbedBuilder()
                 .setTitle('🖼️ Server Avatar Changed')
                 .setColor('#5865F2')
-                .setDescription(`<@${newMember.id}> changed their server avatar`)
+                .setDescription(`**${newMember.user.username}** changed their server avatar`)
                 .addFields(
                     { name: 'Member', value: `${newMember.user.username}`, inline: true }
                 )
