@@ -117,31 +117,38 @@ export default {
       });
 
       collector.on('collect', async (i) => {
-        // Parse custom_id format: lb_action_type_currentPage
-        const parts = i.customId.split('_');
-        const action = parts[1]; // first, prev, page, next, last
-        const btnType = parts[2];
-        const btnCurrentPage = parseInt(parts[3]);
+        try {
+          // Parse custom_id format: lb_action_type_currentPage
+          const parts = i.customId.split('_');
+          const action = parts[1]; // first, prev, page, next, last
+          const btnType = parts[2];
+          const btnCurrentPage = parseInt(parts[3]);
 
-        if (parts[0] === 'lb' && action !== 'page') {
-          let targetPage = btnCurrentPage;
-          
-          if (action === 'first') targetPage = 1;
-          else if (action === 'prev') targetPage = Math.max(1, btnCurrentPage - 1);
-          else if (action === 'next') targetPage = Math.min(maxPage, btnCurrentPage + 1);
-          else if (action === 'last') targetPage = maxPage;
+          if (parts[0] === 'lb' && action !== 'page') {
+            // Defer the update first to prevent timeout
+            await i.deferUpdate();
 
-          const newStart = (targetPage - 1) * perPage;
-          const newEnd = newStart + perPage;
+            let targetPage = btnCurrentPage;
+            
+            if (action === 'first') targetPage = 1;
+            else if (action === 'prev') targetPage = Math.max(1, btnCurrentPage - 1);
+            else if (action === 'next') targetPage = Math.min(maxPage, btnCurrentPage + 1);
+            else if (action === 'last') targetPage = maxPage;
 
-          const newEmbed = await createLeaderboardEmbed(
-            message, leaderboard, newStart, newEnd, type, title,
-            targetPage, maxPage, totalEntries, coinEmoji, coinName, guildConfig
-          );
+            const newStart = (targetPage - 1) * perPage;
+            const newEnd = newStart + perPage;
 
-          const newRow = createPaginationRow(targetPage, maxPage, type);
+            const newEmbed = await createLeaderboardEmbed(
+              message, leaderboard, newStart, newEnd, type, title,
+              targetPage, maxPage, totalEntries, coinEmoji, coinName, guildConfig
+            );
 
-          await i.update({ embeds: [newEmbed], components: [newRow] });
+            const newRow = createPaginationRow(targetPage, maxPage, type);
+
+            await i.editReply({ embeds: [newEmbed], components: [newRow] });
+          }
+        } catch (error) {
+          console.error('Error handling leaderboard pagination:', error);
         }
       });
 
