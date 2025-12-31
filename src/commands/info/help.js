@@ -14,7 +14,7 @@ const COMMANDS_BY_CATEGORY = {
   moderation: ['warn', 'kick', 'ban', 'purge', 'userhistory', 'timeout', 'untimeout', 'lockdown', 'verify'],
   economy: [
     'daily', 'balance', 'level', 'profile', 'shop', 'inventory', 'setprofile', 'setbackground',
-    'adventure', 'rep', 'addcoins', 'claim'
+    'adventure', 'rep', 'claim'
   ],
   gambling: ['coinflip', 'slots', 'dice', 'roulette', 'blackjack'],
   music: [
