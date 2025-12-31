@@ -29,7 +29,7 @@ export default {
     );
 
     // Handle special slash commands that need custom handling
-    const specialCommands = ['automod', 'lockdown', 'setrole', 'setchannel', 'slashcommands', 'refreshcache', 'birthdaysettings', 'setbirthday', 'config', 'setup', 'welcome', 'manageshop', 'verify', 'cmdchannels', 'logs', 'autorole', 'feature', 'giveaway'];
+    const specialCommands = ['automod', 'lockdown', 'setrole', 'setchannel', 'slashcommands', 'refreshcache', 'birthdaysettings', 'setbirthday', 'config', 'setup', 'welcome', 'manageshop', 'verify', 'cmdchannels', 'logs', 'autorole', 'feature', 'giveaway', 'award'];
     if (specialCommands.includes(interaction.commandName)) {
       return handleSpecialCommand(interaction, client, guildConfig, hasAdminRole);
     }
@@ -244,6 +244,9 @@ async function handleSpecialCommand(interaction, client, guildConfig, hasAdminRo
         break;
       case 'giveaway':
         await handleGiveawayCommand(interaction, client, guildConfig);
+        break;
+      case 'award':
+        await handleAwardCommand(interaction, client, guildConfig);
         break;
     }
   } catch (error) {
@@ -2177,5 +2180,162 @@ async function handleGiveawayCommand(interaction, client, guildConfig) {
           `${GLYPHS.SUCCESS} The giveaway has been cancelled and deleted.`)]
       });
     }
+  }
+}
+
+async function handleAwardCommand(interaction, client, guildConfig) {
+  const { successEmbed, errorEmbed, GLYPHS } = await import('../../utils/embeds.js');
+  const { EmbedBuilder } = await import('discord.js');
+  const Economy = (await import('../../models/Economy.js')).default;
+  const Level = (await import('../../models/Level.js')).default;
+
+  const type = interaction.options.getString('type');
+  const targetUser = interaction.options.getUser('user');
+  const amount = interaction.options.getInteger('amount');
+  const reason = interaction.options.getString('reason') || 'No reason provided';
+
+  if (amount === 0) {
+    return interaction.editReply({
+      embeds: [await errorEmbed(interaction.guild.id, 'Invalid Amount',
+        'Amount cannot be zero.')]
+    });
+  }
+
+  const guildId = interaction.guild.id;
+  const isAdding = amount > 0;
+  const absAmount = Math.abs(amount);
+
+  try {
+    let result;
+
+    switch (type) {
+      case 'xp': {
+        let levelData = await Level.findOne({ userId: targetUser.id, guildId });
+
+        if (!levelData) {
+          levelData = new Level({
+            userId: targetUser.id,
+            guildId,
+            username: targetUser.username
+          });
+        }
+
+        if (amount < 0) {
+          // Remove XP
+          levelData.totalXP = Math.max(0, levelData.totalXP - absAmount);
+          levelData.xp = Math.max(0, levelData.xp - absAmount);
+
+          // Recalculate level based on totalXP
+          let newLevel = 0;
+          let accumulatedXP = 0;
+
+          while (true) {
+            const xpForLevel = Math.floor(100 + (newLevel * 50) + Math.pow(newLevel, 1.5) * 25);
+            if (accumulatedXP + xpForLevel > levelData.totalXP) {
+              levelData.level = newLevel;
+              levelData.xp = levelData.totalXP - accumulatedXP;
+              break;
+            }
+            accumulatedXP += xpForLevel;
+            newLevel++;
+            if (newLevel > 1000) break;
+          }
+        } else {
+          levelData.addXP(amount);
+        }
+
+        levelData.username = targetUser.username;
+        await levelData.save();
+
+        result = {
+          emoji: '✨',
+          typeName: 'XP',
+          newValue: levelData.totalXP,
+          levelInfo: `**Level:** ${levelData.level} • **Current XP:** ${levelData.xp}/${levelData.xpForNextLevel()}`
+        };
+        break;
+      }
+
+      case 'coins': {
+        const economy = await Economy.getEconomy(targetUser.id, guildId);
+
+        if (amount < 0) {
+          if (economy.coins >= absAmount) {
+            economy.coins -= absAmount;
+          } else {
+            const remaining = absAmount - economy.coins;
+            economy.coins = 0;
+            economy.bank = Math.max(0, economy.bank - remaining);
+          }
+        } else {
+          economy.coins += amount;
+          economy.stats.totalEarned = (economy.stats.totalEarned || 0) + amount;
+        }
+
+        await economy.save();
+
+        const coinEmoji = guildConfig.economy?.coinEmoji || '💰';
+
+        result = {
+          emoji: coinEmoji,
+          typeName: 'Coins',
+          newValue: economy.coins + economy.bank,
+          levelInfo: `**Wallet:** ${economy.coins.toLocaleString()} • **Bank:** ${economy.bank.toLocaleString()}`
+        };
+        break;
+      }
+
+      case 'rep': {
+        const economy = await Economy.getEconomy(targetUser.id, guildId);
+
+        if (amount < 0) {
+          economy.reputation = Math.max(0, economy.reputation - absAmount);
+        } else {
+          economy.reputation = (economy.reputation || 0) + amount;
+        }
+
+        await economy.save();
+
+        result = {
+          emoji: '⭐',
+          typeName: 'Reputation',
+          newValue: economy.reputation
+        };
+        break;
+      }
+    }
+
+    const actionWord = isAdding ? 'Added' : 'Removed';
+    const embed = await successEmbed(guildId,
+      `${result.emoji} ${result.typeName} ${actionWord}!`,
+      `${GLYPHS.SUCCESS} Successfully ${isAdding ? 'added' : 'removed'} **${absAmount.toLocaleString()}** ${result.emoji} ${result.typeName.toLowerCase()} ${isAdding ? 'to' : 'from'} ${targetUser}!\n\n` +
+      `**${targetUser.username}'s New ${result.typeName}:** ${result.newValue.toLocaleString()} ${result.emoji}` +
+      (result.levelInfo ? `\n${result.levelInfo}` : '') +
+      `\n\n**Reason:** ${reason}`
+    );
+
+    await interaction.editReply({ embeds: [embed] });
+
+    // Try to DM the user
+    try {
+      const dmEmbed = new EmbedBuilder()
+        .setColor(isAdding ? '#00FF00' : '#FF6B6B')
+        .setTitle(`${result.emoji} ${result.typeName} ${actionWord}`)
+        .setDescription(
+          `An administrator in **${interaction.guild.name}** has ${isAdding ? 'given you' : 'removed'} **${absAmount.toLocaleString()}** ${result.emoji} ${result.typeName.toLowerCase()}.\n\n` +
+          `**Your new ${result.typeName.toLowerCase()}:** ${result.newValue.toLocaleString()} ${result.emoji}\n` +
+          `**Reason:** ${reason}`
+        )
+        .setTimestamp();
+      await targetUser.send({ embeds: [dmEmbed] });
+    } catch {
+      // User has DMs disabled
+    }
+
+  } catch (error) {
+    console.error('Error in award command:', error);
+    return interaction.editReply({
+      embeds: [await errorEmbed(guildId, 'Error', 'An error occurred while processing the award.')]
+    });
   }
 }

@@ -849,6 +849,35 @@ const slashCommands = [
             .setDescription('The giveaway message ID')
             .setRequired(true)))
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
+
+  // Award Command (XP, Coins, Rep)
+  new SlashCommandBuilder()
+    .setName('award')
+    .setDescription('Award or deduct XP, coins, or reputation from a user')
+    .addStringOption(option =>
+      option.setName('type')
+        .setDescription('What to award')
+        .setRequired(true)
+        .addChoices(
+          { name: '✨ XP (Experience)', value: 'xp' },
+          { name: '💰 Coins (Currency)', value: 'coins' },
+          { name: '⭐ Rep (Reputation)', value: 'rep' }
+        ))
+    .addUserOption(option =>
+      option.setName('user')
+        .setDescription('The user to award')
+        .setRequired(true))
+    .addIntegerOption(option =>
+      option.setName('amount')
+        .setDescription('Amount to add (positive) or remove (negative)')
+        .setRequired(true)
+        .setMinValue(-10000000)
+        .setMaxValue(10000000))
+    .addStringOption(option =>
+      option.setName('reason')
+        .setDescription('Reason for the award (optional)')
+        .setRequired(false))
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 ];
 
 export async function registerSlashCommands(client) {

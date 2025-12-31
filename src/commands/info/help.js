@@ -5,7 +5,7 @@ import Guild from '../../models/Guild.js';
 
 // Accurate command lists based on actual files
 const COMMANDS_BY_CATEGORY = {
-  admin: ['deployment', 'logs'],
+  admin: ['deployment', 'logs', 'award'],
   config: [
     'setup', 'config', 'feature', 'setprefix', 'setchannel', 'setrole', 'setcoin',
     'automod', 'welcome', 'antinuke', 'autopublish', 'autorole', 'cmdchannels',
@@ -38,7 +38,7 @@ const COMMANDS_BY_CATEGORY = {
 // Slash commands available
 const SLASH_COMMANDS = [
   'ban', 'kick', 'warn', 'timeout', 'purge', 'userhistory', 'untimeout', 'verify',
-  'lockdown', 'feature', 'giveaway', 'play', 'pause', 'resume', 'skip', 'stop', 'queue',
+  'lockdown', 'feature', 'giveaway', 'award', 'play', 'pause', 'resume', 'skip', 'stop', 'queue',
   'nowplaying', 'volume', 'shuffle', 'loop', 'seek', 'remove', 'clear', 'skipto'
 ];
 
