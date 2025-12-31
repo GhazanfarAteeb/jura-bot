@@ -123,7 +123,7 @@ export default {
           const action = parts[1]; // first, prev, page, next, last
           const btnType = parts[2];
           const btnCurrentPage = parseInt(parts[3]);
-
+          // Ensure the button type matches the current leaderboard type
           if (parts[0] === 'lb' && action !== 'page') {
             // Defer the update first to prevent timeout
             await i.deferUpdate();
