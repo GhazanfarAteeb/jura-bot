@@ -29,7 +29,7 @@ export default {
     );
 
     // Handle special slash commands that need custom handling
-    const specialCommands = ['automod', 'lockdown', 'setrole', 'setchannel', 'slashcommands', 'refreshcache', 'birthdaysettings', 'setbirthday', 'config', 'setup', 'welcome', 'manageshop', 'verify', 'cmdchannels', 'logs', 'autorole', 'feature'];
+    const specialCommands = ['automod', 'lockdown', 'setrole', 'setchannel', 'slashcommands', 'refreshcache', 'birthdaysettings', 'setbirthday', 'config', 'setup', 'welcome', 'manageshop', 'verify', 'cmdchannels', 'logs', 'autorole', 'feature', 'giveaway'];
     if (specialCommands.includes(interaction.commandName)) {
       return handleSpecialCommand(interaction, client, guildConfig, hasAdminRole);
     }
@@ -241,6 +241,9 @@ async function handleSpecialCommand(interaction, client, guildConfig, hasAdminRo
         break;
       case 'feature':
         await handleFeatureCommand(interaction, client, guildConfig);
+        break;
+      case 'giveaway':
+        await handleGiveawayCommand(interaction, client, guildConfig);
         break;
     }
   } catch (error) {
@@ -1505,13 +1508,13 @@ async function handleVerifyCommand(interaction, client, guildConfig) {
     case 'settype': {
       const type = interaction.options.getString('type');
       await Guild.updateGuild(interaction.guild.id, { $set: { 'features.verificationSystem.type': type } });
-      
+
       const typeDescriptions = {
         button: 'Simple button click verification',
         captcha: 'Image captcha verification (creates private thread)',
         reaction: 'Reaction-based verification'
       };
-      
+
       await interaction.editReply({
         embeds: [await successEmbed(interaction.guild.id, 'Verification Type Set',
           `${GLYPHS.SUCCESS} Verification type set to **${type}**\n\n${typeDescriptions[type]}\n\n⚠️ **Note:** You need to re-send the verification panel with \`/verify panel\` for changes to take effect.`)]
@@ -1844,7 +1847,7 @@ async function handleAutoroleCommand(interaction, guildConfig) {
 async function handleFeatureCommand(interaction, client, guildConfig) {
   const { successEmbed, errorEmbed, infoEmbed, GLYPHS } = await import('../../utils/embeds.js');
   const { EmbedBuilder } = await import('discord.js');
-  
+
   const guildId = interaction.guild.id;
   const featureType = interaction.options.getString('type');
   const status = interaction.options.getString('status');
@@ -1875,7 +1878,7 @@ async function handleFeatureCommand(interaction, client, guildConfig) {
   if (featureType === 'custom') {
     if (!customCommand) {
       return interaction.editReply({
-        embeds: [await errorEmbed(guildId, 'Missing Command', 
+        embeds: [await errorEmbed(guildId, 'Missing Command',
           `${GLYPHS.ERROR} Please specify a command name using the \`command\` option.`)]
       });
     }
@@ -1906,7 +1909,7 @@ async function handleFeatureCommand(interaction, client, guildConfig) {
   if (status === 'status') {
     const disabledText = guildConfig.textCommands?.disabledCommands || [];
     const disabledSlash = guildConfig.slashCommands?.disabledCommands || [];
-    
+
     const commandStatus = commandsToManage.map(cmd => {
       const textDisabled = disabledText.includes(cmd);
       const slashDisabled = disabledSlash.includes(cmd);
@@ -1927,10 +1930,10 @@ async function handleFeatureCommand(interaction, client, guildConfig) {
   const isEnabling = status === 'enable';
   const disabledText = [...(guildConfig.textCommands?.disabledCommands || [])];
   const disabledSlash = [...(guildConfig.slashCommands?.disabledCommands || [])];
-  
+
   // Protected commands that cannot be disabled
   const protectedCommands = ['help', 'config', 'feature', 'setup'];
-  
+
   let modifiedCount = 0;
   let skippedProtected = [];
 
@@ -1963,14 +1966,216 @@ async function handleFeatureCommand(interaction, client, guildConfig) {
   let description = `${GLYPHS.SUCCESS} **${featureName}** has been ${isEnabling ? 'enabled' : 'disabled'}.\n\n`;
   description += `**Commands affected:** ${commandsToManage.length}\n`;
   description += `**Commands:** ${commandsToManage.map(c => `\`${c}\``).join(', ')}`;
-  
+
   if (skippedProtected.length > 0) {
     description += `\n\n⚠️ **Skipped (protected):** ${skippedProtected.map(c => `\`${c}\``).join(', ')}`;
   }
 
   return interaction.editReply({
-    embeds: [await successEmbed(guildId, 
+    embeds: [await successEmbed(guildId,
       `Feature ${isEnabling ? 'Enabled' : 'Disabled'}`,
       description)]
   });
+}
+
+async function handleGiveawayCommand(interaction, client, guildConfig) {
+  const { successEmbed, errorEmbed, infoEmbed, GLYPHS } = await import('../../utils/embeds.js');
+  const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = await import('discord.js');
+  const Giveaway = (await import('../../models/Giveaway.js')).default;
+  const { endGiveawayById } = await import('../../commands/community/giveaway.js');
+
+  const subcommand = interaction.options.getSubcommand();
+
+  switch (subcommand) {
+    case 'start': {
+      const durationStr = interaction.options.getString('duration');
+      const winners = interaction.options.getInteger('winners');
+      const prize = interaction.options.getString('prize');
+      const requiredRole = interaction.options.getRole('required_role');
+
+      // Parse duration
+      const durationMatch = durationStr.match(/^(\d+)(s|m|h|d|w)$/i);
+      if (!durationMatch) {
+        return interaction.editReply({
+          embeds: [await errorEmbed(interaction.guild.id, 'Invalid Duration',
+            'Please provide a valid duration.')]
+        });
+      }
+
+      const value = parseInt(durationMatch[1]);
+      const unit = durationMatch[2].toLowerCase();
+      const multipliers = { s: 1000, m: 60000, h: 3600000, d: 86400000, w: 604800000 };
+      const duration = value * multipliers[unit];
+
+      const endsAt = new Date(Date.now() + duration);
+
+      // Create giveaway embed
+      const embed = new EmbedBuilder()
+        .setColor(guildConfig.embedStyle?.color || '#FF69B4')
+        .setTitle('🎉 GIVEAWAY 🎉')
+        .setDescription(
+          `**Prize:** ${prize}\n\n` +
+          `**Winners:** ${winners}\n` +
+          `**Hosted by:** ${interaction.user}\n` +
+          (requiredRole ? `**Required Role:** ${requiredRole}\n\n` : '\n') +
+          `**Ends:** <t:${Math.floor(endsAt.getTime() / 1000)}:R>\n\n` +
+          `Click the button below to enter!`
+        )
+        .setFooter({ text: 'Ends at' })
+        .setTimestamp(endsAt);
+
+      const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId('giveaway_enter')
+          .setLabel('🎉 Enter (0)')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId('giveaway_participants')
+          .setLabel('👥 Participants')
+          .setStyle(ButtonStyle.Secondary)
+      );
+
+      const giveawayMessage = await interaction.channel.send({
+        embeds: [embed],
+        components: [row]
+      });
+
+      // Save to database
+      await Giveaway.create({
+        guildId: interaction.guild.id,
+        channelId: interaction.channel.id,
+        messageId: giveawayMessage.id,
+        hostId: interaction.user.id,
+        prize,
+        winners,
+        endsAt,
+        participants: [],
+        requirements: requiredRole ? { roleId: requiredRole.id } : undefined
+      });
+
+      return interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, 'Giveaway Started!',
+          `${GLYPHS.SUCCESS} Giveaway for **${prize}** has started!\n` +
+          `Ends <t:${Math.floor(endsAt.getTime() / 1000)}:R>`)]
+      });
+    }
+
+    case 'end': {
+      const messageId = interaction.options.getString('message_id');
+      const giveaway = await Giveaway.findOne({ messageId, guildId: interaction.guild.id });
+
+      if (!giveaway) {
+        return interaction.editReply({
+          embeds: [await errorEmbed(interaction.guild.id, 'Not Found',
+            'Could not find a giveaway with that message ID.')]
+        });
+      }
+
+      if (giveaway.ended) {
+        return interaction.editReply({
+          embeds: [await errorEmbed(interaction.guild.id, 'Already Ended',
+            'This giveaway has already ended.')]
+        });
+      }
+
+      await endGiveawayById(interaction.guild, giveaway);
+
+      return interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, 'Giveaway Ended',
+          `${GLYPHS.SUCCESS} The giveaway has been ended!`)]
+      });
+    }
+
+    case 'reroll': {
+      const messageId = interaction.options.getString('message_id');
+      const giveaway = await Giveaway.findOne({ messageId, guildId: interaction.guild.id });
+
+      if (!giveaway) {
+        return interaction.editReply({
+          embeds: [await errorEmbed(interaction.guild.id, 'Not Found',
+            'Could not find a giveaway with that message ID.')]
+        });
+      }
+
+      if (!giveaway.ended) {
+        return interaction.editReply({
+          embeds: [await errorEmbed(interaction.guild.id, 'Not Ended',
+            'This giveaway has not ended yet. Use `/giveaway end` first.')]
+        });
+      }
+
+      if (giveaway.participants.length === 0) {
+        return interaction.editReply({
+          embeds: [await errorEmbed(interaction.guild.id, 'No Participants',
+            'There were no participants in this giveaway.')]
+        });
+      }
+
+      // Pick new winners
+      const newWinners = giveaway.pickWinners();
+      giveaway.winnerIds = newWinners;
+      await giveaway.save();
+
+      const channel = interaction.guild.channels.cache.get(giveaway.channelId);
+      if (channel) {
+        const winnerMentions = newWinners.map(id => `<@${id}>`).join(', ');
+        await channel.send({
+          content: `🎉 **REROLL!** New winner(s): ${winnerMentions}\n**Prize:** ${giveaway.prize}`
+        });
+      }
+
+      return interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, 'Giveaway Rerolled',
+          `${GLYPHS.SUCCESS} New winners have been selected!`)]
+      });
+    }
+
+    case 'list': {
+      const giveaways = await Giveaway.getGuildGiveaways(interaction.guild.id);
+
+      if (giveaways.length === 0) {
+        return interaction.editReply({
+          embeds: [await infoEmbed(interaction.guild.id, 'No Active Giveaways',
+            'There are no active giveaways in this server.')]
+        });
+      }
+
+      const giveawayList = giveaways.map((g, i) =>
+        `**${i + 1}.** ${g.prize}\n` +
+        `   ${GLYPHS.DOT} Ends: <t:${Math.floor(g.endsAt.getTime() / 1000)}:R>\n` +
+        `   ${GLYPHS.DOT} Participants: ${g.participants.length}\n` +
+        `   ${GLYPHS.DOT} Message ID: \`${g.messageId}\``
+      ).join('\n\n');
+
+      return interaction.editReply({
+        embeds: [await infoEmbed(interaction.guild.id, '🎉 Active Giveaways', giveawayList)]
+      });
+    }
+
+    case 'delete': {
+      const messageId = interaction.options.getString('message_id');
+      const giveaway = await Giveaway.findOneAndDelete({ messageId, guildId: interaction.guild.id });
+
+      if (!giveaway) {
+        return interaction.editReply({
+          embeds: [await errorEmbed(interaction.guild.id, 'Not Found',
+            'Could not find a giveaway with that message ID.')]
+        });
+      }
+
+      // Try to delete the giveaway message
+      try {
+        const channel = interaction.guild.channels.cache.get(giveaway.channelId);
+        const msg = await channel?.messages.fetch(giveaway.messageId);
+        await msg?.delete();
+      } catch {
+        // Message might already be deleted
+      }
+
+      return interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, 'Giveaway Deleted',
+          `${GLYPHS.SUCCESS} The giveaway has been cancelled and deleted.`)]
+      });
+    }
+  }
 }

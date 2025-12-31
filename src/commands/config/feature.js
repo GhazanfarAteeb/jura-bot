@@ -134,9 +134,9 @@ async function showFeatureMenu(message, guildConfig) {
   const disabledSlash = guildConfig.slashCommands?.disabledCommands || [];
 
   let description = `**Manage bot features and commands**\n\n`;
-  
+
   for (const [key, category] of Object.entries(featureCategories)) {
-    const disabledCount = category.commands.filter(cmd => 
+    const disabledCount = category.commands.filter(cmd =>
       disabledText.includes(cmd) || disabledSlash.includes(cmd)
     ).length;
     const status = disabledCount === 0 ? '✅' : disabledCount === category.commands.length ? '❌' : '⚠️';
@@ -166,18 +166,18 @@ async function showDisabledList(message, guildConfig) {
   const disabledSlash = guildConfig.slashCommands?.disabledCommands || [];
 
   let description = '';
-  
+
   if (disabledText.length > 0) {
     description += `**Disabled Text Commands (${disabledText.length}):**\n`;
     description += disabledText.map(c => `${GLYPHS.DOT} \`${c}\``).join('\n');
     description += '\n\n';
   }
-  
+
   if (disabledSlash.length > 0) {
     description += `**Disabled Slash Commands (${disabledSlash.length}):**\n`;
     description += disabledSlash.map(c => `${GLYPHS.DOT} \`/${c}\``).join('\n');
   }
-  
+
   if (!description) {
     description = `${GLYPHS.SUCCESS} No commands are currently disabled!\n\nAll bot features are active.`;
   }
@@ -189,7 +189,7 @@ async function showDisabledList(message, guildConfig) {
 async function showFeatureStatus(message, guildConfig, feature) {
   const guildId = message.guild.id;
   const category = featureCategories[feature];
-  
+
   if (!category) {
     // Check if it's a single command
     const embed = await errorEmbed(guildId, 'Unknown Feature',
@@ -211,7 +211,7 @@ async function showFeatureStatus(message, guildConfig, feature) {
     return `${icon} \`${cmd}\``;
   });
 
-  const enabledCount = category.commands.filter(cmd => 
+  const enabledCount = category.commands.filter(cmd =>
     !disabledText.includes(cmd) && !disabledSlash.includes(cmd)
   ).length;
 
@@ -231,7 +231,7 @@ async function showFeatureStatus(message, guildConfig, feature) {
 async function toggleFeature(message, guildConfig, target, isEnabling, client) {
   const guildId = message.guild.id;
   const category = featureCategories[target];
-  
+
   let commandsToManage = [];
   let featureName = '';
 
@@ -250,7 +250,7 @@ async function toggleFeature(message, guildConfig, target, isEnabling, client) {
       );
       return message.reply({ embeds: [embed] });
     }
-    
+
     const actualCommand = client.commands.get(target) || client.commands.get(client.aliases.get(target));
     commandsToManage = [actualCommand?.name || target];
     featureName = `Command: ${commandsToManage[0]}`;
@@ -258,7 +258,7 @@ async function toggleFeature(message, guildConfig, target, isEnabling, client) {
 
   const disabledText = [...(guildConfig.textCommands?.disabledCommands || [])];
   const disabledSlash = [...(guildConfig.slashCommands?.disabledCommands || [])];
-  
+
   let skippedProtected = [];
 
   for (const cmd of commandsToManage) {
@@ -289,16 +289,16 @@ async function toggleFeature(message, guildConfig, target, isEnabling, client) {
 
   let description = `${GLYPHS.SUCCESS} **${featureName}** has been ${isEnabling ? 'enabled' : 'disabled'}.\n\n`;
   description += `**Commands affected:** ${commandsToManage.length - skippedProtected.length}\n`;
-  
+
   if (commandsToManage.length <= 10) {
     description += `**Commands:** ${commandsToManage.filter(c => !skippedProtected.includes(c)).map(c => `\`${c}\``).join(', ')}`;
   }
-  
+
   if (skippedProtected.length > 0) {
     description += `\n\n⚠️ **Skipped (protected):** ${skippedProtected.map(c => `\`${c}\``).join(', ')}`;
   }
 
-  const embed = await successEmbed(guildId, 
+  const embed = await successEmbed(guildId,
     `Feature ${isEnabling ? 'Enabled' : 'Disabled'}`,
     description
   );

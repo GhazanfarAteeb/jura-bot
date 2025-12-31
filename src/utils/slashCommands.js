@@ -788,6 +788,67 @@ const slashCommands = [
       subcommand.setName('end')
         .setDescription('End the server lockdown'))
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+
+  // Giveaway Command
+  new SlashCommandBuilder()
+    .setName('giveaway')
+    .setDescription('Create and manage giveaways')
+    .addSubcommand(subcommand =>
+      subcommand.setName('start')
+        .setDescription('Start a new giveaway')
+        .addStringOption(option =>
+          option.setName('duration')
+            .setDescription('Duration (e.g., 1h, 1d, 1w)')
+            .setRequired(true)
+            .addChoices(
+              { name: '10 minutes', value: '10m' },
+              { name: '30 minutes', value: '30m' },
+              { name: '1 hour', value: '1h' },
+              { name: '6 hours', value: '6h' },
+              { name: '12 hours', value: '12h' },
+              { name: '1 day', value: '1d' },
+              { name: '3 days', value: '3d' },
+              { name: '1 week', value: '1w' }
+            ))
+        .addIntegerOption(option =>
+          option.setName('winners')
+            .setDescription('Number of winners (1-20)')
+            .setRequired(true)
+            .setMinValue(1)
+            .setMaxValue(20))
+        .addStringOption(option =>
+          option.setName('prize')
+            .setDescription('What is the prize?')
+            .setRequired(true))
+        .addRoleOption(option =>
+          option.setName('required_role')
+            .setDescription('Role required to enter (optional)')
+            .setRequired(false)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('end')
+        .setDescription('End a giveaway early')
+        .addStringOption(option =>
+          option.setName('message_id')
+            .setDescription('The giveaway message ID')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('reroll')
+        .setDescription('Pick new winner(s) for an ended giveaway')
+        .addStringOption(option =>
+          option.setName('message_id')
+            .setDescription('The giveaway message ID')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('list')
+        .setDescription('View all active giveaways'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('delete')
+        .setDescription('Cancel and delete a giveaway')
+        .addStringOption(option =>
+          option.setName('message_id')
+            .setDescription('The giveaway message ID')
+            .setRequired(true)))
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
 ];
 
 export async function registerSlashCommands(client) {

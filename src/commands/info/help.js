@@ -38,7 +38,7 @@ const COMMANDS_BY_CATEGORY = {
 // Slash commands available
 const SLASH_COMMANDS = [
   'ban', 'kick', 'warn', 'timeout', 'purge', 'userhistory', 'untimeout', 'verify',
-  'lockdown', 'feature', 'play', 'pause', 'resume', 'skip', 'stop', 'queue',
+  'lockdown', 'feature', 'giveaway', 'play', 'pause', 'resume', 'skip', 'stop', 'queue',
   'nowplaying', 'volume', 'shuffle', 'loop', 'seek', 'remove', 'clear', 'skipto'
 ];
 
@@ -255,7 +255,7 @@ async function showMainHelp(message, prefix, client, disabledCommands) {
     disabledRow2.components.forEach((btn, i) => {
       if (i < 3) btn.setDisabled(true); // Don't disable link button
     });
-    reply.edit({ components: [disabledRow1, disabledRow2] }).catch(() => {});
+    reply.edit({ components: [disabledRow1, disabledRow2] }).catch(() => { });
   });
 }
 
@@ -644,6 +644,6 @@ async function showCommandDetail(message, commandName, prefix, client, disabledC
 
   collector.on('end', () => {
     row.components.forEach(btn => btn.setDisabled(true));
-    reply.edit({ components: [row] }).catch(() => {});
+    reply.edit({ components: [row] }).catch(() => { });
   });
 }
