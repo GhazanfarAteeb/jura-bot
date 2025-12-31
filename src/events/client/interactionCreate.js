@@ -2393,19 +2393,19 @@ async function announceLevelUpFromAward(guild, guildConfig, user, levelData, lev
   try {
     const { EmbedBuilder } = await import('discord.js');
     const levelConfig = guildConfig.features?.levelSystem;
-    
+
     // Check if level up announcements are enabled
     if (levelConfig?.announceLevelUp === false) return;
-    
+
     const newLevel = Math.max(...leveledUp);
-    
+
     // Get the level up channel
     const channelId = levelConfig?.levelUpChannel || guildConfig.channels?.levelUpChannel;
     if (!channelId) return;
-    
+
     const channel = guild.channels.cache.get(channelId);
     if (!channel) return;
-    
+
     // Build level up message
     let levelUpMessage = levelConfig?.levelUpMessage || '🎉 {user} leveled up to level {level}!';
     levelUpMessage = levelUpMessage
@@ -2414,7 +2414,7 @@ async function announceLevelUpFromAward(guild, guildConfig, user, levelData, lev
       .replace(/{level}/g, newLevel)
       .replace(/{totalxp}/g, levelData.totalXP.toLocaleString())
       .replace(/{server}/g, guild.name);
-    
+
     // Create embed
     const embed = new EmbedBuilder()
       .setColor(guildConfig.embedStyle?.color || '#FFD700')
@@ -2427,12 +2427,12 @@ async function announceLevelUpFromAward(guild, guildConfig, user, levelData, lev
       )
       .setFooter({ text: 'Awarded by admin' })
       .setTimestamp();
-    
-    await channel.send({ 
+
+    await channel.send({
       content: `<@${user.id}>`,
-      embeds: [embed] 
+      embeds: [embed]
     });
-    
+
   } catch (error) {
     console.error('Error announcing level up:', error);
   }
