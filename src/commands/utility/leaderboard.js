@@ -117,10 +117,20 @@ export default {
       });
 
       collector.on('collect', async (i) => {
-        const [action, , newPage] = i.customId.split('_');
+        // Parse custom_id format: lb_action_type_currentPage
+        const parts = i.customId.split('_');
+        const action = parts[1]; // first, prev, page, next, last
+        const btnType = parts[2];
+        const btnCurrentPage = parseInt(parts[3]);
 
-        if (action === 'lb') {
-          const targetPage = parseInt(newPage);
+        if (parts[0] === 'lb' && action !== 'page') {
+          let targetPage = btnCurrentPage;
+          
+          if (action === 'first') targetPage = 1;
+          else if (action === 'prev') targetPage = Math.max(1, btnCurrentPage - 1);
+          else if (action === 'next') targetPage = Math.min(maxPage, btnCurrentPage + 1);
+          else if (action === 'last') targetPage = maxPage;
+
           const newStart = (targetPage - 1) * perPage;
           const newEnd = newStart + perPage;
 
@@ -208,29 +218,30 @@ function createPaginationRow(currentPage, maxPage, type, forceDisabled = false) 
   const nextDisabled = forceDisabled || currentPage >= maxPage;
   const lastDisabled = forceDisabled || currentPage >= maxPage;
 
+  // Use unique identifiers for each button action to avoid duplicate custom_id
   return new ActionRowBuilder().addComponents(
     new ButtonBuilder()
-      .setCustomId(`lb_${type}_1`)
+      .setCustomId(`lb_first_${type}_${currentPage}`)
       .setEmoji('⏮️')
       .setStyle(ButtonStyle.Secondary)
       .setDisabled(firstDisabled),
     new ButtonBuilder()
-      .setCustomId(`lb_${type}_${currentPage - 1}`)
+      .setCustomId(`lb_prev_${type}_${currentPage}`)
       .setEmoji('◀️')
       .setStyle(ButtonStyle.Primary)
       .setDisabled(prevDisabled),
     new ButtonBuilder()
-      .setCustomId(`lb_page_info`)
+      .setCustomId(`lb_page_${type}_${currentPage}`)
       .setLabel(`${currentPage}/${maxPage}`)
       .setStyle(ButtonStyle.Secondary)
       .setDisabled(true),
     new ButtonBuilder()
-      .setCustomId(`lb_${type}_${currentPage + 1}`)
+      .setCustomId(`lb_next_${type}_${currentPage}`)
       .setEmoji('▶️')
       .setStyle(ButtonStyle.Primary)
       .setDisabled(nextDisabled),
     new ButtonBuilder()
-      .setCustomId(`lb_${type}_${maxPage}`)
+      .setCustomId(`lb_last_${type}_${currentPage}`)
       .setEmoji('⏭️')
       .setStyle(ButtonStyle.Secondary)
       .setDisabled(lastDisabled)
