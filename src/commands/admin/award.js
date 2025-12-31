@@ -94,6 +94,11 @@ export default {
 
       await message.reply({ embeds: [embed] });
 
+      // Send level up announcement if user leveled up
+      if (type === 'xp' && result.leveledUp && result.leveledUp.length > 0) {
+        await announceLevelUp(message.guild, guildConfig, targetUser, result.levelData, result.leveledUp);
+      }
+
       // Log to mod log channel
       await logAward(message.guild, guildConfig, {
         type: type === 'coins' || type === 'coin' || type === 'money' ? 'coins' : (type === 'rep' || type === 'reputation' ? 'rep' : 'xp'),
@@ -159,6 +164,9 @@ async function handleXP(user, guildId, amount, admin) {
     });
   }
 
+  const oldLevel = levelData.level;
+  let leveledUp = [];
+
   // Handle negative XP
   if (amount < 0) {
     const absAmount = Math.abs(amount);
@@ -186,7 +194,7 @@ async function handleXP(user, guildId, amount, admin) {
     }
   } else {
     // Add XP normally
-    const leveledUp = levelData.addXP(amount);
+    leveledUp = levelData.addXP(amount) || [];
   }
 
   levelData.username = user.username;
@@ -196,7 +204,9 @@ async function handleXP(user, guildId, amount, admin) {
     emoji: '✨',
     typeName: 'XP',
     newValue: levelData.totalXP,
-    levelInfo: `**Level:** ${levelData.level} • **Current XP:** ${levelData.xp}/${levelData.xpForNextLevel()}`
+    levelInfo: `**Level:** ${levelData.level} • **Current XP:** ${levelData.xp}/${levelData.xpForNextLevel()}`,
+    leveledUp,
+    levelData
   };
 }
 
@@ -205,14 +215,7 @@ async function handleCoins(user, guildId, amount, admin, guildConfig) {
 
   if (amount < 0) {
     const absAmount = Math.abs(amount);
-    // Deduct from wallet first, then bank if needed
-    if (economy.coins >= absAmount) {
-      economy.coins -= absAmount;
-    } else {
-      const remaining = absAmount - economy.coins;
-      economy.coins = 0;
-      economy.bank = Math.max(0, economy.bank - remaining);
-    }
+    economy.coins = Math.max(0, economy.coins - absAmount);
   } else {
     economy.coins += amount;
     economy.stats.totalEarned = (economy.stats.totalEarned || 0) + amount;
@@ -225,8 +228,8 @@ async function handleCoins(user, guildId, amount, admin, guildConfig) {
   return {
     emoji: coinEmoji,
     typeName: 'Coins',
-    newValue: economy.coins + economy.bank,
-    levelInfo: `**Wallet:** ${economy.coins.toLocaleString()} • **Bank:** ${economy.bank.toLocaleString()}`
+    newValue: economy.coins,
+    levelInfo: `**Wallet:** ${economy.coins.toLocaleString()}`
   };
 }
 
@@ -303,5 +306,54 @@ async function logAward(guild, guildConfig, data) {
   }
 }
 
+// Announce level up to the level up channel
+async function announceLevelUp(guild, guildConfig, user, levelData, leveledUp) {
+  try {
+    const levelConfig = guildConfig.features?.levelSystem;
+    
+    // Check if level up announcements are enabled
+    if (levelConfig?.announceLevelUp === false) return;
+    
+    const newLevel = Math.max(...leveledUp);
+    
+    // Get the level up channel
+    const channelId = levelConfig?.levelUpChannel || guildConfig.channels?.levelUpChannel;
+    if (!channelId) return;
+    
+    const channel = guild.channels.cache.get(channelId);
+    if (!channel) return;
+    
+    // Build level up message
+    let levelUpMessage = levelConfig?.levelUpMessage || '🎉 {user} leveled up to level {level}!';
+    levelUpMessage = levelUpMessage
+      .replace(/{user}/g, `<@${user.id}>`)
+      .replace(/{username}/g, user.username)
+      .replace(/{level}/g, newLevel)
+      .replace(/{totalxp}/g, levelData.totalXP.toLocaleString())
+      .replace(/{server}/g, guild.name);
+    
+    // Create embed
+    const embed = new EmbedBuilder()
+      .setColor(guildConfig.embedStyle?.color || '#FFD700')
+      .setTitle('🎉 Level Up!')
+      .setDescription(levelUpMessage)
+      .setThumbnail(user.displayAvatarURL({ extension: 'png', size: 128 }))
+      .addFields(
+        { name: 'New Level', value: `**${newLevel}**`, inline: true },
+        { name: 'Total XP', value: levelData.totalXP.toLocaleString(), inline: true }
+      )
+      .setFooter({ text: 'Awarded by admin' })
+      .setTimestamp();
+    
+    await channel.send({ 
+      content: `<@${user.id}>`,
+      embeds: [embed] 
+    });
+    
+  } catch (error) {
+    console.error('Error announcing level up:', error);
+  }
+}
+
 // Export logAward for use in slash command handler
-export { logAward };
+export { logAward, announceLevelUp };

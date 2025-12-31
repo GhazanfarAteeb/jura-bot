@@ -2208,10 +2208,12 @@ async function handleAwardCommand(interaction, client, guildConfig) {
 
   try {
     let result;
+    let leveledUp = [];
+    let levelData = null;
 
     switch (type) {
       case 'xp': {
-        let levelData = await Level.findOne({ userId: targetUser.id, guildId });
+        levelData = await Level.findOne({ userId: targetUser.id, guildId });
 
         if (!levelData) {
           levelData = new Level({
@@ -2242,7 +2244,7 @@ async function handleAwardCommand(interaction, client, guildConfig) {
             if (newLevel > 1000) break;
           }
         } else {
-          levelData.addXP(amount);
+          leveledUp = levelData.addXP(amount) || [];
         }
 
         levelData.username = targetUser.username;
@@ -2261,13 +2263,7 @@ async function handleAwardCommand(interaction, client, guildConfig) {
         const economy = await Economy.getEconomy(targetUser.id, guildId);
 
         if (amount < 0) {
-          if (economy.coins >= absAmount) {
-            economy.coins -= absAmount;
-          } else {
-            const remaining = absAmount - economy.coins;
-            economy.coins = 0;
-            economy.bank = Math.max(0, economy.bank - remaining);
-          }
+          economy.coins = Math.max(0, economy.coins - absAmount);
         } else {
           economy.coins += amount;
           economy.stats.totalEarned = (economy.stats.totalEarned || 0) + amount;
@@ -2280,8 +2276,8 @@ async function handleAwardCommand(interaction, client, guildConfig) {
         result = {
           emoji: coinEmoji,
           typeName: 'Coins',
-          newValue: economy.coins + economy.bank,
-          levelInfo: `**Wallet:** ${economy.coins.toLocaleString()} • **Bank:** ${economy.bank.toLocaleString()}`
+          newValue: economy.coins,
+          levelInfo: `**Wallet:** ${economy.coins.toLocaleString()}`
         };
         break;
       }
@@ -2316,6 +2312,11 @@ async function handleAwardCommand(interaction, client, guildConfig) {
     );
 
     await interaction.editReply({ embeds: [embed] });
+
+    // Send level up announcement if user leveled up
+    if (type === 'xp' && leveledUp && leveledUp.length > 0 && levelData) {
+      await announceLevelUpFromAward(interaction.guild, guildConfig, targetUser, levelData, leveledUp);
+    }
 
     // Try to DM the user
     try {
@@ -2384,5 +2385,55 @@ async function handleAwardCommand(interaction, client, guildConfig) {
     return interaction.editReply({
       embeds: [await errorEmbed(guildId, 'Error', 'An error occurred while processing the award.')]
     });
+  }
+}
+
+// Announce level up for award command
+async function announceLevelUpFromAward(guild, guildConfig, user, levelData, leveledUp) {
+  try {
+    const { EmbedBuilder } = await import('discord.js');
+    const levelConfig = guildConfig.features?.levelSystem;
+    
+    // Check if level up announcements are enabled
+    if (levelConfig?.announceLevelUp === false) return;
+    
+    const newLevel = Math.max(...leveledUp);
+    
+    // Get the level up channel
+    const channelId = levelConfig?.levelUpChannel || guildConfig.channels?.levelUpChannel;
+    if (!channelId) return;
+    
+    const channel = guild.channels.cache.get(channelId);
+    if (!channel) return;
+    
+    // Build level up message
+    let levelUpMessage = levelConfig?.levelUpMessage || '🎉 {user} leveled up to level {level}!';
+    levelUpMessage = levelUpMessage
+      .replace(/{user}/g, `<@${user.id}>`)
+      .replace(/{username}/g, user.username)
+      .replace(/{level}/g, newLevel)
+      .replace(/{totalxp}/g, levelData.totalXP.toLocaleString())
+      .replace(/{server}/g, guild.name);
+    
+    // Create embed
+    const embed = new EmbedBuilder()
+      .setColor(guildConfig.embedStyle?.color || '#FFD700')
+      .setTitle('🎉 Level Up!')
+      .setDescription(levelUpMessage)
+      .setThumbnail(user.displayAvatarURL({ extension: 'png', size: 128 }))
+      .addFields(
+        { name: 'New Level', value: `**${newLevel}**`, inline: true },
+        { name: 'Total XP', value: levelData.totalXP.toLocaleString(), inline: true }
+      )
+      .setFooter({ text: 'Awarded by admin' })
+      .setTimestamp();
+    
+    await channel.send({ 
+      content: `<@${user.id}>`,
+      embeds: [embed] 
+    });
+    
+  } catch (error) {
+    console.error('Error announcing level up:', error);
   }
 }
