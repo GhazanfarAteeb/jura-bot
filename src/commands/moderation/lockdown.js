@@ -156,13 +156,15 @@ export default {
       }
 
       // Save lockdown state and permissions to database
-      guildConfig.security = guildConfig.security || {};
-      guildConfig.security.lockdownActive = true;
-      guildConfig.security.lockdownReason = reason;
-      guildConfig.security.lockdownBy = message.author.id;
-      guildConfig.security.lockdownAt = new Date();
-      guildConfig.security.lockdownPermissions = savedPermissions;
-      await guildConfig.save();
+      await Guild.updateGuild(message.guild.id, {
+        $set: {
+          'security.lockdownActive': true,
+          'security.lockdownReason': reason,
+          'security.lockdownBy': message.author.id,
+          'security.lockdownAt': new Date(),
+          'security.lockdownPermissions': savedPermissions
+        }
+      });
 
       // Disconnect all members from voice channels
       for (const [, channel] of voiceChannels) {
@@ -238,9 +240,39 @@ export default {
           if (!channel) continue;
 
           try {
-            await channel.permissionOverwrites.edit(message.guild.id, saved.permissions, { 
-              reason: 'Lockdown ended - restoring original permissions' 
-            });
+            // Filter out null values - null means "inherit" which requires removing the overwrite
+            // We need to set non-null values and then remove the null ones
+            const permissionsToSet = {};
+            const permissionsToRemove = [];
+            
+            for (const [key, value] of Object.entries(saved.permissions)) {
+              if (value === null) {
+                permissionsToRemove.push(key);
+              } else {
+                permissionsToSet[key] = value;
+              }
+            }
+
+            // First, set the explicit permissions (true/false values)
+            if (Object.keys(permissionsToSet).length > 0) {
+              await channel.permissionOverwrites.edit(message.guild.id, permissionsToSet, { 
+                reason: 'Lockdown ended - restoring original permissions' 
+              });
+            }
+
+            // For null values, we need to reset them to neutral (inherit from role)
+            // The only way to do this is to edit with the permission set to null
+            // But discord.js requires us to use permissionOverwrites.edit with null values
+            // to actually remove specific permission overwrites
+            if (permissionsToRemove.length > 0) {
+              const resetPerms = {};
+              for (const perm of permissionsToRemove) {
+                resetPerms[perm] = null;
+              }
+              await channel.permissionOverwrites.edit(message.guild.id, resetPerms, { 
+                reason: 'Lockdown ended - resetting inherited permissions' 
+              });
+            }
             
             if (saved.channelType === 'text') {
               restoredTextCount++;
@@ -287,9 +319,12 @@ export default {
       }
 
       // Clear lockdown state
-      guildConfig.security.lockdownActive = false;
-      guildConfig.security.lockdownPermissions = [];
-      await guildConfig.save();
+      await Guild.updateGuild(message.guild.id, {
+        $set: {
+          'security.lockdownActive': false,
+          'security.lockdownPermissions': []
+        }
+      });
 
       await statusMsg.edit({
         embeds: [await successEmbed(message.guild.id, '🔓 Server Lockdown Disabled',
