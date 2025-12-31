@@ -10,7 +10,7 @@ export default {
   description: 'View server leaderboards with pagination',
   usage: 'top <coins|rep|level>',
   category: 'utility',
-  aliases: ['leaderboards', 'rankings', 'lb'],
+  // aliases: ['leaderboards', 'rankings', 'lb'],
   cooldown: 5,
   slashCommand: true,
 
