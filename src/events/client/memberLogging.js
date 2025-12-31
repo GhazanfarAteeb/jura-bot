@@ -29,6 +29,13 @@ async function logMemberUpdate(oldMember, newMember) {
     try {
         if (newMember.user.bot) return;
 
+        // Skip if oldMember is partial (cache incomplete) - this causes false positives
+        if (oldMember.partial) return;
+        
+        // Skip if the old member's roles cache is empty (except @everyone) - indicates incomplete cache
+        // This prevents false role change logs when the bot restarts or member data is fetched
+        if (oldMember.roles.cache.size <= 1 && newMember.roles.cache.size > 1) return;
+
         const guildConfig = await Guild.getGuild(newMember.guild.id, newMember.guild.name);
 
         if (!guildConfig.channels.memberLog) return;
@@ -38,12 +45,12 @@ async function logMemberUpdate(oldMember, newMember) {
 
         const embeds = [];
 
-        // Nickname change
-        if (oldMember.nickname !== newMember.nickname) {
+        // Nickname change - only log if both are properly cached
+        if (oldMember.nickname !== newMember.nickname && !oldMember.partial) {
             const embed = new EmbedBuilder()
                 .setTitle('📝 Nickname Changed')
                 .setColor('#5865F2')
-                .setDescription(`${newMember}'s nickname was changed`)
+                .setDescription(`<@${newMember.id}>'s nickname was changed`)
                 .addFields(
                     { name: 'Before', value: oldMember.nickname || '*None*', inline: true },
                     { name: 'After', value: newMember.nickname || '*None*', inline: true }
@@ -55,17 +62,22 @@ async function logMemberUpdate(oldMember, newMember) {
             embeds.push(embed);
         }
 
-        // Role changes
-        const addedRoles = newMember.roles.cache.filter(role => !oldMember.roles.cache.has(role.id));
-        const removedRoles = oldMember.roles.cache.filter(role => !newMember.roles.cache.has(role.id));
+        // Role changes - filter out @everyone role (has same ID as guild)
+        const guildId = newMember.guild.id;
+        const addedRoles = newMember.roles.cache.filter(role => 
+            role.id !== guildId && !oldMember.roles.cache.has(role.id)
+        );
+        const removedRoles = oldMember.roles.cache.filter(role => 
+            role.id !== guildId && !newMember.roles.cache.has(role.id)
+        );
 
         if (addedRoles.size > 0) {
             const embed = new EmbedBuilder()
                 .setTitle('➕ Roles Added')
                 .setColor('#57F287')
-                .setDescription(`${newMember} received new role(s)`)
+                .setDescription(`<@${newMember.id}> received new role(s)`)
                 .addFields(
-                    { name: 'Member', value: newMember.user.tag, inline: true },
+                    { name: 'Member', value: `${newMember.user.username}`, inline: true },
                     { name: 'Roles Added', value: addedRoles.map(r => r.toString()).join(', '), inline: true }
                 )
                 .setThumbnail(newMember.user.displayAvatarURL())
@@ -79,9 +91,9 @@ async function logMemberUpdate(oldMember, newMember) {
             const embed = new EmbedBuilder()
                 .setTitle('➖ Roles Removed')
                 .setColor('#ED4245')
-                .setDescription(`${newMember} had role(s) removed`)
+                .setDescription(`<@${newMember.id}> had role(s) removed`)
                 .addFields(
-                    { name: 'Member', value: newMember.user.tag, inline: true },
+                    { name: 'Member', value: `${newMember.user.username}`, inline: true },
                     { name: 'Roles Removed', value: removedRoles.map(r => r.toString()).join(', '), inline: true }
                 )
                 .setThumbnail(newMember.user.displayAvatarURL())
@@ -98,9 +110,9 @@ async function logMemberUpdate(oldMember, newMember) {
                 const embed = new EmbedBuilder()
                     .setTitle('⏰ Member Timed Out')
                     .setColor('#FEE75C')
-                    .setDescription(`${newMember} was timed out`)
+                    .setDescription(`<@${newMember.id}> was timed out`)
                     .addFields(
-                        { name: 'Member', value: newMember.user.tag, inline: true },
+                        { name: 'Member', value: `${newMember.user.username}`, inline: true },
                         { name: 'Until', value: `<t:${until}:F>`, inline: true }
                     )
                     .setThumbnail(newMember.user.displayAvatarURL())
@@ -112,9 +124,9 @@ async function logMemberUpdate(oldMember, newMember) {
                 const embed = new EmbedBuilder()
                     .setTitle('✅ Timeout Removed')
                     .setColor('#57F287')
-                    .setDescription(`${newMember}'s timeout was removed`)
+                    .setDescription(`<@${newMember.id}>'s timeout was removed`)
                     .addFields(
-                        { name: 'Member', value: newMember.user.tag, inline: true }
+                        { name: 'Member', value: `${newMember.user.username}`, inline: true }
                     )
                     .setThumbnail(newMember.user.displayAvatarURL())
                     .setFooter({ text: `User ID: ${newMember.id}` })
@@ -129,9 +141,9 @@ async function logMemberUpdate(oldMember, newMember) {
             const embed = new EmbedBuilder()
                 .setTitle('💎 New Server Booster!')
                 .setColor('#F47FFF')
-                .setDescription(`${newMember} just boosted the server!`)
+                .setDescription(`<@${newMember.id}> just boosted the server!`)
                 .addFields(
-                    { name: 'Member', value: newMember.user.tag, inline: true },
+                    { name: 'Member', value: `${newMember.user.username}`, inline: true },
                     { name: 'Boost Count', value: `${newMember.guild.premiumSubscriptionCount}`, inline: true }
                 )
                 .setThumbnail(newMember.user.displayAvatarURL())
@@ -143,9 +155,9 @@ async function logMemberUpdate(oldMember, newMember) {
             const embed = new EmbedBuilder()
                 .setTitle('💔 Boost Removed')
                 .setColor('#808080')
-                .setDescription(`${newMember} is no longer boosting the server`)
+                .setDescription(`<@${newMember.id}> is no longer boosting the server`)
                 .addFields(
-                    { name: 'Member', value: newMember.user.tag, inline: true }
+                    { name: 'Member', value: `${newMember.user.username}`, inline: true }
                 )
                 .setThumbnail(newMember.user.displayAvatarURL())
                 .setFooter({ text: `User ID: ${newMember.id}` })
@@ -159,9 +171,9 @@ async function logMemberUpdate(oldMember, newMember) {
             const embed = new EmbedBuilder()
                 .setTitle('🖼️ Server Avatar Changed')
                 .setColor('#5865F2')
-                .setDescription(`${newMember} changed their server avatar`)
+                .setDescription(`<@${newMember.id}> changed their server avatar`)
                 .addFields(
-                    { name: 'Member', value: newMember.user.tag, inline: true }
+                    { name: 'Member', value: `${newMember.user.username}`, inline: true }
                 )
                 .setThumbnail(newMember.displayAvatarURL())
                 .setImage(newMember.displayAvatarURL({ size: 256 }))
@@ -193,9 +205,9 @@ async function logBan(ban, isBan) {
         const embed = new EmbedBuilder()
             .setTitle(isBan ? '🔨 Member Banned' : '🔓 Member Unbanned')
             .setColor(isBan ? '#ED4245' : '#57F287')
-            .setDescription(`${ban.user.tag} was ${isBan ? 'banned from' : 'unbanned in'} the server`)
+            .setDescription(`${ban.user.username} was ${isBan ? 'banned from' : 'unbanned in'} the server`)
             .addFields(
-                { name: 'User', value: `${ban.user.tag}`, inline: true },
+                { name: 'User', value: `${ban.user.username}`, inline: true },
                 { name: 'User ID', value: ban.user.id, inline: true }
             )
             .setThumbnail(ban.user.displayAvatarURL())
