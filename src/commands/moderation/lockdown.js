@@ -76,16 +76,16 @@ export default {
           // Get current @everyone overwrites
           const everyoneOverwrite = channel.permissionOverwrites.cache.get(message.guild.id);
           const currentPerms = everyoneOverwrite ? {
-            SendMessages: everyoneOverwrite.allow.has(PermissionFlagsBits.SendMessages) ? true : 
-                          everyoneOverwrite.deny.has(PermissionFlagsBits.SendMessages) ? false : null,
+            SendMessages: everyoneOverwrite.allow.has(PermissionFlagsBits.SendMessages) ? true :
+              everyoneOverwrite.deny.has(PermissionFlagsBits.SendMessages) ? false : null,
             CreatePublicThreads: everyoneOverwrite.allow.has(PermissionFlagsBits.CreatePublicThreads) ? true :
-                                 everyoneOverwrite.deny.has(PermissionFlagsBits.CreatePublicThreads) ? false : null,
+              everyoneOverwrite.deny.has(PermissionFlagsBits.CreatePublicThreads) ? false : null,
             CreatePrivateThreads: everyoneOverwrite.allow.has(PermissionFlagsBits.CreatePrivateThreads) ? true :
-                                  everyoneOverwrite.deny.has(PermissionFlagsBits.CreatePrivateThreads) ? false : null,
+              everyoneOverwrite.deny.has(PermissionFlagsBits.CreatePrivateThreads) ? false : null,
             SendMessagesInThreads: everyoneOverwrite.allow.has(PermissionFlagsBits.SendMessagesInThreads) ? true :
-                                   everyoneOverwrite.deny.has(PermissionFlagsBits.SendMessagesInThreads) ? false : null,
+              everyoneOverwrite.deny.has(PermissionFlagsBits.SendMessagesInThreads) ? false : null,
             AddReactions: everyoneOverwrite.allow.has(PermissionFlagsBits.AddReactions) ? true :
-                          everyoneOverwrite.deny.has(PermissionFlagsBits.AddReactions) ? false : null
+              everyoneOverwrite.deny.has(PermissionFlagsBits.AddReactions) ? false : null
           } : {
             SendMessages: null,
             CreatePublicThreads: null,
@@ -122,13 +122,13 @@ export default {
           const everyoneOverwrite = channel.permissionOverwrites.cache.get(message.guild.id);
           const currentPerms = everyoneOverwrite ? {
             Connect: everyoneOverwrite.allow.has(PermissionFlagsBits.Connect) ? true :
-                     everyoneOverwrite.deny.has(PermissionFlagsBits.Connect) ? false : null,
+              everyoneOverwrite.deny.has(PermissionFlagsBits.Connect) ? false : null,
             Speak: everyoneOverwrite.allow.has(PermissionFlagsBits.Speak) ? true :
-                   everyoneOverwrite.deny.has(PermissionFlagsBits.Speak) ? false : null,
+              everyoneOverwrite.deny.has(PermissionFlagsBits.Speak) ? false : null,
             Stream: everyoneOverwrite.allow.has(PermissionFlagsBits.Stream) ? true :
-                    everyoneOverwrite.deny.has(PermissionFlagsBits.Stream) ? false : null,
+              everyoneOverwrite.deny.has(PermissionFlagsBits.Stream) ? false : null,
             UseVAD: everyoneOverwrite.allow.has(PermissionFlagsBits.UseVAD) ? true :
-                    everyoneOverwrite.deny.has(PermissionFlagsBits.UseVAD) ? false : null
+              everyoneOverwrite.deny.has(PermissionFlagsBits.UseVAD) ? false : null
           } : {
             Connect: null,
             Speak: null,
@@ -171,7 +171,7 @@ export default {
         try {
           for (const [, member] of channel.members) {
             if (!member.permissions.has(PermissionFlagsBits.Administrator)) {
-              await member.voice.disconnect(`[Lockdown] ${reason}`).catch(() => {});
+              await member.voice.disconnect(`[Lockdown] ${reason}`).catch(() => { });
             }
           }
         } catch (error) {
@@ -225,7 +225,7 @@ export default {
 
       const statusMsg = await message.reply({
         embeds: [await infoEmbed(message.guild.id, '🔓 Unlocking Server...',
-          hasSavedPerms 
+          hasSavedPerms
             ? `Restoring ${savedPermissions.length} saved channel permissions...`
             : `Resetting channel permissions to default...`)]
       });
@@ -244,7 +244,7 @@ export default {
             // We need to set non-null values and then remove the null ones
             const permissionsToSet = {};
             const permissionsToRemove = [];
-            
+
             for (const [key, value] of Object.entries(saved.permissions)) {
               if (value === null) {
                 permissionsToRemove.push(key);
@@ -255,8 +255,8 @@ export default {
 
             // First, set the explicit permissions (true/false values)
             if (Object.keys(permissionsToSet).length > 0) {
-              await channel.permissionOverwrites.edit(message.guild.id, permissionsToSet, { 
-                reason: 'Lockdown ended - restoring original permissions' 
+              await channel.permissionOverwrites.edit(message.guild.id, permissionsToSet, {
+                reason: 'Lockdown ended - restoring original permissions'
               });
             }
 
@@ -269,11 +269,11 @@ export default {
               for (const perm of permissionsToRemove) {
                 resetPerms[perm] = null;
               }
-              await channel.permissionOverwrites.edit(message.guild.id, resetPerms, { 
-                reason: 'Lockdown ended - resetting inherited permissions' 
+              await channel.permissionOverwrites.edit(message.guild.id, resetPerms, {
+                reason: 'Lockdown ended - resetting inherited permissions'
               });
             }
-            
+
             if (saved.channelType === 'text') {
               restoredTextCount++;
             } else {
@@ -302,7 +302,7 @@ export default {
               AddReactions: null
             }, { reason: 'Lockdown ended' });
             restoredTextCount++;
-          } catch (error) {}
+          } catch (error) { }
         }
 
         for (const [, channel] of voiceChannels) {
@@ -314,7 +314,7 @@ export default {
               UseVAD: null
             }, { reason: 'Lockdown ended' });
             restoredVoiceCount++;
-          } catch (error) {}
+          } catch (error) { }
         }
       }
 

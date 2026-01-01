@@ -34,9 +34,21 @@ export default {
         try {
           const leaveLogChannel = member.guild.channels.cache.get(leaveLogChannelId);
           if (leaveLogChannel) {
+            // Get the most recent join timestamp from database, fallback to Discord's joinedTimestamp
+            const lastJoin = memberData?.joinHistory?.length > 0 
+              ? memberData.joinHistory[memberData.joinHistory.length - 1].timestamp 
+              : null;
+            const joinedTimestamp = lastJoin 
+              ? Math.floor(new Date(lastJoin).getTime() / 1000) 
+              : (member.joinedTimestamp ? Math.floor(member.joinedTimestamp / 1000) : null);
+            
+            const joinedText = joinedTimestamp 
+              ? `<t:${joinedTimestamp}:R>` 
+              : 'Unknown';
+
             const embed = await infoEmbed(guildId, 'Member Left',
               `${GLYPHS.ARROW_RIGHT} **User:** ${member.user.tag} (${member.user.id})\n` +
-              `${GLYPHS.ARROW_RIGHT} **Joined:** <t:${Math.floor(member.joinedTimestamp / 1000)}:R>\n` +
+              `${GLYPHS.ARROW_RIGHT} **Joined:** ${joinedText}\n` +
               `${GLYPHS.ARROW_RIGHT} **Total Joins:** ${memberData?.joinCount || 1}\n` +
               `${GLYPHS.ARROW_RIGHT} **Total Leaves:** ${memberData?.leaveCount || 1}`
             );
