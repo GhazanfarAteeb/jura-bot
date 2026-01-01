@@ -24,8 +24,9 @@ export default {
     switch (action) {
       case 'enable':
       case 'on':
-        guildConfig.features.welcomeSystem.enabled = true;
-        await guildConfig.save();
+        await Guild.updateGuild(message.guild.id, {
+          $set: { 'features.welcomeSystem.enabled': true }
+        });
         return message.reply({
           embeds: [await successEmbed(message.guild.id, 'Welcome System Enabled',
             `${GLYPHS.SUCCESS} Welcome messages are now enabled.\n\n` +
@@ -34,8 +35,9 @@ export default {
 
       case 'disable':
       case 'off':
-        guildConfig.features.welcomeSystem.enabled = false;
-        await guildConfig.save();
+        await Guild.updateGuild(message.guild.id, {
+          $set: { 'features.welcomeSystem.enabled': false }
+        });
         return message.reply({
           embeds: [await successEmbed(message.guild.id, 'Welcome System Disabled',
             `${GLYPHS.SUCCESS} Welcome messages are now disabled.`)]
@@ -59,9 +61,12 @@ export default {
           });
         }
 
-        guildConfig.features.welcomeSystem.channel = channel.id;
-        guildConfig.channels.welcomeChannel = channel.id;
-        await guildConfig.save();
+        await Guild.updateGuild(message.guild.id, {
+          $set: {
+            'features.welcomeSystem.channel': channel.id,
+            'channels.welcomeChannel': channel.id
+          }
+        });
 
         return message.reply({
           embeds: [await successEmbed(message.guild.id, 'Welcome Channel Set',
@@ -88,8 +93,9 @@ export default {
           });
         }
 
-        guildConfig.features.welcomeSystem.message = welcomeMsg;
-        await guildConfig.save();
+        await Guild.updateGuild(message.guild.id, {
+          $set: { 'features.welcomeSystem.message': welcomeMsg }
+        });
 
         return message.reply({
           embeds: [await successEmbed(message.guild.id, 'Welcome Message Set',
@@ -107,12 +113,14 @@ export default {
           });
         }
 
-        guildConfig.features.welcomeSystem.embedEnabled = ['on', 'enable'].includes(embedOption);
-        await guildConfig.save();
+        const embedEnabled = ['on', 'enable'].includes(embedOption);
+        await Guild.updateGuild(message.guild.id, {
+          $set: { 'features.welcomeSystem.embedEnabled': embedEnabled }
+        });
 
         return message.reply({
           embeds: [await successEmbed(message.guild.id, 'Embed Setting Updated',
-            `${GLYPHS.SUCCESS} Welcome embeds are now **${guildConfig.features.welcomeSystem.embedEnabled ? 'enabled' : 'disabled'}**`)]
+            `${GLYPHS.SUCCESS} Welcome embeds are now **${embedEnabled ? 'enabled' : 'disabled'}**`)]
         });
 
       case 'dm':
@@ -125,12 +133,14 @@ export default {
           });
         }
 
-        guildConfig.features.welcomeSystem.dmWelcome = ['on', 'enable'].includes(dmOption);
-        await guildConfig.save();
+        const dmEnabled = ['on', 'enable'].includes(dmOption);
+        await Guild.updateGuild(message.guild.id, {
+          $set: { 'features.welcomeSystem.dmWelcome': dmEnabled }
+        });
 
         return message.reply({
           embeds: [await successEmbed(message.guild.id, 'DM Setting Updated',
-            `${GLYPHS.SUCCESS} DM welcome messages are now **${guildConfig.features.welcomeSystem.dmWelcome ? 'enabled' : 'disabled'}**`)]
+            `${GLYPHS.SUCCESS} DM welcome messages are now **${dmEnabled ? 'enabled' : 'disabled'}**`)]
         });
 
       case 'test':
@@ -151,8 +161,9 @@ export default {
         }
 
         if (imageUrl === 'remove' || imageUrl === 'none') {
-          guildConfig.features.welcomeSystem.bannerUrl = null;
-          await guildConfig.save();
+          await Guild.updateGuild(message.guild.id, {
+            $set: { 'features.welcomeSystem.bannerUrl': null }
+          });
           return message.reply({
             embeds: [await successEmbed(message.guild.id, 'Banner Removed',
               `${GLYPHS.SUCCESS} Welcome banner has been removed.`)]
@@ -167,8 +178,9 @@ export default {
           });
         }
 
-        guildConfig.features.welcomeSystem.bannerUrl = imageUrl;
-        await guildConfig.save();
+        await Guild.updateGuild(message.guild.id, {
+          $set: { 'features.welcomeSystem.bannerUrl': imageUrl }
+        });
 
         return message.reply({
           embeds: [await successEmbed(message.guild.id, 'Banner Set',

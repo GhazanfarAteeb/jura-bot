@@ -85,14 +85,20 @@ export default {
 
     // Initialize temp voice settings if not exist
     if (!guildConfig.features.tempVoice) {
-      guildConfig.features.tempVoice = {
-        enabled: false,
-        createChannelId: null,
-        categoryId: null,
-        defaultName: "{user}'s Channel",
-        defaultLimit: 0
-      };
-      await guildConfig.save();
+      await Guild.updateGuild(message.guild.id, {
+        $set: {
+          'features.tempVoice': {
+            enabled: false,
+            createChannelId: null,
+            categoryId: null,
+            defaultName: "{user}'s Channel",
+            defaultLimit: 0
+          }
+        }
+      });
+      // Refetch to get updated config
+      const updatedConfig = await Guild.getGuild(message.guild.id, message.guild.name);
+      guildConfig.features.tempVoice = updatedConfig.features.tempVoice;
     }
 
     if (!args[0]) {
@@ -119,8 +125,9 @@ export default {
         return resendInterface(message, guildConfig);
 
       case 'disable':
-        guildConfig.features.tempVoice.enabled = false;
-        await guildConfig.save();
+        await Guild.updateGuild(message.guild.id, {
+          $set: { 'features.tempVoice.enabled': false }
+        });
         return message.reply({
           embeds: [await successEmbed(message.guild.id, 'Temp VC Disabled',
             `${GLYPHS.SUCCESS} Temporary voice channels are now disabled.`)]
@@ -137,8 +144,9 @@ export default {
               'Please provide a default channel name.\nUse `{user}` as a placeholder for the username.')]
           });
         }
-        guildConfig.features.tempVoice.defaultName = name;
-        await guildConfig.save();
+        await Guild.updateGuild(message.guild.id, {
+          $set: { 'features.tempVoice.defaultName': name }
+        });
         return message.reply({
           embeds: [await successEmbed(message.guild.id, 'Default Name Set',
             `${GLYPHS.SUCCESS} Default channel name set to: **${name}**`)]
@@ -152,8 +160,9 @@ export default {
               'Limit must be between 0 (unlimited) and 99.')]
           });
         }
-        guildConfig.features.tempVoice.defaultLimit = limit;
-        await guildConfig.save();
+        await Guild.updateGuild(message.guild.id, {
+          $set: { 'features.tempVoice.defaultLimit': limit }
+        });
         return message.reply({
           embeds: [await successEmbed(message.guild.id, 'Default Limit Set',
             `${GLYPHS.SUCCESS} Default user limit set to: **${limit || 'Unlimited'}**`)]
@@ -316,8 +325,14 @@ async function setupTempVC(message, guildConfig) {
     await interfaceChannel.send({ embeds: [embed], components: rows });
   }
 
-  guildConfig.features.tempVoice.enabled = true;
-  await guildConfig.save();
+  await Guild.updateGuild(message.guild.id, {
+    $set: {
+      'features.tempVoice.enabled': true,
+      'features.tempVoice.categoryId': category.id,
+      'features.tempVoice.createChannelId': createChannel.id,
+      'features.tempVoice.interfaceChannelId': interfaceChannel.id
+    }
+  });
 
   return message.reply({
     embeds: [await successEmbed(message.guild.id, 'Temp VC Setup Complete!',
@@ -370,8 +385,9 @@ async function setCategory(message, categoryId, guildConfig) {
     });
   }
 
-  guildConfig.features.tempVoice.categoryId = category.id;
-  await guildConfig.save();
+  await Guild.updateGuild(message.guild.id, {
+    $set: { 'features.tempVoice.categoryId': category.id }
+  });
 
   return message.reply({
     embeds: [await successEmbed(message.guild.id, 'Category Set',

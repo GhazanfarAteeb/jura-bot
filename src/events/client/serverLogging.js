@@ -65,7 +65,7 @@ async function logChannelEvent(channel, type) {
 
         const guildConfig = await Guild.getGuild(channel.guild.id, channel.guild.name);
 
-        if (!guildConfig.channels.serverLog) return;
+        if (!guildConfig?.channels?.serverLog) return;
 
         const logChannel = channel.guild.channels.cache.get(guildConfig.channels.serverLog);
         if (!logChannel) return;
@@ -106,7 +106,7 @@ async function logChannelUpdate(oldChannel, newChannel) {
 
         const guildConfig = await Guild.getGuild(newChannel.guild.id, newChannel.guild.name);
 
-        if (!guildConfig.channels.serverLog) return;
+        if (!guildConfig?.channels?.serverLog) return;
 
         const logChannel = newChannel.guild.channels.cache.get(guildConfig.channels.serverLog);
         if (!logChannel) return;
@@ -154,7 +154,7 @@ async function logRoleEvent(role, type) {
     try {
         const guildConfig = await Guild.getGuild(role.guild.id, role.guild.name);
 
-        if (!guildConfig.channels.serverLog) return;
+        if (!guildConfig?.channels?.serverLog) return;
 
         const logChannel = role.guild.channels.cache.get(guildConfig.channels.serverLog);
         if (!logChannel) return;
@@ -187,7 +187,7 @@ async function logRoleUpdate(oldRole, newRole) {
     try {
         const guildConfig = await Guild.getGuild(newRole.guild.id, newRole.guild.name);
 
-        if (!guildConfig.channels.serverLog) return;
+        if (!guildConfig?.channels?.serverLog) return;
 
         const logChannel = newRole.guild.channels.cache.get(guildConfig.channels.serverLog);
         if (!logChannel) return;
@@ -233,7 +233,7 @@ async function logEmojiEvent(emoji, type) {
     try {
         const guildConfig = await Guild.getGuild(emoji.guild.id, emoji.guild.name);
 
-        if (!guildConfig.channels.serverLog) return;
+        if (!guildConfig?.channels?.serverLog) return;
 
         const logChannel = emoji.guild.channels.cache.get(guildConfig.channels.serverLog);
         if (!logChannel) return;
@@ -260,7 +260,7 @@ async function logGuildUpdate(oldGuild, newGuild) {
     try {
         const guildConfig = await Guild.getGuild(newGuild.id, newGuild.name);
 
-        if (!guildConfig.channels.serverLog) return;
+        if (!guildConfig?.channels?.serverLog) return;
 
         const logChannel = newGuild.channels.cache.get(guildConfig.channels.serverLog);
         if (!logChannel) return;
@@ -314,7 +314,7 @@ async function logInviteEvent(invite, type) {
 
         const guildConfig = await Guild.getGuild(invite.guild.id, invite.guild.name);
 
-        if (!guildConfig.channels.serverLog) return;
+        if (!guildConfig?.channels?.serverLog) return;
 
         const logChannel = invite.guild.channels.cache.get(guildConfig.channels.serverLog);
         if (!logChannel) return;

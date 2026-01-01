@@ -179,12 +179,26 @@ export default {
 async function handleSpecialCommand(interaction, client, guildConfig, hasAdminRole) {
   const { successEmbed, errorEmbed, infoEmbed, GLYPHS } = await import('../../utils/embeds.js');
 
-  // Check admin permission for other commands
-  if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator) && !hasAdminRole) {
-    return interaction.reply({
-      content: '❌ You need Administrator permissions to use this command.',
-      flags: MessageFlags.Ephemeral
-    });
+  // Commands that only require ManageGuild permission
+  const manageGuildCommands = ['feature'];
+  
+  // Check permissions based on command type
+  if (manageGuildCommands.includes(interaction.commandName)) {
+    // For manage guild commands, check ManageGuild permission
+    if (!interaction.member.permissions.has(PermissionFlagsBits.ManageGuild) && !hasAdminRole) {
+      return interaction.reply({
+        content: '❌ You need Manage Server permissions to use this command.',
+        flags: MessageFlags.Ephemeral
+      });
+    }
+  } else {
+    // For other commands, require Administrator permissions
+    if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator) && !hasAdminRole) {
+      return interaction.reply({
+        content: '❌ You need Administrator permissions to use this command.',
+        flags: MessageFlags.Ephemeral
+      });
+    }
   }
 
   await interaction.deferReply({ flags: MessageFlags.Ephemeral });

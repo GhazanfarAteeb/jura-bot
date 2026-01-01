@@ -35,15 +35,15 @@ export default {
           const leaveLogChannel = member.guild.channels.cache.get(leaveLogChannelId);
           if (leaveLogChannel) {
             // Get the most recent join timestamp from database, fallback to Discord's joinedTimestamp
-            const lastJoin = memberData?.joinHistory?.length > 0 
-              ? memberData.joinHistory[memberData.joinHistory.length - 1].timestamp 
+            const lastJoin = memberData?.joinHistory?.length > 0
+              ? memberData.joinHistory[memberData.joinHistory.length - 1].timestamp
               : null;
-            const joinedTimestamp = lastJoin 
-              ? Math.floor(new Date(lastJoin).getTime() / 1000) 
+            const joinedTimestamp = lastJoin
+              ? Math.floor(new Date(lastJoin).getTime() / 1000)
               : (member.joinedTimestamp ? Math.floor(member.joinedTimestamp / 1000) : null);
-            
-            const joinedText = joinedTimestamp 
-              ? `<t:${joinedTimestamp}:R>` 
+
+            const joinedText = joinedTimestamp
+              ? `<t:${joinedTimestamp}:R>`
               : 'Unknown';
 
             const embed = await infoEmbed(guildId, 'Member Left',
