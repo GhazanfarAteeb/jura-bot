@@ -133,10 +133,11 @@ export default {
 
     // DM the user
     try {
-      const dmEmbed = await errorEmbed(message.guild.id, `Kicked from ${message.guild.name}`,
-        `${GLYPHS.KICK} You have been kicked from the server.\n\n` +
-        `**Reason:** ${reason}\n` +
-        `**Moderator:** ${message.author.tag}`
+      const dmEmbed = await errorEmbed(message.guild.id, `Removal Notice`,
+        `**Notice:** You have been removed from **${message.guild.name}**.\n\n` +
+        `▸ **Justification:** ${reason}\n` +
+        `▸ **Authorized by:** ${message.author.tag}\n\n` +
+        `*You may rejoin if you have an invite link.*`
       );
       await targetMember.send({ embeds: [dmEmbed] });
     } catch (error) {
@@ -155,9 +156,11 @@ export default {
       }
     }
 
-    const embed = await successEmbed(message.guild.id, 'Member Kicked',
-      `${GLYPHS.ARROW_RIGHT} **${targetMember.user.tag}** has been kicked.\n` +
-      `${GLYPHS.ARROW_RIGHT} **Case #${caseNumber}**`
+    const embed = await successEmbed(message.guild.id, 'Removal Executed',
+      `**Notice:** Disciplinary action has been executed, Master.\n\n` +
+      `▸ **Subject:** ${targetMember.user.tag}\n` +
+      `▸ **Action:** Server Removal\n` +
+      `▸ **Case Reference:** #${caseNumber}`
     );
     return message.reply({ embeds: [embed] });
   }

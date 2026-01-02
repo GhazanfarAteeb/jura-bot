@@ -103,11 +103,12 @@ export default {
 
     // DM the user
     try {
-      const dmEmbed = await errorEmbed(message.guild.id, `Warning in ${message.guild.name}`,
-        `${GLYPHS.WARN} You have been warned.\n\n` +
-        `**Reason:** ${reason}\n` +
-        `**Moderator:** ${message.author.tag}\n\n` +
-        `**Total Warnings:** ${memberData.warnings.length}`
+      const dmEmbed = await errorEmbed(message.guild.id, `Official Warning`,
+        `**Caution:** You have received an official warning in **${message.guild.name}**.\n\n` +
+        `▸ **Justification:** ${reason}\n` +
+        `▸ **Issued by:** ${message.author.tag}\n\n` +
+        `▸ **Accumulated Warnings:** ${memberData.warnings.length}\n\n` +
+        `*Further infractions may result in escalated disciplinary action.*`
       );
       await targetMember.send({ embeds: [dmEmbed] });
     } catch (error) {
@@ -115,10 +116,11 @@ export default {
     }
 
     // Confirm to moderator
-    const embed = await successEmbed(message.guild.id, 'Member Warned',
-      `${GLYPHS.ARROW_RIGHT} **${targetMember.user.tag}** has been warned.\n` +
-      `${GLYPHS.ARROW_RIGHT} **Case #${caseNumber}**\n` +
-      `${GLYPHS.ARROW_RIGHT} **Total Warnings:** ${memberData.warnings.length}`
+    const embed = await successEmbed(message.guild.id, 'Warning Issued',
+      `**Notice:** Disciplinary warning has been recorded, Master.\n\n` +
+      `▸ **Subject:** ${targetMember.user.tag}\n` +
+      `▸ **Case Reference:** #${caseNumber}\n` +
+      `▸ **Total Infractions:** ${memberData.warnings.length}`
     );
     return message.reply({ embeds: [embed] });
   }

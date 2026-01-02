@@ -52,8 +52,8 @@ export default class Loop extends Command {
         if (!player) {
             return ctx.sendMessage({
                 embeds: [{
-                    color: 0xff0000,
-                    description: '❌ No music player found.'
+                    color: 0xff4757,
+                    description: '**Warning:** No audio playback system detected, Master.'
                 }]
             });
         }
@@ -65,8 +65,8 @@ export default class Loop extends Command {
             if (!['track', 'queue', 'off', 'none'].includes(mode)) {
                 return ctx.sendMessage({
                     embeds: [{
-                        color: 0xff0000,
-                        description: '❌ Invalid mode. Use `track`, `queue`, or `off`.'
+                        color: 0xff4757,
+                        description: '**Warning:** Invalid mode. Valid options: `track`, `queue`, `off`, Master.'
                     }]
                 });
             }
@@ -75,14 +75,14 @@ export default class Loop extends Command {
             player.setLoop(loopMode);
 
             const messages = {
-                track: '🔂 Now looping the current track.',
-                queue: '🔁 Now looping the entire queue.',
-                none: '➡️ Loop disabled.'
+                track: '**Confirmed:** Now repeating current track, Master.',
+                queue: '**Confirmed:** Now repeating entire queue, Master.',
+                none: '**Confirmed:** Repeat mode disabled, Master.'
             };
 
             return ctx.sendMessage({
                 embeds: [{
-                    color: 0x00ff00,
+                    color: 0x00ced1,
                     description: messages[loopMode]
                 }]
             });
@@ -95,20 +95,20 @@ export default class Loop extends Command {
 
         if (currentLoop === 'none') {
             newLoop = 'track';
-            message = '🔂 Now looping the current track.';
+            message = '**Confirmed:** Now repeating current track, Master.';
         } else if (currentLoop === 'track') {
             newLoop = 'queue';
-            message = '🔁 Now looping the entire queue.';
+            message = '**Confirmed:** Now repeating entire queue, Master.';
         } else {
             newLoop = 'none';
-            message = '➡️ Loop disabled.';
+            message = '**Confirmed:** Repeat mode disabled, Master.';
         }
 
         player.setLoop(newLoop);
 
         return ctx.sendMessage({
             embeds: [{
-                color: 0x00ff00,
+                color: 0x00ced1,
                 description: message
             }]
         });

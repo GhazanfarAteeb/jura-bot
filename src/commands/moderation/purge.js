@@ -1,6 +1,7 @@
 import { PermissionFlagsBits } from 'discord.js';
 import { successEmbed, errorEmbed, GLYPHS } from '../../utils/embeds.js';
 import logger from '../../utils/logger.js';
+import { getRandomFooter } from '../../utils/raphael.js';
 
 export default {
   name: 'purge',
@@ -15,8 +16,8 @@ export default {
 
   async execute(message, args) {
     if (!args[0]) {
-      const embed = await errorEmbed(message.guild.id, 'Invalid Usage',
-        `${GLYPHS.ARROW_RIGHT} Usage: \`purge <amount> [@user]\``
+      const embed = await errorEmbed(message.guild.id, 'Protocol Parameters',
+        `**Notice:** Correct syntax required, Master.\n\`purge <amount> [@user]\``
       );
       return message.reply({ embeds: [embed] });
     }
@@ -26,8 +27,8 @@ export default {
     // Discord max is 100, but we fetch amount+1 to include the command message
     // So limit to 99 to avoid exceeding 100
     if (isNaN(amount) || amount < 1 || amount > 99) {
-      const embed = await errorEmbed(message.guild.id, 'Invalid Amount',
-        `${GLYPHS.WARNING} Please provide a number between 1 and 99.`
+      const embed = await errorEmbed(message.guild.id, 'Invalid Quantity',
+        `**Warning:** Value must be between 1 and 99, Master.`
       );
       return message.reply({ embeds: [embed] });
     }
@@ -54,8 +55,8 @@ export default {
       // Bulk delete
       const deleted = await message.channel.bulkDelete(toDelete, true);
 
-      const embed = await successEmbed(message.guild.id, 'Messages Purged',
-        `${GLYPHS.ARROW_RIGHT} Deleted **${deleted.size}** messages${targetUser ? ` from <@${targetUser}>` : ''}.`
+      const embed = await successEmbed(message.guild.id, 'Data Purge Complete',
+        `**Confirmed:** Removed **${deleted.size}** message records${targetUser ? ` from <@${targetUser}>` : ''}, Master.`
       );
 
       const reply = await message.channel.send({ embeds: [embed] });
@@ -65,8 +66,8 @@ export default {
 
     } catch (error) {
       logger.error('Error purging messages:', error);
-      const embed = await errorEmbed(message.guild.id, 'Purge Failed',
-        `${GLYPHS.ERROR} Failed to delete messages. They may be too old (>14 days).`
+      const embed = await errorEmbed(message.guild.id, 'Purge Protocol Failed',
+        `**Warning:** Unable to remove messages, Master. They may exceed the 14-day threshold.`
       );
       return message.reply({ embeds: [embed] });
     }

@@ -4,6 +4,7 @@ import ModLog from '../../models/ModLog.js';
 import Guild from '../../models/Guild.js';
 import { successEmbed, errorEmbed, modLogEmbed, GLYPHS } from '../../utils/embeds.js';
 import logger from '../../utils/logger.js';
+import { getRandomFooter } from '../../utils/raphael.js';
 
 export default {
   name: 'timeout',
@@ -37,14 +38,15 @@ export default {
 
   async execute(message, args) {
     if (!args[0]) {
-      const embed = await errorEmbed(message.guild.id, 'Invalid Usage',
-        `${GLYPHS.ARROW_RIGHT} Usage: \`timeout <@user|user_id> <duration> [reason]\`\n\n` +
-        `**Duration Examples:**\n` +
-        `${GLYPHS.DOT} \`5m\` - 5 minutes\n` +
-        `${GLYPHS.DOT} \`1h\` - 1 hour\n` +
-        `${GLYPHS.DOT} \`1d\` - 1 day\n` +
-        `${GLYPHS.DOT} \`1w\` - 1 week\n` +
-        `${GLYPHS.DOT} \`off\` - Remove timeout`
+      const embed = await errorEmbed(message.guild.id, 'Protocol Parameters',
+        `**Notice:** Correct syntax required, Master.\n\n` +
+        `\`timeout <@user|user_id> <duration> [reason]\`\n\n` +
+        `**Duration Parameters:**\n` +
+        `◇ \`5m\` — 5 minutes\n` +
+        `◇ \`1h\` — 1 hour\n` +
+        `◇ \`1d\` — 1 day\n` +
+        `◇ \`1w\` — 1 week\n` +
+        `◇ \`off\` — Remove restriction`
       );
       return message.reply({ embeds: [embed] });
     }
@@ -54,16 +56,16 @@ export default {
     const targetMember = await message.guild.members.fetch({ user: userId, force: true }).catch(() => null);
 
     if (!targetMember) {
-      const embed = await errorEmbed(message.guild.id, 'User Not Found',
-        `${GLYPHS.ERROR} Could not find that user.`
+      const embed = await errorEmbed(message.guild.id, 'Subject Not Found',
+        `**Warning:** Unable to locate the specified user, Master.`
       );
       return message.reply({ embeds: [embed] });
     }
 
     // Check if target is the server owner
     if (targetMember.id === message.guild.ownerId) {
-      const embed = await errorEmbed(message.guild.id, 'Cannot Timeout Owner',
-        `${GLYPHS.ERROR} Cannot timeout the server owner. The owner is immune to all moderation actions.`
+      const embed = await errorEmbed(message.guild.id, 'Action Denied',
+        `**Warning:** Server owner possesses absolute immunity, Master. This action cannot be executed.`
       );
       return message.reply({ embeds: [embed] });
     }
@@ -90,13 +92,13 @@ export default {
       logger.info(`  All target roles: ${targetMember.roles.cache.map(r => `${r.name}(${r.position})`).join(', ')}`);
       logger.info(`  All bot roles: ${botMember.roles.cache.map(r => `${r.name}(${r.position})`).join(', ')}`);
       
-      const embed = await errorEmbed(message.guild.id, 'Cannot Timeout',
-        `${GLYPHS.ERROR} I cannot timeout this user.\n\n` +
-        `**Debug Info:**\n` +
-        `${GLYPHS.DOT} My highest role: \`${botHighestRole.name}\` (position: ${botHighestRole.position})\n` +
-        `${GLYPHS.DOT} Their highest role: \`${targetHighestRole.name}\` (position: ${targetHighestRole.position})\n` +
-        `${GLYPHS.DOT} Bot has Admin: ${botMember.permissions.has('Administrator') ? 'Yes' : 'No'}\n\n` +
-        `**Issue:** ${isRoleIssue ? 'Their role is higher or equal to mine. Move my role above theirs in Server Settings → Roles.' : 'Unknown - check Discord permissions.'}`
+      const embed = await errorEmbed(message.guild.id, 'Authority Insufficient',
+        `**Warning:** Unable to execute restriction on this subject, Master.\n\n` +
+        `**Diagnostic Data:**\n` +
+        `◇ My authority level: \`${botHighestRole.name}\` (position: ${botHighestRole.position})\n` +
+        `◇ Subject authority: \`${targetHighestRole.name}\` (position: ${targetHighestRole.position})\n` +
+        `◇ Administrative access: ${botMember.permissions.has('Administrator') ? 'Affirmative' : 'Negative'}\n\n` +
+        `**Analysis:** ${isRoleIssue ? 'Subject role exceeds or equals my authority. Elevation required via Server Settings → Roles.' : 'Unknown — verify Discord permissions.'}`
       );
       return message.reply({ embeds: [embed] });
     }
@@ -114,12 +116,12 @@ export default {
         logger.info(`  Moderator has Admin: ${message.member.permissions.has(PermissionFlagsBits.Administrator)}`);
         logger.info(`  Moderator is Owner: ${isOwner}`);
         
-        const embed = await errorEmbed(message.guild.id, 'Permission Denied',
-          `${GLYPHS.LOCK} You cannot timeout someone with equal or higher role than you.\n\n` +
-          `**Debug Info:**\n` +
-          `${GLYPHS.DOT} Your highest role: \`${message.member.roles.highest.name}\` (pos: ${message.member.roles.highest.position})\n` +
-          `${GLYPHS.DOT} Their highest role: \`${targetMember.roles.highest.name}\` (pos: ${targetMember.roles.highest.position})\n\n` +
-          `*Server owner and Administrators can bypass this check.*`
+        const embed = await errorEmbed(message.guild.id, 'Authority Conflict',
+          `**Warning:** Your authority level is insufficient to restrict this subject, Master.\n\n` +
+          `**Hierarchy Analysis:**\n` +
+          `◇ Your authority: \`${message.member.roles.highest.name}\` (pos: ${message.member.roles.highest.position})\n` +
+          `◇ Subject authority: \`${targetMember.roles.highest.name}\` (pos: ${targetMember.roles.highest.position})\n\n` +
+          `*Server owner and Administrators possess override privileges.*`
         );
         return message.reply({ embeds: [embed] });
       }
@@ -130,8 +132,8 @@ export default {
     // Handle timeout removal
     if (durationArg === 'off' || durationArg === 'remove' || durationArg === 'clear') {
       if (!targetMember.isCommunicationDisabled()) {
-        const embed = await errorEmbed(message.guild.id, 'Not Timed Out',
-          `${GLYPHS.ERROR} This user is not currently timed out.`
+        const embed = await errorEmbed(message.guild.id, 'No Active Restriction',
+          `**Notice:** This subject has no active communication restriction, Master.`
         );
         return message.reply({ embeds: [embed] });
       }
@@ -151,15 +153,15 @@ export default {
         }
       }
 
-      const embed = await successEmbed(message.guild.id, 'Timeout Removed',
-        `${GLYPHS.SUCCESS} Removed timeout from ${targetMember.user.tag}`
+      const embed = await successEmbed(message.guild.id, 'Restriction Lifted',
+        `**Confirmed:** Communication restriction removed from **${targetMember.user.tag}**, Master.`
       );
       return message.reply({ embeds: [embed] });
     }
 
     if (!durationArg) {
-      const embed = await errorEmbed(message.guild.id, 'Missing Duration',
-        `${GLYPHS.ERROR} Please specify a duration.\n\n` +
+      const embed = await errorEmbed(message.guild.id, 'Duration Required',
+        `**Notice:** Temporal parameter is mandatory, Master.\n\n` +
         `Examples: \`5m\`, \`1h\`, \`1d\`, \`1w\`, \`off\``
       );
       return message.reply({ embeds: [embed] });
@@ -169,13 +171,13 @@ export default {
     const durationMs = parseDuration(durationArg);
 
     if (!durationMs) {
-      const embed = await errorEmbed(message.guild.id, 'Invalid Duration',
-        `${GLYPHS.ERROR} Invalid duration format.\n\n` +
-        `**Valid formats:**\n` +
-        `${GLYPHS.DOT} \`5m\` - 5 minutes\n` +
-        `${GLYPHS.DOT} \`1h\` - 1 hour\n` +
-        `${GLYPHS.DOT} \`1d\` - 1 day\n` +
-        `${GLYPHS.DOT} \`1w\` - 1 week`
+      const embed = await errorEmbed(message.guild.id, 'Invalid Duration Format',
+        `**Warning:** Duration syntax is incorrect, Master.\n\n` +
+        `**Valid Formats:**\n` +
+        `◇ \`5m\` — 5 minutes\n` +
+        `◇ \`1h\` — 1 hour\n` +
+        `◇ \`1d\` — 1 day\n` +
+        `◇ \`1w\` — 1 week`
       );
       return message.reply({ embeds: [embed] });
     }
@@ -183,8 +185,8 @@ export default {
     // Max timeout is 28 days (Discord limit)
     const maxTimeout = 28 * 24 * 60 * 60 * 1000;
     if (durationMs > maxTimeout) {
-      const embed = await errorEmbed(message.guild.id, 'Duration Too Long',
-        `${GLYPHS.ERROR} Maximum timeout duration is 28 days.`
+      const embed = await errorEmbed(message.guild.id, 'Duration Exceeded',
+        `**Warning:** Maximum restriction duration is 28 days, Master.`
       );
       return message.reply({ embeds: [embed] });
     }
@@ -270,20 +272,20 @@ export default {
 
     // DM the user
     try {
-      const dmEmbed = await errorEmbed(message.guild.id, `Timed Out in ${message.guild.name}`,
-        `${GLYPHS.MUTE} You have been timed out.\n\n` +
+      const dmEmbed = await errorEmbed(message.guild.id, `Communication Restricted — ${message.guild.name}`,
+        `**Caution:** Your communication privileges have been suspended.\n\n` +
         `**Duration:** ${formatDuration(durationMs)}\n` +
         `**Reason:** ${reason}\n` +
-        `**Moderator:** ${message.author.tag}\n\n` +
-        `You will be able to interact again <t:${Math.floor((Date.now() + durationMs) / 1000)}:R>`
+        `**Authority:** ${message.author.tag}\n\n` +
+        `Communication will resume <t:${Math.floor((Date.now() + durationMs) / 1000)}:R>`
       );
       await targetMember.send({ embeds: [dmEmbed] });
     } catch (error) {
       // User has DMs disabled
     }
 
-    const embed = await successEmbed(message.guild.id, 'Member Timed Out',
-      `${GLYPHS.MUTE} **${targetMember.user.tag}** has been timed out.\n\n` +
+    const embed = await successEmbed(message.guild.id, 'Restriction Applied',
+      `**Confirmed:** Communication restriction applied to **${targetMember.user.tag}**, Master.\n\n` +
       `**Duration:** ${formatDuration(durationMs)}\n` +
       `**Reason:** ${reason}\n` +
       `**Case:** #${caseNumber}\n` +

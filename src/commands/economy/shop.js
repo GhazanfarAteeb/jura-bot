@@ -1,6 +1,7 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } from 'discord.js';
 import Economy from '../../models/Economy.js';
 import Guild from '../../models/Guild.js';
+import { getRandomFooter } from '../../utils/raphael.js';
 
 export default {
   name: 'shop',
@@ -36,10 +37,10 @@ export default {
       // Check if shop is empty
       if (allBackgrounds.length === 0) {
         const embed = new EmbedBuilder()
-          .setColor('#FF6B6B')
-          .setTitle('🛍️ Shop is Empty')
-          .setDescription('There are no backgrounds available in the shop yet!\n\nAsk an admin to add some using the `manageshop` command.')
-          .setFooter({ text: 'Check back later!' });
+          .setColor('#FF4757')
+          .setTitle('『 Acquisition Module 』')
+          .setDescription('**Notice:** The inventory is currently vacant, Master.\n\nRequest an administrator to add items using the `manageshop` command.')
+          .setFooter({ text: getRandomFooter() });
 
         return message.reply({ embeds: [embed] });
       }
@@ -58,16 +59,16 @@ export default {
         const canAfford = economy.coins >= item.price;
 
         const embed = new EmbedBuilder()
-          .setColor('#667eea')
-          .setTitle('🛍️ Background Shop')
-          .setDescription(`**${item.name}**\n${item.description || 'A custom background'}`)
+          .setColor('#00CED1')
+          .setTitle('『 Acquisition Module 』')
+          .setDescription(`**${item.name}**\n${item.description || 'A custom visual template'}`)
           .addFields(
-            { name: '💎 Price', value: `**${item.price.toLocaleString()}** ${coinEmoji}`, inline: true },
-            { name: `${coinEmoji} Balance`, value: `**${economy.coins.toLocaleString()}**`, inline: true },
-            { name: '📦 Status', value: owned ? '✅ Owned' : canAfford ? '💳 Available' : '❌ Insufficient funds', inline: true }
+            { name: '▸ Value', value: `**${item.price.toLocaleString()}** ${coinEmoji}`, inline: true },
+            { name: `▸ Balance`, value: `**${economy.coins.toLocaleString()}**`, inline: true },
+            { name: '▸ Status', value: owned ? '◉ Acquired' : canAfford ? '◈ Available' : '○ Insufficient Resources', inline: true }
           )
           .setImage(item.image)
-          .setFooter({ text: `Background ${page + 1} of ${maxPages}` })
+          .setFooter({ text: `${getRandomFooter()} | Item ${page + 1} of ${maxPages}` })
           .setTimestamp();
 
         return embed;
@@ -82,17 +83,17 @@ export default {
           .addComponents(
             new ButtonBuilder()
               .setCustomId('previous')
-              .setLabel('◀️ Previous')
+              .setLabel('◀ Previous')
               .setStyle(ButtonStyle.Secondary)
               .setDisabled(page === 0),
             new ButtonBuilder()
               .setCustomId('buy')
-              .setLabel(owned ? '✅ Owned' : `🛒 Buy (${item.price.toLocaleString()})`)
+              .setLabel(owned ? '◉ Acquired' : `Acquire (${item.price.toLocaleString()})`)
               .setStyle(owned ? ButtonStyle.Secondary : canAfford ? ButtonStyle.Success : ButtonStyle.Danger)
               .setDisabled(owned || !canAfford),
             new ButtonBuilder()
               .setCustomId('next')
-              .setLabel('Next ▶️')
+              .setLabel('Next ▶')
               .setStyle(ButtonStyle.Secondary)
               .setDisabled(page === maxPages - 1)
           );
@@ -137,7 +138,7 @@ export default {
             // Check if already owned
             if (freshEconomy.inventory.backgrounds.some(bg => bg.id === item.id)) {
               await interaction.reply({
-                content: '❌ You already own this background!',
+                content: '**Notice:** This item is already in your inventory, Master.',
                 ephemeral: true
               });
               return;
@@ -146,7 +147,7 @@ export default {
             // Check if can afford
             if (freshEconomy.coins < item.price) {
               await interaction.reply({
-                content: `❌ You need **${(item.price - freshEconomy.coins).toLocaleString()}** more coins!`,
+                content: `**Warning:** You require **${(item.price - freshEconomy.coins).toLocaleString()}** additional coins, Master.`,
                 ephemeral: true
               });
               return;
@@ -162,14 +163,14 @@ export default {
             await freshEconomy.save();
 
             const successEmbed = new EmbedBuilder()
-              .setColor('#00FF00')
-              .setTitle('✅ Purchase Successful!')
-              .setDescription(`You purchased **${item.name}**!`)
+              .setColor('#00FF7F')
+              .setTitle('『 Acquisition Complete 』')
+              .setDescription(`**Confirmed:** **${item.name}** has been added to your inventory, Master.`)
               .addFields(
-                { name: `${coinEmoji} Spent`, value: `${item.price.toLocaleString()} ${coinName}`, inline: true },
-                { name: '💵 Balance', value: `${freshEconomy.coins.toLocaleString()} ${coinName}`, inline: true }
+                { name: `▸ Expended`, value: `${item.price.toLocaleString()} ${coinName}`, inline: true },
+                { name: '▸ Remaining', value: `${freshEconomy.coins.toLocaleString()} ${coinName}`, inline: true }
               )
-              .setFooter({ text: 'Use !setbg to apply this background to your profile' })
+              .setFooter({ text: `${getRandomFooter()} | Use !setbg to apply` })
               .setTimestamp();
 
             await interaction.update({
@@ -183,7 +184,7 @@ export default {
           console.error('Shop interaction error:', error);
           if (!interaction.replied && !interaction.deferred) {
             await interaction.reply({
-              content: '❌ An error occurred. Please try again!',
+              content: '**Warning:** An error occurred during processing, Master. Please retry.',
               ephemeral: true
             });
           }
@@ -199,7 +200,7 @@ export default {
 
     } catch (error) {
       console.error('Shop command error:', error);
-      message.reply('❌ An error occurred while loading the shop. Please try again!');
+      message.reply('**Warning:** An error occurred while loading the acquisition module, Master. Please retry.');
     }
   }
 };

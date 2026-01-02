@@ -1,6 +1,7 @@
 import { PermissionFlagsBits, ChannelType } from 'discord.js';
 import Guild from '../../models/Guild.js';
 import { successEmbed, errorEmbed, infoEmbed, GLYPHS } from '../../utils/embeds.js';
+import { getRandomFooter } from '../../utils/raphael.js';
 
 export default {
   name: 'lockdown',
@@ -22,19 +23,19 @@ export default {
 
     if (!message.member.permissions.has(PermissionFlagsBits.Administrator) && !hasAdminRole) {
       return message.reply({
-        embeds: [await errorEmbed(message.guild.id, 'Permission Denied',
-          `${GLYPHS.LOCK} You need Administrator permissions to use this command.`)]
+        embeds: [await errorEmbed(message.guild.id, 'Authorization Denied',
+          `**Warning:** Administrator privileges required, Master.`)]
       });
     }
 
     if (!args[0]) {
       const isLocked = guildConfig.security?.lockdownActive;
       return message.reply({
-        embeds: [await infoEmbed(message.guild.id, 'Lockdown Status',
-          `**Status:** ${isLocked ? '🔒 LOCKED' : '🔓 Unlocked'}\n\n` +
-          `**Usage:**\n` +
-          `${GLYPHS.DOT} \`lockdown on [reason]\` - Lock the server\n` +
-          `${GLYPHS.DOT} \`lockdown off\` - Unlock the server`)]
+        embeds: [await infoEmbed(message.guild.id, 'Security Protocol Status',
+          `**Status:** ${isLocked ? '◉ SECURED' : '○ Open'}\n\n` +
+          `**Commands:**\n` +
+          `◇ \`lockdown on [reason]\` — Activate security protocol\n` +
+          `◇ \`lockdown off\` — Deactivate security protocol`)]
       });
     }
 
@@ -45,9 +46,9 @@ export default {
       // Check if already locked
       if (guildConfig.security?.lockdownActive) {
         return message.reply({
-          embeds: [await errorEmbed(message.guild.id, 'Already Locked',
-            `${GLYPHS.ERROR} The server is already in lockdown mode.\n` +
-            `Use \`lockdown off\` to unlock first.`)]
+          embeds: [await errorEmbed(message.guild.id, 'Protocol Active',
+            `**Notice:** Security protocol is already engaged, Master.\n` +
+            `Use \`lockdown off\` to disengage first.`)]
         });
       }
 
@@ -62,8 +63,8 @@ export default {
       const totalChannels = textChannels.size + voiceChannels.size;
 
       const statusMsg = await message.reply({
-        embeds: [await infoEmbed(message.guild.id, '🔒 Locking Server...',
-          `Saving permissions and locking ${totalChannels} channels...`)]
+        embeds: [await infoEmbed(message.guild.id, 'Initiating Security Protocol...',
+          `Preserving permissions and securing ${totalChannels} channels...`)]
       });
 
       // Save current permissions before locking
@@ -180,15 +181,15 @@ export default {
       }
 
       await statusMsg.edit({
-        embeds: [await successEmbed(message.guild.id, '🔒 Server Lockdown Enabled',
-          `${GLYPHS.SUCCESS} Locked **${lockedTextCount}** text channels and **${lockedVoiceCount}** voice channels.\n\n` +
-          `**Permissions Saved:** ${savedPermissions.length} channels\n` +
-          `**Restrictions:**\n` +
-          `${GLYPHS.DOT} Text: Messages, threads, and reactions disabled\n` +
-          `${GLYPHS.DOT} Voice: Connect, speak, and stream disabled\n\n` +
+        embeds: [await successEmbed(message.guild.id, 'Security Protocol Engaged',
+          `**Confirmed:** Secured **${lockedTextCount}** text channels and **${lockedVoiceCount}** voice channels, Master.\n\n` +
+          `**Permissions Preserved:** ${savedPermissions.length} channels\n` +
+          `**Active Restrictions:**\n` +
+          `◇ Text: Messages, threads, and reactions disabled\n` +
+          `◇ Voice: Connect, speak, and stream disabled\n\n` +
           `**Reason:** ${reason}\n` +
-          `**By:** ${message.author.tag}\n\n` +
-          `Use \`${await getPrefix(message.guild.id)}lockdown off\` to unlock the server.`)]
+          `**Authority:** ${message.author.tag}\n\n` +
+          `Use \`${await getPrefix(message.guild.id)}lockdown off\` to disengage protocol.`)]
       });
 
       // Announce in alert channel
@@ -201,12 +202,12 @@ export default {
 
           await alertChannel.send({
             content: staffMention,
-            embeds: [await errorEmbed(message.guild.id, '🔒 SERVER LOCKDOWN ACTIVATED',
-              `**Activated By:** ${message.author.tag}\n` +
+            embeds: [await errorEmbed(message.guild.id, 'Security Protocol Activated',
+              `**Initiated By:** ${message.author.tag}\n` +
               `**Reason:** ${reason}\n` +
-              `**Text Channels Locked:** ${lockedTextCount}\n` +
-              `**Voice Channels Locked:** ${lockedVoiceCount}\n\n` +
-              `${GLYPHS.WARNING} All channels are now locked (text, voice & threads disabled).`)]
+              `**Text Channels Secured:** ${lockedTextCount}\n` +
+              `**Voice Channels Secured:** ${lockedVoiceCount}\n\n` +
+              `**Alert:** All channels are now restricted (text, voice & threads disabled).`)]
           });
         }
       }
@@ -215,8 +216,8 @@ export default {
       // Check if lockdown is active
       if (!guildConfig.security?.lockdownActive) {
         return message.reply({
-          embeds: [await errorEmbed(message.guild.id, 'Not Locked',
-            `${GLYPHS.ERROR} The server is not currently in lockdown mode.`)]
+          embeds: [await errorEmbed(message.guild.id, 'No Active Protocol',
+            `**Notice:** Security protocol is not currently engaged, Master.`)]
         });
       }
 
@@ -224,10 +225,10 @@ export default {
       const hasSavedPerms = savedPermissions.length > 0;
 
       const statusMsg = await message.reply({
-        embeds: [await infoEmbed(message.guild.id, '🔓 Unlocking Server...',
+        embeds: [await infoEmbed(message.guild.id, 'Disengaging Security Protocol...',
           hasSavedPerms
-            ? `Restoring ${savedPermissions.length} saved channel permissions...`
-            : `Resetting channel permissions to default...`)]
+            ? `Restoring ${savedPermissions.length} preserved channel permissions...`
+            : `Resetting channel permissions to default state...`)]
       });
 
       let restoredTextCount = 0;

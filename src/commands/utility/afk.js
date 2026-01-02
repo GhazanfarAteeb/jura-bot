@@ -3,6 +3,7 @@ import Afk from '../../models/Afk.js';
 import Guild from '../../models/Guild.js';
 import { successEmbed, infoEmbed, GLYPHS } from '../../utils/embeds.js';
 import { getPrefix, parseDuration } from '../../utils/helpers.js';
+import { getRandomFooter } from '../../utils/raphael.js';
 
 // URL regex pattern
 const urlRegex = /(https?:\/\/[^\s]+)/gi;
@@ -64,9 +65,9 @@ export default {
     if (links && links.length > 0) {
       // Has links - create embed for links
       const embed = new EmbedBuilder()
-        .setColor(guildConfig.embedStyle?.color || '#5865F2')
+        .setColor('#00CED1')
         .setAuthor({
-          name: `${message.author.username} is now AFK`,
+          name: `『 ${message.author.username} • Away Status 』`,
           iconURL: message.author.displayAvatarURL({ dynamic: true })
         })
         .setTimestamp();
@@ -115,16 +116,17 @@ export default {
       await message.reply({ embeds: [embed] });
     } else {
       // No links - just text
-      let description = `${GLYPHS.SUCCESS} ${message.author} is now AFK: **${reason}**`;
+      let description = `**Notice:** ${message.author} has entered away status.\n\n▸ **Reason:** ${reason}`;
 
       if (options.scheduledReturn) {
-        description += `\n\n⏰ Auto-return: <t:${Math.floor(options.scheduledReturn.getTime() / 1000)}:R>`;
+        description += `\n\n▸ **Scheduled Return:** <t:${Math.floor(options.scheduledReturn.getTime() / 1000)}:R>`;
       }
       if (!options.autoRemove) {
-        description += `\n🔒 Sticky mode: Use \`${prefix}afk off\` to remove`;
+        description += `\n▸ **Sticky Mode:** Use \`${prefix}afk off\` to deactivate`;
       }
 
-      const embed = await successEmbed(message.guild.id, 'AFK Set', description);
+      const embed = await successEmbed(message.guild.id, 'Away Status Active', description);
+      embed.setFooter({ text: getRandomFooter() });
       await message.reply({ embeds: [embed] });
     }
 

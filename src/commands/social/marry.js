@@ -1,6 +1,7 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import Social from '../../models/Social.js';
 import { getPrefix } from '../../utils/helpers.js';
+import { getRandomFooter } from '../../utils/raphael.js';
 
 export default {
   name: 'marry',
@@ -17,15 +18,15 @@ export default {
 
     const targetUser = message.mentions.users.first();
     if (!targetUser) {
-      return message.reply(`💍 Please mention someone to propose to!\n\nUsage: \`${prefix}marry @user\``);
+      return message.reply(`**Notice:** Please specify a subject for your proposal, Master.\n\nSyntax: \`${prefix}marry @user\``);
     }
 
     if (targetUser.id === userId) {
-      return message.reply('💔 You cannot marry yourself!');
+      return message.reply('**Warning:** Self-bonding is not a valid operation, Master.');
     }
 
     if (targetUser.bot) {
-      return message.reply('🤖 You cannot marry a bot!');
+      return message.reply('**Warning:** Automated systems cannot participate in bonding rituals, Master.');
     }
 
     try {
@@ -35,37 +36,37 @@ export default {
       // Check if already married
       if (userSocial.isMarried()) {
         const partner = await client.users.fetch(userSocial.marriage.partnerId).catch(() => null);
-        return message.reply(`💍 You're already married to **${partner?.username || 'someone'}**! Use \`${prefix}divorce\` first.`);
+        return message.reply(`**Notice:** You are already bonded to **${partner?.username || 'someone'}**, Master. Use \`${prefix}divorce\` to dissolve the union first.`);
       }
 
       if (targetSocial.isMarried()) {
         const partner = await client.users.fetch(targetSocial.marriage.partnerId).catch(() => null);
-        return message.reply(`💔 **${targetUser.username}** is already married to **${partner?.username || 'someone'}**!`);
+        return message.reply(`**Notice:** **${targetUser.username}** is already bonded to **${partner?.username || 'someone'}**, Master.`);
       }
 
       // Check for existing proposal
       const existingProposal = targetSocial.pendingProposals.find(p => p.odId === odId);
       if (existingProposal) {
-        return message.reply(`💌 You already have a pending proposal to **${targetUser.username}**!`);
+        return message.reply(`**Notice:** You already have a pending proposal to **${targetUser.username}**, Master.`);
       }
 
       // Create proposal embed
       const embed = new EmbedBuilder()
-        .setColor('#FF69B4')
-        .setTitle('💍 Marriage Proposal!')
-        .setDescription(`**${message.author.username}** is proposing to **${targetUser.username}**!\n\n${targetUser}, do you accept this proposal?`)
+        .setColor('#00CED1')
+        .setTitle('『 Bonding Proposal 』')
+        .setDescription(`**${message.author.username}** is requesting a permanent bond with **${targetUser.username}**.\n\n${targetUser}, do you accept this proposal?`)
         .setThumbnail(message.author.displayAvatarURL({ dynamic: true }))
-        .setFooter({ text: 'This proposal expires in 60 seconds' });
+        .setFooter({ text: `${getRandomFooter()} | Expires in 60 seconds` });
 
       const row = new ActionRowBuilder()
         .addComponents(
           new ButtonBuilder()
             .setCustomId(`marry_accept_${userId}_${targetUser.id}`)
-            .setLabel('Accept 💕')
+            .setLabel('Accept')
             .setStyle(ButtonStyle.Success),
           new ButtonBuilder()
             .setCustomId(`marry_reject_${userId}_${targetUser.id}`)
-            .setLabel('Reject 💔')
+            .setLabel('Reject')
             .setStyle(ButtonStyle.Danger)
         );
 

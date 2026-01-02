@@ -55,7 +55,7 @@ function createInterfaceEmbed() {
 
   // Create button rows
   const rows = [];
-  
+
   for (const [rowKey, buttons] of Object.entries(TEMPVC_BUTTONS)) {
     const row = new ActionRowBuilder();
     for (const btn of buttons) {

@@ -4,6 +4,7 @@ import Guild from '../../models/Guild.js';
 import { SLOTS_MIN, SLOTS_MAX, SLOTS_EMOJIS } from '../../utils/gameConfig.js';
 import { errorEmbed } from '../../utils/embeds.js';
 import { getPrefix } from '../../utils/helpers.js';
+import { getRandomFooter } from '../../utils/raphael.js';
 
 export default {
     name: 'slots',
@@ -23,23 +24,27 @@ export default {
             if (!amount || isNaN(amount)) {
                 const prefix = await getPrefix(guildId);
                 return message.reply({
-                    embeds: [await errorEmbed(guildId, 
-                        `Please provide a valid bet amount!\n\n` +
-                        `Usage: \`${prefix}slots <amount>\`\n` +
-                        `Example: \`${prefix}slots 100\``
+                    embeds: [await errorEmbed(guildId, 'Invalid Parameters',
+                        `**Notice:** A valid wager amount is required, Master.\n\n` +
+                        `▸ Syntax: \`${prefix}slots <amount>\`\n` +
+                        `▸ Example: \`${prefix}slots 100\``
                     )]
                 });
             }
             
             if (amount < SLOTS_MIN) {
                 return message.reply({
-                    embeds: [await errorEmbed(guildId, `Minimum bet is **${SLOTS_MIN}** coins!`)]
+                    embeds: [await errorEmbed(guildId, 'Wager Rejected',
+                        `**Notice:** Minimum wager is **${SLOTS_MIN}** coins, Master.`
+                    )]
                 });
             }
             
             if (amount > SLOTS_MAX) {
                 return message.reply({
-                    embeds: [await errorEmbed(guildId, `Maximum bet is **${SLOTS_MAX}** coins!`)]
+                    embeds: [await errorEmbed(guildId, 'Wager Rejected',
+                        `**Notice:** Maximum wager is **${SLOTS_MAX}** coins, Master.`
+                    )]
                 });
             }
             
@@ -50,10 +55,10 @@ export default {
             
             if (economy.coins < amount) {
                 return message.reply({
-                    embeds: [await errorEmbed(guildId, 
-                        `You don't have enough ${coinEmoji} ${coinName}!\n\n` +
-                        `**Your Balance:** ${economy.coins} ${coinEmoji} ${coinName}\n` +
-                        `**Bet Amount:** ${amount} ${coinEmoji} ${coinName}`
+                    embeds: [await errorEmbed(guildId, 'Insufficient Resources',
+                        `**Warning:** Your current balance is insufficient, Master.\n\n` +
+                        `▸ **Available Funds:** ${economy.coins} ${coinEmoji} ${coinName}\n` +
+                        `▸ **Required Wager:** ${amount} ${coinEmoji} ${coinName}`
                     )]
                 });
             }
@@ -71,21 +76,21 @@ export default {
                 // All three match - JACKPOT!
                 if (slot1 === '7️⃣') {
                     multiplier = 10; // 10x for triple 7s
-                    result = '🎰 **JACKPOT!** Triple 7s!';
+                    result = '◉ **PROBABILITY ANOMALY** — Triple 7s detected!';
                 } else if (slot1 === '💎') {
                     multiplier = 7; // 7x for triple diamonds
-                    result = '💎 **MEGA WIN!** Triple Diamonds!';
+                    result = '◉ **EXCEPTIONAL OUTCOME** — Triple Diamonds aligned!';
                 } else {
                     multiplier = 5; // 5x for triple anything else
-                    result = '🎉 **BIG WIN!** Triple Match!';
+                    result = '◉ **FAVORABLE RESULT** — Triple sequence confirmed!';
                 }
             } else if (slot1 === slot2 || slot2 === slot3 || slot1 === slot3) {
                 // Two match
                 multiplier = 2; // 2x for double match
-                result = '✨ **WIN!** Double Match!';
+                result = '◈ **PARTIAL MATCH** — Two symbols aligned.';
             } else {
                 // No match - loss
-                result = '😢 **No Match** - Better luck next time!';
+                result = '○ **NO CORRELATION** — Sequence mismatch detected.';
             }
             
             const won = multiplier > 0;
@@ -104,20 +109,21 @@ export default {
             await economy.save();
             
             const embed = new EmbedBuilder()
-                .setTitle('🎰 Slot Machine')
+                .setTitle('『 Probability Engine 』')
                 .setDescription(
+                    `**Notice:** Initiating random sequence generator...\n\n` +
                     `**╔═══════╗**\n` +
-                    `**║** ${slot1} **|** ${slot2} **|** ${slot3} **║**\n` +
+                    `**║** ${slot1} **│** ${slot2} **│** ${slot3} **║**\n` +
                     `**╚═══════╝**\n\n` +
                     result + '\n\n' +
                     (won 
-                        ? `**Multiplier:** ${multiplier}x\n**Winnings:** +${winnings} ${coinEmoji} ${coinName}\n**Profit:** +${netGain} ${coinEmoji} ${coinName}`
-                        : `**Lost:** -${amount} ${coinEmoji} ${coinName}`) +
-                    `\n\n**New Balance:** ${economy.coins} ${coinEmoji} ${coinName}`
+                        ? `▸ **Multiplier Applied:** ${multiplier}x\n▸ **Resources Gained:** +${winnings} ${coinEmoji}\n▸ **Net Profit:** +${netGain} ${coinEmoji}\n\n*Fortune favors you, Master.*`
+                        : `▸ **Resources Lost:** -${amount} ${coinEmoji}\n\n*Perhaps a different approach is advisable, Master.*`) +
+                    `\n\n**Current Balance:** ${economy.coins} ${coinEmoji} ${coinName}`
                 )
-                .setColor(won ? '#00ff00' : '#ff0000')
+                .setColor(won ? '#00FF7F' : '#FF4757')
                 .setThumbnail(message.author.displayAvatarURL({ extension: 'png' }))
-                .setFooter({ text: `Gambling Stats: ${economy.gamblingWins || 0}W / ${economy.gamblingLosses || 0}L` })
+                .setFooter({ text: `${getRandomFooter()} | W:${economy.gamblingWins || 0} L:${economy.gamblingLosses || 0}` })
                 .setTimestamp();
             
             await message.reply({ embeds: [embed] });
@@ -125,7 +131,9 @@ export default {
         } catch (error) {
             console.error('Error in slots command:', error);
             return message.reply({
-                embeds: [await errorEmbed(guildId, 'An error occurred while playing slots.')]
+                embeds: [await errorEmbed(guildId, 'System Error',
+                    `**Warning:** An anomaly occurred during probability calculation, Master.`
+                )]
             });
         }
     }

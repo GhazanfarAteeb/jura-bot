@@ -2,6 +2,7 @@ import { EmbedBuilder } from 'discord.js';
 import Economy from '../../models/Economy.js';
 import Guild from '../../models/Guild.js';
 import { getPrefix } from '../../utils/helpers.js';
+import { getRandomFooter } from '../../utils/raphael.js';
 
 // Define timed rewards here (can be configured per server later)
 const TIMED_REWARDS = {
@@ -51,18 +52,18 @@ export default {
             const prefix = await getPrefix(guildId);
             const availableRewards = Object.entries(TIMED_REWARDS)
                 .map(([key, reward]) => 
-                    `**${reward.name}** - ${reward.description}\n` +
-                    `💰 Reward: **${reward.amount}** coins\n` +
-                    `⏰ Cooldown: **${reward.interval}** minutes\n` +
-                    `Command: \`${prefix}claim ${key}\` or \`${prefix}${key}\``
+                    `**${reward.name}** — ${reward.description}\n` +
+                    `◇ Reward: **${reward.amount}** coins\n` +
+                    `◇ Cooldown: **${reward.interval}** minutes\n` +
+                    `◇ Command: \`${prefix}claim ${key}\` or \`${prefix}${key}\``
                 )
                 .join('\n\n');
             
             const embed = new EmbedBuilder()
-                .setColor('#5865F2')
-                .setTitle('⏰ Timed Rewards')
-                .setDescription('Claim these rewards regularly!\n\n' + availableRewards)
-                .setFooter({ text: 'Choose a reward to claim' })
+                .setColor('#00CED1')
+                .setTitle('『 Temporal Rewards 』')
+                .setDescription('**Answer:** Available reward protocols, Master.\n\n' + availableRewards)
+                .setFooter({ text: getRandomFooter() })
                 .setTimestamp();
             
             return message.reply({ embeds: [embed] });
@@ -88,16 +89,16 @@ export default {
             const rewardData = economy.timedRewards.find(r => r.commandName === rewardType);
             
             const embed = new EmbedBuilder()
-                .setColor('#00FF00')
+                .setColor('#00FF7F')
                 .setAuthor({ 
                     name: message.author.tag, 
                     iconURL: message.author.displayAvatarURL({ dynamic: true }) 
                 })
-                .setTitle(`✅ ${reward.name} Claimed!`)
-                .setDescription(`You earned **${amount.toLocaleString()}** ${coinEmoji} ${coinName}!`)
+                .setTitle(`『 ${reward.name} Acquired 』`)
+                .setDescription(`**Confirmed:** You have earned **${amount.toLocaleString()}** ${coinEmoji} ${coinName}, Master.`)
                 .addFields(
                     { 
-                        name: `${coinEmoji} Balance`, 
+                        name: `▸ Balance`, 
                         value: `**${economy.coins.toLocaleString()}** ${coinName}`, 
                         inline: true 
                     },

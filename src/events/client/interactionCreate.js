@@ -181,7 +181,7 @@ async function handleSpecialCommand(interaction, client, guildConfig, hasAdminRo
 
   // Commands that only require ManageGuild permission
   const manageGuildCommands = ['feature'];
-  
+
   // Check permissions based on command type
   if (manageGuildCommands.includes(interaction.commandName)) {
     // For manage guild commands, check ManageGuild permission

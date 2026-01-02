@@ -1,4 +1,5 @@
 import { infoEmbed, GLYPHS } from '../../utils/embeds.js';
+import { getRandomFooter } from '../../utils/raphael.js';
 
 export default {
     name: 'serverinfo',
@@ -10,16 +11,18 @@ export default {
     async execute(message) {
         const guild = message.guild;
         
-        const embed = await infoEmbed(guild.id, `Server Info: ${guild.name}`, null);
+        const embed = await infoEmbed(guild.id, `Server Analysis`, 
+            `**Report:** Comprehensive data compiled for **${guild.name}**, Master.`
+        );
         
         // Basic info
         embed.addFields({
-            name: `${GLYPHS.ARROW_RIGHT} Basic Information`,
+            name: `▸ Core Data`,
             value:
-                `**Name:** ${guild.name}\n` +
-                `**ID:** \`${guild.id}\`\n` +
-                `**Owner:** <@${guild.ownerId}>\n` +
-                `**Created:** <t:${Math.floor(guild.createdTimestamp / 1000)}:R>`,
+                `**Designation:** ${guild.name}\n` +
+                `**Identifier:** \`${guild.id}\`\n` +
+                `**Administrator:** <@${guild.ownerId}>\n` +
+                `**Established:** <t:${Math.floor(guild.createdTimestamp / 1000)}:R>`,
             inline: false
         });
         
@@ -29,16 +32,16 @@ export default {
         const humanCount = stats.size - botCount;
         
         embed.addFields({
-            name: `${GLYPHS.ARROW_RIGHT} Statistics`,
+            name: `▸ Population Metrics`,
             value:
-                `**Members:** ${guild.memberCount}\n` +
-                `${GLYPHS.DOT} Humans: ${humanCount}\n` +
-                `${GLYPHS.DOT} Bots: ${botCount}\n` +
-                `**Roles:** ${guild.roles.cache.size}\n` +
-                `**Channels:** ${guild.channels.cache.size}\n` +
-                `${GLYPHS.DOT} Text: ${guild.channels.cache.filter(c => c.type === 0).size}\n` +
-                `${GLYPHS.DOT} Voice: ${guild.channels.cache.filter(c => c.type === 2).size}\n` +
-                `**Emojis:** ${guild.emojis.cache.size}`,
+                `**Total Entities:** ${guild.memberCount}\n` +
+                `◇ Organic Users: ${humanCount}\n` +
+                `◇ Automated Systems: ${botCount}\n` +
+                `**Authority Levels:** ${guild.roles.cache.size}\n` +
+                `**Communication Channels:** ${guild.channels.cache.size}\n` +
+                `◇ Text: ${guild.channels.cache.filter(c => c.type === 0).size}\n` +
+                `◇ Voice: ${guild.channels.cache.filter(c => c.type === 2).size}\n` +
+                `**Custom Expressions:** ${guild.emojis.cache.size}`,
             inline: false
         });
         
@@ -49,8 +52,8 @@ export default {
         
         if (features.length > 0) {
             embed.addFields({
-                name: `${GLYPHS.ARROW_RIGHT} Features`,
-                value: features.map(f => `${GLYPHS.DOT} ${f}`).join('\n'),
+                name: `▸ Enabled Capabilities`,
+                value: features.map(f => `◇ ${f}`).join('\n'),
                 inline: false
             });
         }
@@ -58,10 +61,10 @@ export default {
         // Boost info
         if (guild.premiumTier > 0) {
             embed.addFields({
-                name: `${GLYPHS.SPARKLE} Boost Status`,
+                name: `▸ Enhancement Status`,
                 value:
-                    `**Tier:** ${guild.premiumTier}\n` +
-                    `**Boosts:** ${guild.premiumSubscriptionCount || 0}`,
+                    `**Tier Classification:** ${guild.premiumTier}\n` +
+                    `**Active Enhancements:** ${guild.premiumSubscriptionCount || 0}`,
                 inline: false
             });
         }
@@ -73,6 +76,8 @@ export default {
         if (guild.banner) {
             embed.setImage(guild.bannerURL({ size: 1024 }));
         }
+        
+        embed.setFooter({ text: getRandomFooter() });
         
         return message.reply({ embeds: [embed] });
     }

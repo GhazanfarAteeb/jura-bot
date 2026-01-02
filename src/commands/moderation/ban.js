@@ -97,10 +97,11 @@ export default {
       // DM the user if they're in the server
       if (targetMember) {
         try {
-          const dmEmbed = await errorEmbed(message.guild.id, `Banned from ${message.guild.name}`,
-            `${GLYPHS.BAN} You have been banned from the server.\n\n` +
-            `**Reason:** ${reason}\n` +
-            `**Moderator:** ${message.author.tag}`
+          const dmEmbed = await errorEmbed(message.guild.id, `Expulsion Notice`,
+            `**Notice:** You have been permanently expelled from **${message.guild.name}**.\n\n` +
+            `▸ **Justification:** ${reason}\n` +
+            `▸ **Authorized by:** ${message.author.tag}\n\n` +
+            `*This decision is final.*`
           );
           await user.send({ embeds: [dmEmbed] });
         } catch (error) {
@@ -163,9 +164,11 @@ export default {
       }
     }
 
-    const embed = await successEmbed(message.guild.id, 'Member Banned',
-      `${GLYPHS.ARROW_RIGHT} **${userTag}** has been banned.\n` +
-      `${GLYPHS.ARROW_RIGHT} **Case #${caseNumber}**`
+    const embed = await successEmbed(message.guild.id, 'Expulsion Executed',
+      `**Notice:** Disciplinary action has been executed, Master.\n\n` +
+      `▸ **Subject:** ${userTag}\n` +
+      `▸ **Action:** Permanent Expulsion\n` +
+      `▸ **Case Reference:** #${caseNumber}`
     );
     return message.reply({ embeds: [embed] });
   }

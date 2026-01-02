@@ -1,6 +1,7 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } from 'discord.js';
 import { successEmbed, errorEmbed, infoEmbed, GLYPHS } from '../../utils/embeds.js';
 import { getPrefix } from '../../utils/helpers.js';
+import { getRandomFooter } from '../../utils/raphael.js';
 
 const activeGames = new Map();
 
@@ -20,8 +21,8 @@ export default {
         // Check if opponent is mentioned
         if (!opponent) {
             const prefix = await getPrefix(guildId);
-            const embed = await errorEmbed(guildId, 'No Opponent',
-                `${GLYPHS.ERROR} Please mention a user to challenge!\n\n**Usage:** \`${prefix}tictactoe @user\``
+            const embed = await errorEmbed(guildId, 'Opponent Required',
+                `**Notice:** Please specify an opponent, Master.\n\n**Syntax:** \`${prefix}tictactoe @user\``
             );
             return message.reply({ embeds: [embed] });
         }
@@ -29,7 +30,7 @@ export default {
         // Can't play against yourself
         if (opponent.id === challenger.id) {
             const embed = await errorEmbed(guildId, 'Invalid Opponent',
-                `${GLYPHS.ERROR} You can't play against yourself!`
+                `**Warning:** Self-challenge is not permitted, Master.`
             );
             return message.reply({ embeds: [embed] });
         }
@@ -37,7 +38,7 @@ export default {
         // Can't play against bots
         if (opponent.bot) {
             const embed = await errorEmbed(guildId, 'Invalid Opponent',
-                `${GLYPHS.ERROR} You can't play against a bot!`
+                `**Warning:** Automated systems cannot participate in games, Master.`
             );
             return message.reply({ embeds: [embed] });
         }
@@ -47,21 +48,21 @@ export default {
         const opponentGameKey = `${guildId}-${opponent.id}`;
         
         if (activeGames.has(gameKey) || activeGames.has(opponentGameKey)) {
-            const embed = await errorEmbed(guildId, 'Game In Progress',
-                `${GLYPHS.ERROR} One of you is already in a game!`
+            const embed = await errorEmbed(guildId, 'Session Active',
+                `**Notice:** One of you is already in an active game session, Master.`
             );
             return message.reply({ embeds: [embed] });
         }
 
         // Create challenge embed
         const challengeEmbed = new EmbedBuilder()
-            .setColor('#5865F2')
-            .setTitle('🎮 Tic Tac Toe Challenge!')
+            .setColor('#00CED1')
+            .setTitle('『 Strategic Challenge 』')
             .setDescription(
-                `${challenger} has challenged ${opponent} to a game of Tic Tac Toe!\n\n` +
-                `${opponent}, do you accept?`
+                `${challenger} has initiated a Tic Tac Toe challenge against ${opponent}.\n\n` +
+                `${opponent}, do you accept this challenge?`
             )
-            .setFooter({ text: 'Challenge expires in 30 seconds' });
+            .setFooter({ text: `${getRandomFooter()} | Expires in 30 seconds` });
 
         const acceptRow = new ActionRowBuilder().addComponents(
             new ButtonBuilder()
@@ -92,9 +93,10 @@ export default {
 
             if (response.customId === 'ttt_decline') {
                 const declineEmbed = new EmbedBuilder()
-                    .setColor('#ED4245')
-                    .setTitle('❌ Challenge Declined')
-                    .setDescription(`${opponent} declined the challenge.`);
+                    .setColor('#FF4757')
+                    .setTitle('『 Challenge Declined 』')
+                    .setDescription(`**Notice:** ${opponent} has declined the challenge.`)
+                    .setFooter({ text: getRandomFooter() });
                 
                 return response.update({ embeds: [declineEmbed], components: [] });
             }

@@ -40,8 +40,8 @@ export default class Pause extends Command {
         if (!player) {
             return ctx.sendMessage({
                 embeds: [{
-                    color: 0xff0000,
-                    description: '❌ No music player found.'
+                    color: 0xff4757,
+                    description: '**Warning:** No audio playback system detected, Master.'
                 }]
             });
         }
@@ -49,8 +49,8 @@ export default class Pause extends Command {
         if (player.paused) {
             return ctx.sendMessage({
                 embeds: [{
-                    color: 0xffcc00,
-                    description: '⏸️ The player is already paused. Use `resume` to continue playing.'
+                    color: 0xffd700,
+                    description: '**Notice:** Audio stream is already suspended, Master. Use `resume` to continue.'
                 }]
             });
         }
@@ -59,8 +59,8 @@ export default class Pause extends Command {
 
         return ctx.sendMessage({
             embeds: [{
-                color: 0x00ff00,
-                description: '⏸️ Paused the current track.'
+                color: 0x00ced1,
+                description: '**Confirmed:** Audio stream suspended, Master.'
             }]
         });
     }

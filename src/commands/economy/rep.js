@@ -4,6 +4,7 @@ import Guild from '../../models/Guild.js';
 import { REPUTATION_COOLDOWN, REPUTATION_AMOUNT } from '../../utils/gameConfig.js';
 import { successEmbed, errorEmbed } from '../../utils/embeds.js';
 import { getPrefix } from '../../utils/helpers.js';
+import { getRandomFooter } from '../../utils/raphael.js';
 
 export default {
     name: 'rep',
@@ -23,19 +24,19 @@ export default {
             if (!targetUser) {
                 const prefix = await getPrefix(guildId);
                 return message.reply({
-                    embeds: [await errorEmbed(guildId, `Please mention a user to give reputation to!\n\nUsage: \`${prefix}rep @user\``)]
+                    embeds: [await errorEmbed(guildId, 'Target Required', `**Notice:** Please specify a user to acknowledge, Master.\n\nSyntax: \`${prefix}rep @user\``)]
                 });
             }
             
             if (targetUser.id === userId) {
                 return message.reply({
-                    embeds: [await errorEmbed(guildId, 'You cannot give reputation to yourself!')]
+                    embeds: [await errorEmbed(guildId, 'Invalid Operation', '**Warning:** Self-acknowledgment is not permitted, Master.')]
                 });
             }
             
             if (targetUser.bot) {
                 return message.reply({
-                    embeds: [await errorEmbed(guildId, 'You cannot give reputation to bots!')]
+                    embeds: [await errorEmbed(guildId, 'Invalid Target', '**Warning:** Automated systems cannot receive reputation, Master.')]
                 });
             }
             
@@ -52,9 +53,9 @@ export default {
                 if (timeSince < cooldownMs) {
                     const hoursLeft = Math.ceil((cooldownMs - timeSince) / 1000 / 60 / 60);
                     return message.reply({
-                        embeds: [await errorEmbed(guildId, 
-                            `You already gave reputation to ${targetUser.username} recently!\n\n` +
-                            `You can give them rep again in **${hoursLeft}** hours.`
+                        embeds: [await errorEmbed(guildId, 'Cooldown Active',
+                            `**Notice:** You recently acknowledged ${targetUser.username}, Master.\n\n` +
+                            `Available again in **${hoursLeft}** hours.`
                         )]
                     });
                 }
@@ -84,14 +85,14 @@ export default {
             await receiverEconomy.save();
             
             const embed = new EmbedBuilder()
-                .setColor('#ff69b4')
-                .setTitle('⭐ Reputation Given!')
+                .setColor('#00CED1')
+                .setTitle('『 Reputation Acknowledged 』')
                 .setDescription(
-                    `${message.author} gave **+1 reputation** to ${targetUser}!\n\n` +
-                    `**${targetUser.username}'s Reputation:** ${receiverEconomy.reputation} ⭐`
+                    `${message.author} has granted **+1 reputation** to ${targetUser}.\n\n` +
+                    `**${targetUser.username}'s Reputation:** ${receiverEconomy.reputation} ◉`
                 )
                 .setThumbnail(targetUser.displayAvatarURL({ extension: 'png' }))
-                .setFooter({ text: 'You can give rep to this user again in 24 hours' })
+                .setFooter({ text: `${getRandomFooter()} | Cooldown: 24 hours` })
                 .setTimestamp();
             
             await message.reply({ embeds: [embed] });

@@ -1,5 +1,6 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { infoEmbed, GLYPHS } from '../../utils/embeds.js';
+import { getRandomFooter } from '../../utils/raphael.js';
 
 export default {
     name: 'avatar',
@@ -26,9 +27,11 @@ export default {
         const hasServerAvatar = serverAvatar && serverAvatar !== globalAvatar;
         
         const embed = new EmbedBuilder()
-            .setTitle(`${user.username}'s Avatar`)
-            .setColor('#5865F2')
+            .setTitle(`『 ${user.username}'s Visual Profile 』`)
+            .setDescription(`**Report:** Image data retrieved successfully, Master.`)
+            .setColor('#00CED1')
             .setImage(globalAvatar)
+            .setFooter({ text: getRandomFooter() })
             .setTimestamp();
         
         // Format links for different sizes
@@ -41,14 +44,14 @@ export default {
         };
         
         embed.addFields({
-            name: '🖼️ Global Avatar',
+            name: '▸ Global Image',
             value: formatLinks(globalAvatar),
             inline: false
         });
         
         if (hasServerAvatar) {
             embed.addFields({
-                name: '🏠 Server Avatar',
+                name: '▸ Server-Specific Image',
                 value: formatLinks(serverAvatar),
                 inline: false
             });

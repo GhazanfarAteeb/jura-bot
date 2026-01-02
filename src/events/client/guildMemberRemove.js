@@ -2,6 +2,7 @@ import { Events } from 'discord.js';
 import Member from '../../models/Member.js';
 import Guild from '../../models/Guild.js';
 import { infoEmbed, GLYPHS } from '../../utils/embeds.js';
+import { getRandomFooter } from '../../utils/raphael.js';
 
 export default {
   name: Events.GuildMemberRemove,
@@ -46,14 +47,18 @@ export default {
               ? `<t:${joinedTimestamp}:R>`
               : 'Unknown';
 
-            const embed = await infoEmbed(guildId, 'Member Left',
-              `${GLYPHS.ARROW_RIGHT} **User:** ${member.user.tag} (${member.user.id})\n` +
-              `${GLYPHS.ARROW_RIGHT} **Joined:** ${joinedText}\n` +
-              `${GLYPHS.ARROW_RIGHT} **Total Joins:** ${memberData?.joinCount || 1}\n` +
-              `${GLYPHS.ARROW_RIGHT} **Total Leaves:** ${memberData?.leaveCount || 1}`
+            const embed = await infoEmbed(guildId, 'Entity Departure',
+              `**Notice:** A member has departed from this server.`
+            );
+            embed.addFields(
+              { name: '▸ Subject', value: `${member.user.tag} (\`${member.user.id}\`)`, inline: true },
+              { name: '▸ First Detected', value: joinedText, inline: true },
+              { name: '▸ Join Records', value: `${memberData?.joinCount || 1}`, inline: true },
+              { name: '▸ Departure Count', value: `${memberData?.leaveCount || 1}`, inline: true }
             );
             embed.setThumbnail(member.user.displayAvatarURL({ dynamic: true }));
-            embed.setColor('#ED4245');
+            embed.setColor('#FF4757');
+            embed.setFooter({ text: getRandomFooter() });
             await leaveLogChannel.send({ embeds: [embed] });
           }
         } catch (error) {

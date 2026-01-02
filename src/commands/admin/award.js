@@ -5,6 +5,7 @@ import Guild from '../../models/Guild.js';
 import ModLog from '../../models/ModLog.js';
 import { successEmbed, errorEmbed, infoEmbed, GLYPHS, createEmbed } from '../../utils/embeds.js';
 import { getPrefix } from '../../utils/helpers.js';
+import { getRandomFooter } from '../../utils/raphael.js';
 
 export default {
   name: 'award',
@@ -42,24 +43,24 @@ export default {
     // Validate user
     if (!targetUser) {
       return message.reply({
-        embeds: [await errorEmbed(guildId, 'Missing User',
-          `Please mention a user!\n\nUsage: \`${prefix}award <type> @user <amount>\``)]
+        embeds: [await errorEmbed(guildId, 'Target Required',
+          `**Notice:** Please specify a subject, Master.\n\nSyntax: \`${prefix}award <type> @user <amount>\``)]
       });
     }
 
     // Validate amount
     if (isNaN(amount) || amount === 0) {
       return message.reply({
-        embeds: [await errorEmbed(guildId, 'Invalid Amount',
-          `Please provide a valid amount (positive to add, negative to remove).\n\nUsage: \`${prefix}award <type> @user <amount>\``)]
+        embeds: [await errorEmbed(guildId, 'Invalid Quantity',
+          `**Warning:** Please provide a valid quantity (positive to grant, negative to revoke), Master.\n\nSyntax: \`${prefix}award <type> @user <amount>\``)]
       });
     }
 
     // Limit amount range
     if (Math.abs(amount) > 10000000) {
       return message.reply({
-        embeds: [await errorEmbed(guildId, 'Amount Too Large',
-          'Maximum amount is 10,000,000 per transaction.')]
+        embeds: [await errorEmbed(guildId, 'Quantity Exceeded',
+          '**Warning:** Maximum quantity is 10,000,000 per transaction, Master.')]
       });
     }
 
@@ -84,10 +85,10 @@ export default {
           break;
       }
 
-      const actionWord = isAdding ? 'Added' : 'Removed';
+      const actionWord = isAdding ? 'Granted' : 'Revoked';
       const embed = await successEmbed(guildId,
-        `${result.emoji} ${result.typeName} ${actionWord}!`,
-        `${GLYPHS.SUCCESS} Successfully ${isAdding ? 'added' : 'removed'} **${absAmount.toLocaleString()}** ${result.emoji} ${result.typeName.toLowerCase()} ${isAdding ? 'to' : 'from'} ${targetUser}!\n\n` +
+        `${result.typeName} ${actionWord}`,
+        `**Confirmed:** Successfully ${isAdding ? 'granted' : 'revoked'} **${absAmount.toLocaleString()}** ${result.emoji} ${result.typeName.toLowerCase()} ${isAdding ? 'to' : 'from'} ${targetUser}, Master.\n\n` +
         `**${targetUser.username}'s New ${result.typeName}:** ${result.newValue.toLocaleString()} ${result.emoji}` +
         (result.levelInfo ? `\n${result.levelInfo}` : '')
       );

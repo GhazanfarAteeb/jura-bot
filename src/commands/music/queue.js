@@ -5,6 +5,7 @@
 
 import Command from '../../structures/Command.js';
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { getRandomFooter } from '../../utils/raphael.js';
 
 export default class Queue extends Command {
     constructor(client) {
@@ -48,8 +49,8 @@ export default class Queue extends Command {
         if (!player) {
             return ctx.sendMessage({
                 embeds: [{
-                    color: 0xff0000,
-                    description: '❌ No music player found.'
+                    color: 0xff4757,
+                    description: '**Warning:** No audio playback system detected, Master.'
                 }]
             });
         }
@@ -61,8 +62,8 @@ export default class Queue extends Command {
         if (!current && queue.length === 0) {
             return ctx.sendMessage({
                 embeds: [{
-                    color: 0xffcc00,
-                    description: '📭 The queue is empty. Use `play` to add some tracks!'
+                    color: 0xffd700,
+                    description: '**Notice:** The audio queue is vacant, Master. Use `play` to add tracks.'
                 }]
             });
         }
@@ -93,8 +94,8 @@ export default class Queue extends Command {
             };
 
             const embed = new EmbedBuilder()
-                .setColor('#0099ff')
-                .setTitle('🎵 Music Queue')
+                .setColor('#00CED1')
+                .setTitle('『 Audio Queue 』')
                 .setThumbnail(current?.info?.thumbnail || current?.info?.artworkUrl || null);
 
             // Now playing - truncate title if too long
@@ -102,7 +103,7 @@ export default class Queue extends Command {
                 const nowPlayingTitle = current.info.title.length > 50 
                     ? current.info.title.substring(0, 47) + '...' 
                     : current.info.title;
-                embed.setDescription(`**Now Playing:**\n[${nowPlayingTitle}](${current.info.uri}) \`[${formatDuration(current.info.length)}]\`\nRequested by: ${current.info.requester?.toString() || 'Unknown'}`);
+                embed.setDescription(`**▸ Currently Processing:**\n[${nowPlayingTitle}](${current.info.uri}) \`[${formatDuration(current.info.length)}]\`\nRequested by: ${current.info.requester?.toString() || 'Unknown'}`);
             }
 
             // Queue list - with character limit handling

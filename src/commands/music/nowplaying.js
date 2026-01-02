@@ -5,6 +5,7 @@
 
 import Command from '../../structures/Command.js';
 import { EmbedBuilder } from 'discord.js';
+import { getRandomFooter } from '../../utils/raphael.js';
 
 export default class NowPlaying extends Command {
     constructor(client) {
@@ -41,8 +42,8 @@ export default class NowPlaying extends Command {
         if (!player || !player.current) {
             return ctx.sendMessage({
                 embeds: [{
-                    color: 0xff0000,
-                    description: '❌ No track is currently playing.'
+                    color: 0xFF4757,
+                    description: '**Notice:** No audio track is currently playing, Master.'
                 }]
             });
         }
@@ -77,23 +78,23 @@ export default class NowPlaying extends Command {
         const progressBar = createProgressBar(position, duration);
 
         const embed = new EmbedBuilder()
-            .setColor('#0099ff')
-            .setAuthor({ name: '🎵 Now Playing' })
+            .setColor('#00CED1')
+            .setAuthor({ name: '『 Audio Playback 』' })
             .setTitle(track.info.title)
             .setURL(track.info.uri)
             .setThumbnail(track.info.thumbnail || track.info.artworkUrl || null)
-            .setDescription(`${progressBar}\n\`${formatDuration(position)} / ${formatDuration(duration)}\``)
+            .setDescription(`**Notice:** Currently processing audio stream, Master.\n\n${progressBar}\n\`${formatDuration(position)} / ${formatDuration(duration)}\``)
             .addFields(
-                { name: 'Author', value: track.info.author || 'Unknown', inline: true },
-                { name: 'Requested By', value: track.info.requester?.toString() || 'Unknown', inline: true },
-                { name: 'Volume', value: `${player.volume}%`, inline: true }
+                { name: '▸ Artist', value: track.info.author || 'Unknown', inline: true },
+                { name: '▸ Requested By', value: track.info.requester?.toString() || 'Unknown', inline: true },
+                { name: '▸ Volume', value: `${player.volume}%`, inline: true }
             );
 
         // Add loop status if enabled
         if (player.loop && player.loop !== 'none') {
             embed.addFields({
-                name: 'Loop',
-                value: player.loop === 'track' ? '🔂 Track' : '🔁 Queue',
+                name: '▸ Loop Mode',
+                value: player.loop === 'track' ? '◉ Track Repeat' : '◉ Queue Repeat',
                 inline: true
             });
         }
@@ -101,12 +102,13 @@ export default class NowPlaying extends Command {
         // Add queue info
         if (player.queue.length > 0) {
             embed.addFields({
-                name: 'Queue',
-                value: `${player.queue.length} track${player.queue.length !== 1 ? 's' : ''} remaining`,
+                name: '▸ Queue Status',
+                value: `${player.queue.length} track${player.queue.length !== 1 ? 's' : ''} pending`,
                 inline: true
             });
         }
 
+        embed.setFooter({ text: getRandomFooter() });
         embed.setTimestamp();
 
         return ctx.sendMessage({ embeds: [embed] });

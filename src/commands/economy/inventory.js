@@ -2,6 +2,7 @@ import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentTy
 import Economy from '../../models/Economy.js';
 import Guild from '../../models/Guild.js';
 import { getPrefix } from '../../utils/helpers.js';
+import { getRandomFooter } from '../../utils/raphael.js';
 
 export default {
   name: 'inventory',
@@ -27,7 +28,7 @@ export default {
 
         if (ownedBackgrounds.length === 0) {
           const prefix = await getPrefix(guildId);
-          return message.reply(`📦 You don't have any backgrounds yet! Check out \`${prefix}shop\` to purchase some.`);
+          return message.reply(`**Notice:** Your inventory is vacant, Master. Visit \`${prefix}shop\` to acquire assets.`);
         }
 
         // Get shop items to find images
@@ -45,18 +46,18 @@ export default {
           const imageUrl = shopItem?.image || bg.image || '';
 
           const embed = new EmbedBuilder()
-            .setColor('#667eea')
+            .setColor('#00CED1')
             .setAuthor({
               name: `${message.author.tag}'s Inventory`,
               iconURL: message.author.displayAvatarURL({ dynamic: true })
             })
-            .setTitle(`🖼️ ${bg.name}`)
+            .setTitle(`『 ${bg.name} 』`)
             .addFields(
-              { name: '📦 Status', value: isEquipped ? '✅ **EQUIPPED**' : '⬜ Not equipped', inline: true },
-              { name: '📅 Purchased', value: `<t:${Math.floor(bg.purchasedAt.getTime() / 1000)}:R>`, inline: true }
+              { name: '▸ Status', value: isEquipped ? '◉ **ACTIVE**' : '○ Inactive', inline: true },
+              { name: '▸ Acquired', value: `<t:${Math.floor(bg.purchasedAt.getTime() / 1000)}:R>`, inline: true }
             )
             .setFooter({
-              text: `Background ${page + 1} of ${maxPages} | Use !setbg ${bg.id} to equip`
+              text: `${getRandomFooter()} | Item ${page + 1} of ${maxPages} | Use !setbg ${bg.id} to equip`
             })
             .setTimestamp();
 
@@ -75,17 +76,17 @@ export default {
             .addComponents(
               new ButtonBuilder()
                 .setCustomId('previous')
-                .setLabel('◀️ Previous')
+                .setLabel('◀ Previous')
                 .setStyle(ButtonStyle.Secondary)
                 .setDisabled(page === 0),
               new ButtonBuilder()
                 .setCustomId('equip')
-                .setLabel(isEquipped ? '✅ Equipped' : '🎨 Equip')
+                .setLabel(isEquipped ? '◉ Active' : 'Activate')
                 .setStyle(isEquipped ? ButtonStyle.Secondary : ButtonStyle.Success)
                 .setDisabled(isEquipped),
               new ButtonBuilder()
                 .setCustomId('next')
-                .setLabel('Next ▶️')
+                .setLabel('Next ▶')
                 .setStyle(ButtonStyle.Secondary)
                 .setDisabled(page === maxPages - 1)
             );

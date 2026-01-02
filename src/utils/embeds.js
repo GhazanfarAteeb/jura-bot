@@ -1,20 +1,21 @@
 import { EmbedBuilder } from 'discord.js';
 import Guild from '../models/Guild.js';
+import { getRandomFooter, RAPHAEL_TITLES } from './raphael.js';
 
-// Glyphs and special characters for styling
+// Glyphs and special characters for styling (Raphael theme)
 export const GLYPHS = {
-    // Arrows
-    ARROW_RIGHT: '➤',
-    ARROW_LEFT: '◄',
-    ARROW_UP: '▲',
-    ARROW_DOWN: '▼',
+    // Arrows (Raphael style)
+    ARROW_RIGHT: '▸',
+    ARROW_LEFT: '◂',
+    ARROW_UP: '▴',
+    ARROW_DOWN: '▾',
     
-    // Status indicators
-    SUCCESS: '✅',
-    ERROR: '❌',
-    WARNING: '⚠️',
-    INFO: 'ℹ️',
-    LOADING: '⏳',
+    // Status indicators (Raphael analytical style)
+    SUCCESS: '◉',
+    ERROR: '⚠',
+    WARNING: '◈',
+    INFO: '◇',
+    LOADING: '◎',
     
     // Symbols
     SHIELD: '🛡️',
@@ -72,7 +73,12 @@ export const COLORS = {
     PRIMARY: '#5865F2',
     SECONDARY: '#57F287',
     DANGER: '#ED4245',
-    MUTED: '#99AAB5'
+    MUTED: '#99AAB5',
+    // Raphael theme colors (cyan/blue analytical)
+    RAPHAEL: '#00CED1',
+    RAPHAEL_SUCCESS: '#00FF7F',
+    RAPHAEL_ERROR: '#FF4757',
+    RAPHAEL_WARNING: '#FFD700'
 };
 
 // Create a styled embed with guild configuration
@@ -80,39 +86,43 @@ export async function createEmbed(guildId, type = 'info') {
     const guild = await Guild.getGuild(guildId);
     const embed = new EmbedBuilder();
     
-    // Set color based on type
+    // Set color based on type - using Raphael theme
     const colorMap = {
-        success: COLORS.SUCCESS,
-        error: COLORS.ERROR,
-        warning: COLORS.WARNING,
-        info: guild?.embedStyle?.color || COLORS.INFO,
-        primary: COLORS.PRIMARY
+        success: COLORS.RAPHAEL_SUCCESS,
+        error: COLORS.RAPHAEL_ERROR,
+        warning: COLORS.RAPHAEL_WARNING,
+        info: guild?.embedStyle?.color || COLORS.RAPHAEL,
+        primary: COLORS.RAPHAEL
     };
     
-    embed.setColor(colorMap[type] || COLORS.INFO);
+    embed.setColor(colorMap[type] || COLORS.RAPHAEL);
     
     // Add timestamp if enabled
     if (guild?.embedStyle?.timestamp !== false) {
         embed.setTimestamp();
     }
     
+    // Add Raphael footer
+    embed.setFooter({ text: getRandomFooter() });
+    
     return embed;
 }
 
-// Success embed
+// Success embed - Raphael style
 export async function successEmbed(guildId, title, description) {
     const embed = await createEmbed(guildId, 'success');
     const guildConfig = await Guild.getGuild(guildId);
     const useGlyphs = guildConfig?.embedStyle?.useGlyphs !== false;
     
-    embed.setTitle(`${useGlyphs ? GLYPHS.SUCCESS : '✓'} ${title}`)
-        .setDescription(description);
+    // Raphael style: analytical title format
+    embed.setTitle(`『 ${title} 』`)
+        .setDescription(`**Confirmed.** ${description}`);
     
     return embed;
 }
 
-// Error embed
-export async function errorEmbed(guildId, title = 'Error', description) {
+// Error embed - Raphael style
+export async function errorEmbed(guildId, title = 'Alert', description) {
     const embed = await createEmbed(guildId, 'error');
     const guildConfig = await Guild.getGuild(guildId);
     const useGlyphs = guildConfig?.embedStyle?.useGlyphs !== false;
@@ -120,43 +130,49 @@ export async function errorEmbed(guildId, title = 'Error', description) {
     // If only 2 parameters, treat second param as description
     if (description === undefined && title) {
         description = title;
-        title = 'Error';
+        title = 'Alert';
     }
     
-    embed.setTitle(`${useGlyphs ? GLYPHS.ERROR : '✗'} ${title}`);
+    // Raphael style: analytical alert format
+    embed.setTitle(`『 ${title} 』`);
     
     if (description) {
-        embed.setDescription(description);
+        embed.setDescription(`**Warning:** ${description}`);
     }
     
     return embed;
 }
 
-// Warning embed
+// Warning embed - Raphael style
 export async function warningEmbed(guildId, title, description) {
     const embed = await createEmbed(guildId, 'warning');
     const guildConfig = await Guild.getGuild(guildId);
     const useGlyphs = guildConfig?.embedStyle?.useGlyphs !== false;
     
-    embed.setTitle(`${useGlyphs ? GLYPHS.WARNING : '⚠'} ${title}`)
-        .setDescription(description);
+    // Raphael style: caution format
+    embed.setTitle(`『 ${title} 』`)
+        .setDescription(`**Caution:** ${description}`);
     
     return embed;
 }
 
-// Info embed
+// Info embed - Raphael style
 export async function infoEmbed(guildId, title, description) {
     const embed = await createEmbed(guildId, 'info');
     const guildConfig = await Guild.getGuild(guildId);
     const useGlyphs = guildConfig?.embedStyle?.useGlyphs !== false;
     
-    embed.setTitle(`${useGlyphs ? GLYPHS.INFO : 'ℹ'} ${title}`)
-        .setDescription(description);
+    // Raphael style: analysis format
+    embed.setTitle(`『 ${title} 』`);
+    
+    if (description) {
+        embed.setDescription(`**Analysis:** ${description}`);
+    }
     
     return embed;
 }
 
-// Moderation log embed
+// Moderation log embed - Raphael style
 export async function modLogEmbed(guildId, action, data) {
     const embed = await createEmbed(guildId, 'info');
     const guildConfig = await Guild.getGuild(guildId);

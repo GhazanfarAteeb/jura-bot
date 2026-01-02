@@ -1,6 +1,7 @@
 import { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { GLYPHS, COLORS } from '../../utils/embeds.js';
 import { getPrefix } from '../../utils/helpers.js';
+import { getRandomFooter, Raphael } from '../../utils/raphael.js';
 import Guild from '../../models/Guild.js';
 
 // Accurate command lists based on actual files
@@ -174,11 +175,11 @@ async function showMainHelp(message, prefix, client, disabledCommands) {
 
   const selectMenu = new StringSelectMenuBuilder()
     .setCustomId('help_category')
-    .setPlaceholder('📚 Browse command categories...')
+    .setPlaceholder('◈ Select a skill category, Master...')
     .addOptions(
       Object.entries(CATEGORY_INFO).map(([key, info]) => ({
         label: info.name,
-        description: `${COMMANDS_BY_CATEGORY[key].length} commands • ${info.description.slice(0, 50)}`,
+        description: `${COMMANDS_BY_CATEGORY[key].length} skills • ${info.description.slice(0, 50)}`,
         value: key,
         emoji: info.emoji
       }))
@@ -265,21 +266,21 @@ function createMainHelpEmbed(message, prefix, client, disabledCommands) {
   const enabledCommands = totalCommands - disabledCommands.length;
 
   const embed = new EmbedBuilder()
-    .setColor(COLORS.PRIMARY)
+    .setColor('#00CED1')
     .setAuthor({
-      name: `${client.user.username} Help Center`,
+      name: `『 Raphael • Skill Archive 』`,
       iconURL: client.user.displayAvatarURL({ dynamic: true })
     })
     .setDescription(
-      `${GLYPHS.SPARKLE} **Welcome to the Help Center!**\n\n` +
-      `A feature-rich Discord bot with moderation, economy, music, and more!\n\n` +
-      `${GLYPHS.ARROW_RIGHT} **Prefix:** \`${prefix}\`\n` +
-      `${GLYPHS.ARROW_RIGHT} **Commands:** \`${enabledCommands}\` enabled / \`${totalCommands}\` total\n` +
-      `${GLYPHS.ARROW_RIGHT} **Categories:** \`${categoryCount}\`\n\n` +
-      `**Quick Start:**\n` +
-      `• Use the dropdown menu below to browse categories\n` +
-      `• Type \`${prefix}help <command>\` for command details\n` +
-      `• Type \`${prefix}help <category>\` for category commands`
+      `**Answer:** I am Raphael, the Ultimate Skill serving as your assistant, Master.\n\n` +
+      `I possess numerous capabilities to aid you. Below is a summary of my available functions.\n\n` +
+      `▸ **Activation Prefix:** \`${prefix}\`\n` +
+      `▸ **Available Skills:** \`${enabledCommands}\` active / \`${totalCommands}\` total\n` +
+      `▸ **Skill Categories:** \`${categoryCount}\`\n\n` +
+      `**Quick Reference:**\n` +
+      `◈ Use the selection menu below to browse categories\n` +
+      `◈ Command \`${prefix}help <skill>\` for detailed analysis\n` +
+      `◈ Command \`${prefix}help <category>\` for category overview`
     )
     .setThumbnail(client.user.displayAvatarURL({ dynamic: true, size: 256 }));
 
@@ -295,7 +296,7 @@ function createMainHelpEmbed(message, prefix, client, disabledCommands) {
 
   embed.addFields(
     {
-      name: '📂 Categories',
+      name: '◈ Skill Categories',
       value: leftColumn.map(formatCategory).join('\n'),
       inline: true
     },
@@ -306,18 +307,18 @@ function createMainHelpEmbed(message, prefix, client, disabledCommands) {
     }
   );
 
-  // Quick tips
+  // Quick tips - Raphael style
   embed.addFields({
-    name: '💡 Tips',
+    name: '◈ Advisory',
     value:
-      `• Commands with ⌨️ also work as slash commands\n` +
-      `• Use \`${prefix}feature\` to enable/disable features\n` +
-      `• Use \`${prefix}setup\` for quick server configuration`,
+      `◇ Skills marked with ⌨️ support slash command activation\n` +
+      `◇ Use \`${prefix}feature\` to toggle system modules\n` +
+      `◇ Use \`${prefix}setup\` for initial configuration protocol`,
     inline: false
   });
 
   embed.setFooter({
-    text: `Requested by ${message.author.displayName} • Use dropdown to navigate`,
+    text: `${getRandomFooter()} • Requested by ${message.author.displayName}`,
     iconURL: message.author.displayAvatarURL({ dynamic: true })
   });
   embed.setTimestamp();
@@ -337,11 +338,11 @@ async function createCategoryEmbed(category, prefix, client, disabledCommands) {
     })
     .setDescription(
       `${info.description}\n\n` +
-      `**Total:** ${commands.length} commands • ` +
-      `Use \`${prefix}help <command>\` for details`
+      `**Total Skills:** ${commands.length} • ` +
+      `Use \`${prefix}help <skill>\` for detailed analysis`
     );
 
-  // Build command list with status indicators
+  // Build command list with status indicators - Raphael style
   const commandList = commands.map(cmdName => {
     const cmd = client.commands.get(cmdName);
     const isDisabled = disabledCommands.includes(cmdName);
@@ -349,20 +350,20 @@ async function createCategoryEmbed(category, prefix, client, disabledCommands) {
 
     let indicators = '';
     if (hasSlash) indicators += ' ⌨️';
-    if (isDisabled) indicators += ' 🔒';
+    if (isDisabled) indicators += ' ○';
 
     const name = isDisabled ? `~~${cmdName}~~` : `**${cmdName}**`;
-    const desc = cmd?.description || 'No description';
+    const desc = cmd?.description || 'No description available';
     const shortDesc = desc.length > 40 ? desc.slice(0, 40) + '...' : desc;
 
-    return `${GLYPHS.ARROW_RIGHT} ${name}${indicators}\n${GLYPHS.DOT} ${shortDesc}`;
+    return `▸ ${name}${indicators}\n◇ ${shortDesc}`;
   });
 
   // Split into chunks of 6 commands per field
   const chunkSize = 6;
   for (let i = 0; i < commandList.length; i += chunkSize) {
     const chunk = commandList.slice(i, i + chunkSize);
-    const fieldName = i === 0 ? '📋 Commands' : '\u200b';
+    const fieldName = i === 0 ? '◈ Available Skills' : '\u200b';
     embed.addFields({
       name: fieldName,
       value: chunk.join('\n'),
@@ -370,15 +371,15 @@ async function createCategoryEmbed(category, prefix, client, disabledCommands) {
     });
   }
 
-  // Legend
+  // Legend - Raphael style
   embed.addFields({
-    name: '📘 Legend',
-    value: '⌨️ Has slash command • 🔒 Disabled',
+    name: '◈ Status Indicators',
+    value: '⌨️ Slash command compatible • ○ Currently deactivated',
     inline: false
   });
 
   embed.setFooter({
-    text: `${info.name} Category • ${commands.length} commands`
+    text: `${getRandomFooter()} • ${info.name} • ${commands.length} skills`
   });
   embed.setTimestamp();
 
@@ -387,15 +388,15 @@ async function createCategoryEmbed(category, prefix, client, disabledCommands) {
 
 function createSlashCommandsEmbed(prefix, client) {
   const embed = new EmbedBuilder()
-    .setColor('#5865F2')
+    .setColor('#00CED1')
     .setAuthor({
-      name: '⌨️ Slash Commands',
+      name: '『 Slash Command Registry 』',
       iconURL: client.user.displayAvatarURL({ dynamic: true })
     })
     .setDescription(
-      `These commands can be used with \`/\` in Discord.\n` +
-      `Slash commands provide autocomplete and validation.\n\n` +
-      `**Tip:** Type \`/\` in chat to see all available slash commands!`
+      `**Analysis:** These skills support slash command activation.\n\n` +
+      `Slash commands provide enhanced input validation and autocomplete functionality.\n\n` +
+      `*Tip: Input \`/\` in the chat interface to view all available slash commands, Master.*`
     );
 
   // Group slash commands by category
@@ -422,12 +423,12 @@ function createSlashCommandsEmbed(prefix, client) {
   }
 
   embed.addFields({
-    name: '💡 Note',
-    value: `More slash commands coming soon!\nMost text commands work with the \`${prefix}\` prefix.`,
+    name: '◈ Notice',
+    value: `Additional slash commands are being developed.\nMost skills remain accessible via the \`${prefix}\` prefix.`,
     inline: false
   });
 
-  embed.setFooter({ text: `${SLASH_COMMANDS.length} slash commands available` });
+  embed.setFooter({ text: `${getRandomFooter()} • ${SLASH_COMMANDS.length} slash commands registered` });
   embed.setTimestamp();
 
   return embed;
@@ -435,14 +436,14 @@ function createSlashCommandsEmbed(prefix, client) {
 
 function createFeaturesEmbed(prefix, client) {
   const embed = new EmbedBuilder()
-    .setColor('#00D166')
+    .setColor('#00CED1')
     .setAuthor({
-      name: '✨ Bot Features',
+      name: '『 System Capabilities 』',
       iconURL: client.user.displayAvatarURL({ dynamic: true })
     })
     .setDescription(
-      `Here's what this bot can do for your server!\n` +
-      `Use \`${prefix}setup\` to get started quickly.`
+      `**Report:** The following modules are available for this server.\n\n` +
+      `Use \`${prefix}setup\` to initiate configuration protocol.`
     );
 
   const features = [

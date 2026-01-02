@@ -4,6 +4,7 @@ import Guild from '../../models/Guild.js';
 import { COINFLIP_MIN, COINFLIP_MAX } from '../../utils/gameConfig.js';
 import { errorEmbed } from '../../utils/embeds.js';
 import { getPrefix } from '../../utils/helpers.js';
+import { getRandomFooter } from '../../utils/raphael.js';
 
 export default {
     name: 'coinflip',
@@ -24,10 +25,10 @@ export default {
             if (!amount || isNaN(amount)) {
                 const prefix = await getPrefix(guildId);
                 return message.reply({
-                    embeds: [await errorEmbed(guildId, 
-                        `Please provide a valid bet amount!\n\n` +
-                        `Usage: \`${prefix}coinflip <amount> <heads|tails>\`\n` +
-                        `Example: \`${prefix}coinflip 100 heads\``
+                    embeds: [await errorEmbed(guildId, 'Invalid Parameters',
+                        `**Notice:** A valid wager amount is required, Master.\n\n` +
+                        `▸ Syntax: \`${prefix}coinflip <amount> <heads|tails>\`\n` +
+                        `▸ Example: \`${prefix}coinflip 100 heads\``
                     )]
                 });
             }
@@ -35,23 +36,23 @@ export default {
             if (!choice || (choice !== 'heads' && choice !== 'h' && choice !== 'tails' && choice !== 't')) {
                 const prefix = await getPrefix(guildId);
                 return message.reply({
-                    embeds: [await errorEmbed(guildId, 
-                        `Please choose heads or tails!\n\n` +
-                        `Usage: \`${prefix}coinflip <amount> <heads|tails>\`\n` +
-                        `Example: \`${prefix}coinflip 100 heads\``
+                    embeds: [await errorEmbed(guildId, 'Selection Required',
+                        `**Notice:** Please specify your prediction, Master.\n\n` +
+                        `▸ Syntax: \`${prefix}coinflip <amount> <heads|tails>\`\n` +
+                        `▸ Example: \`${prefix}coinflip 100 heads\``
                     )]
                 });
             }
             
             if (amount < COINFLIP_MIN) {
                 return message.reply({
-                    embeds: [await errorEmbed(guildId, `Minimum bet is **${COINFLIP_MIN}** coins!`)]
+                    embeds: [await errorEmbed(guildId, 'Wager Rejected', `**Notice:** Minimum wager is **${COINFLIP_MIN}** coins, Master.`)]
                 });
             }
             
             if (amount > COINFLIP_MAX) {
                 return message.reply({
-                    embeds: [await errorEmbed(guildId, `Maximum bet is **${COINFLIP_MAX}** coins!`)]
+                    embeds: [await errorEmbed(guildId, 'Wager Rejected', `**Notice:** Maximum wager is **${COINFLIP_MAX}** coins, Master.`)]
                 });
             }
             
@@ -62,10 +63,10 @@ export default {
             
             if (economy.coins < amount) {
                 return message.reply({
-                    embeds: [await errorEmbed(guildId, 
-                        `You don't have enough ${coinEmoji} ${coinName}!\n\n` +
-                        `**Your Balance:** ${economy.coins} ${coinEmoji} ${coinName}\n` +
-                        `**Bet Amount:** ${amount} ${coinEmoji} ${coinName}`
+                    embeds: [await errorEmbed(guildId, 'Insufficient Resources',
+                        `**Warning:** Your current balance is insufficient, Master.\n\n` +
+                        `▸ **Available Funds:** ${economy.coins} ${coinEmoji} ${coinName}\n` +
+                        `▸ **Required Wager:** ${amount} ${coinEmoji} ${coinName}`
                     )]
                 });
             }
@@ -89,17 +90,19 @@ export default {
             await economy.save();
             
             const embed = new EmbedBuilder()
-                .setTitle('🪙 Coinflip!')
+                .setTitle('『 Binary Probability 』')
                 .setDescription(
-                    `**Your Choice:** ${userChoice.charAt(0).toUpperCase() + userChoice.slice(1)}\n` +
-                    `**Result:** ${result.charAt(0).toUpperCase() + result.slice(1)}\n\n` +
-                    `**${won ? '✅ YOU WON!' : '❌ YOU LOST!'}**\n\n` +
-                    `**${won ? '+' : '-'}${amount}** ${coinEmoji} ${coinName}\n` +
-                    `**New Balance:** ${economy.coins} ${coinEmoji} ${coinName}`
+                    `**Notice:** Initiating random binary calculation...\n\n` +
+                    `▸ **Your Prediction:** ${userChoice.charAt(0).toUpperCase() + userChoice.slice(1)}\n` +
+                    `▸ **Outcome:** ${result.charAt(0).toUpperCase() + result.slice(1)}\n\n` +
+                    (won 
+                        ? `◉ **PREDICTION CORRECT**\n\n▸ **Resources Gained:** +${amount} ${coinEmoji}\n\n*Fortune favors you, Master.*`
+                        : `○ **PREDICTION INCORRECT**\n\n▸ **Resources Lost:** -${amount} ${coinEmoji}\n\n*Perhaps reconsider your strategy, Master.*`) +
+                    `\n\n**Current Balance:** ${economy.coins} ${coinEmoji} ${coinName}`
                 )
-                .setColor(won ? '#00ff00' : '#ff0000')
+                .setColor(won ? '#00FF7F' : '#FF4757')
                 .setThumbnail(message.author.displayAvatarURL({ extension: 'png' }))
-                .setFooter({ text: `Gambling Stats: ${economy.gamblingWins || 0}W / ${economy.gamblingLosses || 0}L` })
+                .setFooter({ text: `${getRandomFooter()} | W:${economy.gamblingWins || 0} L:${economy.gamblingLosses || 0}` })
                 .setTimestamp();
             
             await message.reply({ embeds: [embed] });
@@ -107,7 +110,7 @@ export default {
         } catch (error) {
             console.error('Error in coinflip command:', error);
             return message.reply({
-                embeds: [await errorEmbed(guildId, 'An error occurred while playing coinflip.')]
+                embeds: [await errorEmbed(guildId, 'System Error', '**Warning:** An anomaly occurred during probability calculation, Master.')]
             });
         }
     }

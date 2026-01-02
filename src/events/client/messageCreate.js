@@ -2,6 +2,7 @@
 import Event from "../../structures/Event.js";
 import { ChannelType, Collection, PermissionFlagsBits } from "discord.js";
 import Context from "../../structures/Context.js";
+import { Raphael, getRandomFooter } from "../../utils/raphael.js";
 
 class MessageCreate extends Event {
   constructor(client, file) {
@@ -36,7 +37,7 @@ class MessageCreate extends Event {
 
     if (message.content.match(mention)) {
       await safeReply({
-        content: `Hey, my prefix for this server is \`${currentPrefix}\` Want more info? then do \`${currentPrefix}help\`\nStay Safe, Stay Awesome!`,
+        content: `**Answer:** Greetings, Master. My activation prefix for this server is \`${currentPrefix}\`\n\nFor a comprehensive list of my capabilities, use \`${currentPrefix}help\`\n\n*I await your commands.*`,
       });
       return;
     }
@@ -71,7 +72,7 @@ class MessageCreate extends Event {
     // Check if text command is disabled (skip for 'command' command to prevent lockout)
     if (command.name !== 'command' && guildConfig?.textCommands?.disabledCommands?.includes(command.name)) {
       const msg = await message.reply({
-        content: `❌ The \`${command.name}\` command has been disabled by an administrator.`
+        content: `**Notice:** The \`${command.name}\` skill has been deactivated by server administration, Master.`
       }).catch(() => null);
       if (msg) setTimeout(() => msg.delete().catch(() => { }), 5000);
       return;
@@ -94,7 +95,7 @@ class MessageCreate extends Event {
           .map(id => `<#${id}>`)
           .join(', ');
         const msg = await safeReply({
-          content: `⚠️ Commands are only allowed in: ${allowedChannelsList}${guildConfig.commandChannels.channels.length > 3 ? '...' : ''}`
+          content: `**Notice:** Commands are restricted to designated channels: ${allowedChannelsList}${guildConfig.commandChannels.channels.length > 3 ? '...' : ''}`
         });
         if (msg) setTimeout(() => msg.delete().catch(() => { }), 5000);
         return;
@@ -108,7 +109,7 @@ class MessageCreate extends Event {
     // Quick permission checks - exit early if missing critical permissions
     if (!botPerms.has(PermissionFlagsBits.SendMessages)) return;
     if (!botPerms.has(PermissionFlagsBits.EmbedLinks)) {
-      return safeReply({ content: "I don't have **`EmbedLinks`** permission." });
+      return safeReply({ content: "**Warning:** I lack the **`EmbedLinks`** permission, Master." });
     }
 
     const ctx = new Context(message, args);
@@ -119,13 +120,13 @@ class MessageCreate extends Event {
           !message.guild.members.me.permissions.has(command.permissions.client)
         )
           return await safeReply({
-            content: "I don't have enough permissions to execute this command.",
+            content: "**Alert:** I lack the required permissions to execute this skill, Master.",
           });
       }
       if (command.permissions.user) {
         if (!message.member.permissions.has(command.permissions.user))
           return await safeReply({
-            content: "You don't have enough permissions to use this command.",
+            content: "**Notice:** Your authority level is insufficient for this skill, Master.",
           });
       }
       if (command.permissions.dev) {
@@ -141,19 +142,19 @@ class MessageCreate extends Event {
       if (command.player.voice) {
         if (!message.member.voice.channel)
           return await safeReply({
-            content: `You must be connected to a voice channel to use this \`${command.name}\` command.`,
+            content: `**Notice:** Voice channel connection required for the \`${command.name}\` skill, Master.`,
           });
         if (
           !message.guild.members.me.permissions.has(PermissionFlagsBits.Connect)
         )
           return await safeReply({
-            content: `I don't have \`CONNECT\` permissions to execute this \`${command.name}\` command.`,
+            content: `**Warning:** I lack \`CONNECT\` permissions for the \`${command.name}\` skill, Master.`,
           });
         if (
           !message.guild.members.me.permissions.has(PermissionFlagsBits.Speak)
         )
           return await safeReply({
-            content: `I don't have \`SPEAK\` permissions to execute this \`${command.name}\` command.`,
+            content: `**Warning:** I lack \`SPEAK\` permissions for the \`${command.name}\` skill, Master.`,
           });
         if (
           message.member.voice.channel.type === ChannelType.GuildStageVoice &&
@@ -162,7 +163,7 @@ class MessageCreate extends Event {
           )
         )
           return await safeReply({
-            content: `I don't have \`REQUEST TO SPEAK\` permission to execute this \`${command.name}\` command.`,
+            content: `**Warning:** I lack \`REQUEST TO SPEAK\` permissions for the \`${command.name}\` skill, Master.`,
           });
         if (message.guild.members.me.voice.channel) {
           if (
@@ -170,7 +171,7 @@ class MessageCreate extends Event {
             message.member.voice.channelId
           )
             return await safeReply({
-              content: `You are not connected to <#${message.guild.members.me.voice.channel.id}> to use this \`${command.name}\` command.`,
+              content: `**Notice:** Please connect to <#${message.guild.members.me.voice.channel.id}> to use the \`${command.name}\` skill, Master.`,
             });
         }
       }
@@ -178,11 +179,11 @@ class MessageCreate extends Event {
         const player = this.client.riffy?.players.get(message.guildId);
         if (!player)
           return await safeReply({
-            content: "Nothing is playing right now.",
+            content: "**Notice:** No audio is currently playing, Master.",
           });
         if ((!player.queue || player.queue.length === 0) && !player.current)
           return await safeReply({
-            content: "Nothing is playing right now.",
+            content: "**Notice:** The playback queue is empty, Master.",
           });
       }
       if (command.player.dj) {
@@ -191,7 +192,7 @@ class MessageCreate extends Event {
           const djRole = this.client.db.getRoles(message.guildId);
           if (!djRole)
             return await safeReply({
-              content: "DJ role is not set.",
+              content: "**Warning:** DJ role has not been configured.",
             });
           const findDJRole = message.member.roles.cache.find((x) =>
             djRole.map((y) => y.roleId).includes(x.id)
@@ -201,7 +202,7 @@ class MessageCreate extends Event {
               !message.member.permissions.has(PermissionFlagsBits.ManageGuild)
             ) {
               const msg = await safeReply({
-                content: "You need to have the DJ role to use this command.",
+                content: "**Notice:** DJ role required for this skill, Master.",
               });
               if (msg) setTimeout(() => msg.delete().catch(() => { }), 5000);
               return;
@@ -214,16 +215,15 @@ class MessageCreate extends Event {
       if (!args.length) {
         const embed = this.client
           .embed()
-          .setColor(this.client.color.red)
-          .setTitle("Missing Arguments")
+          .setColor('#00CED1')
+          .setTitle("『 Missing Parameters 』")
           .setDescription(
-            `Please provide the required arguments for the \`${command.name
-            }\` command.\n\nExamples:\n${command.description.examples
-              ? command.description.examples.join("\n")
-              : "None"
+            `**Notice:** Additional parameters are required for the \`${command.name}\` skill, Master.\n\n**Usage Examples:**\n${command.description.examples
+              ? command.description.examples.map(e => `▸ \`${e}\``).join("\n")
+              : "None available"
             }`
           )
-          .setFooter({ text: "Syntax: [] = optional, <> = required" });
+          .setFooter({ text: `${getRandomFooter()} | Syntax: [] = optional, <> = required` });
         return await safeReply({ embeds: [embed] });
       }
     }
@@ -241,9 +241,7 @@ class MessageCreate extends Event {
       const timeLeft = (expirationTime - now) / 1000;
       if (now < expirationTime && timeLeft > 0.9) {
         return await safeReply({
-          content: `Please wait ${timeLeft.toFixed(
-            1
-          )} more second(s) before reusing the \`${cmd}\` command.`,
+          content: `**Notice:** Skill cooldown in effect, Master. Please wait \`${timeLeft.toFixed(1)}\` seconds before using \`${cmd}\` again.`,
         });
       }
       timestamps.set(message.author.id, now);
@@ -251,7 +249,7 @@ class MessageCreate extends Event {
     }
     if (args.includes("@everyone") || args.includes("@here"))
       return await safeReply({
-        content: "You can't use this command with everyone or here.",
+        content: "**Warning:** Mass mention parameters are not permitted, Master.",
       });
     try {
       if (command.run) {
@@ -261,7 +259,7 @@ class MessageCreate extends Event {
       }
     } catch (error) {
       this.client.logger.error(error);
-      await safeReply({ content: `An error occurred: \`${error}\`` });
+      await safeReply({ content: `**Alert:** An anomaly occurred during execution: \`${error}\`` });
       return;
     }
   }

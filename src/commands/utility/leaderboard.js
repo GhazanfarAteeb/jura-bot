@@ -2,6 +2,7 @@ import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'disc
 import Level from '../../models/Level.js';
 import Guild from '../../models/Guild.js';
 import { infoEmbed, GLYPHS } from '../../utils/embeds.js';
+import { getRandomFooter } from '../../utils/raphael.js';
 
 export default {
   name: 'leaderboard',

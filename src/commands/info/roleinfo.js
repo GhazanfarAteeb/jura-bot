@@ -1,6 +1,7 @@
 import { EmbedBuilder, PermissionsBitField } from 'discord.js';
 import { errorEmbed, GLYPHS } from '../../utils/embeds.js';
 import { getPrefix } from '../../utils/helpers.js';
+import { getRandomFooter } from '../../utils/raphael.js';
 
 export default {
     name: 'roleinfo',
@@ -16,7 +17,7 @@ export default {
         
         if (!args[0]) {
             return message.reply({
-                embeds: [await errorEmbed(guildId, `Please mention a role or provide a role name!\n\n\`${prefix}roleinfo @role\` or \`${prefix}roleinfo Admin\``)]
+                embeds: [await errorEmbed(guildId, 'Target Required', `**Notice:** Please specify a role, Master.\n\n\`${prefix}roleinfo @role\` or \`${prefix}roleinfo Admin\``)]
             });
         }
         
@@ -29,7 +30,7 @@ export default {
         
         if (!role) {
             return message.reply({
-                embeds: [await errorEmbed(guildId, 'Could not find that role!')]
+                embeds: [await errorEmbed(guildId, 'Role Not Found', '**Warning:** Unable to locate the specified role, Master.')]
             });
         }
         
@@ -51,14 +52,14 @@ export default {
         
         // Create embed
         const embed = new EmbedBuilder()
-            .setTitle(`Role Info: ${role.name}`)
-            .setColor(role.color || '#99AAB5')
+            .setTitle(`『 ${role.name} Analysis 』`)
+            .setColor(role.color || '#00CED1')
             .setThumbnail(role.iconURL({ size: 128 }) || null)
             .addFields(
                 {
-                    name: '📋 General',
+                    name: '▸ General',
                     value: [
-                        `**ID:** \`${role.id}\``,
+                        `**Identifier:** \`${role.id}\``,
                         `**Color:** ${role.hexColor}`,
                         `**Position:** ${role.position}/${message.guild.roles.cache.size}`,
                         `**Created:** <t:${Math.floor(role.createdTimestamp / 1000)}:R>`
@@ -66,17 +67,17 @@ export default {
                     inline: true
                 },
                 {
-                    name: '⚙️ Settings',
+                    name: '▸ Configuration',
                     value: [
-                        `**Hoisted:** ${role.hoist ? '✅' : '❌'}`,
-                        `**Mentionable:** ${role.mentionable ? '✅' : '❌'}`,
-                        `**Managed:** ${role.managed ? '✅' : '❌'}`,
-                        `**Bot Role:** ${role.tags?.botId ? '✅' : '❌'}`
+                        `**Hoisted:** ${role.hoist ? '◉' : '○'}`,
+                        `**Mentionable:** ${role.mentionable ? '◉' : '○'}`,
+                        `**Managed:** ${role.managed ? '◉' : '○'}`,
+                        `**Bot Role:** ${role.tags?.botId ? '◉' : '○'}`
                     ].join('\n'),
                     inline: true
                 },
                 {
-                    name: `👥 Members (${membersWithRole})`,
+                    name: `▸ Members (${membersWithRole})`,
                     value: membersWithRole > 0 
                         ? (membersWithRole <= 10 
                             ? role.members.map(m => m.user.tag).join(', ')
@@ -85,12 +86,12 @@ export default {
                     inline: false
                 },
                 {
-                    name: '🔐 Key Permissions',
+                    name: '▸ Key Permissions',
                     value: permText,
                     inline: false
                 }
             )
-            .setFooter({ text: `Requested by ${message.author.tag}` })
+            .setFooter({ text: getRandomFooter() })
             .setTimestamp();
         
         // Add mention if role is mentionable

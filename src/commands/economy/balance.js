@@ -1,6 +1,7 @@
 import { EmbedBuilder } from 'discord.js';
 import Economy from '../../models/Economy.js';
 import Guild from '../../models/Guild.js';
+import { getRandomFooter } from '../../utils/raphael.js';
 
 export default {
     name: 'balance',
@@ -23,38 +24,32 @@ export default {
             const coinEmoji = guildConfig.economy?.coinEmoji || '💰';
             const coinName = guildConfig.economy?.coinName || 'coins';
             
+            const isSelf = targetUser.id === message.author.id;
+            const addressee = isSelf ? 'Master' : targetUser.username;
+            
             const embed = new EmbedBuilder()
-                .setColor('#FFD700')
+                .setColor('#00CED1')
                 .setAuthor({ 
                     name: targetUser.tag, 
                     iconURL: targetUser.displayAvatarURL({ dynamic: true }) 
                 })
-                .setTitle(`${coinEmoji} Balance`)
+                .setTitle(`『 Financial Report 』`)
+                .setDescription(`**Analysis complete.** ${isSelf ? 'Your' : `${addressee}'s`} economic status retrieved.`)
                 .addFields(
-                    // { 
-                    //     name: '💵 Wallet', 
-                    //     value: `**${economy.coins.toLocaleString()}** ${coinName}`, 
-                    //     inline: true 
-                    // },
-                    // { 
-                    //     name: '🏦 Bank', 
-                    //     value: `**${economy.bank.toLocaleString()}** ${coinName}`, 
-                    //     inline: true 
-                    // },
                     { 
-                        name: '💎 Total', 
-                        value: `**${(economy.coins + economy.bank).toLocaleString()}** ${coinName}`, 
+                        name: '▸ Total Assets', 
+                        value: `**${(economy.coins + economy.bank).toLocaleString()}** ${coinEmoji} ${coinName}`, 
                         inline: true 
                     }
                 )
-                .setFooter({ text: `Total Earned: ${economy.stats.totalEarned.toLocaleString()} | Total Spent: ${economy.stats.totalSpent.toLocaleString()}` })
+                .setFooter({ text: `${getRandomFooter()} | Earned: ${economy.stats.totalEarned.toLocaleString()} | Spent: ${economy.stats.totalSpent.toLocaleString()}` })
                 .setTimestamp();
             
             message.reply({ embeds: [embed] });
             
         } catch (error) {
             console.error('Balance command error:', error);
-            message.reply('An error occurred while fetching balance. Please try again!');
+            message.reply('**Warning:** An anomaly occurred while retrieving financial data. Please try again, Master.');
         }
     }
 };

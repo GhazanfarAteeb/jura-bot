@@ -3,6 +3,7 @@ import Guild from '../../models/Guild.js';
 import Member from '../../models/Member.js';
 import { getHoursSince } from '../../utils/helpers.js';
 import { susAlertEmbed, newAccountEmbed } from '../../utils/embeds.js';
+import { getRandomFooter } from '../../utils/raphael.js';
 
 export default {
   name: Events.GuildMemberAdd,

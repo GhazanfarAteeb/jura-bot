@@ -5,6 +5,7 @@
 
 import Command from '../../structures/Command.js';
 import { EmbedBuilder } from 'discord.js';
+import { getRandomFooter } from '../../utils/raphael.js';
 
 export default class Play extends Command {
     constructor(client) {
@@ -48,8 +49,9 @@ export default class Play extends Command {
         if (!query) {
             return ctx.sendMessage({
                 embeds: [{
-                    color: 0xff0000,
-                    description: '❌ Please provide a song name or URL.'
+                    color: 0xFF4757,
+                    title: '『 Audio System 』',
+                    description: '**Warning:** No audio source specified, Master.\n\nPlease provide a track name or URL.'
                 }]
             });
         }
@@ -58,8 +60,9 @@ export default class Play extends Command {
         if (!client.riffy) {
             return ctx.sendMessage({
                 embeds: [{
-                    color: 0xff0000,
-                    description: '❌ Music system is not available. Please try again later.'
+                    color: 0xFF4757,
+                    title: '『 System Alert 』',
+                    description: '**Warning:** Audio subsystem is currently unavailable, Master.\n\nPlease attempt again later.'
                 }]
             });
         }
@@ -86,8 +89,9 @@ export default class Play extends Command {
         if (loadType === 'error') {
             return ctx.sendMessage({
                 embeds: [{
-                    color: 0xff0000,
-                    description: '❌ An error occurred while searching for the track.'
+                    color: 0xFF4757,
+                    title: '『 Audio System 』',
+                    description: '**Warning:** An anomaly occurred during track resolution, Master.'
                 }]
             });
         }
@@ -95,8 +99,9 @@ export default class Play extends Command {
         if (loadType === 'empty' || !tracks.length) {
             return ctx.sendMessage({
                 embeds: [{
-                    color: 0xff0000,
-                    description: '❌ No results found for your query.'
+                    color: 0xFF4757,
+                    title: '『 Audio System 』',
+                    description: '**Notice:** No matching audio sources detected for your query, Master.'
                 }]
             });
         }
@@ -108,9 +113,10 @@ export default class Play extends Command {
             }
 
             const embed = new EmbedBuilder()
-                .setColor('#00ff00')
-                .setTitle('📋 Playlist Added')
-                .setDescription(`Added **${tracks.length}** tracks from **${playlistInfo.name}** to the queue.`)
+                .setColor('#00CED1')
+                .setTitle('『 Playlist Loaded 』')
+                .setDescription(`**Confirmed.** Added **${tracks.length}** tracks from **${playlistInfo.name}** to the queue, Master.`)
+                .setFooter({ text: getRandomFooter() })
                 .setTimestamp();
 
             await ctx.sendMessage({ embeds: [embed] });
@@ -137,15 +143,16 @@ export default class Play extends Command {
             };
 
             const embed = new EmbedBuilder()
-                .setColor('#00ff00')
-                .setTitle('🎵 Track Added')
-                .setDescription(`[${track.info.title}](${track.info.uri})`)
+                .setColor('#00CED1')
+                .setTitle('『 Track Queued 』')
+                .setDescription(`**Notice:** Audio source acquired and queued, Master.\n\n▸ [${track.info.title}](${track.info.uri})`)
                 .addFields(
-                    { name: 'Duration', value: formatDuration(track.info.length), inline: true },
-                    { name: 'Author', value: track.info.author || 'Unknown', inline: true },
-                    { name: 'Position', value: `#${player.queue.length}`, inline: true }
+                    { name: '▸ Duration', value: formatDuration(track.info.length), inline: true },
+                    { name: '▸ Artist', value: track.info.author || 'Unknown', inline: true },
+                    { name: '▸ Queue Position', value: `#${player.queue.length}`, inline: true }
                 )
                 .setThumbnail(track.info.thumbnail || track.info.artworkUrl || null)
+                .setFooter({ text: getRandomFooter() })
                 .setTimestamp();
 
             await ctx.sendMessage({ embeds: [embed] });

@@ -1,5 +1,6 @@
 import { EmbedBuilder, ChannelType } from 'discord.js';
 import { errorEmbed, GLYPHS } from '../../utils/embeds.js';
+import { getRandomFooter } from '../../utils/raphael.js';
 
 export default {
     name: 'channelinfo',
@@ -19,29 +20,29 @@ export default {
         
         // Channel type mapping
         const channelTypes = {
-            [ChannelType.GuildText]: '💬 Text Channel',
-            [ChannelType.GuildVoice]: '🔊 Voice Channel',
-            [ChannelType.GuildCategory]: '📁 Category',
-            [ChannelType.GuildAnnouncement]: '📢 Announcement Channel',
-            [ChannelType.AnnouncementThread]: '📢 Announcement Thread',
-            [ChannelType.PublicThread]: '🧵 Public Thread',
-            [ChannelType.PrivateThread]: '🔒 Private Thread',
-            [ChannelType.GuildStageVoice]: '🎭 Stage Channel',
-            [ChannelType.GuildForum]: '📋 Forum Channel',
-            [ChannelType.GuildMedia]: '🖼️ Media Channel'
+            [ChannelType.GuildText]: '◇ Text Channel',
+            [ChannelType.GuildVoice]: '◇ Voice Channel',
+            [ChannelType.GuildCategory]: '◇ Category',
+            [ChannelType.GuildAnnouncement]: '◇ Announcement Channel',
+            [ChannelType.AnnouncementThread]: '◇ Announcement Thread',
+            [ChannelType.PublicThread]: '◇ Public Thread',
+            [ChannelType.PrivateThread]: '◇ Private Thread',
+            [ChannelType.GuildStageVoice]: '◇ Stage Channel',
+            [ChannelType.GuildForum]: '◇ Forum Channel',
+            [ChannelType.GuildMedia]: '◇ Media Channel'
         };
         
         const channelTypeText = channelTypes[channel.type] || 'Unknown Channel';
         
         // Create base embed
         const embed = new EmbedBuilder()
-            .setTitle(`Channel Info: #${channel.name}`)
-            .setColor('#5865F2')
+            .setTitle(`『 #${channel.name} Analysis 』`)
+            .setColor('#00CED1')
             .addFields(
                 {
-                    name: '📋 General',
+                    name: '▸ General',
                     value: [
-                        `**ID:** \`${channel.id}\``,
+                        `**Identifier:** \`${channel.id}\``,
                         `**Type:** ${channelTypeText}`,
                         `**Created:** <t:${Math.floor(channel.createdTimestamp / 1000)}:R>`,
                         `**Position:** ${channel.position !== undefined ? channel.position + 1 : 'N/A'}`
@@ -49,13 +50,13 @@ export default {
                     inline: true
                 }
             )
-            .setFooter({ text: `Requested by ${message.author.tag}` })
+            .setFooter({ text: getRandomFooter() })
             .setTimestamp();
         
         // Add category info
         if (channel.parent) {
             embed.addFields({
-                name: '📁 Category',
+                name: '▸ Category',
                 value: channel.parent.name,
                 inline: true
             });
@@ -64,10 +65,10 @@ export default {
         // Text channel specific info
         if (channel.type === ChannelType.GuildText || channel.type === ChannelType.GuildAnnouncement) {
             embed.addFields({
-                name: '⚙️ Settings',
+                name: '▸ Configuration',
                 value: [
-                    `**NSFW:** ${channel.nsfw ? '✅' : '❌'}`,
-                    `**Slowmode:** ${channel.rateLimitPerUser ? `${channel.rateLimitPerUser}s` : 'Off'}`,
+                    `**NSFW:** ${channel.nsfw ? '◉' : '○'}`,
+                    `**Slowmode:** ${channel.rateLimitPerUser ? `${channel.rateLimitPerUser}s` : 'Disabled'}`,
                     `**Topic:** ${channel.topic ? (channel.topic.length > 100 ? channel.topic.substring(0, 100) + '...' : channel.topic) : 'None'}`
                 ].join('\n'),
                 inline: false
@@ -78,7 +79,7 @@ export default {
         if (channel.type === ChannelType.GuildVoice || channel.type === ChannelType.GuildStageVoice) {
             const membersInVoice = channel.members?.size || 0;
             embed.addFields({
-                name: '🔊 Voice Settings',
+                name: '▸ Audio Configuration',
                 value: [
                     `**Bitrate:** ${channel.bitrate / 1000}kbps`,
                     `**User Limit:** ${channel.userLimit || 'Unlimited'}`,
@@ -91,7 +92,7 @@ export default {
             // Show connected members
             if (membersInVoice > 0 && membersInVoice <= 10) {
                 embed.addFields({
-                    name: '👥 Connected Members',
+                    name: '▸ Connected Members',
                     value: channel.members.map(m => m.user.tag).join(', '),
                     inline: false
                 });

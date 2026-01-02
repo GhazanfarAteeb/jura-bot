@@ -40,8 +40,8 @@ export default class Stop extends Command {
         if (!player) {
             return ctx.sendMessage({
                 embeds: [{
-                    color: 0xff0000,
-                    description: '❌ No music player found.'
+                    color: 0xff4757,
+                    description: '**Warning:** No audio playback system detected, Master.'
                 }]
             });
         }
@@ -51,8 +51,8 @@ export default class Stop extends Command {
 
         return ctx.sendMessage({
             embeds: [{
-                color: 0x00ff00,
-                description: '⏹️ Stopped playback and disconnected from the voice channel.'
+                color: 0x00ced1,
+                description: '**Confirmed:** Audio playback terminated and voice connection severed, Master.'
             }]
         });
     }

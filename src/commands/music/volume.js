@@ -49,8 +49,8 @@ export default class Volume extends Command {
         if (!player) {
             return ctx.sendMessage({
                 embeds: [{
-                    color: 0xff0000,
-                    description: '❌ No music player found.'
+                    color: 0xff4757,
+                    description: '**Warning:** No audio playback system detected, Master.'
                 }]
             });
         }
@@ -59,8 +59,8 @@ export default class Volume extends Command {
         if (!args[0]) {
             return ctx.sendMessage({
                 embeds: [{
-                    color: 0x0099ff,
-                    description: `🔊 Current volume: **${player.volume}%**`
+                    color: 0x00ced1,
+                    description: `**Report:** Current audio level: **${player.volume}%**, Master.`
                 }]
             });
         }
@@ -70,8 +70,8 @@ export default class Volume extends Command {
         if (isNaN(volume)) {
             return ctx.sendMessage({
                 embeds: [{
-                    color: 0xff0000,
-                    description: '❌ Please provide a valid number.'
+                    color: 0xff4757,
+                    description: '**Warning:** Please provide a valid numerical value, Master.'
                 }]
             });
         }
@@ -79,24 +79,24 @@ export default class Volume extends Command {
         if (volume < 0 || volume > 150) {
             return ctx.sendMessage({
                 embeds: [{
-                    color: 0xff0000,
-                    description: '❌ Volume must be between 0 and 150.'
+                    color: 0xff4757,
+                    description: '**Warning:** Volume must be between 0 and 150, Master.'
                 }]
             });
         }
 
         player.setVolume(volume);
 
-        // Volume emoji based on level
-        let volumeEmoji = '🔊';
-        if (volume === 0) volumeEmoji = '🔇';
-        else if (volume <= 30) volumeEmoji = '🔈';
-        else if (volume <= 70) volumeEmoji = '🔉';
+        // Volume indicator based on level
+        let volumeIndicator = '◉ High';
+        if (volume === 0) volumeIndicator = '○ Muted';
+        else if (volume <= 30) volumeIndicator = '◈ Low';
+        else if (volume <= 70) volumeIndicator = '◈ Medium';
 
         return ctx.sendMessage({
             embeds: [{
-                color: 0x00ff00,
-                description: `${volumeEmoji} Volume set to **${volume}%**`
+                color: 0x00ced1,
+                description: `**Confirmed:** Audio level set to **${volume}%** (${volumeIndicator}), Master.`
             }]
         });
     }

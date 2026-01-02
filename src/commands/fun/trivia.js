@@ -2,6 +2,7 @@ import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentTy
 import { successEmbed, errorEmbed, GLYPHS } from '../../utils/embeds.js';
 import Guild from '../../models/Guild.js';
 import Economy from '../../models/Economy.js';
+import { getRandomFooter } from '../../utils/raphael.js';
 
 // Trivia questions by category
 const TRIVIA_QUESTIONS = {
@@ -85,16 +86,16 @@ export default {
         // If no category or invalid category, show category selection
         if (!category || !TRIVIA_QUESTIONS[category]) {
             const categoryEmbed = new EmbedBuilder()
-                .setColor('#5865F2')
-                .setTitle('🧠 Trivia Quiz')
+                .setColor('#00CED1')
+                .setTitle('『 Knowledge Assessment 』')
                 .setDescription(
-                    'Choose a category to start!\n\n' +
+                    '**Answer:** Select a category to begin, Master.\n\n' +
                     Object.entries(CATEGORY_EMOJIS).map(([cat, emoji]) => 
                         `${emoji} **${cat.charAt(0).toUpperCase() + cat.slice(1)}**`
                     ).join('\n') +
-                    `\n\n**Reward:** Win ${coinEmoji} 50-150 ${coinName} per correct answer!`
+                    `\n\n**Reward:** ${coinEmoji} 50-150 ${coinName} per correct response.`
                 )
-                .setFooter({ text: 'Click a button to select category' });
+                .setFooter({ text: getRandomFooter() });
 
             const row = new ActionRowBuilder().addComponents(
                 ...Object.entries(CATEGORY_EMOJIS).map(([cat, emoji]) =>
@@ -121,9 +122,10 @@ export default {
 
             } catch (error) {
                 const timeoutEmbed = new EmbedBuilder()
-                    .setColor('#ED4245')
-                    .setTitle('⏰ Timed Out')
-                    .setDescription('You didn\'t select a category in time.');
+                    .setColor('#FFD700')
+                    .setTitle('『 Session Expired 』')
+                    .setDescription('**Notice:** Category selection timed out, Master.')
+                    .setFooter({ text: getRandomFooter() });
                 
                 return catMsg.edit({ embeds: [timeoutEmbed], components: [] });
             }

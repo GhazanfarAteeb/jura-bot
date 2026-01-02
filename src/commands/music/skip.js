@@ -40,8 +40,8 @@ export default class Skip extends Command {
         if (!player) {
             return ctx.sendMessage({
                 embeds: [{
-                    color: 0xff0000,
-                    description: '❌ No music player found.'
+                    color: 0xff4757,
+                    description: '**Warning:** No audio playback system detected, Master.'
                 }]
             });
         }
@@ -51,8 +51,8 @@ export default class Skip extends Command {
 
         return ctx.sendMessage({
             embeds: [{
-                color: 0x00ff00,
-                description: `⏭️ Skipped **${currentTrack?.info?.title || 'the current track'}**.`
+                color: 0x00ced1,
+                description: `**Confirmed:** Skipped **${currentTrack?.info?.title || 'the current track'}**, Master.`
             }]
         });
     }

@@ -2,6 +2,7 @@ import { PermissionFlagsBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, But
 import Giveaway from '../../models/Giveaway.js';
 import Guild from '../../models/Guild.js';
 import { successEmbed, errorEmbed, infoEmbed, GLYPHS } from '../../utils/embeds.js';
+import { getRandomFooter } from '../../utils/raphael.js';
 
 export default {
   name: 'giveaway',
@@ -41,20 +42,20 @@ export default {
 };
 
 async function showHelp(message) {
-  const embed = await infoEmbed(message.guild.id, '🎉 Giveaway Commands',
-    `**Commands:**\n` +
-    `${GLYPHS.DOT} \`giveaway start <duration> <winners> <prize>\`\n` +
+  const embed = await infoEmbed(message.guild.id, 'Lottery Protocol',
+    `**Answer:** Available sub-commands, Master.\n\n` +
+    `◇ \`giveaway start <duration> <winners> <prize>\`\n` +
     `  Example: \`giveaway start 1d 2 Nitro Classic\`\n\n` +
-    `${GLYPHS.DOT} \`giveaway end <messageId>\` - End a giveaway early\n` +
-    `${GLYPHS.DOT} \`giveaway reroll <messageId>\` - Pick new winners\n` +
-    `${GLYPHS.DOT} \`giveaway list\` - List active giveaways\n` +
-    `${GLYPHS.DOT} \`giveaway delete <messageId>\` - Cancel a giveaway\n\n` +
-    `**Duration formats:**\n` +
-    `${GLYPHS.DOT} \`s\` - seconds (30s)\n` +
-    `${GLYPHS.DOT} \`m\` - minutes (10m)\n` +
-    `${GLYPHS.DOT} \`h\` - hours (2h)\n` +
-    `${GLYPHS.DOT} \`d\` - days (1d)\n` +
-    `${GLYPHS.DOT} \`w\` - weeks (1w)`
+    `◇ \`giveaway end <messageId>\` — Terminate early\n` +
+    `◇ \`giveaway reroll <messageId>\` — Select new recipients\n` +
+    `◇ \`giveaway list\` — Display active lotteries\n` +
+    `◇ \`giveaway delete <messageId>\` — Cancel lottery\n\n` +
+    `**Duration Formats:**\n` +
+    `◇ \`s\` — seconds (30s)\n` +
+    `◇ \`m\` — minutes (10m)\n` +
+    `◇ \`h\` — hours (2h)\n` +
+    `◇ \`d\` — days (1d)\n` +
+    `◇ \`w\` — weeks (1w)`
   );
   return message.reply({ embeds: [embed] });
 }
@@ -63,8 +64,8 @@ async function startGiveaway(message, args) {
   // Parse arguments: duration, winners, prize
   if (args.length < 3) {
     return message.reply({
-      embeds: [await errorEmbed(message.guild.id, 'Missing Arguments',
-        'Usage: `giveaway start <duration> <winners> <prize>`\n' +
+      embeds: [await errorEmbed(message.guild.id, 'Insufficient Parameters',
+        '**Notice:** Required syntax, Master:\n`giveaway start <duration> <winners> <prize>`\n' +
         'Example: `giveaway start 1d 2 Nitro Classic`')]
     });
   }
@@ -73,23 +74,23 @@ async function startGiveaway(message, args) {
   if (!duration) {
     return message.reply({
       embeds: [await errorEmbed(message.guild.id, 'Invalid Duration',
-        'Please provide a valid duration (e.g., 30s, 10m, 2h, 1d, 1w)')]
+        '**Warning:** Please provide a valid temporal format (e.g., 30s, 10m, 2h, 1d, 1w), Master.')]
     });
   }
 
   const winners = parseInt(args[1]);
   if (isNaN(winners) || winners < 1 || winners > 20) {
     return message.reply({
-      embeds: [await errorEmbed(message.guild.id, 'Invalid Winners',
-        'Winner count must be between 1 and 20.')]
+      embeds: [await errorEmbed(message.guild.id, 'Invalid Winner Count',
+        '**Warning:** Recipient count must be between 1 and 20, Master.')]
     });
   }
 
   const prize = args.slice(2).join(' ');
   if (!prize) {
     return message.reply({
-      embeds: [await errorEmbed(message.guild.id, 'No Prize',
-        'Please provide a prize description.')]
+      embeds: [await errorEmbed(message.guild.id, 'Prize Required',
+        '**Warning:** Prize description is mandatory, Master.')]
     });
   }
 
@@ -98,26 +99,26 @@ async function startGiveaway(message, args) {
 
   // Create giveaway embed
   const embed = new EmbedBuilder()
-    .setColor(guildConfig.embedStyle?.color || '#FF69B4')
-    .setTitle('🎉 GIVEAWAY 🎉')
+    .setColor(guildConfig.embedStyle?.color || '#00CED1')
+    .setTitle('『 Lottery Protocol Active 』')
     .setDescription(
       `**Prize:** ${prize}\n\n` +
-      `**Winners:** ${winners}\n` +
-      `**Hosted by:** ${message.author}\n\n` +
-      `**Ends:** <t:${Math.floor(endsAt.getTime() / 1000)}:R>\n\n` +
-      `Click the button below to enter!`
+      `**Recipients:** ${winners}\n` +
+      `**Initiated by:** ${message.author}\n\n` +
+      `**Concludes:** <t:${Math.floor(endsAt.getTime() / 1000)}:R>\n\n` +
+      `Activate the button below to register your entry.`
     )
-    .setFooter({ text: `Ends at` })
+    .setFooter({ text: `${getRandomFooter()} | Concludes at` })
     .setTimestamp(endsAt);
 
   const row = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId('giveaway_enter')
-      .setLabel('🎉 Enter (0)')
+      .setLabel('◉ Enter (0)')
       .setStyle(ButtonStyle.Primary),
     new ButtonBuilder()
       .setCustomId('giveaway_participants')
-      .setLabel('👥 Participants')
+      .setLabel('◈ Participants')
       .setStyle(ButtonStyle.Secondary)
   );
 
@@ -139,9 +140,9 @@ async function startGiveaway(message, args) {
   });
 
   await message.reply({
-    embeds: [await successEmbed(message.guild.id, 'Giveaway Started!',
-      `${GLYPHS.SUCCESS} Giveaway for **${prize}** has started!\n` +
-      `Ends <t:${Math.floor(endsAt.getTime() / 1000)}:R>`)]
+    embeds: [await successEmbed(message.guild.id, 'Lottery Initiated',
+      `**Confirmed:** Lottery for **${prize}** has been activated, Master.\n` +
+      `Concludes <t:${Math.floor(endsAt.getTime() / 1000)}:R>`)]
   });
 }
 

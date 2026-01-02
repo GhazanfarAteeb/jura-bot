@@ -3,6 +3,7 @@ import Economy from '../../models/Economy.js';
 import Guild from '../../models/Guild.js';
 import { errorEmbed, GLYPHS } from '../../utils/embeds.js';
 import { getPrefix, formatNumber } from '../../utils/helpers.js';
+import { getRandomFooter } from '../../utils/raphael.js';
 
 // Card suits and values
 const SUITS = ['♠️', '♥️', '♦️', '♣️'];
@@ -79,9 +80,9 @@ function getHandDisplay(hand, hideSecond = false) {
 // Create game embed
 function createGameEmbed(game, guildConfig, showResult = false) {
   const embed = new EmbedBuilder()
-    .setTitle('🃏 Blackjack')
-    .setColor(guildConfig.embedStyle?.color || '#5865F2')
-    .setFooter({ text: `Bet: ${formatNumber(game.bet)} ${guildConfig.economy?.currencyName || 'coins'}` });
+    .setTitle('『 Strategic Card Analysis 』')
+    .setColor(guildConfig.embedStyle?.color || '#00CED1')
+    .setFooter({ text: `${getRandomFooter()} | Wager: ${formatNumber(game.bet)} ${guildConfig.economy?.currencyName || 'coins'}` });
 
   const dealerValue = calculateHand(game.dealerHand);
   const playerValue = calculateHand(game.playerHand);
@@ -89,14 +90,14 @@ function createGameEmbed(game, guildConfig, showResult = false) {
   // Dealer's hand
   if (showResult) {
     embed.addFields({
-      name: `🎩 Dealer (${dealerValue})`,
+      name: `▸ Dealer (${dealerValue})`,
       value: getHandDisplay(game.dealerHand),
       inline: false
     });
   } else {
     const hiddenValue = getCardValue(game.dealerHand[0]);
     embed.addFields({
-      name: `🎩 Dealer (${hiddenValue}+?)`,
+      name: `▸ Dealer (${hiddenValue}+?)`,
       value: getHandDisplay(game.dealerHand, true),
       inline: false
     });
@@ -104,7 +105,7 @@ function createGameEmbed(game, guildConfig, showResult = false) {
 
   // Player's hand
   embed.addFields({
-    name: `👤 ${game.playerName} (${playerValue})`,
+    name: `▸ ${game.playerName} (${playerValue})`,
     value: getHandDisplay(game.playerHand),
     inline: false
   });
@@ -153,31 +154,31 @@ async function endGame(game, message, guildConfig, result) {
   switch (result) {
     case 'blackjack':
       winnings = Math.floor(game.bet * 2.5); // 3:2 payout
-      resultText = `🎉 **BLACKJACK!** You win **${formatNumber(winnings)}** ${currencyName}!`;
+      resultText = `◉ **OPTIMAL HAND ACHIEVED** — Natural 21 detected! Winnings: **${formatNumber(winnings)}** ${currencyName}`;
       color = '#FFD700';
       break;
     case 'win':
       winnings = game.bet * 2;
-      resultText = `🎉 **You win!** You earned **${formatNumber(winnings)}** ${currencyName}!`;
-      color = '#00FF00';
+      resultText = `◉ **VICTORY CONFIRMED** — You have earned **${formatNumber(winnings)}** ${currencyName}, Master.`;
+      color = '#00FF7F';
       break;
     case 'push':
       winnings = game.bet;
-      resultText = `🤝 **Push!** Your bet of **${formatNumber(game.bet)}** ${currencyName} has been returned.`;
-      color = '#FFFF00';
+      resultText = `◈ **DRAW DETECTED** — Your wager of **${formatNumber(game.bet)}** ${currencyName} has been returned.`;
+      color = '#FFD700';
       break;
     case 'bust':
-      resultText = `💥 **Bust!** You went over 21 and lost **${formatNumber(game.bet)}** ${currencyName}.`;
-      color = '#FF0000';
+      resultText = `○ **THRESHOLD EXCEEDED** — Hand value surpassed 21. Loss: **${formatNumber(game.bet)}** ${currencyName}.`;
+      color = '#FF4757';
       break;
     case 'lose':
-      resultText = `😔 **You lost** **${formatNumber(game.bet)}** ${currencyName}.`;
-      color = '#FF0000';
+      resultText = `○ **DEFEAT RECORDED** — You have lost **${formatNumber(game.bet)}** ${currencyName}, Master.`;
+      color = '#FF4757';
       break;
     case 'dealer_bust':
       winnings = game.bet * 2;
-      resultText = `🎉 **Dealer bust!** You win **${formatNumber(winnings)}** ${currencyName}!`;
-      color = '#00FF00';
+      resultText = `◉ **DEALER EXCEEDED** — Opponent bust! Winnings: **${formatNumber(winnings)}** ${currencyName}`;
+      color = '#00FF7F';
       break;
   }
 
@@ -190,7 +191,7 @@ async function endGame(game, message, guildConfig, result) {
   const embed = createGameEmbed(game, { ...guildConfig, embedStyle: { ...guildConfig.embedStyle, color } }, true);
   embed.setDescription(resultText);
   embed.addFields({
-    name: '💰 New Balance',
+    name: '▸ Updated Balance',
     value: `**${formatNumber(economy.coins + (winnings > 0 ? 0 : 0))}** ${currencyName}`,
     inline: true
   });
