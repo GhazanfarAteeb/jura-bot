@@ -55,16 +55,16 @@ export function startBirthdayChecker(client) {
             }
 
             // Create birthday message
-            let message = guildConfig.features.birthdaySystem.message || '🎉 Happy Birthday {user}! 🎂';
+            let message = guildConfig.features.birthdaySystem.message || '**Notice:** Birthday celebration detected for {user}. Congratulations, Master.';
             message = message.replace('{user}', member.toString());
 
             const age = birthday.getAge();
             if (age && birthday.showAge) {
-              message += `\n🎈 Turning ${age} today!`;
+              message += `\n**Analysis:** Subject has reached ${age} years of age.`;
             }
 
             if (birthday.customMessage) {
-              message += `\n\n💭 "${birthday.customMessage}"`;
+              message += `\n\n**Message:** "${birthday.customMessage}"`;
             }
 
             // Send birthday message
@@ -105,7 +105,7 @@ export function startBirthdayChecker(client) {
     }
   });
 
-  console.log('✅ Birthday checker scheduled');
+  console.log('[RAPHAEL] Birthday monitoring system initialized.');
 }
 
 // Check for events every minute
@@ -193,7 +193,7 @@ export function startEventChecker(client) {
         });
         await event.save();
 
-        console.log(`📢 Sent event notification for: ${event.title}`);
+        console.log(`[RAPHAEL] Event notification dispatched: ${event.title}`);
       }
 
     } catch (error) {
@@ -201,7 +201,7 @@ export function startEventChecker(client) {
     }
   });
 
-  console.log('✅ Event checker scheduled');
+  console.log('[RAPHAEL] Event monitoring system initialized.');
 }
 
 // Remove birthday role at end of day
@@ -238,7 +238,7 @@ export function startBirthdayRoleRemover(client) {
     }
   });
 
-  console.log('✅ Birthday role remover scheduled');
+  console.log('[RAPHAEL] Birthday role removal scheduler initialized.');
 }
 
 // Check giveaways every 15 seconds
@@ -247,7 +247,7 @@ export function startGiveawayChecker(client) {
     await checkGiveaways(client);
   }, 15000);
 
-  console.log('✅ Giveaway checker started (every 15 seconds)');
+  console.log('[RAPHAEL] Giveaway monitoring system initialized.');
 }
 
 // Check reminders every 15 seconds for more timely delivery
@@ -263,7 +263,7 @@ export function startReminderChecker(client) {
     }
   }, 15000); // 15 seconds for faster reminder delivery
 
-  console.log('✅ Reminder checker started (every 15 seconds)');
+  console.log('[RAPHAEL] Reminder monitoring system initialized.');
 }
 
 // Initialize all schedulers

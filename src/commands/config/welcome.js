@@ -197,12 +197,12 @@ async function showStatus(message, guildConfig) {
   const welcome = guildConfig.features.welcomeSystem;
   const channel = welcome.channel ? message.guild.channels.cache.get(welcome.channel) : null;
 
-  const embed = await infoEmbed(message.guild.id, '👋 Welcome System Status',
-    `**Status:** ${welcome.enabled ? '✅ Enabled' : '❌ Disabled'}\n` +
-    `**Channel:** ${channel ? channel : 'Not set'}\n` +
-    `**Embed Mode:** ${welcome.embedEnabled ? '✅' : '❌'}\n` +
-    `**DM Welcome:** ${welcome.dmWelcome ? '✅' : '❌'}\n` +
-    `**Banner:** ${welcome.bannerUrl ? '✅ Set' : '❌ Not set'}\n\n` +
+  const embed = await infoEmbed(message.guild.id, '『 Welcome System Status 』',
+    `**▸ Status:** ${welcome.enabled ? '◉ Active' : '○ Inactive'}\n` +
+    `**▸ Channel:** ${channel ? channel : 'Not configured'}\n` +
+    `**▸ Embed Mode:** ${welcome.embedEnabled ? '◉' : '○'}\n` +
+    `**▸ DM Welcome:** ${welcome.dmWelcome ? '◉' : '○'}\n` +
+    `**▸ Banner:** ${welcome.bannerUrl ? '◉ Set' : '○ Not set'}\n\n` +
     `**Current Message:**\n\`\`\`${welcome.message || 'Welcome {user} to {server}!'}\`\`\`\n` +
     `**Commands:**\n` +
     `${GLYPHS.DOT} \`welcome enable/disable\` - Toggle system\n` +

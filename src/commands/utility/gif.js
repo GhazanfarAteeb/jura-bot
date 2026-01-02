@@ -12,7 +12,7 @@ export default {
   execute: async (message, args) => {
     if (!args.length) {
       const prefix = await getPrefix(message.guild.id);
-      return message.reply(`❌ Please provide a search query! Usage: \`${prefix}gif <search term>\`\n**Tip:** Use specific terms for better results!`);
+      return message.reply(`**Error:** Search query required. Usage: \`${prefix}gif <search term>\`, Master.`);
     }
 
     const searchQuery = args.join(' ');
@@ -33,11 +33,12 @@ export default {
       if (!data.results || data.results.length === 0) {
         // Suggest alternatives
         return message.reply(
-          `❌ No GIFs found for **${searchQuery}**\n\n💡 **Tips:**\n` +
-          `• Try simpler or more common terms\n` +
-          `• Use English keywords\n` +
-          `• Try related words (e.g., "happy" instead of "joyful")\n` +
-          `• Check your spelling`
+          `**Notice:** No results found for **${searchQuery}**, Master.\n\n` +
+          `**Suggestions:**\n` +
+          `◇ Try simpler or more common terms\n` +
+          `◇ Use English keywords\n` +
+          `◇ Try related words (e.g., "happy" instead of "joyful")\n` +
+          `◇ Verify spelling`
         );
       }
 

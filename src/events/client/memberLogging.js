@@ -122,11 +122,11 @@ async function logMemberUpdate(oldMember, newMember) {
         embeds.push(embed);
       } else {
         const embed = new EmbedBuilder()
-          .setTitle('✅ Timeout Removed')
-          .setColor('#57F287')
-          .setDescription(`**${newMember.user.username}**'s timeout was removed`)
+          .setTitle('『 Timeout Lifted 』')
+          .setColor('#00FF7F')
+          .setDescription(`**${newMember.user.username}**'s timeout restriction has been removed.`)
           .addFields(
-            { name: 'Member', value: `${newMember.user.username}`, inline: true }
+            { name: '▸ Member', value: `${newMember.user.username}`, inline: true }
           )
           .setThumbnail(newMember.user.displayAvatarURL())
           .setFooter({ text: `User ID: ${newMember.id}` })
@@ -169,7 +169,7 @@ async function logMemberUpdate(oldMember, newMember) {
     // Avatar change (server specific)
     if (oldMember.avatar !== newMember.avatar && newMember.avatar) {
       const embed = new EmbedBuilder()
-        .setTitle('🖼️ Server Avatar Changed')
+        .setTitle('🖼️ Avatar Changed')
         .setColor('#5865F2')
         .setDescription(`**${newMember.user.username}** changed their server avatar`)
         .addFields(

@@ -22,9 +22,9 @@ export default {
 
       if (badges.length === 0) {
         if (targetUser.id === message.author.id) {
-          return message.reply(`🏅 You don't have any badges yet!\n\nEarn badges by being active, getting married, leveling up, and more!`);
+          return message.reply(`**Notice:** No achievements detected in your profile, Master.\n\nAchievements are earned through activity, bonds, and progression.`);
         }
-        return message.reply(`🏅 **${targetUser.username}** doesn't have any badges yet!`);
+        return message.reply(`**Notice:** **${targetUser.username}** has not acquired any achievements yet.`);
       }
 
       const badgeList = badges.map(b => {
@@ -33,11 +33,11 @@ export default {
       }).join('\n\n');
 
       const embed = new EmbedBuilder()
-        .setColor(social.profile?.color || '#5865F2')
-        .setTitle(`🏅 ${targetUser.username}'s Badges`)
+        .setColor(social.profile?.color || '#00CED1')
+        .setTitle(`『 ${targetUser.username}'s Achievements 』`)
         .setThumbnail(targetUser.displayAvatarURL({ dynamic: true }))
         .setDescription(badgeList)
-        .setFooter({ text: `${badges.length} badge${badges.length !== 1 ? 's' : ''} earned` });
+        .setFooter({ text: `${badges.length} achievement${badges.length !== 1 ? 's' : ''} acquired • Analysis complete.` });
 
       // Show available badges they don't have
       if (targetUser.id === message.author.id) {
@@ -49,7 +49,7 @@ export default {
 
         if (availableBadges) {
           embed.addFields({
-            name: '🔒 Badges to Earn',
+            name: '◈ Locked Achievements',
             value: availableBadges
           });
         }
@@ -59,7 +59,7 @@ export default {
 
     } catch (error) {
       console.error('Badges command error:', error);
-      return message.reply('❌ An error occurred while fetching badges.');
+      return message.reply('**Error:** An anomaly occurred while retrieving achievement data, Master.');
     }
   }
 };

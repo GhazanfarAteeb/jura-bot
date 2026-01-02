@@ -448,35 +448,35 @@ function createFeaturesEmbed(prefix, client) {
 
   const features = [
     {
-      name: '🛡️ Moderation & AutoMod',
+      name: '▸ Moderation & AutoMod',
       value: 'Bans, kicks, warnings, timeouts, anti-spam, anti-raid, anti-nuke, bad word filter, and more.'
     },
     {
-      name: '💰 Economy System',
+      name: '▸ Economy System',
       value: 'Daily rewards, coins, leveling, XP multipliers, profiles, backgrounds, and shop system.'
     },
     {
-      name: '🎰 Gambling Games',
+      name: '▸ Gambling Games',
       value: 'Coinflip, slots, dice, roulette, and blackjack with customizable betting.'
     },
     {
-      name: '🎵 Music Player',
+      name: '▸ Music Player',
       value: 'High-quality music from YouTube, Spotify, and more with queue management.'
     },
     {
-      name: '🎉 Community Features',
+      name: '▸ Community Features',
       value: 'Birthdays, events, giveaways, starboard, tickets, and welcome messages.'
     },
     {
-      name: '⚙️ Customization',
+      name: '▸ Customization',
       value: 'Custom prefix, autoroles, reaction roles, color roles, and embed styling.'
     },
     {
-      name: '📊 Logging',
+      name: '▸ Logging',
       value: 'Message logs, member logs, moderation logs, and voice channel logs.'
     },
     {
-      name: '🔒 Security',
+      name: '▸ Security',
       value: 'Verification system, anti-nuke protection, and permission management.'
     }
   ];
@@ -517,23 +517,23 @@ async function showCommandDetail(message, commandName, prefix, client, disabledC
   const embed = new EmbedBuilder()
     .setColor(isDisabled ? COLORS.MUTED : (categoryInfo?.color || COLORS.PRIMARY))
     .setAuthor({
-      name: `📖 Command: ${command.name}`,
+      name: `『 Skill Analysis: ${command.name} 』`,
       iconURL: client.user.displayAvatarURL({ dynamic: true })
     })
     .setDescription(
-      (isDisabled ? `🔒 **This command is currently disabled**\n\n` : '') +
-      (command.description || 'No description available.')
+      (isDisabled ? `**Warning:** This skill is currently deactivated.\n\n` : '') +
+      `**Analysis:** ${command.description || 'No analysis data available.'}`
     );
 
   // Status badges
   const badges = [];
-  if (hasSlash) badges.push('⌨️ Slash Command');
-  if (isDisabled) badges.push('🔒 Disabled');
-  if (command.cooldown) badges.push(`⏱️ ${command.cooldown}s cooldown`);
+  if (hasSlash) badges.push('⌨️ Slash');
+  if (isDisabled) badges.push('◎ Deactivated');
+  if (command.cooldown) badges.push(`◈ ${command.cooldown}s cooldown`);
 
   if (badges.length > 0) {
     embed.addFields({
-      name: '🏷️ Status',
+      name: '▸ Status Indicators',
       value: badges.join(' • '),
       inline: false
     });
@@ -542,7 +542,7 @@ async function showCommandDetail(message, commandName, prefix, client, disabledC
   // Usage
   const usage = command.usage ? `${prefix}${command.name} ${command.usage}` : `${prefix}${command.name}`;
   embed.addFields({
-    name: '📝 Usage',
+    name: '▸ Activation Syntax',
     value: `\`\`\`${usage}\`\`\``,
     inline: false
   });
@@ -550,7 +550,7 @@ async function showCommandDetail(message, commandName, prefix, client, disabledC
   // Aliases
   if (command.aliases && command.aliases.length > 0) {
     embed.addFields({
-      name: '🔀 Aliases',
+      name: '▸ Alternative Triggers',
       value: command.aliases.map(a => `\`${prefix}${a}\``).join(', '),
       inline: true
     });
@@ -559,7 +559,7 @@ async function showCommandDetail(message, commandName, prefix, client, disabledC
   // Category
   if (categoryInfo) {
     embed.addFields({
-      name: '📂 Category',
+      name: '▸ Classification',
       value: `${categoryInfo.emoji} ${categoryInfo.name}`,
       inline: true
     });
@@ -568,7 +568,7 @@ async function showCommandDetail(message, commandName, prefix, client, disabledC
   // Permissions
   if (command.permissions && command.permissions.length > 0) {
     embed.addFields({
-      name: '🔒 Required Permissions',
+      name: '▸ Required Authorization',
       value: command.permissions.map(p => `\`${p}\``).join(', '),
       inline: false
     });
@@ -585,7 +585,7 @@ async function showCommandDetail(message, commandName, prefix, client, disabledC
       return `\`${prefix}${ex}\``;
     });
     embed.addFields({
-      name: '💡 Examples',
+      name: '▸ Usage Examples',
       value: formattedExamples.join('\n'),
       inline: false
     });
@@ -594,14 +594,14 @@ async function showCommandDetail(message, commandName, prefix, client, disabledC
   // Slash command tip
   if (hasSlash) {
     embed.addFields({
-      name: '⌨️ Slash Command',
-      value: `This command is also available as \`/${command.name}\``,
+      name: '▸ Slash Command',
+      value: `This skill also responds to \`/${command.name}\`, Master.`,
       inline: false
     });
   }
 
   embed.setFooter({
-    text: `Use ${prefix}help for all commands`
+    text: `${getRandomFooter()} • Use ${prefix}help for skill archive`
   });
   embed.setTimestamp();
 

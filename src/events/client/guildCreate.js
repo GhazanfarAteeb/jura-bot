@@ -67,7 +67,7 @@ export default {
 
       const duration = ((Date.now() - startTime) / 1000).toFixed(2);
 
-      console.log(`[GUILD JOIN] ✅ Profile recording complete!`);
+      console.log(`[GUILD JOIN] Profile recording complete.`);
       console.log(`[GUILD JOIN] - Recorded: ${recordedCount} members`);
       console.log(`[GUILD JOIN] - Skipped: ${skippedBots} bots`);
       console.log(`[GUILD JOIN] - Errors: ${errors}`);
@@ -84,41 +84,41 @@ export default {
         if (welcomeChannel) {
           await welcomeChannel.send({
             embeds: [{
-              color: 0x5865F2,
-              title: '👋 Thanks for adding RAPHAEL!',
+              color: 0x00CED1,
+              title: '『 System Initialization Complete 』',
               description:
-                `Hello! I'm RAPHAEL, a multi-purpose Discord bot with **73 commands**.\n\n` +
-                `✅ **Recorded ${recordedCount} member profiles**\n` +
-                `🤖 **Skipped ${skippedBots} bot accounts**\n\n` +
-                `**Quick Setup:**\n` +
-                `• Run \`${process.env.DEFAULT_PREFIX || '!'}setup\` to auto-configure your server\n` +
-                `• Use \`${process.env.DEFAULT_PREFIX || '!'}help\` to explore all commands\n` +
-                `• Configure with \`${process.env.DEFAULT_PREFIX || '!'}config\`\n\n` +
-                `**Features:**\n` +
-                `⚙️ Auto-setup wizard\n` +
-                `🛡️ Advanced moderation & security\n` +
-                `💰 Economy system with gambling\n` +
-                `🎵 Music player with 25+ effects\n` +
-                `🎉 Birthdays & events\n` +
-                `📊 Detailed statistics\n` +
-                `🎨 Customizable profiles\n\n` +
-                `Need help? Use \`${process.env.DEFAULT_PREFIX || '!'}help\` to get started!`,
+                `**Confirmed:** RAPHAEL integration successful, Master.\\n\\n` +
+                `◉ **Recorded ${recordedCount} member profiles**\\n` +
+                `◎ **Skipped ${skippedBots} bot accounts**\\n\\n` +
+                `**Quick Setup:**\\n` +
+                `◇ Run \\`${ process.env.DEFAULT_PREFIX || '!' }setup\\` to auto-configure your server\\n` +
+            `◇ Use \\`${ process.env.DEFAULT_PREFIX || '!' }help\\` to explore all commands\\n` +
+            `◇ Configure with \\`${ process.env.DEFAULT_PREFIX || '!' }config\\`\\n\\n` +
+            `**Available Modules:**\\n` +
+            `▸ Auto-setup wizard\\n` +
+            `▸ Advanced moderation & security\\n` +
+            `▸ Economy system with gambling\\n` +
+            `▸ Music player with 25+ effects\\n` +
+            `▸ Birthdays & events\\n` +
+            `▸ Detailed statistics\\n` +
+            `▸ Customizable profiles\\n\\n` +
+            `**Notice:** Use \\`${ process.env.DEFAULT_PREFIX || '!' }help\\` to begin, Master.`,
               thumbnail: {
-                url: guild.client.user.displayAvatarURL({ size: 256 })
-              },
+              url: guild.client.user.displayAvatarURL({ size: 256 })
+            },
               footer: {
-                text: `Profile recording took ${duration}s`
-              },
+              text: `Profile recording completed in ${duration}s`
+            },
               timestamp: new Date()
             }]
           });
-        }
-      } catch (error) {
-        console.error('[GUILD JOIN] Could not send welcome message:', error);
       }
-
-    } catch (error) {
-      console.error('[GUILD JOIN] Error in guildCreate event:', error);
+      } catch (error) {
+      console.error('[GUILD JOIN] Could not send welcome message:', error);
     }
+
+  } catch(error) {
+    console.error('[GUILD JOIN] Error in guildCreate event:', error);
   }
+}
 };

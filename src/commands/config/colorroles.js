@@ -95,10 +95,10 @@ export default {
     const prefix = await getPrefix(guildId);
 
     const embed = new EmbedBuilder()
-      .setColor('#667eea')
-      .setTitle('🎨 Color Roles System')
+      .setColor('#00CED1')
+      .setTitle('『 Color Roles System 』')
       .setDescription(
-        `**Status:** ${hasPanel ? '✅ Active' : '❌ Not Setup'}\n\n` +
+        `**▸ Status:** ${hasPanel ? '◉ Active' : '○ Not configured'}\n\n` +
         `**Commands:**\n` +
         `${GLYPHS.ARROW_RIGHT} \`${prefix}colorroles setup\` - Create channel & panel\n` +
         `${GLYPHS.ARROW_RIGHT} \`${prefix}colorroles settings\` - View current settings\n` +
@@ -254,12 +254,12 @@ export default {
         const allColorRoles = message.guild.roles.cache.filter(r => r.name.startsWith('🎨 '));
         const rolePositions = [];
         let pos = targetPosition;
-        
+
         for (const [roleId, role] of allColorRoles) {
           rolePositions.push({ role: roleId, position: pos });
           pos = Math.max(1, pos - 1);
         }
-        
+
         if (rolePositions.length > 0) {
           await message.guild.roles.setPositions(rolePositions);
         }
@@ -630,32 +630,32 @@ export default {
     const hasPanel = !!settings.messageId;
 
     const embed = new EmbedBuilder()
-      .setColor(settings.embedColor || '#667eea')
-      .setTitle('🎨 Color Roles Settings')
+      .setColor(settings.embedColor || '#00CED1')
+      .setTitle('『 Color Roles Settings 』')
       .addFields(
         {
-          name: '📊 Status',
-          value: hasPanel ? `✅ Active in <#${settings.channelId}>` : '❌ Not Setup',
+          name: '▸ Status',
+          value: hasPanel ? `◉ Active in <#${settings.channelId}>` : '○ Not configured',
           inline: true
         },
         {
-          name: '📝 Title',
+          name: '▸ Title',
           value: `\`${settings.title || '🎨 Color Roles'}\``,
           inline: true
         },
         {
-          name: '🎨 Embed Color',
+          name: '▸ Embed Color',
           value: `\`${settings.embedColor || '#667eea'}\``,
           inline: true
         },
         {
-          name: '📄 Description',
+          name: '▸ Description',
           value: (settings.description || 'Default').substring(0, 100) + (settings.description?.length > 100 ? '...' : ''),
           inline: false
         },
         {
-          name: '🖼️ Image/Banner',
-          value: settings.image ? `[View Image](${settings.image})` : 'Not set',
+          name: '▸ Image/Banner',
+          value: settings.image ? `[View Image](${settings.image})` : 'Not configured',
           inline: true
         },
         {

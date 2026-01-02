@@ -54,10 +54,10 @@ class MusicBot {
       await this.loadMusicSlashCommands();
       await this.loadRiffyEvents();
 
-      console.log('✅ Music bot module initialized successfully');
+      console.log('[RAPHAEL] Audio module initialized.');
       return true;
     } catch (error) {
-      console.error('❌ Failed to initialize music bot:', error);
+      console.error('[RAPHAEL] Audio module initialization failure:', error);
       throw error;
     }
   }
@@ -69,9 +69,9 @@ class MusicBot {
     if (this.riffy && this.mainClient.user) {
       try {
         await this.riffy.init(this.mainClient.user.id);
-        console.log('🎵 Riffy music system initialized');
+        console.log('[RAPHAEL] Riffy audio system active.');
       } catch (error) {
-        console.error('❌ Failed to initialize Riffy:', error);
+        console.error('[RAPHAEL] Riffy initialization failure:', error);
         throw error;
       }
     }
@@ -84,7 +84,7 @@ class MusicBot {
     const commandsPath = path.join(__dirname, '../../working-common-js-music-bot/structures/commands');
 
     if (!readdirSync(commandsPath).length) {
-      console.log('⚠️ No music command directories found');
+      console.log('[RAPHAEL] No audio command directories detected.');
       return;
     }
 
@@ -104,7 +104,7 @@ class MusicBot {
           if (command.name) {
             // Set category for proper routing in messageCreate
             command.category = folder;
-            
+
             // Store with music prefix to avoid conflicts
             this.musicCommands.set(command.name, command);
             this.mainClient.commands.set(command.name, command);
@@ -116,15 +116,15 @@ class MusicBot {
             }
 
             loadedCount++;
-            console.log(`  🎵 Loaded music command: ${command.name}`);
+            console.log(`  [RAPHAEL] Audio command loaded: ${command.name}`);
           }
         } catch (error) {
-          console.error(`  ❌ Failed to load music command ${file}:`, error);
+          console.error(`  [RAPHAEL] Audio command load failure ${file}:`, error);
         }
       }
     }
 
-    console.log(`✅ Loaded ${loadedCount} music commands`);
+    console.log(`[RAPHAEL] Audio commands loaded: ${loadedCount}`);
   }
 
   /**
@@ -134,7 +134,7 @@ class MusicBot {
     const slashCommandsPath = path.join(__dirname, '../../working-common-js-music-bot/structures/slashcommands');
 
     if (!readdirSync(slashCommandsPath).length) {
-      console.log('⚠️ No music slash command directories found');
+      console.log('[RAPHAEL] No audio slash command directories detected.');
       return;
     }
 
@@ -156,15 +156,15 @@ class MusicBot {
             this.mainClient.slashCommands.set(command.data.name, command);
 
             loadedCount++;
-            console.log(`  🎵 Loaded music slash command: ${command.data.name}`);
+            console.log(`  [RAPHAEL] Audio slash command loaded: ${command.data.name}`);
           }
         } catch (error) {
-          console.error(`  ❌ Failed to load music slash command ${file}:`, error);
+          console.error(`  [RAPHAEL] Audio slash command load failure ${file}:`, error);
         }
       }
     }
 
-    console.log(`✅ Loaded ${loadedCount} music slash commands`);
+    console.log(`[RAPHAEL] Audio slash commands loaded: ${loadedCount}`);
   }
 
   /**
@@ -173,9 +173,9 @@ class MusicBot {
    * Riffy will use default handlers
    */
   async loadRiffyEvents() {
-    console.log('  ℹ️  Skipping standalone event files (they require client.js)');
-    console.log('  ℹ️  Riffy will use built-in event handling');
-    console.log('✅ Riffy events configuration complete');
+    console.log('  [RAPHAEL] Standalone event files skipped (client.js dependency).');
+    console.log('  [RAPHAEL] Riffy utilizing built-in event handling.');
+    console.log('[RAPHAEL] Riffy event configuration complete.');
   }
 }
 

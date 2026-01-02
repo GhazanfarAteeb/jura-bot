@@ -193,13 +193,13 @@ async function showStatus(message, guildConfig) {
   const channel = sb?.channel ? message.guild.channels.cache.get(sb.channel) : null;
   const ignoredCount = sb?.ignoredChannels?.length || 0;
 
-  const embed = await infoEmbed(message.guild.id, '⭐ Starboard Settings',
-    `**Status:** ${sb?.enabled ? '✅ Enabled' : '❌ Disabled'}\n` +
-    `**Channel:** ${channel || 'Not set'}\n` +
-    `**Threshold:** ${sb?.threshold || 3} reactions\n` +
-    `**Emoji:** ${sb?.emoji || '⭐'}\n` +
-    `**Self-Star:** ${sb?.selfStar ? '✅ Allowed' : '❌ Not allowed'}\n` +
-    `**Ignored Channels:** ${ignoredCount}\n\n` +
+  const embed = await infoEmbed(message.guild.id, '『 Starboard Settings 』',
+    `**▸ Status:** ${sb?.enabled ? '◉ Active' : '○ Inactive'}\n` +
+    `**▸ Channel:** ${channel || 'Not configured'}\n` +
+    `**▸ Threshold:** ${sb?.threshold || 3} reactions\n` +
+    `**▸ Emoji:** ${sb?.emoji || '⭐'}\n` +
+    `**▸ Self-Star:** ${sb?.selfStar ? '◉ Allowed' : '○ Disabled'}\n` +
+    `**▸ Ignored Channels:** ${ignoredCount}\n\n` +
     `**Commands:**\n` +
     `${GLYPHS.DOT} \`starboard enable/disable\` - Toggle starboard\n` +
     `${GLYPHS.DOT} \`starboard channel #channel\` - Set channel\n` +

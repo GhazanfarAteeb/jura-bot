@@ -176,12 +176,12 @@ export default {
         message.reply({ embeds: [embed] });
 
       } else {
-        message.reply('❌ Invalid category! Use: `backgrounds`, `badges`, or `items`');
+        message.reply('**Error:** Invalid category specified. Use: `backgrounds`, `badges`, or `items`, Master.');
       }
 
     } catch (error) {
       console.error('Inventory command error:', error);
-      message.reply('❌ An error occurred while loading your inventory. Please try again!');
+      message.reply('**Error:** An anomaly occurred while loading inventory data, Master.');
     }
   }
 };

@@ -5,32 +5,32 @@ export default {
   name: Events.ClientReady,
   once: true,
   async execute(client) {
-    console.log(`✅ Logged in as ${client.user.tag}`);
-    console.log(`📊 Serving ${client.guilds.cache.size} servers`);
-    console.log(`👥 Serving ${client.guilds.cache.reduce((a, g) => a + g.memberCount, 0)} users`);
+    console.log(`[RAPHAEL] System online. Logged in as ${client.user.tag}`);
+    console.log(`[RAPHAEL] Serving ${client.guilds.cache.size} servers`);
+    console.log(`[RAPHAEL] Monitoring ${client.guilds.cache.reduce((a, g) => a + g.memberCount, 0)} users`);
 
     // Set bot presence
     client.user.setPresence({
       activities: [{
-        name: 'your server | !help',
+        name: 'Analyzing... | !help',
         type: ActivityType.Watching
       }],
       status: 'online'
     });
 
     // Cache invites for all guilds (async, don't block)
-    console.log('📋 Caching invites...');
+    console.log('[RAPHAEL] Initializing invite cache...');
     Promise.all(
       Array.from(client.guilds.cache.values()).map(async guild => {
         try {
           const invites = await guild.invites.fetch();
           client.invites.set(guild.id, new Map(invites.map(invite => [invite.code, invite.uses])));
         } catch (error) {
-          console.error(`Failed to cache invites for ${guild.name}:`, error.message);
+          console.error(`[RAPHAEL] Failed to cache invites for ${guild.name}:`, error.message);
         }
       })
-    ).then(() => console.log('✅ Invites cached'));
+    ).then(() => console.log('[RAPHAEL] Invite cache complete.'));
 
-    console.log('🚀 Bot is ready!');
+    console.log('[RAPHAEL] All systems operational. Awaiting commands, Master.');
   }
 };

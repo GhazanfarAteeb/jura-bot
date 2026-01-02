@@ -13,11 +13,11 @@ const TEMPVC_BUTTONS = {
     { id: 'tempvc_status', emoji: '📝', label: 'Status', style: ButtonStyle.Secondary }
   ],
   row2: [
-    { id: 'tempvc_permit', emoji: '✅', label: 'Permit', style: ButtonStyle.Success },
-    { id: 'tempvc_reject', emoji: '❌', label: 'Reject', style: ButtonStyle.Danger },
+    { id: 'tempvc_permit', emoji: '◎', label: 'Permit', style: ButtonStyle.Success },
+    { id: 'tempvc_reject', emoji: '○', label: 'Reject', style: ButtonStyle.Danger },
     { id: 'tempvc_invite', emoji: '📨', label: 'Invite', style: ButtonStyle.Primary },
     { id: 'tempvc_kick', emoji: '👢', label: 'Kick', style: ButtonStyle.Danger },
-    { id: 'tempvc_info', emoji: 'ℹ️', label: 'Info', style: ButtonStyle.Secondary }
+    { id: 'tempvc_info', emoji: '◈', label: 'Info', style: ButtonStyle.Secondary }
   ],
   row3: [
     { id: 'tempvc_claim', emoji: '👑', label: 'Claim', style: ButtonStyle.Primary },
@@ -31,27 +31,27 @@ const TEMPVC_BUTTONS = {
  */
 function createInterfaceEmbed() {
   const embed = new EmbedBuilder()
-    .setColor(0x5865F2)
-    .setTitle('🎙️ Raphael Temp Voice')
+    .setColor(0x00ced1)
+    .setTitle('『 Voice Channel Interface 』')
     .setDescription(
-      'This **interface** can be used to manage temporary voice channels.\n' +
-      `More options are available with \`${process.env.DEFAULT_PREFIX || '!'}tempvc\` commands.\n\n` +
+      '**Notice:** This interface allows control of temporary voice channels, Master.\n' +
+      `Additional commands available via \`${process.env.DEFAULT_PREFIX || '!'}tempvc\`.\n\n` +
       '**Available Controls:**\n' +
-      '`✏️ NAME` - Rename your channel\n' +
+      '`✏️ NAME` - Rename channel\n' +
       '`👥 LIMIT` - Set user limit\n' +
-      '`🔒 PRIVACY` - Lock/Unlock/Hide/Chat options\n' +
+      '`🔒 PRIVACY` - Lock/Unlock/Hide options\n' +
       '`🎵 BITRATE` - Set audio quality\n' +
       '`📝 STATUS` - Set channel status\n' +
-      '`✅ PERMIT` - Allow a user to join\n' +
-      '`❌ REJECT` - Block a user\n' +
+      '`◎ PERMIT` - Authorize user access\n' +
+      '`○ REJECT` - Deny user access\n' +
       '`📨 INVITE` - Send invite link\n' +
-      '`👢 KICK` - Remove a user\n' +
+      '`👢 KICK` - Remove user\n' +
       '`👑 CLAIM` - Claim abandoned channel\n' +
       '`🔄 TRANSFER` - Transfer ownership\n' +
-      '`🗑️ DELETE` - Delete your channel\n\n' +
-      '*Press the buttons below to use the interface*'
+      '`🗑️ DELETE` - Delete channel\n\n' +
+      '*Press the buttons below to execute commands.*'
     )
-    .setFooter({ text: 'Raphael Temp Voice • You must be in a temp channel to use these' });
+    .setFooter({ text: 'Voice Channel Control Interface • You must be in a temp channel' });
 
   // Create button rows
   const rows = [];
@@ -226,31 +226,31 @@ async function showStatus(message, guildConfig) {
   // Check if user has a temp channel
   const userChannel = await TempVoice.findUserChannel(message.guild.id, message.author.id);
 
-  const embed = await infoEmbed(message.guild.id, '🎙️ Temporary Voice Channels',
-    `**Status:** ${tv?.enabled ? '✅ Enabled' : '❌ Disabled'}\n` +
-    `**Join to Create:** ${createChannel || 'Not set'}\n` +
-    `**Interface:** ${interfaceChannel || 'Not set'}\n` +
-    `**Category:** ${category || 'Auto'}\n` +
-    `**Default Name:** ${tv?.defaultName || "{user}'s Channel"}\n` +
-    `**Default Limit:** ${tv?.defaultLimit || 'Unlimited'}\n\n` +
+  const embed = await infoEmbed(message.guild.id, '『 Voice Channel System 』',
+    `**▸ Status:** ${tv?.enabled ? '◉ Active' : '○ Inactive'}\n` +
+    `**▸ Join to Create:** ${createChannel || 'Not configured'}\n` +
+    `**▸ Interface:** ${interfaceChannel || 'Not configured'}\n` +
+    `**▸ Category:** ${category || 'Automatic'}\n` +
+    `**▸ Default Name:** ${tv?.defaultName || "{user}'s Channel"}\n` +
+    `**▸ Default Limit:** ${tv?.defaultLimit || 'Unlimited'}\n\n` +
     (userChannel ? `**Your Channel:** <#${userChannel.channelId}>\n\n` : '') +
-    `**Admin Commands:**\n` +
-    `${GLYPHS.DOT} \`tempvc setup\` - Set up temp voice\n` +
-    `${GLYPHS.DOT} \`tempvc disable\` - Disable temp voice\n` +
-    `${GLYPHS.DOT} \`tempvc resend\` - Resend interface message\n` +
+    `**Administrator Commands:**\n` +
+    `${GLYPHS.DOT} \`tempvc setup\` - Initialize system\n` +
+    `${GLYPHS.DOT} \`tempvc disable\` - Deactivate system\n` +
+    `${GLYPHS.DOT} \`tempvc resend\` - Resend interface\n` +
     `${GLYPHS.DOT} \`tempvc defaultname <name>\` - Set default name\n` +
     `${GLYPHS.DOT} \`tempvc defaultlimit <num>\` - Set default limit\n\n` +
     `**User Commands:** Use the buttons in ${interfaceChannel || 'the interface channel'} or:\n` +
-    `${GLYPHS.DOT} \`tempvc name <name>\` - Rename your channel\n` +
+    `${GLYPHS.DOT} \`tempvc name <name>\` - Rename channel\n` +
     `${GLYPHS.DOT} \`tempvc limit <num>\` - Set user limit\n` +
     `${GLYPHS.DOT} \`tempvc lock/unlock\` - Lock/unlock channel\n` +
     `${GLYPHS.DOT} \`tempvc hide/unhide\` - Hide/show channel\n` +
-    `${GLYPHS.DOT} \`tempvc permit/reject @user\` - Allow/block user\n` +
-    `${GLYPHS.DOT} \`tempvc kick @user\` - Kick user\n` +
+    `${GLYPHS.DOT} \`tempvc permit/reject @user\` - Authorize/deny user\n` +
+    `${GLYPHS.DOT} \`tempvc kick @user\` - Remove user\n` +
     `${GLYPHS.DOT} \`tempvc transfer @user\` - Transfer ownership\n` +
     `${GLYPHS.DOT} \`tempvc claim\` - Claim abandoned channel\n` +
     `${GLYPHS.DOT} \`tempvc bitrate <8-96>\` - Set audio bitrate\n` +
-    `${GLYPHS.DOT} \`tempvc info\` - Show channel info`
+    `${GLYPHS.DOT} \`tempvc info\` - Display channel info`
   );
 
   return message.reply({ embeds: [embed] });

@@ -328,10 +328,10 @@ export default {
       });
 
       await statusMsg.edit({
-        embeds: [await successEmbed(message.guild.id, '🔓 Server Lockdown Disabled',
+        embeds: [await successEmbed(message.guild.id, '『 Lockdown Deactivated 』',
           `${GLYPHS.SUCCESS} Restored **${restoredTextCount}** text channels and **${restoredVoiceCount}** voice channels.\n\n` +
-          `${hasSavedPerms ? '✅ Original permissions have been restored.' : '⚠️ Permissions reset to default (no saved data found).'}\n` +
-          `Server is now back to normal operation.`)]
+          `${hasSavedPerms ? '◉ Original permissions have been restored.' : '◈ Permissions reset to default (no saved data found).'}\n` +
+          `**Status:** Server operations resumed, Master.`)]
       });
 
       // Announce in alert channel
@@ -339,11 +339,11 @@ export default {
         const alertChannel = message.guild.channels.cache.get(guildConfig.channels.alertLog);
         if (alertChannel) {
           await alertChannel.send({
-            embeds: [await successEmbed(message.guild.id, '🔓 SERVER LOCKDOWN ENDED',
-              `**Ended By:** ${message.author.tag}\n` +
-              `**Text Channels Restored:** ${restoredTextCount}\n` +
-              `**Voice Channels Restored:** ${restoredVoiceCount}\n\n` +
-              `${hasSavedPerms ? '✅ Original permissions restored.' : '⚠️ Permissions reset to default.'}`)]
+            embeds: [await successEmbed(message.guild.id, '『 Lockdown Terminated 』',
+              `**▸ Ended By:** ${message.author.tag}\n` +
+              `**▸ Text Channels Restored:** ${restoredTextCount}\n` +
+              `**▸ Voice Channels Restored:** ${restoredVoiceCount}\n\n` +
+              `${hasSavedPerms ? '◉ Original permissions restored.' : '◈ Permissions reset to default.'}`)]
           });
         }
       }

@@ -105,7 +105,7 @@ export default {
 
         if (interaction.user.id !== targetUser.id) {
           return interaction.reply({
-            content: '❌ Only the person being proposed to can respond!',
+            content: '**Notice:** Only the recipient can respond to this proposal, Master.',
             ephemeral: true
           });
         }
@@ -135,10 +135,10 @@ export default {
 
           const weddingEmbed = new EmbedBuilder()
             .setColor('#FFD700')
-            .setTitle('🎊 Congratulations! 🎊')
-            .setDescription(`**${message.author.username}** 💍 **${targetUser.username}**\n\nThey are now married! Wishing you a lifetime of happiness! 💕`)
+            .setTitle('『 Bond Established 』')
+            .setDescription(`**Confirmed:** **${message.author.username}** 💍 **${targetUser.username}**\n\n**Status:** Union successfully registered. May your bond endure.`)
             .setImage('https://media.giphy.com/media/26FLdmIp6wJr91JAI/giphy.gif')
-            .setFooter({ text: `Married on ${now.toLocaleDateString()}` });
+            .setFooter({ text: `Bonded on ${now.toLocaleDateString()} • Acknowledged.` });
 
           await interaction.update({ embeds: [weddingEmbed], components: [] });
 
@@ -146,9 +146,9 @@ export default {
           // Rejected
           const rejectEmbed = new EmbedBuilder()
             .setColor('#808080')
-            .setTitle('💔 Proposal Rejected')
-            .setDescription(`**${targetUser.username}** has rejected **${message.author.username}**'s proposal.`)
-            .setFooter({ text: 'Better luck next time!' });
+            .setTitle('『 Proposal Declined 』')
+            .setDescription(`**Notice:** **${targetUser.username}** has declined the proposal from **${message.author.username}**.`)
+            .setFooter({ text: 'Acknowledged.' });
 
           await interaction.update({ embeds: [rejectEmbed], components: [] });
         }
@@ -164,8 +164,8 @@ export default {
 
           const expiredEmbed = new EmbedBuilder()
             .setColor('#808080')
-            .setTitle('⏰ Proposal Expired')
-            .setDescription(`The proposal from **${message.author.username}** to **${targetUser.username}** has expired.`);
+            .setTitle('『 Proposal Expired 』')
+            .setDescription(`**Notice:** The proposal from **${message.author.username}** to **${targetUser.username}** has exceeded the time limit.`);
 
           await proposalMsg.edit({ embeds: [expiredEmbed], components: [] }).catch(() => { });
         }
@@ -173,7 +173,7 @@ export default {
 
     } catch (error) {
       console.error('Marry command error:', error);
-      return message.reply('❌ An error occurred while processing the proposal.');
+      return message.reply('**Error:** An anomaly occurred while processing the proposal, Master.');
     }
   }
 };

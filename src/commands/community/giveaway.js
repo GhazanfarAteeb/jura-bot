@@ -218,7 +218,7 @@ async function rerollGiveaway(message, messageId) {
   if (channel) {
     const winnerMentions = newWinners.map(id => `<@${id}>`).join(', ');
     await channel.send({
-      content: `🎉 **REROLL!** New winner(s): ${winnerMentions}\n**Prize:** ${giveaway.prize}`
+      content: `**Notice:** Giveaway reroll complete. New winner(s): ${winnerMentions}\n**Prize:** ${giveaway.prize}`
     });
   }
 
@@ -245,7 +245,7 @@ async function listGiveaways(message) {
     `   ${GLYPHS.DOT} Message ID: \`${g.messageId}\``
   ).join('\n\n');
 
-  const embed = await infoEmbed(message.guild.id, '🎉 Active Giveaways', giveawayList);
+  const embed = await infoEmbed(message.guild.id, '『 Active Distributions 』', giveawayList);
   return message.reply({ embeds: [embed] });
 }
 
@@ -319,21 +319,21 @@ export async function endGiveawayById(guild, giveaway) {
     // Update embed
     const embed = new EmbedBuilder()
       .setColor('#808080')
-      .setTitle('🎉 GIVEAWAY ENDED 🎉')
+      .setTitle('『 Distribution Complete 』')
       .setDescription(
-        `**Prize:** ${giveaway.prize}\n\n` +
-        `**Winners:** ${winners.length > 0 ? winners.map(id => `<@${id}>`).join(', ') : 'No valid participants'}\n` +
-        `**Hosted by:** <@${giveaway.hostId}>\n\n` +
-        `**Participants:** ${giveaway.participants.length}`
+        `**▸ Prize:** ${giveaway.prize}\n\n` +
+        `**▸ Winners:** ${winners.length > 0 ? winners.map(id => `<@${id}>`).join(', ') : 'No valid participants'}\n` +
+        `**▸ Hosted by:** <@${giveaway.hostId}>\n\n` +
+        `**▸ Participants:** ${giveaway.participants.length}`
       )
-      .setFooter({ text: 'Ended' })
+      .setFooter({ text: 'Distribution concluded.' })
       .setTimestamp();
 
     // Disable buttons
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId('giveaway_enter')
-        .setLabel('🎉 Ended')
+        .setLabel('◈ Concluded')
         .setStyle(ButtonStyle.Secondary)
         .setDisabled(true),
       new ButtonBuilder()
@@ -349,12 +349,12 @@ export async function endGiveawayById(guild, giveaway) {
     if (winners.length > 0) {
       const winnerMentions = winners.map(id => `<@${id}>`).join(', ');
       await channel.send({
-        content: `🎉 Congratulations ${winnerMentions}! You won **${giveaway.prize}**!`,
+        content: `**Confirmed:** Congratulations ${winnerMentions}. You have won **${giveaway.prize}**.`,
         reply: { messageReference: giveaway.messageId }
       });
     } else {
       await channel.send({
-        content: `😢 No one entered the giveaway for **${giveaway.prize}**.`,
+        content: `**Notice:** No participants entered for **${giveaway.prize}**.`,
         reply: { messageReference: giveaway.messageId }
       });
     }

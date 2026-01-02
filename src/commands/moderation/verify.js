@@ -119,9 +119,9 @@ export default {
               await sendVerificationPanel(channel, guildConfig, client);
 
               const completeEmbed = new EmbedBuilder()
-                .setColor('#00FF00')
-                .setTitle('✅ Verification Setup Complete!')
-                .setDescription(`Your verification system is now active!\n\n**Type:** ${type}\n**Role:** ${role}\n**Channel:** ${channel}\n\nNew members will need to verify to access the server.`)
+                .setColor('#00FF7F')
+                .setTitle('『 Verification System Configured 』')
+                .setDescription(`**Confirmed:** Verification system is now active, Master.\n\n**▸ Type:** ${type}\n**▸ Role:** ${role}\n**▸ Channel:** ${channel}\n\nNew members will require verification for server access.`)
                 .setFooter({ text: `Use ${prefix}verify panel to resend the panel` });
 
               await message.channel.send({ embeds: [completeEmbed] });
@@ -133,14 +133,14 @@ export default {
 
       case 'panel': {
         if (!guildConfig.features?.verificationSystem?.enabled) {
-          return message.reply(`❌ Verification is not set up! Use \`${prefix}verify setup\` first.`);
+          return message.reply(`**Error:** Verification system not configured. Use \`${prefix}verify setup\` first, Master.`);
         }
 
         const channel = message.mentions.channels.first() || message.channel;
         await sendVerificationPanel(channel, guildConfig, client);
 
         if (channel.id !== message.channel.id) {
-          await message.reply(`✅ Verification panel sent to ${channel}!`);
+          await message.reply(`**Confirmed:** Verification panel deployed to ${channel}, Master.`);
         }
         break;
       }
@@ -148,12 +148,12 @@ export default {
       case 'manual': {
         const targetUser = message.mentions.members.first();
         if (!targetUser) {
-          return message.reply(`❌ Please mention a user to verify!\n\nUsage: \`${prefix}verify manual @user\``);
+          return message.reply(`**Error:** Please mention a user to verify. Usage: \`${prefix}verify manual @user\`, Master.`);
         }
 
         const verifiedRole = guildConfig.features?.verificationSystem?.role || guildConfig.roles?.verifiedRole;
         if (!verifiedRole) {
-          return message.reply(`❌ No verified role set! Use \`${prefix}verify setup\` first.`);
+          return message.reply(`**Error:** No verified role configured. Use \`${prefix}verify setup\` first, Master.`);
         }
 
         try {
@@ -164,12 +164,12 @@ export default {
           await verification.verify(`staff:${message.author.id}`);
 
           const embed = new EmbedBuilder()
-            .setColor('#00FF00')
-            .setDescription(`✅ **${targetUser.user.username}** has been manually verified!`);
+            .setColor('#00FF7F')
+            .setDescription(`**Confirmed:** **${targetUser.user.username}** has been manually verified, Master.`);
 
           await message.reply({ embeds: [embed] });
         } catch (error) {
-          return message.reply(`❌ Failed to verify user: ${error.message}`);
+          return message.reply(`**Error:** Failed to verify user: ${error.message}`);
         }
         break;
       }
@@ -198,36 +198,36 @@ export default {
         switch (setting) {
           case 'type':
             if (!['button', 'captcha', 'reaction'].includes(value)) {
-              return message.reply('❌ Type must be: button, captcha, or reaction');
+              return message.reply('**Error:** Type must be: button, captcha, or reaction, Master.');
             }
             guildConfig.features.verificationSystem.type = value;
             await guildConfig.save();
-            return message.reply(`✅ Verification type set to **${value}**`);
+            return message.reply(`**Confirmed:** Verification type set to **${value}**, Master.`);
 
           case 'role':
             const role = message.mentions.roles.first();
-            if (!role) return message.reply('❌ Please mention a role!');
+            if (!role) return message.reply('**Error:** Please mention a role, Master.');
             guildConfig.features.verificationSystem.role = role.id;
             guildConfig.roles.verifiedRole = role.id;
             await guildConfig.save();
-            return message.reply(`✅ Verified role set to ${role}`);
+            return message.reply(`**Confirmed:** Verified role set to ${role}, Master.`);
 
           case 'channel':
             const channel = message.mentions.channels.first();
-            if (!channel) return message.reply('❌ Please mention a channel!');
+            if (!channel) return message.reply('**Error:** Please mention a channel, Master.');
             guildConfig.features.verificationSystem.channel = channel.id;
             await guildConfig.save();
-            return message.reply(`✅ Verification channel set to ${channel}`);
+            return message.reply(`**Confirmed:** Verification channel set to ${channel}, Master.`);
 
           case 'enable':
             guildConfig.features.verificationSystem.enabled = true;
             await guildConfig.save();
-            return message.reply('✅ Verification system enabled!');
+            return message.reply('**Confirmed:** Verification system activated, Master.');
 
           case 'disable':
             guildConfig.features.verificationSystem.enabled = false;
             await guildConfig.save();
-            return message.reply('⚠️ Verification system disabled!');
+            return message.reply('**Notice:** Verification system deactivated, Master.');
         }
         break;
       }
@@ -238,13 +238,13 @@ export default {
         const channel = vs?.channel ? message.guild.channels.cache.get(vs.channel) : null;
 
         const embed = new EmbedBuilder()
-          .setColor(vs?.enabled ? '#00FF00' : '#FF0000')
-          .setTitle('🔐 Verification Status')
+          .setColor(vs?.enabled ? '#00FF7F' : '#FF4757')
+          .setTitle('『 Verification Status 』')
           .addFields(
-            { name: 'Status', value: vs?.enabled ? '✅ Enabled' : '❌ Disabled', inline: true },
-            { name: 'Type', value: vs?.type || 'Not set', inline: true },
-            { name: 'Role', value: role ? role.toString() : 'Not set', inline: true },
-            { name: 'Channel', value: channel ? channel.toString() : 'Not set', inline: true }
+            { name: '▸ Status', value: vs?.enabled ? '◉ Active' : '◎ Inactive', inline: true },
+            { name: '▸ Type', value: vs?.type || 'Not configured', inline: true },
+            { name: '▸ Role', value: role ? role.toString() : 'Not configured', inline: true },
+            { name: '▸ Channel', value: channel ? channel.toString() : 'Not configured', inline: true }
           );
 
         await message.reply({ embeds: [embed] });
@@ -252,7 +252,7 @@ export default {
       }
 
       default:
-        return message.reply(`❌ Unknown subcommand! Use \`${prefix}verify\` for help.`);
+        return message.reply(`**Error:** Unknown subcommand. Use \`${prefix}verify\` for guidance, Master.`);
     }
   }
 };
@@ -261,13 +261,13 @@ async function sendVerificationPanel(channel, guildConfig, client) {
   const type = guildConfig.features?.verificationSystem?.type || 'button';
 
   const embed = new EmbedBuilder()
-    .setColor('#5865F2')
-    .setTitle('🔐 Server Verification')
-    .setDescription('Welcome to the server! Please verify yourself to gain access.\n\n' +
-      (type === 'button' ? '**Click the button below to verify!**' :
-        type === 'captcha' ? '**Click the button below to receive a captcha code!**' :
-          '**React with ✅ to verify!**'))
-    .setFooter({ text: 'This helps us keep the server safe from bots!' });
+    .setColor('#00CED1')
+    .setTitle('『 Server Verification 』')
+    .setDescription('**Notice:** Access to this server requires verification, Master.\n\n' +
+      (type === 'button' ? '**Activate the button below to proceed.**' :
+        type === 'captcha' ? '**Activate the button below to receive verification code.**' :
+          '**Apply the reaction below to verify.**'))
+    .setFooter({ text: 'Security protocol active.' });
 
   if (type === 'button' || type === 'captcha') {
     const row = new ActionRowBuilder()
@@ -276,7 +276,7 @@ async function sendVerificationPanel(channel, guildConfig, client) {
           .setCustomId(`verify_${type}`)
           .setLabel(type === 'captcha' ? 'Get Captcha' : 'Verify')
           .setStyle(ButtonStyle.Success)
-          .setEmoji('✅')
+          .setEmoji('◉')
       );
 
     await channel.send({ embeds: [embed], components: [row] });

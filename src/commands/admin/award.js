@@ -137,7 +137,7 @@ export default {
 
 async function showHelp(message, prefix) {
   const embed = await infoEmbed(message.guild.id,
-    '🎁 Award Command',
+    '『 Award System 』',
     `Award or deduct XP, coins, or reputation from users.\n\n` +
     `**Usage:**\n` +
     `\`${prefix}award <type> @user <amount>\`\n\n` +
@@ -325,7 +325,7 @@ async function announceLevelUp(guild, guildConfig, user, levelData, leveledUp) {
     if (!channel) return;
 
     // Build level up message
-    let levelUpMessage = levelConfig?.levelUpMessage || '🎉 {user} leveled up to level {level}!';
+    let levelUpMessage = levelConfig?.levelUpMessage || '**Confirmed:** {user} has advanced to level {level}, Master.';
     levelUpMessage = levelUpMessage
       .replace(/{user}/g, `<@${user.id}>`)
       .replace(/{username}/g, user.username)
@@ -335,13 +335,13 @@ async function announceLevelUp(guild, guildConfig, user, levelData, leveledUp) {
 
     // Create embed
     const embed = new EmbedBuilder()
-      .setColor(guildConfig.embedStyle?.color || '#FFD700')
-      .setTitle('🎉 Level Up!')
+      .setColor(guildConfig.embedStyle?.color || '#00CED1')
+      .setTitle('『 Level Advancement 』')
       .setDescription(levelUpMessage)
       .setThumbnail(user.displayAvatarURL({ extension: 'png', size: 128 }))
       .addFields(
-        { name: 'New Level', value: `**${newLevel}**`, inline: true },
-        { name: 'Total XP', value: levelData.totalXP.toLocaleString(), inline: true }
+        { name: '▸ New Level', value: `**${newLevel}**`, inline: true },
+        { name: '▸ Total XP', value: levelData.totalXP.toLocaleString(), inline: true }
       )
       .setFooter({ text: 'Awarded by admin' })
       .setTimestamp();

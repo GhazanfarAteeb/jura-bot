@@ -45,9 +45,9 @@ export default {
         await guildConfig.save();
 
         const embed = new EmbedBuilder()
-          .setColor('#00FF00')
-          .setTitle('✅ Auto-Publish Enabled')
-          .setDescription(`Messages in configured announcement channels will now be automatically published.\n\nUse \`${prefix}autopublish add #channel\` to add channels.`);
+          .setColor('#00FF7F')
+          .setTitle('『 Auto-Publish Activated 』')
+          .setDescription(`**Confirmed:** Messages in configured announcement channels will be automatically published, Master.\n\nUse \`${prefix}autopublish add #channel\` to add channels.`);
 
         return message.reply({ embeds: [embed] });
       }
@@ -57,9 +57,9 @@ export default {
         await guildConfig.save();
 
         const embed = new EmbedBuilder()
-          .setColor('#FF9900')
-          .setTitle('⚠️ Auto-Publish Disabled')
-          .setDescription('Auto-publish has been disabled.');
+          .setColor('#FFD700')
+          .setTitle('『 Auto-Publish Deactivated 』')
+          .setDescription('**Confirmed:** Auto-publish functionality has been disabled, Master.');
 
         return message.reply({ embeds: [embed] });
       }
@@ -68,24 +68,24 @@ export default {
         const channel = message.mentions.channels.first();
 
         if (!channel) {
-          return message.reply(`❌ Please mention a channel!\n\nUsage: \`${prefix}autopublish add #channel\``);
+          return message.reply(`**Error:** Please mention a channel. Usage: \`${prefix}autopublish add #channel\`, Master.`);
         }
 
         // Check if it's an announcement channel
         if (channel.type !== ChannelType.GuildAnnouncement) {
-          return message.reply(`❌ ${channel} is not an announcement channel!\n\nOnly channels with the "Announcement" type can be used.`);
+          return message.reply(`**Error:** ${channel} is not an announcement channel. Only channels with "Announcement" type are valid, Master.`);
         }
 
         if (guildConfig.autoPublish.channels.includes(channel.id)) {
-          return message.reply(`⚠️ ${channel} is already in the auto-publish list!`);
+          return message.reply(`**Notice:** ${channel} is already in the auto-publish list, Master.`);
         }
 
         guildConfig.autoPublish.channels.push(channel.id);
         await guildConfig.save();
 
         const embed = new EmbedBuilder()
-          .setColor('#00FF00')
-          .setDescription(`✅ Added ${channel} to auto-publish list!\n\nAll messages sent in that channel will be automatically published.`);
+          .setColor('#00FF7F')
+          .setDescription(`**Confirmed:** Added ${channel} to auto-publish list. All messages will be automatically published, Master.`);
 
         return message.reply({ embeds: [embed] });
       }
@@ -94,20 +94,20 @@ export default {
         const channel = message.mentions.channels.first();
 
         if (!channel) {
-          return message.reply(`❌ Please mention a channel!\n\nUsage: \`${prefix}autopublish remove #channel\``);
+          return message.reply(`**Error:** Please mention a channel. Usage: \`${prefix}autopublish remove #channel\`, Master.`);
         }
 
         const index = guildConfig.autoPublish.channels.indexOf(channel.id);
         if (index === -1) {
-          return message.reply(`⚠️ ${channel} is not in the auto-publish list!`);
+          return message.reply(`**Notice:** ${channel} is not in the auto-publish list, Master.`);
         }
 
         guildConfig.autoPublish.channels.splice(index, 1);
         await guildConfig.save();
 
         const embed = new EmbedBuilder()
-          .setColor('#00FF00')
-          .setDescription(`✅ Removed ${channel} from auto-publish list!`);
+          .setColor('#00FF7F')
+          .setDescription(`**Confirmed:** Removed ${channel} from auto-publish list, Master.`);
 
         return message.reply({ embeds: [embed] });
       }
@@ -121,18 +121,18 @@ export default {
           .join('\n') || 'No channels configured';
 
         const embed = new EmbedBuilder()
-          .setColor('#5865F2')
-          .setTitle('📢 Auto-Publish Channels')
+          .setColor('#00CED1')
+          .setTitle('『 Auto-Publish Channels 』')
           .addFields(
-            { name: 'Status', value: guildConfig.autoPublish.enabled ? '✅ Enabled' : '❌ Disabled', inline: true },
-            { name: 'Channels', value: channels }
+            { name: '▸ Status', value: guildConfig.autoPublish.enabled ? '◉ Active' : '○ Inactive', inline: true },
+            { name: '▸ Channels', value: channels }
           );
 
         return message.reply({ embeds: [embed] });
       }
 
       default:
-        return message.reply(`❌ Unknown subcommand! Use \`${prefix}autopublish\` for help.`);
+        return message.reply(`**Error:** Unknown subcommand. Use \`${prefix}autopublish\` for guidance, Master.`);
     }
   }
 };

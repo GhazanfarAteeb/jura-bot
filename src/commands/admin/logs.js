@@ -29,7 +29,7 @@ export default {
       const hasModRole = modRoles.some(roleId => memberRoles.includes(roleId));
 
       if (!hasStaffRole && !hasModRole) {
-        return message.reply('❌ You need Administrator permission or a staff/moderator role to use this command.');
+        return message.reply('**Warning:** Administrator permission or staff/moderator role required, Master.');
       }
     }
     const action = args[0]?.toLowerCase() || 'stats';
@@ -40,15 +40,15 @@ export default {
           const stats = logger.getStats();
 
           if (!stats) {
-            return message.reply('❌ Could not retrieve log statistics.');
+            return message.reply('**Error:** Could not retrieve log statistics, Master.');
           }
 
           const embed = new EmbedBuilder()
-            .setTitle('📊 Log Statistics')
-            .setColor('#3498db')
+            .setTitle('『 Log Statistics 』')
+            .setColor('#00CED1')
             .addFields(
-              { name: 'Total Files', value: stats.totalFiles.toString(), inline: true },
-              { name: 'Total Size', value: stats.totalSize, inline: true },
+              { name: '▸ Total Files', value: stats.totalFiles.toString(), inline: true },
+              { name: '▸ Total Size', value: stats.totalSize, inline: true },
               { name: '\u200B', value: '\u200B', inline: true }
             )
             .setTimestamp();
@@ -70,7 +70,7 @@ export default {
           const days = parseInt(args[1]) || 30;
 
           if (days < 7) {
-            return message.reply('⚠️ Cannot clean logs newer than 7 days for safety.');
+            return message.reply('**Warning:** Cannot purge logs newer than 7 days for safety, Master.');
           }
 
           logger.cleanOldLogs(days);
@@ -79,7 +79,7 @@ export default {
             daysKept: days
           });
 
-          await message.reply(`✅ Cleaned logs older than ${days} days.`);
+          await message.reply(`**Confirmed:** Logs older than ${days} days have been purged, Master.`);
           break;
 
         case 'types':
@@ -139,20 +139,20 @@ export default {
             await message.reply({ embeds: [recentEmbed] });
           } catch (error) {
             if (error.code === 'ENOENT') {
-              await message.reply(`No log file found for today: ${filename}`);
+              await message.reply(`**Notice:** No log file found for today: ${filename}, Master.`);
             } else {
               logger.error('Error reading recent logs', error);
-              await message.reply('❌ Error reading log file.');
+              await message.reply('**Error:** Failed to read log file, Master.');
             }
           }
           break;
 
         default:
-          await message.reply('Usage: `logs [stats|clean <days>|types|recent <type>]`');
+          await message.reply('**Usage:** `logs [stats|clean <days>|types|recent <type>]`');
       }
     } catch (error) {
       logger.error('Logs command error', error);
-      await message.reply('❌ An error occurred while processing the logs command.');
+      await message.reply('**Error:** An error occurred while processing the logs command, Master.');
     }
   }
 };

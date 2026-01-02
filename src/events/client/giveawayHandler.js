@@ -17,14 +17,14 @@ export default {
 
     if (!giveaway) {
       return interaction.reply({
-        content: '❌ This giveaway no longer exists.',
+        content: '**Error:** This giveaway no longer exists, Master.',
         ephemeral: true
       });
     }
 
     if (giveaway.ended) {
       return interaction.reply({
-        content: '❌ This giveaway has already ended.',
+        content: '**Notice:** This giveaway has already concluded, Master.',
         ephemeral: true
       });
     }
@@ -50,7 +50,7 @@ async function handleEnter(interaction, giveaway) {
     await updateGiveawayMessage(interaction, giveaway);
 
     return interaction.reply({
-      content: '✅ You have left the giveaway.',
+      content: '**Confirmed:** You have withdrawn from the giveaway, Master.',
       ephemeral: true
     });
   }
@@ -61,7 +61,7 @@ async function handleEnter(interaction, giveaway) {
     if (giveaway.requirements.roleId) {
       if (!interaction.member.roles.cache.has(giveaway.requirements.roleId)) {
         return interaction.reply({
-          content: `❌ You need the <@&${giveaway.requirements.roleId}> role to enter this giveaway.`,
+          content: `**Error:** The <@&${giveaway.requirements.roleId}> role is required for giveaway entry, Master.`,
           ephemeral: true
         });
       }
@@ -76,7 +76,7 @@ async function handleEnter(interaction, giveaway) {
   await updateGiveawayMessage(interaction, giveaway);
 
   return interaction.reply({
-    content: `🎉 You have entered the giveaway for **${giveaway.prize}**!\nClick again to leave.`,
+    content: `**Confirmed:** Giveaway entry registered for **${giveaway.prize}**, Master.\n**Notice:** Activate again to withdraw.`,
     ephemeral: true
   });
 }
@@ -104,14 +104,14 @@ async function updateGiveawayMessage(interaction, giveaway) {
   const guildConfig = await Guild.getGuild(interaction.guild.id, interaction.guild.name);
 
   const embed = new EmbedBuilder()
-    .setColor(guildConfig.embedStyle?.color || '#FF69B4')
-    .setTitle('🎉 GIVEAWAY 🎉')
+    .setColor(guildConfig.embedStyle?.color || '#00CED1')
+    .setTitle('『 GIVEAWAY 』')
     .setDescription(
-      `**Prize:** ${giveaway.prize}\n\n` +
-      `**Winners:** ${giveaway.winners}\n` +
-      `**Hosted by:** <@${giveaway.hostId}>\n\n` +
-      `**Ends:** <t:${Math.floor(giveaway.endsAt.getTime() / 1000)}:R>\n\n` +
-      `Click the button below to enter!`
+      `**▸ Prize:** ${giveaway.prize}\n\n` +
+      `**▸ Winners:** ${giveaway.winners}\n` +
+      `**▸ Hosted by:** <@${giveaway.hostId}>\n\n` +
+      `**▸ Ends:** <t:${Math.floor(giveaway.endsAt.getTime() / 1000)}:R>\n\n` +
+      `Activate the button below to enter, Master.`
     )
     .setFooter({ text: `Ends at` })
     .setTimestamp(giveaway.endsAt);
@@ -119,11 +119,11 @@ async function updateGiveawayMessage(interaction, giveaway) {
   const row = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId('giveaway_enter')
-      .setLabel(`🎉 Enter (${giveaway.participants.length})`)
+      .setLabel(`◉ Enter (${giveaway.participants.length})`)
       .setStyle(ButtonStyle.Primary),
     new ButtonBuilder()
       .setCustomId('giveaway_participants')
-      .setLabel('👥 Participants')
+      .setLabel('◇ Participants')
       .setStyle(ButtonStyle.Secondary)
   );
 

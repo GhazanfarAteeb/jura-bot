@@ -13,7 +13,7 @@ export default {
     // Check if command is disabled
     if (guildConfig.slashCommands?.disabledCommands?.includes(interaction.commandName)) {
       return interaction.reply({
-        content: '❌ This slash command has been disabled by an administrator.',
+        content: '**Notice:** This command has been deactivated by an administrator, Master.',
         flags: MessageFlags.Ephemeral
       });
     }
@@ -187,7 +187,7 @@ async function handleSpecialCommand(interaction, client, guildConfig, hasAdminRo
     // For manage guild commands, check ManageGuild permission
     if (!interaction.member.permissions.has(PermissionFlagsBits.ManageGuild) && !hasAdminRole) {
       return interaction.reply({
-        content: '❌ You need Manage Server permissions to use this command.',
+        content: '**Error:** Manage Server permissions required for this function, Master.',
         flags: MessageFlags.Ephemeral
       });
     }
@@ -195,7 +195,7 @@ async function handleSpecialCommand(interaction, client, guildConfig, hasAdminRo
     // For other commands, require Administrator permissions
     if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator) && !hasAdminRole) {
       return interaction.reply({
-        content: '❌ You need Administrator permissions to use this command.',
+        content: '**Error:** Administrator permissions required for this function, Master.',
         flags: MessageFlags.Ephemeral
       });
     }
@@ -266,7 +266,7 @@ async function handleSpecialCommand(interaction, client, guildConfig, hasAdminRo
   } catch (error) {
     console.error(`Error handling ${interaction.commandName}:`, error);
     await interaction.editReply({
-      content: '❌ An error occurred while executing this command.',
+      content: '**Error:** Command execution failure detected, Master.',
     });
   }
 }
@@ -302,16 +302,16 @@ async function handleAutomodCommand(interaction, guildConfig) {
       const getSpamLimit = () => typeof autoMod.antiSpam === 'object' ? autoMod.antiSpam.messageLimit : 5;
       const getSpamWindow = () => typeof autoMod.antiSpam === 'object' ? autoMod.antiSpam.timeWindow : 5;
 
-      const statusEmbed = await infoEmbed(interaction.guild.id, '🛡️ AutoMod Status',
-        `**Overall:** ${autoMod.enabled ? '✅ Enabled' : '❌ Disabled'}\n\n` +
+      const statusEmbed = await infoEmbed(interaction.guild.id, '『 AutoMod Status 』',
+        `**▸ Overall:** ${autoMod.enabled ? '◉ Active' : '○ Inactive'}\n\n` +
         `**Features:**\n` +
-        `${GLYPHS.DOT} Anti-Spam: ${isEnabled(autoMod.antiSpam) ? '✅' : '❌'} (${getSpamLimit()} msgs/${getSpamWindow()}s)\n` +
-        `${GLYPHS.DOT} Anti-Raid: ${isEnabled(autoMod.antiRaid) ? '✅' : '❌'} (${autoMod.antiRaid?.joinThreshold || 10} joins/${autoMod.antiRaid?.timeWindow || 30}s)\n` +
-        `${GLYPHS.DOT} Anti-Nuke: ${isEnabled(autoMod.antiNuke) ? '✅' : '❌'}\n` +
-        `${GLYPHS.DOT} Anti-Invites: ${isEnabled(autoMod.antiInvites) ? '✅' : '❌'}\n` +
-        `${GLYPHS.DOT} Anti-Links: ${isEnabled(autoMod.antiLinks) ? '✅' : '❌'}\n` +
-        `${GLYPHS.DOT} Bad Words: ${isEnabled(autoMod.badWords) ? '✅' : '❌'} (${autoMod.badWords?.words?.length || 0} words)\n` +
-        `${GLYPHS.DOT} Mass Mention: ${isEnabled(autoMod.antiMassMention) ? '✅' : '❌'} (limit: ${autoMod.antiMassMention?.limit || 5})`
+        `${GLYPHS.DOT} Anti-Spam: ${isEnabled(autoMod.antiSpam) ? '◉' : '○'} (${getSpamLimit()} msgs/${getSpamWindow()}s)\n` +
+        `${GLYPHS.DOT} Anti-Raid: ${isEnabled(autoMod.antiRaid) ? '◉' : '○'} (${autoMod.antiRaid?.joinThreshold || 10} joins/${autoMod.antiRaid?.timeWindow || 30}s)\n` +
+        `${GLYPHS.DOT} Anti-Nuke: ${isEnabled(autoMod.antiNuke) ? '◉' : '○'}\n` +
+        `${GLYPHS.DOT} Anti-Invites: ${isEnabled(autoMod.antiInvites) ? '◉' : '○'}\n` +
+        `${GLYPHS.DOT} Anti-Links: ${isEnabled(autoMod.antiLinks) ? '◉' : '○'}\n` +
+        `${GLYPHS.DOT} Bad Words: ${isEnabled(autoMod.badWords) ? '◉' : '○'} (${autoMod.badWords?.words?.length || 0} words)\n` +
+        `${GLYPHS.DOT} Mass Mention: ${isEnabled(autoMod.antiMassMention) ? '◉' : '○'} (limit: ${autoMod.antiMassMention?.limit || 5})`
       );
       await interaction.editReply({ embeds: [statusEmbed] });
       break;
@@ -707,12 +707,12 @@ async function handleSlashcommandsCommand(interaction, guildConfig) {
       const commandList = allCommands.map(cmd => {
         const name = cmd.name;
         const isDisabled = disabled.includes(name);
-        return `${isDisabled ? '❌' : '✅'} \`/${name}\``;
+        return `${isDisabled ? '◎' : '◉'} \`/${name}\``;
       }).join('\n');
 
       await interaction.editReply({
-        embeds: [await infoEmbed(interaction.guild.id, 'Slash Commands',
-          `**Status:** ${slashCommandsConfig.enabled ? 'Enabled' : 'Disabled'}\n\n` +
+        embeds: [await infoEmbed(interaction.guild.id, '『 Slash Commands 』',
+          `**▸ Status:** ${slashCommandsConfig.enabled ? '◉ Active' : '◎ Inactive'}\n\n` +
           `**Commands:**\n${commandList}`)]
       });
       break;
@@ -736,25 +736,25 @@ async function handleRefreshCacheCommand(interaction, client, guildConfig) {
         // Force update the cached version
         Object.assign(guildConfig, freshGuildConfig.toObject());
       }
-      refreshed.push('✅ Guild Settings');
+      refreshed.push('◉ Guild Settings');
     }
 
     // Refresh Members cache
     if (cacheType === 'all' || cacheType === 'members') {
       await guild.members.fetch();
-      refreshed.push(`✅ Members (${guild.memberCount} cached)`);
+      refreshed.push(`◉ Members (${guild.memberCount} cached)`);
     }
 
     // Refresh Roles cache
     if (cacheType === 'all' || cacheType === 'roles') {
       await guild.roles.fetch();
-      refreshed.push(`✅ Roles (${guild.roles.cache.size} cached)`);
+      refreshed.push(`◉ Roles (${guild.roles.cache.size} cached)`);
     }
 
     // Refresh Channels cache
     if (cacheType === 'all' || cacheType === 'channels') {
       await guild.channels.fetch();
-      refreshed.push(`✅ Channels (${guild.channels.cache.size} cached)`);
+      refreshed.push(`◉ Channels (${guild.channels.cache.size} cached)`);
     }
 
     // Refresh Invites cache
@@ -762,14 +762,14 @@ async function handleRefreshCacheCommand(interaction, client, guildConfig) {
       try {
         const invites = await guild.invites.fetch();
         client.invites.set(guild.id, new Map(invites.map(inv => [inv.code, inv.uses])));
-        refreshed.push(`✅ Invites (${invites.size} cached)`);
+        refreshed.push(`◉ Invites (${invites.size} cached)`);
       } catch (invErr) {
-        refreshed.push('⚠️ Invites (no permission)');
+        refreshed.push('◎ Invites (no permission)');
       }
     }
 
-    const embed = await successEmbed(interaction.guild.id, '🔄 Cache Refreshed',
-      `Successfully refreshed cache for **${guild.name}**\n\n` +
+    const embed = await successEmbed(interaction.guild.id, '『 Cache Refreshed 』',
+      `**Confirmed:** Cache refresh complete for **${guild.name}**, Master.\n\n` +
       `**Refreshed:**\n${refreshed.join('\n')}\n\n` +
       `**Refreshed at:** <t:${Math.floor(Date.now() / 1000)}:F>`
     );
@@ -846,20 +846,20 @@ async function handleBirthdaySettingsCommand(interaction, guildConfig) {
 
     case 'status': {
       const bs = guildConfig.features.birthdaySystem;
-      const channel = bs.channel ? `<#${bs.channel}>` : 'Not set';
-      const role = bs.role ? `<@&${bs.role}>` : 'Not set';
-      const message = bs.message || '🎉 Happy Birthday {user}! 🎂';
+      const channel = bs.channel ? `<#${bs.channel}>` : 'Not configured';
+      const role = bs.role ? `<@&${bs.role}>` : 'Not configured';
+      const message = bs.message || '**Notice:** Birthday celebration detected for {user}. Congratulations, Master.';
 
       await interaction.editReply({
-        embeds: [await infoEmbed(interaction.guild.id, '🎂 Birthday Settings',
-          `**Status:** ${bs.enabled ? '✅ Enabled' : '❌ Disabled'}\n` +
-          `**Channel:** ${channel}\n` +
-          `**Role:** ${role}\n` +
-          `**Message:** ${message}\n\n` +
+        embeds: [await infoEmbed(interaction.guild.id, '『 Birthday Settings 』',
+          `**▸ Status:** ${bs.enabled ? '◉ Active' : '◎ Inactive'}\n` +
+          `**▸ Channel:** ${channel}\n` +
+          `**▸ Role:** ${role}\n` +
+          `**▸ Message:** ${message}\n\n` +
           `**Variables:**\n` +
-          `• \`{user}\` - Mentions the user\n` +
-          `• \`{username}\` - User's name\n` +
-          `• \`{age}\` - User's age (if year provided)`)]
+          `◇ \`{user}\` - Mentions the user\n` +
+          `◇ \`{username}\` - User's name\n` +
+          `◇ \`{age}\` - User's age (if year provided)`)]
       });
       break;
     }
@@ -882,7 +882,7 @@ async function handleSetBirthdayCommand(interaction, client, guildConfig) {
   if (testDate.getMonth() !== month - 1 || testDate.getDate() !== day) {
     return interaction.editReply({
       embeds: [await errorEmbed(interaction.guild.id, 'Invalid Date',
-        'This date doesn\'t exist! Please check the month and day.')]
+        '**Error:** This date does not exist. Please verify the month and day, Master.')]
     });
   }
 
@@ -923,9 +923,9 @@ async function handleSetBirthdayCommand(interaction, client, guildConfig) {
       const channel = interaction.guild.channels.cache.get(birthdayChannel);
       if (channel) {
         const dateStr = `${month}/${day}${year ? `/${year}` : ''}`;
-        const announceEmbed = await successEmbed(interaction.guild.id, '🎂 Birthday Registered!',
-          `**${user}**'s birthday has been set to **${dateStr}**!\n\n` +
-          `They will receive a special celebration on their birthday! 🎉`
+        const announceEmbed = await successEmbed(interaction.guild.id, '『 Birthday Registered 』',
+          `**${user}**'s birthday has been registered as **${dateStr}**, Master.\n\n` +
+          `**Notice:** A special celebration will be conducted on their birthday.`
         );
         await channel.send({ embeds: [announceEmbed] }).catch(() => { });
       }
@@ -933,10 +933,10 @@ async function handleSetBirthdayCommand(interaction, client, guildConfig) {
 
     // Success message
     const dateStr = `${month}/${day}${year ? `/${year}` : ''}`;
-    let description = `${GLYPHS.SUCCESS} Birthday for **${user.tag}** set to **${dateStr}**!`;
+    let description = `${GLYPHS.SUCCESS} Birthday for **${user.tag}** set to **${dateStr}**, Master.`;
 
     if (isPrivate) {
-      description += '\n🔒 Age will not be shown in announcements';
+      description += '\n**Notice:** Age will remain concealed in announcements.';
     }
 
     if (year) {
@@ -975,19 +975,19 @@ async function handleConfigCommand(interaction, guildConfig) {
   switch (subcommand) {
     case 'view': {
       const config = guildConfig;
-      const embed = await infoEmbed(interaction.guild.id, '⚙️ Server Configuration',
-        `**Prefix:** \`${config.prefix}\`\n\n` +
+      const embed = await infoEmbed(interaction.guild.id, '『 Server Configuration 』',
+        `**▸ Prefix:** \`${config.prefix}\`\n\n` +
         `**Channels:**\n` +
-        `• Mod Log: ${config.channels.modLog ? `<#${config.channels.modLog}>` : 'Not set'}\n` +
-        `• Alert Log: ${config.channels.alertLog ? `<#${config.channels.alertLog}>` : 'Not set'}\n` +
-        `• Join Log: ${config.channels.joinLog ? `<#${config.channels.joinLog}>` : 'Not set'}\n` +
-        `• Birthday: ${config.channels.birthdayChannel ? `<#${config.channels.birthdayChannel}>` : 'Not set'}\n` +
-        `• Welcome: ${config.channels.welcomeChannel ? `<#${config.channels.welcomeChannel}>` : 'Not set'}\n\n` +
+        `◇ Mod Log: ${config.channels.modLog ? `<#${config.channels.modLog}>` : 'Not configured'}\n` +
+        `◇ Alert Log: ${config.channels.alertLog ? `<#${config.channels.alertLog}>` : 'Not configured'}\n` +
+        `◇ Join Log: ${config.channels.joinLog ? `<#${config.channels.joinLog}>` : 'Not configured'}\n` +
+        `◇ Birthday: ${config.channels.birthdayChannel ? `<#${config.channels.birthdayChannel}>` : 'Not configured'}\n` +
+        `◇ Welcome: ${config.channels.welcomeChannel ? `<#${config.channels.welcomeChannel}>` : 'Not configured'}\n\n` +
         `**Features:**\n` +
-        `• AutoMod: ${config.features.autoMod?.enabled ? '✅' : '❌'}\n` +
-        `• Birthdays: ${config.features.birthdaySystem?.enabled ? '✅' : '❌'}\n` +
-        `• Levels: ${config.features.levelSystem?.enabled ? '✅' : '❌'}\n` +
-        `• Welcome: ${config.features.welcomeSystem?.enabled ? '✅' : '❌'}`
+        `◇ AutoMod: ${config.features.autoMod?.enabled ? '◉ Active' : '◎ Inactive'}\n` +
+        `◇ Birthdays: ${config.features.birthdaySystem?.enabled ? '◉ Active' : '◎ Inactive'}\n` +
+        `◇ Levels: ${config.features.levelSystem?.enabled ? '◉ Active' : '◎ Inactive'}\n` +
+        `◇ Welcome: ${config.features.welcomeSystem?.enabled ? '◉ Active' : '◎ Inactive'}`
       );
       await interaction.editReply({ embeds: [embed] });
       break;
@@ -1090,18 +1090,18 @@ async function handleWelcomeCommand(interaction, guildConfig) {
 
     case 'status': {
       const ws = guildConfig.features.welcomeSystem;
-      const channel = ws?.channel ? `<#${ws.channel}>` : 'Not set';
+      const channel = ws?.channel ? `<#${ws.channel}>` : 'Not configured';
       const message = ws?.message || 'Welcome {user} to {server}! You are member #{memberCount}';
 
       await interaction.editReply({
-        embeds: [await infoEmbed(interaction.guild.id, '👋 Welcome Settings',
-          `**Status:** ${ws?.enabled ? '✅ Enabled' : '❌ Disabled'}\n` +
-          `**Channel:** ${channel}\n` +
-          `**Message:** ${message}\n\n` +
+        embeds: [await infoEmbed(interaction.guild.id, '『 Welcome Settings 』',
+          `**▸ Status:** ${ws?.enabled ? '◉ Active' : '◎ Inactive'}\n` +
+          `**▸ Channel:** ${channel}\n` +
+          `**▸ Message:** ${message}\n\n` +
           `**Variables:**\n` +
-          `• \`{user}\` - Mentions the user\n` +
-          `• \`{server}\` - Server name\n` +
-          `• \`{memberCount}\` - Member count`)]
+          `◇ \`{user}\` - Mentions the user\n` +
+          `◇ \`{server}\` - Server name\n` +
+          `◇ \`{memberCount}\` - Member count`)]
       });
       break;
     }

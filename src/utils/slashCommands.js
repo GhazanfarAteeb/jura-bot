@@ -868,7 +868,7 @@ export async function registerSlashCommands(client) {
   const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
 
   try {
-    console.log('🔧 Started refreshing slash commands...');
+    console.log('[RAPHAEL] Initiating slash command registration...');
 
     const commandData = slashCommands.map(cmd => cmd.toJSON());
 
@@ -878,7 +878,7 @@ export async function registerSlashCommands(client) {
       { body: commandData }
     );
 
-    console.log(`✅ Successfully registered ${commandData.length} slash commands globally`);
+    console.log(`[RAPHAEL] Slash commands registered globally: ${commandData.length}`);
 
     return commandData.length;
   } catch (error) {
@@ -898,7 +898,7 @@ export async function registerGuildSlashCommands(client, guildId) {
       { body: commandData }
     );
 
-    console.log(`✅ Registered slash commands for guild ${guildId}`);
+    console.log(`[RAPHAEL] Slash commands registered for guild ${guildId}`);
     return true;
   } catch (error) {
     console.error(`Error registering slash commands for guild ${guildId}:`, error);

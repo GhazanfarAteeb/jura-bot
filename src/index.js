@@ -124,11 +124,11 @@ async function connectDatabase() {
     const duration = Date.now() - startTime;
     logger.database('MongoDB connection established', true);
     logger.performance('Database connection', duration);
-    console.log('✅ Connected to MongoDB');
+    console.log('[RAPHAEL] Database connection established.');
   } catch (error) {
     logger.database('MongoDB connection failed', false, error);
     logger.error('MongoDB connection error', error);
-    console.error('❌ MongoDB connection error:', error);
+    console.error('[RAPHAEL] Database connection failure:', error);
     process.exit(1);
   }
 }
@@ -141,10 +141,10 @@ async function connectRedis() {
       client.redis = redis;
       logger.startup('Redis cache initialized');
     } else {
-      console.log('⚠️ Redis unavailable, using in-memory cache fallback');
+      console.log('[RAPHAEL] Redis unavailable, utilizing in-memory cache fallback.');
     }
   } catch (error) {
-    console.log('⚠️ Redis connection failed, using in-memory cache fallback');
+    console.log('[RAPHAEL] Redis connection failure, utilizing in-memory cache fallback.');
     logger.error('Redis connection error', error);
   }
 }
@@ -173,7 +173,7 @@ async function loadCommands() {
                 if (commandInstance.aliases && Array.isArray(commandInstance.aliases)) {
                   commandInstance.aliases.forEach(alias => client.aliases.set(alias, commandInstance.name));
                 }
-                console.log(`📝 Loaded command: ${commandInstance.name}`);
+                console.log(`[RAPHAEL] Command loaded: ${commandInstance.name}`);
                 return 1;
               }
             }
@@ -183,7 +183,7 @@ async function loadCommands() {
               if (CommandClass.aliases && Array.isArray(CommandClass.aliases)) {
                 CommandClass.aliases.forEach(alias => client.aliases.set(alias, CommandClass.name));
               }
-              console.log(`📝 Loaded command: ${CommandClass.name}`);
+              console.log(`[RAPHAEL] Command loaded: ${CommandClass.name}`);
               return 1;
             }
             return 0;
@@ -275,7 +275,7 @@ async function loadMusicEvents() {
 
     for (const file of events) {
       try {
-        console.log("🎵 Loading music event:", file);
+        console.log("[RAPHAEL] Loading audio event:", file);
         const EventModule = await import(`./events/music/${file}`);
         const EventClass = EventModule.default || EventModule;
 
@@ -299,7 +299,7 @@ async function loadMusicEvents() {
   }
 
   logger.startup(`Loaded ${totalMusicEvents} music events`);
-  console.log(`🎵 Loaded ${totalMusicEvents} music events`);
+  console.log(`[RAPHAEL] Audio system events loaded: ${totalMusicEvents}`);
 }
 
 // Initialize bot
@@ -309,7 +309,7 @@ async function initialize() {
   logger.build('Bot version: 2.1.0');
   logger.build('Node version: ' + process.version);
   logger.build('Environment: ' + (process.env.NODE_ENV || 'production'));
-  console.log('🚀 Starting RAPHAEL...');
+  console.log('[RAPHAEL] Initiating system startup...');
 
   await connectDatabase();
   await connectRedis();
@@ -324,7 +324,7 @@ async function initialize() {
 
   // Initialize events after client is ready
   client.once('ready', async () => {
-    console.log('🤖 Client is ready!');
+    console.log('[RAPHAEL] Client connection established.');
     console.log(`   Logged in as: ${client.user.tag}`);
     console.log(`   Guilds: ${client.guilds.cache.size}`);
     console.log(`   WS Status: ${client.ws.status}, Ping: ${client.ws.ping}ms`);
@@ -333,10 +333,10 @@ async function initialize() {
     try {
       riffyManager.initialize();
       riffyManager.initializePlayer();
-      console.log('🎵 Music system initialized!');
+      console.log('[RAPHAEL] Audio subsystem initialized.');
     } catch (error) {
       logger.error('Failed to initialize music system:', error);
-      console.error('❌ Failed to initialize music system:', error.message);
+      console.error('[RAPHAEL] Audio subsystem initialization failure:', error.message);
     }
 
     // Load event handlers
@@ -360,7 +360,7 @@ async function initialize() {
     // Send initial online message
     notifyStatusChange('online');
 
-    console.log('✅ All systems initialized and ready!');
+    console.log('[RAPHAEL] All systems operational. Awaiting commands, Master.');
   });
 }
 
@@ -397,9 +397,9 @@ async function initializeSecuritySystems(client) {
       await serverLogging.default.initialize(client);
     }
 
-    console.log('🛡️ Security and logging systems initialized!');
+    console.log('[RAPHAEL] Security and logging subsystems initialized.');
   } catch (error) {
-    console.error('Error initializing security systems:', error);
+    console.error('[RAPHAEL] Security systems initialization failure:', error);
     logger.error('Failed to initialize security systems', error);
   }
 }
@@ -408,18 +408,18 @@ async function initializeSecuritySystems(client) {
 async function registerSlashCommandsOnReady(client) {
   try {
     const { registerSlashCommands, clearGuildSlashCommands } = await import('./utils/slashCommands.js');
-    
+
     // Clear guild-specific commands to remove duplicates (one-time cleanup)
-    console.log('🧹 Clearing guild-specific commands to remove duplicates...');
+    console.log('[RAPHAEL] Clearing guild-specific commands...');
     for (const guild of client.guilds.cache.values()) {
       await clearGuildSlashCommands(client, guild.id);
     }
-    
+
     // Register globally only
     const commandCount = await registerSlashCommands(client);
-    console.log(`📝 Registered ${commandCount} slash commands globally`);
+    console.log(`[RAPHAEL] Slash commands registered globally: ${commandCount}`);
   } catch (error) {
-    console.error('Error registering slash commands:', error);
+    console.error('[RAPHAEL] Slash command registration failure:', error);
     logger.error('Failed to register slash commands', error);
   }
 }
@@ -450,12 +450,12 @@ process.on('SIGINT', async () => {
   // Close database connection
   await mongoose.connection.close();
 
-  console.log('✅ Shutdown complete');
+  console.log('[RAPHAEL] Shutdown sequence complete.');
   process.exit(0);
 });
 
 process.on('SIGTERM', async () => {
-  console.log('\n🛑 Shutting down gracefully...');
+  console.log('\n[RAPHAEL] Initiating graceful shutdown...');
   logger.info('Bot shutting down (SIGTERM)');
 
   // Stop Spotify token refresh
@@ -467,7 +467,7 @@ process.on('SIGTERM', async () => {
   // Close database connection
   await mongoose.connection.close();
 
-  console.log('✅ Shutdown complete');
+  console.log('[RAPHAEL] Shutdown sequence complete.');
   process.exit(0);
 });
 
@@ -562,14 +562,14 @@ async function notifyStatusChange(status) {
         if (!channel) continue;
 
         const embed = new EmbedBuilder()
-          .setTitle(`🤖 Bot Status Update`)
+          .setTitle(`『 System Status Update 』`)
           .setDescription(status === 'online'
-            ? '✅ **Bot is now ONLINE**\nAll systems operational.'
-            : '❌ **Bot is now OFFLINE**\nTrying to reconnect...')
-          .setColor(status === 'online' ? '#00ff00' : '#ff0000')
+            ? '**Confirmed:** All systems online and operational, Master.'
+            : '**Warning:** System offline. Initiating reconnection protocol...')
+          .setColor(status === 'online' ? '#00FF7F' : '#ff4757')
           .addFields(
-            { name: 'Status', value: status.toUpperCase(), inline: true },
-            { name: 'Timestamp', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: true }
+            { name: '▸ Status', value: status.toUpperCase(), inline: true },
+            { name: '▸ Timestamp', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: true }
           )
           .setTimestamp();
 

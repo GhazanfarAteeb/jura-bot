@@ -86,7 +86,7 @@ const guildSchema = new mongoose.Schema({
       enabled: { type: Boolean, default: true },
       channel: String,
       role: String, // Birthday role
-      message: { type: String, default: '🎉 Happy Birthday {user}! 🎂' }
+      message: { type: String, default: '**Notice:** Birthday celebration detected for {user}. Congratulations, Master.' }
     },
     eventSystem: {
       enabled: { type: Boolean, default: true },
@@ -98,7 +98,7 @@ const guildSchema = new mongoose.Schema({
       maxXpPerMessage: { type: Number, default: 25 },
       xpCooldown: { type: Number, default: 60 }, // seconds between XP gains
       levelUpChannel: String,
-      levelUpMessage: { type: String, default: '🎉 {user} leveled up to level {level}!' },
+      levelUpMessage: { type: String, default: '**Confirmed:** {user} has advanced to level {level}, Master.' },
       announceLevelUp: { type: Boolean, default: true },
       rewards: [{
         level: Number,

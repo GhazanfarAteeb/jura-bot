@@ -31,29 +31,29 @@ class RedisClient {
       this.isConnected = true;
       this.reconnectAttempts = 0;
       logger.startup('Redis connected');
-      console.log('✅ Redis connected');
+      console.log('[RAPHAEL] Redis cache connected.');
     });
 
     this.client.on('error', (err) => {
       logger.error('Redis error', err);
-      console.error('❌ Redis error:', err.message);
+      console.error('[RAPHAEL] Redis error:', err.message);
     });
 
     this.client.on('close', () => {
       this.isConnected = false;
-      console.log('⚠️ Redis connection closed');
+      console.log('[RAPHAEL] Redis connection closed.');
     });
 
     this.client.on('reconnecting', () => {
       this.reconnectAttempts++;
-      console.log(`🔄 Redis reconnecting (attempt ${this.reconnectAttempts})`);
+      console.log(`[RAPHAEL] Redis reconnecting (attempt ${this.reconnectAttempts})`);
     });
 
     try {
       await this.client.connect();
       return true;
     } catch (error) {
-      console.error('❌ Failed to connect to Redis:', error.message);
+      console.error('[RAPHAEL] Redis connection failure:', error.message);
       logger.error('Redis connection failed', error);
       return false;
     }

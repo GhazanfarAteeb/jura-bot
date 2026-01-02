@@ -17,7 +17,7 @@ export default {
       const userSocial = await Social.getSocial(odId, guildId);
 
       if (!userSocial.isMarried()) {
-        return message.reply('💔 You are not married to anyone!');
+        return message.reply('**Notice:** Analysis indicates you are not bound to anyone, Master.');
       }
 
       const partnerId = userSocial.marriage.partnerId;
@@ -26,16 +26,16 @@ export default {
       const marriageDays = userSocial.getMarriageDuration();
 
       const embed = new EmbedBuilder()
-        .setColor('#FF0000')
-        .setTitle('💔 Divorce Confirmation')
-        .setDescription(`Are you sure you want to divorce **${partnerName}**?\n\nYou have been married for **${marriageDays} days**.`)
-        .setFooter({ text: 'This action cannot be undone!' });
+        .setColor('#FF4757')
+        .setTitle('『 Bond Dissolution Protocol 』')
+        .setDescription(`**Confirmation Required:**\n\nDo you wish to sever the bond with **${partnerName}**, Master?\n\n▸ **Duration:** ${marriageDays} days`)
+        .setFooter({ text: 'Warning: This action is irreversible.' });
 
       const row = new ActionRowBuilder()
         .addComponents(
           new ButtonBuilder()
             .setCustomId(`divorce_confirm_${odId}`)
-            .setLabel('Yes, Divorce')
+            .setLabel('Confirm Dissolution')
             .setStyle(ButtonStyle.Danger),
           new ButtonBuilder()
             .setCustomId(`divorce_cancel_${odId}`)
@@ -66,9 +66,9 @@ export default {
 
           const divorceEmbed = new EmbedBuilder()
             .setColor('#808080')
-            .setTitle('💔 Divorced')
-            .setDescription(`**${message.author.username}** and **${partnerName}** are no longer married.\n\nThe marriage lasted **${marriageDays} days**.`)
-            .setFooter({ text: 'We wish you both the best.' });
+            .setTitle('『 Bond Dissolved 』')
+            .setDescription(`**Confirmed:** The bond between **${message.author.username}** and **${partnerName}** has been severed.\n\n▸ **Duration:** ${marriageDays} days`)
+            .setFooter({ text: 'Acknowledged. May your paths diverge peacefully.' });
 
           await interaction.update({ embeds: [divorceEmbed], components: [] });
 
@@ -77,9 +77,9 @@ export default {
             try {
               await partner.send({
                 embeds: [new EmbedBuilder()
-                  .setColor('#FF0000')
-                  .setTitle('💔 Divorce Notice')
-                  .setDescription(`**${message.author.username}** has divorced you in **${message.guild.name}**.`)]
+                  .setColor('#FF4757')
+                  .setTitle('『 Notification 』')
+                  .setDescription(`**Notice:** **${message.author.username}** has dissolved the bond in **${message.guild.name}**, Master.`)]
               });
             } catch (e) {
               // DMs disabled
@@ -88,9 +88,9 @@ export default {
 
         } else {
           const cancelEmbed = new EmbedBuilder()
-            .setColor('#00FF00')
-            .setTitle('💕 Divorce Cancelled')
-            .setDescription(`You decided to stay with **${partnerName}**!`);
+            .setColor('#00FF7F')
+            .setTitle('『 Protocol Cancelled 』')
+            .setDescription(`**Confirmed:** Bond with **${partnerName}** remains intact, Master.`);
 
           await interaction.update({ embeds: [cancelEmbed], components: [] });
         }
@@ -104,7 +104,7 @@ export default {
 
     } catch (error) {
       console.error('Divorce command error:', error);
-      return message.reply('❌ An error occurred while processing the divorce.');
+      return message.reply('**Error:** An anomaly occurred during processing. Please try again, Master.');
     }
   }
 };

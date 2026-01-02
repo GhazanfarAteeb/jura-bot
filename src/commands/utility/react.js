@@ -828,7 +828,7 @@ export default {
       }
 
       if (!gifUrl) {
-        return message.reply(`❌ No reaction GIF found. Try again!`);
+        return message.reply(`**Notice:** No reaction data found. Please retry, Master.`);
       }
 
       // Create action text
