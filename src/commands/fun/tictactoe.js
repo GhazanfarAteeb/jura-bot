@@ -69,12 +69,12 @@ export default {
         .setCustomId('ttt_accept')
         .setLabel('Accept')
         .setStyle(ButtonStyle.Success)
-        .setEmoji('◎'),
+        .setEmoji('✅'),
       new ButtonBuilder()
         .setCustomId('ttt_decline')
         .setLabel('Decline')
         .setStyle(ButtonStyle.Danger)
-        .setEmoji('○')
+        .setEmoji('❌')
     );
 
     const challengeMsg = await message.reply({

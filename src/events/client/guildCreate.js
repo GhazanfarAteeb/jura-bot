@@ -87,22 +87,22 @@ export default {
               color: 0x00CED1,
               title: '『 System Initialization Complete 』',
               description:
-                `**Confirmed:** RAPHAEL integration successful, Master.\\n\\n` +
-                `◉ **Recorded ${recordedCount} member profiles**\\n` +
-                `◎ **Skipped ${skippedBots} bot accounts**\\n\\n` +
-                `**Quick Setup:**\\n` +
-                `◇ Run \\`${ process.env.DEFAULT_PREFIX || '!' }setup\\` to auto-configure your server\\n` +
-            `◇ Use \\`${ process.env.DEFAULT_PREFIX || '!' }help\\` to explore all commands\\n` +
-            `◇ Configure with \\`${ process.env.DEFAULT_PREFIX || '!' }config\\`\\n\\n` +
-            `**Available Modules:**\\n` +
-            `▸ Auto-setup wizard\\n` +
-            `▸ Advanced moderation & security\\n` +
-            `▸ Economy system with gambling\\n` +
-            `▸ Music player with 25+ effects\\n` +
-            `▸ Birthdays & events\\n` +
-            `▸ Detailed statistics\\n` +
-            `▸ Customizable profiles\\n\\n` +
-            `**Notice:** Use \\`${ process.env.DEFAULT_PREFIX || '!' }help\\` to begin, Master.`,
+                `**Confirmed:** RAPHAEL integration successful, Master.\n\n` +
+                `◉ **Recorded ${recordedCount} member profiles**\n` +
+                `◎ **Skipped ${skippedBots} bot accounts**\n\n` +
+                `**Quick Setup:**\n` +
+                `◇ Run \`${process.env.DEFAULT_PREFIX || '!'}setup\` to auto-configure your server\n` +
+                `◇ Use \`${process.env.DEFAULT_PREFIX || '!'}help\` to explore all commands\n` +
+                `◇ Configure with \`${process.env.DEFAULT_PREFIX || '!'}config\`\n\n` +
+                `**Available Modules:**\n` +
+                `▸ Auto-setup wizard\n` +
+                `▸ Advanced moderation & security\n` +
+                `▸ Economy system with gambling\n` +
+                `▸ Music player with 25+ effects\n` +
+                `▸ Birthdays & events\n` +
+                `▸ Detailed statistics\n` +
+                `▸ Customizable profiles\n\n` +
+                `**Notice:** Use \`${process.env.DEFAULT_PREFIX || '!'}help\` to begin, Master.`,
               thumbnail: {
               url: guild.client.user.displayAvatarURL({ size: 256 })
             },
