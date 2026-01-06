@@ -602,35 +602,6 @@ const slashCommands = [
     .setDescription('Run the initial server setup wizard')
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
-  // Welcome Settings Command
-  new SlashCommandBuilder()
-    .setName('welcome')
-    .setDescription('Configure welcome message settings')
-    .addSubcommand(subcommand =>
-      subcommand.setName('channel')
-        .setDescription('Set the welcome channel')
-        .addChannelOption(option =>
-          option.setName('channel')
-            .setDescription('Channel for welcome messages')
-            .setRequired(true)))
-    .addSubcommand(subcommand =>
-      subcommand.setName('message')
-        .setDescription('Set the welcome message')
-        .addStringOption(option =>
-          option.setName('message')
-            .setDescription('Welcome message ({user}, {server}, {memberCount})')
-            .setRequired(true)))
-    .addSubcommand(subcommand =>
-      subcommand.setName('enable')
-        .setDescription('Enable welcome messages'))
-    .addSubcommand(subcommand =>
-      subcommand.setName('disable')
-        .setDescription('Disable welcome messages'))
-    .addSubcommand(subcommand =>
-      subcommand.setName('status')
-        .setDescription('View welcome settings'))
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
-
   // Shop Management Command (Backgrounds only)
   new SlashCommandBuilder()
     .setName('manageshop')
