@@ -20,26 +20,31 @@ const MAX_HISTORY = 10;
 // Track repeated messages per user (anti-loop)
 const messageTracker = new Map();
 
-async function getAIResponse(messages, maxTokens = 500, retries = 2) {
+async function getAIResponse(messages, maxTokens = 500, retries = 3) {
+  // Models to try in order
+  const models = ['openai', 'mistral', 'llama'];
+  
   for (let attempt = 0; attempt <= retries; attempt++) {
+    const modelToUse = models[attempt % models.length];
+    
     try {
       // Use Pollinations AI API with OpenAI-compatible endpoint
       const apiKey = process.env.POLLINATIONS_API_KEY;
       
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      const timeout = setTimeout(() => controller.abort(), 45000); // 45 second timeout
       
-      const response = await fetch('https://gen.pollinations.ai/v1/chat/completions', {
+      const response = await fetch('https://text.pollinations.ai/openai', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...(apiKey && { 'Authorization': `Bearer ${apiKey}` })
         },
         body: JSON.stringify({
-          model: 'openai',
+          model: modelToUse,
           messages: messages,
           max_tokens: maxTokens,
-          temperature: 0.9 // Higher for more personality
+          temperature: 0.95 // Higher for more personality and chaos
         }),
         signal: controller.signal
       });
@@ -47,9 +52,9 @@ async function getAIResponse(messages, maxTokens = 500, retries = 2) {
       clearTimeout(timeout);
 
       if (!response.ok) {
-        console.error(`Pollinations API error (attempt ${attempt + 1}):`, response.status, response.statusText);
+        console.error(`Pollinations API error (attempt ${attempt + 1}, model: ${modelToUse}):`, response.status, response.statusText);
         if (attempt < retries) {
-          await new Promise(r => setTimeout(r, 1000)); // Wait 1 second before retry
+          await new Promise(r => setTimeout(r, 1500 + (attempt * 500))); // Increasing delay: 1.5s, 2s, 2.5s
           continue;
         }
         return null;
@@ -80,9 +85,9 @@ async function getAIResponse(messages, maxTokens = 500, retries = 2) {
       
       return cleanedResponse;
     } catch (error) {
-      console.error(`AI Chat error (attempt ${attempt + 1}):`, error.message);
+      console.error(`AI Chat error (attempt ${attempt + 1}, model: ${modelToUse}):`, error.message);
       if (attempt < retries) {
-        await new Promise(r => setTimeout(r, 1000));
+        await new Promise(r => setTimeout(r, 1500 + (attempt * 500)));
         continue;
       }
       return null;
