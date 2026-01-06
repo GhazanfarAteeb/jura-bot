@@ -4,6 +4,7 @@ import Member from '../../models/Member.js';
 import { getHoursSince } from '../../utils/helpers.js';
 import { susAlertEmbed, newAccountEmbed } from '../../utils/embeds.js';
 import { getRandomFooter } from '../../utils/raphael.js';
+import { buildWelcomeEmbed, parseWelcomeMessage } from '../../commands/config/welcome.js';
 
 export default {
   name: Events.GuildMemberAdd,
@@ -231,43 +232,32 @@ async function sendWelcomeMessage(member, guildConfig) {
   const welcome = guildConfig.features.welcomeSystem;
 
   try {
-    // Parse the welcome message with variables
-    const welcomeMsg = parseWelcomeMessage(
-      welcome.message || 'Welcome {user} to {server}!',
-      member
-    );
-
     // Send to channel
     const channelId = welcome.channel || guildConfig.channels.welcomeChannel;
     if (channelId) {
       const channel = member.guild.channels.cache.get(channelId);
 
       if (channel) {
-        if (welcome.embedEnabled) {
-          // Decorative title with stars (Mimu style)
-          const decorativeTitle = '˚　　　　✦　　　.　　. 　 ˚　.　　　　　 . ✦　　　 　˚　　　　 . ★⋆. ࿐࿔  　　　.　　 　　˚　　 　　*　　 　　✦　　　.　　.　　　✦　˚ 　　　　 ˚　.˚　　　　✦　　　.　　. 　 ˚　.　　　　 　　 　　　　        ੈ✧̣̇˳·˖✶   ✦';
-          
-          const embed = new EmbedBuilder()
-            .setColor(welcome.embedColor || guildConfig.embedStyle?.color || '#5865F2')
-            .setAuthor({
-              name: member.user.username,
-              iconURL: member.user.displayAvatarURL({ dynamic: true, size: 128 })
-            })
-            .setTitle(welcome.embedTitle || decorativeTitle)
-            .setDescription(welcomeMsg)
-            .setFooter({ text: `Member #${member.guild.memberCount}` })
-            .setTimestamp();
-
-          if (welcome.bannerUrl) {
-            embed.setImage(welcome.bannerUrl);
-          }
-
-          // Send with optional mention outside embed
-          const content = welcome.mentionUser ? `welcome, ${member}!` : undefined;
+        // Use the shared buildWelcomeEmbed function for consistency
+        const { embed, content } = buildWelcomeEmbed(member, welcome, guildConfig);
+        
+        if (embed) {
           await channel.send({ content, embeds: [embed] });
         } else {
-          await channel.send(welcomeMsg);
+          await channel.send(content || `Welcome ${member} to ${member.guild.name}!`);
         }
+      }
+    }
+
+    // Assign auto role if configured
+    if (welcome.autoRole) {
+      try {
+        const role = member.guild.roles.cache.get(welcome.autoRole);
+        if (role) {
+          await member.roles.add(role);
+        }
+      } catch (roleError) {
+        console.error('Error assigning welcome auto role:', roleError.message);
       }
     }
 
@@ -279,9 +269,9 @@ async function sendWelcomeMessage(member, guildConfig) {
           member
         );
 
-        if (welcome.embedEnabled) {
+        if (welcome.embedEnabled !== false) {
           const dmEmbed = new EmbedBuilder()
-            .setColor(guildConfig.embedStyle?.color || '#5865F2')
+            .setColor(welcome.embedColor || guildConfig.embedStyle?.color || '#5865F2')
             .setTitle(`👋 Welcome to ${member.guild.name}!`)
             .setDescription(dmMsg)
             .setThumbnail(member.guild.iconURL({ dynamic: true, size: 256 }))
@@ -303,18 +293,4 @@ async function sendWelcomeMessage(member, guildConfig) {
   } catch (error) {
     console.error('Error sending welcome message:', error.message);
   }
-}
-
-/**
- * Parse welcome message with variables
- */
-function parseWelcomeMessage(msg, member) {
-  return msg
-    .replace(/{user}/gi, `<@${member.user.id}>`)
-    .replace(/{username}/gi, member.user.username)
-    .replace(/{tag}/gi, member.user.tag)
-    .replace(/{server}/gi, member.guild.name)
-    .replace(/{membercount}/gi, member.guild.memberCount.toString())
-    .replace(/{usercreated}/gi, `<t:${Math.floor(member.user.createdTimestamp / 1000)}:D>`)
-    .replace(/\\n/g, '\n');
 }

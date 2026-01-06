@@ -1042,9 +1042,29 @@ async function handleSetupCommand(interaction, client, guildConfig) {
 // Welcome Handler
 async function handleWelcomeCommand(interaction, guildConfig) {
   const { successEmbed, errorEmbed, infoEmbed, GLYPHS } = await import('../../utils/embeds.js');
+  const { buildWelcomeEmbed, parseWelcomeMessage } = await import('../../commands/config/welcome.js');
   const subcommand = interaction.options.getSubcommand();
+  const welcome = guildConfig.features.welcomeSystem || {};
 
   switch (subcommand) {
+    case 'enable': {
+      await Guild.updateGuild(interaction.guild.id, { $set: { 'features.welcomeSystem.enabled': true } });
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, 'Welcome System Enabled',
+          `${GLYPHS.SUCCESS} Welcome messages are now enabled.\n\nMake sure to set a channel: \`/welcome channel\``)]
+      });
+      break;
+    }
+
+    case 'disable': {
+      await Guild.updateGuild(interaction.guild.id, { $set: { 'features.welcomeSystem.enabled': false } });
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, 'Welcome System Disabled',
+          `${GLYPHS.SUCCESS} Welcome messages are now disabled.`)]
+      });
+      break;
+    }
+
     case 'channel': {
       const channel = interaction.options.getChannel('channel');
       await Guild.updateGuild(interaction.guild.id, {
@@ -1054,54 +1074,378 @@ async function handleWelcomeCommand(interaction, guildConfig) {
         }
       });
       await interaction.editReply({
-        embeds: [await successEmbed(interaction.guild.id, '👋 Welcome Channel Set',
+        embeds: [await successEmbed(interaction.guild.id, 'Welcome Channel Set',
           `${GLYPHS.SUCCESS} Welcome messages will be sent to ${channel}`)]
       });
       break;
     }
 
     case 'message': {
-      const message = interaction.options.getString('message');
-      await Guild.updateGuild(interaction.guild.id, { $set: { 'features.welcomeSystem.message': message } });
+      const text = interaction.options.getString('text');
+      await Guild.updateGuild(interaction.guild.id, { $set: { 'features.welcomeSystem.message': text } });
+      
+      // Preview the message
+      const previewMsg = text
+        .replace(/{user}/gi, interaction.user.toString())
+        .replace(/{username}/gi, interaction.user.username)
+        .replace(/{server}/gi, interaction.guild.name)
+        .replace(/{membercount}/gi, interaction.guild.memberCount.toString())
+        .replace(/\\n/g, '\n');
+      
       await interaction.editReply({
-        embeds: [await successEmbed(interaction.guild.id, '👋 Welcome Message Set',
-          `${GLYPHS.SUCCESS} Welcome message updated!\n\n**Preview:**\n${message.replace('{user}', interaction.user.toString()).replace('{server}', interaction.guild.name).replace('{memberCount}', interaction.guild.memberCount)}`)]
+        embeds: [await successEmbed(interaction.guild.id, 'Welcome Message Set',
+          `${GLYPHS.SUCCESS} Welcome message updated!\n\n**Preview:**\n${previewMsg}`)]
       });
       break;
     }
 
-    case 'enable': {
-      await Guild.updateGuild(interaction.guild.id, { $set: { 'features.welcomeSystem.enabled': true } });
+    case 'title': {
+      const text = interaction.options.getString('text');
+      
+      if (text.toLowerCase() === 'reset' || text.toLowerCase() === 'default') {
+        await Guild.updateGuild(interaction.guild.id, { $set: { 'features.welcomeSystem.embedTitle': null } });
+        await interaction.editReply({
+          embeds: [await successEmbed(interaction.guild.id, 'Title Reset',
+            `${GLYPHS.SUCCESS} Welcome embed title reset to default decorative style.`)]
+        });
+      } else if (text.toLowerCase() === 'none' || text.toLowerCase() === 'remove') {
+        await Guild.updateGuild(interaction.guild.id, { $set: { 'features.welcomeSystem.embedTitle': ' ' } });
+        await interaction.editReply({
+          embeds: [await successEmbed(interaction.guild.id, 'Title Removed',
+            `${GLYPHS.SUCCESS} Welcome embed title has been removed.`)]
+        });
+      } else {
+        await Guild.updateGuild(interaction.guild.id, { $set: { 'features.welcomeSystem.embedTitle': text } });
+        await interaction.editReply({
+          embeds: [await successEmbed(interaction.guild.id, 'Title Set',
+            `${GLYPHS.SUCCESS} Welcome embed title set to:\n${text}`)]
+        });
+      }
+      break;
+    }
+
+    case 'footer': {
+      const text = interaction.options.getString('text');
+      
+      if (text.toLowerCase() === 'reset' || text.toLowerCase() === 'default') {
+        await Guild.updateGuild(interaction.guild.id, { $set: { 'features.welcomeSystem.footerText': null } });
+        await interaction.editReply({
+          embeds: [await successEmbed(interaction.guild.id, 'Footer Reset',
+            `${GLYPHS.SUCCESS} Footer text reset to default.`)]
+        });
+      } else if (text.toLowerCase() === 'none' || text.toLowerCase() === 'remove') {
+        await Guild.updateGuild(interaction.guild.id, { $set: { 'features.welcomeSystem.footerText': ' ' } });
+        await interaction.editReply({
+          embeds: [await successEmbed(interaction.guild.id, 'Footer Removed',
+            `${GLYPHS.SUCCESS} Footer has been removed.`)]
+        });
+      } else {
+        await Guild.updateGuild(interaction.guild.id, { $set: { 'features.welcomeSystem.footerText': text } });
+        await interaction.editReply({
+          embeds: [await successEmbed(interaction.guild.id, 'Footer Set',
+            `${GLYPHS.SUCCESS} Footer text set to: ${text}`)]
+        });
+      }
+      break;
+    }
+
+    case 'greet': {
+      const text = interaction.options.getString('text');
+      
+      if (text.toLowerCase() === 'reset' || text.toLowerCase() === 'default') {
+        await Guild.updateGuild(interaction.guild.id, { $set: { 'features.welcomeSystem.greetingText': null } });
+        await interaction.editReply({
+          embeds: [await successEmbed(interaction.guild.id, 'Greeting Reset',
+            `${GLYPHS.SUCCESS} Greeting text reset to "welcome, @user!"`)]
+        });
+      } else {
+        await Guild.updateGuild(interaction.guild.id, { $set: { 'features.welcomeSystem.greetingText': text } });
+        await interaction.editReply({
+          embeds: [await successEmbed(interaction.guild.id, 'Greeting Set',
+            `${GLYPHS.SUCCESS} Greeting text set to:\n${text.replace(/{user}/gi, interaction.user.toString())}`)]
+        });
+      }
+      break;
+    }
+
+    case 'color': {
+      const hex = interaction.options.getString('hex');
+      
+      if (hex.toLowerCase() === 'reset' || hex.toLowerCase() === 'default') {
+        await Guild.updateGuild(interaction.guild.id, { $set: { 'features.welcomeSystem.embedColor': null } });
+        await interaction.editReply({
+          embeds: [await successEmbed(interaction.guild.id, 'Color Reset',
+            `${GLYPHS.SUCCESS} Welcome embed color reset to default.`)]
+        });
+      } else if (!hex.match(/^#?[0-9A-Fa-f]{6}$/)) {
+        await interaction.editReply({
+          embeds: [await errorEmbed(interaction.guild.id, 'Invalid Color',
+            'Please provide a valid hex color (e.g., `#5432A6`)')]
+        });
+      } else {
+        const color = hex.startsWith('#') ? hex : `#${hex}`;
+        await Guild.updateGuild(interaction.guild.id, { $set: { 'features.welcomeSystem.embedColor': color } });
+        await interaction.editReply({
+          embeds: [await successEmbed(interaction.guild.id, 'Color Set',
+            `${GLYPHS.SUCCESS} Welcome embed color set to \`${color}\``)]
+        });
+      }
+      break;
+    }
+
+    case 'image': {
+      const url = interaction.options.getString('url');
+      
+      if (url.toLowerCase() === 'remove' || url.toLowerCase() === 'none') {
+        await Guild.updateGuild(interaction.guild.id, { $set: { 'features.welcomeSystem.bannerUrl': null } });
+        await interaction.editReply({
+          embeds: [await successEmbed(interaction.guild.id, 'Banner Removed',
+            `${GLYPHS.SUCCESS} Welcome banner has been removed.`)]
+        });
+      } else if (!url.match(/^https?:\/\/.+/i)) {
+        await interaction.editReply({
+          embeds: [await errorEmbed(interaction.guild.id, 'Invalid URL',
+            'Please provide a valid image URL starting with http:// or https://')]
+        });
+      } else {
+        await Guild.updateGuild(interaction.guild.id, { $set: { 'features.welcomeSystem.bannerUrl': url } });
+        await interaction.editReply({
+          embeds: [await successEmbed(interaction.guild.id, 'Banner Set',
+            `${GLYPHS.SUCCESS} Welcome banner has been set.`)]
+        });
+      }
+      break;
+    }
+
+    case 'thumbnail': {
+      const type = interaction.options.getString('type');
+      
+      if (type === 'remove') {
+        await Guild.updateGuild(interaction.guild.id, {
+          $set: { 'features.welcomeSystem.thumbnailUrl': null, 'features.welcomeSystem.thumbnailType': null }
+        });
+        await interaction.editReply({
+          embeds: [await successEmbed(interaction.guild.id, 'Thumbnail Removed',
+            `${GLYPHS.SUCCESS} Welcome thumbnail has been removed.`)]
+        });
+      } else if (type === 'avatar') {
+        await Guild.updateGuild(interaction.guild.id, {
+          $set: { 'features.welcomeSystem.thumbnailType': 'avatar', 'features.welcomeSystem.thumbnailUrl': null }
+        });
+        await interaction.editReply({
+          embeds: [await successEmbed(interaction.guild.id, 'Thumbnail Set',
+            `${GLYPHS.SUCCESS} Thumbnail will show the user's avatar.`)]
+        });
+      } else if (type === 'server') {
+        await Guild.updateGuild(interaction.guild.id, {
+          $set: { 'features.welcomeSystem.thumbnailType': 'server', 'features.welcomeSystem.thumbnailUrl': null }
+        });
+        await interaction.editReply({
+          embeds: [await successEmbed(interaction.guild.id, 'Thumbnail Set',
+            `${GLYPHS.SUCCESS} Thumbnail will show the server icon.`)]
+        });
+      }
+      break;
+    }
+
+    case 'author': {
+      const type = interaction.options.getString('type');
+      await Guild.updateGuild(interaction.guild.id, { $set: { 'features.welcomeSystem.authorType': type } });
       await interaction.editReply({
-        embeds: [await successEmbed(interaction.guild.id, '👋 Welcome System Enabled',
-          `${GLYPHS.SUCCESS} Welcome messages are now enabled!`)]
+        embeds: [await successEmbed(interaction.guild.id, 'Author Setting Updated',
+          `${GLYPHS.SUCCESS} Author section set to: **${type}**`)]
       });
       break;
     }
 
-    case 'disable': {
-      await Guild.updateGuild(interaction.guild.id, { $set: { 'features.welcomeSystem.enabled': false } });
+    case 'embed': {
+      const enabled = interaction.options.getBoolean('enabled');
+      await Guild.updateGuild(interaction.guild.id, { $set: { 'features.welcomeSystem.embedEnabled': enabled } });
       await interaction.editReply({
-        embeds: [await successEmbed(interaction.guild.id, '👋 Welcome System Disabled',
-          `${GLYPHS.SUCCESS} Welcome messages are now disabled.`)]
+        embeds: [await successEmbed(interaction.guild.id, 'Embed Setting Updated',
+          `${GLYPHS.SUCCESS} Welcome embeds are now **${enabled ? 'enabled' : 'disabled'}**`)]
       });
+      break;
+    }
+
+    case 'mention': {
+      const enabled = interaction.options.getBoolean('enabled');
+      await Guild.updateGuild(interaction.guild.id, { $set: { 'features.welcomeSystem.mentionUser': enabled } });
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, 'Mention Setting Updated',
+          `${GLYPHS.SUCCESS} User mention above embed is now **${enabled ? 'enabled' : 'disabled'}**`)]
+      });
+      break;
+    }
+
+    case 'dm': {
+      const enabled = interaction.options.getBoolean('enabled');
+      await Guild.updateGuild(interaction.guild.id, { $set: { 'features.welcomeSystem.dmWelcome': enabled } });
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, 'DM Setting Updated',
+          `${GLYPHS.SUCCESS} DM welcome messages are now **${enabled ? 'enabled' : 'disabled'}**`)]
+      });
+      break;
+    }
+
+    case 'timestamp': {
+      const enabled = interaction.options.getBoolean('enabled');
+      await Guild.updateGuild(interaction.guild.id, { $set: { 'features.welcomeSystem.showTimestamp': enabled } });
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, 'Timestamp Setting Updated',
+          `${GLYPHS.SUCCESS} Timestamp is now **${enabled ? 'enabled' : 'disabled'}**`)]
+      });
+      break;
+    }
+
+    case 'role': {
+      const role = interaction.options.getRole('role');
+      
+      if (!role) {
+        await Guild.updateGuild(interaction.guild.id, { $set: { 'features.welcomeSystem.autoRole': null } });
+        await interaction.editReply({
+          embeds: [await successEmbed(interaction.guild.id, 'Auto Role Removed',
+            `${GLYPHS.SUCCESS} Welcome auto role has been disabled.`)]
+        });
+      } else {
+        await Guild.updateGuild(interaction.guild.id, { $set: { 'features.welcomeSystem.autoRole': role.id } });
+        await interaction.editReply({
+          embeds: [await successEmbed(interaction.guild.id, 'Auto Role Set',
+            `${GLYPHS.SUCCESS} New members will receive ${role}`)]
+        });
+      }
       break;
     }
 
     case 'status': {
-      const ws = guildConfig.features.welcomeSystem;
-      const channel = ws?.channel ? `<#${ws.channel}>` : 'Not configured';
-      const message = ws?.message || 'Welcome {user} to {server}! You are member #{memberCount}';
+      const channel = welcome.channel ? interaction.guild.channels.cache.get(welcome.channel) : null;
+      const autoRole = welcome.autoRole ? interaction.guild.roles.cache.get(welcome.autoRole) : null;
 
       await interaction.editReply({
-        embeds: [await infoEmbed(interaction.guild.id, '『 Welcome Settings 』',
-          `**▸ Status:** ${ws?.enabled ? '◉ Active' : '◎ Inactive'}\n` +
-          `**▸ Channel:** ${channel}\n` +
-          `**▸ Message:** ${message}\n\n` +
-          `**Variables:**\n` +
-          `◇ \`{user}\` - Mentions the user\n` +
-          `◇ \`{server}\` - Server name\n` +
-          `◇ \`{memberCount}\` - Member count`)]
+        embeds: [await infoEmbed(interaction.guild.id, '『 Welcome System Status 』',
+          `**▸ Status:** ${welcome.enabled ? '◉ Active' : '○ Inactive'}\n` +
+          `**▸ Channel:** ${channel || 'Not configured'}\n` +
+          `**▸ Embed Mode:** ${welcome.embedEnabled !== false ? '◉' : '○'}\n` +
+          `**▸ DM Welcome:** ${welcome.dmWelcome ? '◉' : '○'}\n` +
+          `**▸ Mention User:** ${welcome.mentionUser ? '◉' : '○'}\n` +
+          `**▸ Timestamp:** ${welcome.showTimestamp !== false ? '◉' : '○'}\n` +
+          `**▸ Auto Role:** ${autoRole || 'None'}\n\n` +
+          `**▸ Color:** ${welcome.embedColor || 'Default'}\n` +
+          `**▸ Title:** ${welcome.embedTitle ? 'Custom' : 'Decorative stars'}\n` +
+          `**▸ Author:** ${welcome.authorType || 'username'}\n` +
+          `**▸ Thumbnail:** ${welcome.thumbnailType || welcome.thumbnailUrl || 'None'}\n` +
+          `**▸ Banner:** ${welcome.bannerUrl ? '◉ Set' : '○ Not set'}\n\n` +
+          `**Current Message:**\n\`\`\`${welcome.message || 'Welcome {user} to {server}!'}\`\`\``)]
+      });
+      break;
+    }
+
+    case 'test': {
+      const channelId = welcome.channel || guildConfig.channels.welcomeChannel;
+      const channel = channelId ? interaction.guild.channels.cache.get(channelId) : interaction.channel;
+      
+      if (!channel) {
+        await interaction.editReply({
+          embeds: [await errorEmbed(interaction.guild.id, 'No Channel',
+            'Welcome channel is not set. Use `/welcome channel` to set one.')]
+        });
+        break;
+      }
+
+      // Get fresh config
+      const freshConfig = await Guild.getGuild(interaction.guild.id, interaction.guild.name);
+      const freshWelcome = freshConfig.features.welcomeSystem || {};
+
+      const { embed, content } = buildWelcomeEmbed(interaction.member, freshWelcome, freshConfig);
+      
+      if (embed) {
+        await channel.send({ content, embeds: [embed] });
+      } else {
+        const welcomeMsg = parseWelcomeMessage(freshWelcome.message || 'Welcome {user} to {server}!', interaction.member);
+        await channel.send(content || welcomeMsg);
+      }
+
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, 'Test Sent',
+          `${GLYPHS.SUCCESS} Test welcome message sent to ${channel}`)]
+      });
+      break;
+    }
+
+    case 'preview': {
+      const freshConfig = await Guild.getGuild(interaction.guild.id, interaction.guild.name);
+      const freshWelcome = freshConfig.features.welcomeSystem || {};
+      
+      const { embed, content } = buildWelcomeEmbed(interaction.member, freshWelcome, freshConfig);
+      
+      await interaction.editReply({
+        content: content || undefined,
+        embeds: embed ? [embed] : []
+      });
+      break;
+    }
+
+    case 'reset': {
+      await Guild.updateGuild(interaction.guild.id, {
+        $set: {
+          'features.welcomeSystem': {
+            enabled: false,
+            channel: null,
+            message: null,
+            embedEnabled: true,
+            dmWelcome: false,
+            bannerUrl: null,
+            thumbnailUrl: null,
+            thumbnailType: null,
+            embedTitle: null,
+            embedColor: null,
+            mentionUser: false,
+            greetingText: null,
+            footerText: null,
+            authorType: 'username',
+            showTimestamp: true,
+            autoRole: null
+          }
+        }
+      });
+
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, 'Welcome System Reset',
+          `${GLYPHS.SUCCESS} All welcome settings have been reset to defaults.`)]
+      });
+      break;
+    }
+
+    case 'help': {
+      await interaction.editReply({
+        embeds: [
+          await infoEmbed(interaction.guild.id, '『 Welcome Commands 』',
+            `**Basic:**\n` +
+            `${GLYPHS.DOT} \`/welcome enable\` - Enable system\n` +
+            `${GLYPHS.DOT} \`/welcome disable\` - Disable system\n` +
+            `${GLYPHS.DOT} \`/welcome channel\` - Set channel\n` +
+            `${GLYPHS.DOT} \`/welcome test\` - Test message\n` +
+            `${GLYPHS.DOT} \`/welcome preview\` - Preview\n` +
+            `${GLYPHS.DOT} \`/welcome reset\` - Reset all\n\n` +
+            `**Content:**\n` +
+            `${GLYPHS.DOT} \`/welcome message\` - Embed description\n` +
+            `${GLYPHS.DOT} \`/welcome greet\` - Text above embed\n` +
+            `${GLYPHS.DOT} \`/welcome title\` - Embed title\n` +
+            `${GLYPHS.DOT} \`/welcome footer\` - Footer text\n\n` +
+            `**Appearance:**\n` +
+            `${GLYPHS.DOT} \`/welcome color\` - Embed color\n` +
+            `${GLYPHS.DOT} \`/welcome image\` - Banner image\n` +
+            `${GLYPHS.DOT} \`/welcome thumbnail\` - Thumbnail\n` +
+            `${GLYPHS.DOT} \`/welcome author\` - Author section\n\n` +
+            `**Toggles:**\n` +
+            `${GLYPHS.DOT} \`/welcome embed\` - Toggle embed\n` +
+            `${GLYPHS.DOT} \`/welcome mention\` - Ping user\n` +
+            `${GLYPHS.DOT} \`/welcome dm\` - DM on join\n` +
+            `${GLYPHS.DOT} \`/welcome timestamp\` - Timestamp\n` +
+            `${GLYPHS.DOT} \`/welcome role\` - Auto role\n\n` +
+            `**Variables:** {user}, {username}, {displayname}, {server}, {membercount}, {usercreated}`
+          )
+        ]
       });
       break;
     }

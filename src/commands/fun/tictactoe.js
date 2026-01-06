@@ -156,10 +156,11 @@ export default {
 
         const button = new ButtonBuilder()
           .setCustomId(`ttt_${index}`)
-          .setStyle(cell === '⬜' ? ButtonStyle.Secondary : (cell === 'X' ? ButtonStyle.Danger : ButtonStyle.Primary))
+          // Use Secondary (grey) for better visibility of X and O emojis
+          .setStyle(ButtonStyle.Secondary)
           .setDisabled(cell !== '⬜');
 
-        // Use emoji only, no label (avoids empty string validation error)
+        // Use emojis for game pieces
         if (cell === '⬜') {
           button.setEmoji('⬜');
         } else if (cell === 'X') {
@@ -299,7 +300,7 @@ export default {
           new ButtonBuilder()
             .setCustomId(`ttt_${index}`)
             .setEmoji(cell === '⬜' ? '⬜' : (cell === 'X' ? '❌' : '⭕'))
-            .setStyle(cell === '⬜' ? ButtonStyle.Secondary : (cell === 'X' ? ButtonStyle.Danger : ButtonStyle.Primary))
+            .setStyle(ButtonStyle.Secondary)
             .setDisabled(true)
         );
       }

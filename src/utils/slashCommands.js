@@ -862,6 +862,142 @@ const slashCommands = [
         .setDescription('Reason for the award (optional)')
         .setRequired(false))
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+
+  // Welcome System Command
+  new SlashCommandBuilder()
+    .setName('welcome')
+    .setDescription('Configure welcome messages for new members')
+    .addSubcommand(subcommand =>
+      subcommand.setName('enable')
+        .setDescription('Enable the welcome system'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('disable')
+        .setDescription('Disable the welcome system'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('status')
+        .setDescription('View current welcome settings'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('test')
+        .setDescription('Test the welcome message'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('preview')
+        .setDescription('Preview the welcome message'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('reset')
+        .setDescription('Reset all welcome settings to default'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('help')
+        .setDescription('Show all welcome commands'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('channel')
+        .setDescription('Set the welcome channel')
+        .addChannelOption(option =>
+          option.setName('channel')
+            .setDescription('The channel to send welcome messages to')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('message')
+        .setDescription('Set the welcome message (embed description)')
+        .addStringOption(option =>
+          option.setName('text')
+            .setDescription('The welcome message text. Use {user}, {username}, {server}, {membercount}')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('title')
+        .setDescription('Set the embed title')
+        .addStringOption(option =>
+          option.setName('text')
+            .setDescription('Title text (use "reset" for default stars, "none" to remove)')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('footer')
+        .setDescription('Set the embed footer')
+        .addStringOption(option =>
+          option.setName('text')
+            .setDescription('Footer text (use "reset" for default, "none" to remove)')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('greet')
+        .setDescription('Set the greeting text above the embed')
+        .addStringOption(option =>
+          option.setName('text')
+            .setDescription('Greeting text (shown when mention is on). Use {user}')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('color')
+        .setDescription('Set the embed color')
+        .addStringOption(option =>
+          option.setName('hex')
+            .setDescription('Hex color code (e.g., #5432A6) or "reset"')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('image')
+        .setDescription('Set the banner image')
+        .addStringOption(option =>
+          option.setName('url')
+            .setDescription('Image URL or "remove" to delete')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('thumbnail')
+        .setDescription('Set the thumbnail')
+        .addStringOption(option =>
+          option.setName('type')
+            .setDescription('Thumbnail type or URL')
+            .setRequired(true)
+            .addChoices(
+              { name: 'User Avatar', value: 'avatar' },
+              { name: 'Server Icon', value: 'server' },
+              { name: 'Remove', value: 'remove' }
+            )))
+    .addSubcommand(subcommand =>
+      subcommand.setName('author')
+        .setDescription('Set the author section style')
+        .addStringOption(option =>
+          option.setName('type')
+            .setDescription('Author display type')
+            .setRequired(true)
+            .addChoices(
+              { name: 'Username (with avatar)', value: 'username' },
+              { name: 'Display Name (with avatar)', value: 'displayname' },
+              { name: 'Server (with icon)', value: 'server' },
+              { name: 'None', value: 'none' }
+            )))
+    .addSubcommand(subcommand =>
+      subcommand.setName('embed')
+        .setDescription('Toggle embed mode')
+        .addBooleanOption(option =>
+          option.setName('enabled')
+            .setDescription('Enable or disable embed mode')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('mention')
+        .setDescription('Toggle user mention above embed')
+        .addBooleanOption(option =>
+          option.setName('enabled')
+            .setDescription('Enable or disable mentioning user')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('dm')
+        .setDescription('Toggle DM welcome message')
+        .addBooleanOption(option =>
+          option.setName('enabled')
+            .setDescription('Enable or disable DM welcomes')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('timestamp')
+        .setDescription('Toggle timestamp in embed')
+        .addBooleanOption(option =>
+          option.setName('enabled')
+            .setDescription('Enable or disable timestamp')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('role')
+        .setDescription('Set auto role for new members')
+        .addRoleOption(option =>
+          option.setName('role')
+            .setDescription('Role to give (leave empty to remove)')
+            .setRequired(false)))
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
 ];
 
 export async function registerSlashCommands(client) {
