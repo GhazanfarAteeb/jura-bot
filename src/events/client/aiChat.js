@@ -212,7 +212,8 @@ export default {
       const systemPrompt = buildSystemPrompt({
         userName: message.author.displayName || message.author.username,
         serverName: message.guild.name,
-        conversationHistory: history
+        conversationHistory: history,
+        trollMode: aiConfig.trollMode || false
       });
       
       // Build messages array for API

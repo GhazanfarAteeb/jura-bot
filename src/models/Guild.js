@@ -176,6 +176,7 @@ const guildSchema = new mongoose.Schema({
     },
     aiChat: {
       enabled: { type: Boolean, default: false },
+      trollMode: { type: Boolean, default: false }, // Unhinged mode
       allowedChannels: [String], // If empty, works everywhere
       ignoredChannels: [String], // Channels to ignore
       personality: { type: String, default: 'raphael' }, // Personality preset

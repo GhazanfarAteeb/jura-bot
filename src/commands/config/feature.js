@@ -160,7 +160,11 @@ async function showFeatureMenu(message, guildConfig) {
   
   // Add AI Chat separately at the end
   const aiEnabled = guildConfig.features?.aiChat?.enabled;
+  const trollEnabled = guildConfig.features?.aiChat?.trollMode;
   description += `${aiEnabled ? '✅' : '❌'} **🤖 AI Chat (Raphael)** - Feature toggle\n`;
+  if (aiEnabled) {
+    description += `  └─ ${trollEnabled ? '😈' : '😇'} Troll Mode: ${trollEnabled ? 'Enabled' : 'Disabled'}\n`;
+  }
 
   description += `\n**Commands:**\n`;
   description += `${GLYPHS.ARROW_RIGHT} \`feature enable <feature>\` - Enable a feature\n`;
@@ -215,7 +219,8 @@ async function showFeatureStatus(message, guildConfig, feature) {
       .setTitle('🤖 AI Chat (Raphael) Status')
       .setColor(aiConfig.enabled ? '#00FF7F' : '#FF4757')
       .setDescription(
-        `**Status:** ${aiConfig.enabled ? '✅ Enabled' : '❌ Disabled'}\n\n` +
+        `**Status:** ${aiConfig.enabled ? '✅ Enabled' : '❌ Disabled'}\n` +
+        `**Troll Mode:** ${aiConfig.trollMode ? '😈 Enabled' : '😇 Disabled'}\n\n` +
         `**How to use:**\n` +
         `• Mention the bot and ask a question\n` +
         `• Reply to the bot's messages\n\n` +
@@ -223,7 +228,9 @@ async function showFeatureStatus(message, guildConfig, feature) {
         `**Powered by:** Pollinations AI (Free)\n\n` +
         `**Commands:**\n` +
         `${GLYPHS.ARROW_RIGHT} \`feature enable aichat\` - Enable AI Chat\n` +
-        `${GLYPHS.ARROW_RIGHT} \`feature disable aichat\` - Disable AI Chat`
+        `${GLYPHS.ARROW_RIGHT} \`feature disable aichat\` - Disable AI Chat\n` +
+        `${GLYPHS.ARROW_RIGHT} \`feature enable troll\` - Enable Troll Mode 😈\n` +
+        `${GLYPHS.ARROW_RIGHT} \`feature disable troll\` - Disable Troll Mode`
       )
       .setFooter({ text: 'No API key required - uses free Pollinations AI' });
     
@@ -273,6 +280,32 @@ async function showFeatureStatus(message, guildConfig, feature) {
 async function toggleFeature(message, guildConfig, target, isEnabling, client) {
   const guildId = message.guild.id;
   const category = featureCategories[target];
+
+  // Handle Troll Mode toggle
+  if (target === 'troll' || target === 'trollmode') {
+    // Check if AI Chat is enabled first
+    const aiEnabled = guildConfig.features?.aiChat?.enabled;
+    if (!aiEnabled && isEnabling) {
+      const embed = await errorEmbed(guildId, 'AI Chat Disabled',
+        `${GLYPHS.ERROR} AI Chat must be enabled before you can enable Troll Mode!\n\n` +
+        `Use \`feature enable aichat\` first.`
+      );
+      return message.reply({ embeds: [embed] });
+    }
+
+    await Guild.updateGuild(guildId, {
+      $set: { 'features.aiChat.trollMode': isEnabling }
+    });
+
+    const embed = await successEmbed(guildId,
+      `Troll Mode ${isEnabling ? 'Enabled 😈' : 'Disabled 😇'}`,
+      `${GLYPHS.SUCCESS} **Troll Mode** has been ${isEnabling ? 'enabled' : 'disabled'}.\n\n` +
+      (isEnabling 
+        ? `Raphael is now in **chaos mode** - expect unhinged, chaotic, and absolutely based responses. 💀`
+        : `Raphael is back to normal - cheeky but reasonable.`)
+    );
+    return message.reply({ embeds: [embed] });
+  }
 
   // Handle AI Chat specially (it's a feature toggle, not command-based)
   if (target === 'aichat' || target === 'ai' || target === 'raphael') {
