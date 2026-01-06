@@ -378,7 +378,7 @@ function buildSystemPrompt(options = {}) {
     return prompt;
 }
 
-module.exports = {
+export {
     RAPHAEL_SYSTEM_PROMPT,
     BLOCKED_PATTERNS,
     QUICK_RESPONSES,
