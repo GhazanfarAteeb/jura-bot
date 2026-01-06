@@ -159,6 +159,12 @@ export default {
         try {
           await targetUser.roles.add(verifiedRole);
 
+          // Remove unverified role if configured
+          const unverifiedRole = guildConfig.features?.verificationSystem?.unverifiedRole;
+          if (unverifiedRole && targetUser.roles.cache.has(unverifiedRole)) {
+            await targetUser.roles.remove(unverifiedRole).catch(() => {});
+          }
+
           // Update verification record
           const verification = await Verification.getVerification(guildId, targetUser.id);
           await verification.verify(`staff:${message.author.id}`);
@@ -185,6 +191,7 @@ export default {
             .addFields(
               { name: 'type <button|captcha|reaction>', value: 'Set verification type' },
               { name: 'role <@role>', value: 'Set verified role' },
+              { name: 'unverifiedrole <@role|remove>', value: 'Set role to remove on verify' },
               { name: 'channel <#channel>', value: 'Set verification channel' },
               { name: 'enable/disable', value: 'Toggle verification' }
             );
@@ -212,6 +219,18 @@ export default {
             await guildConfig.save();
             return message.reply(`**Confirmed:** Verified role set to ${role}, Master.`);
 
+          case 'unverifiedrole':
+            if (value?.toLowerCase() === 'remove' || value?.toLowerCase() === 'none') {
+              guildConfig.features.verificationSystem.unverifiedRole = undefined;
+              await guildConfig.save();
+              return message.reply('**Confirmed:** Unverified role cleared, Master.');
+            }
+            const unverifiedRole = message.mentions.roles.first();
+            if (!unverifiedRole) return message.reply('**Error:** Please mention a role or use `remove` to clear, Master.');
+            guildConfig.features.verificationSystem.unverifiedRole = unverifiedRole.id;
+            await guildConfig.save();
+            return message.reply(`**Confirmed:** Unverified role set to ${unverifiedRole}. This role will be **removed** when a user verifies, Master.`);
+
           case 'channel':
             const channel = message.mentions.channels.first();
             if (!channel) return message.reply('**Error:** Please mention a channel, Master.');
@@ -235,6 +254,7 @@ export default {
       case 'status': {
         const vs = guildConfig.features?.verificationSystem;
         const role = vs?.role ? message.guild.roles.cache.get(vs.role) : null;
+        const unverifiedRole = vs?.unverifiedRole ? message.guild.roles.cache.get(vs.unverifiedRole) : null;
         const channel = vs?.channel ? message.guild.channels.cache.get(vs.channel) : null;
 
         const embed = new EmbedBuilder()
@@ -243,7 +263,8 @@ export default {
           .addFields(
             { name: '▸ Status', value: vs?.enabled ? '◉ Active' : '◎ Inactive', inline: true },
             { name: '▸ Type', value: vs?.type || 'Not configured', inline: true },
-            { name: '▸ Role', value: role ? role.toString() : 'Not configured', inline: true },
+            { name: '▸ Verified Role', value: role ? role.toString() : 'Not configured', inline: true },
+            { name: '▸ Unverified Role', value: unverifiedRole ? unverifiedRole.toString() : 'Not configured', inline: true },
             { name: '▸ Channel', value: channel ? channel.toString() : 'Not configured', inline: true }
           );
 

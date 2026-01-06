@@ -1737,6 +1737,7 @@ async function handleVerifyCommand(interaction, client, guildConfig) {
         .setTitle('🔐 Verification Setup')
         .setDescription('To complete setup via slash command, use these subcommands:\n\n' +
           '`/verify setrole @role` - Set the verified role\n' +
+          '`/verify setunverifiedrole @role` - Set the role to remove on verification\n' +
           '`/verify setchannel #channel` - Set the verification channel\n' +
           '`/verify enable` - Enable the system\n' +
           '`/verify panel` - Send the verification panel');
@@ -1805,6 +1806,13 @@ async function handleVerifyCommand(interaction, client, guildConfig) {
       }
 
       await member.roles.add(verifiedRoleId);
+      
+      // Remove unverified role if configured
+      const unverifiedRoleId = guildConfig.features?.verificationSystem?.unverifiedRole;
+      if (unverifiedRoleId && member.roles.cache.has(unverifiedRoleId)) {
+        await member.roles.remove(unverifiedRoleId).catch(() => {});
+      }
+      
       await interaction.editReply({
         embeds: [await successEmbed(interaction.guild.id, 'User Verified',
           `${GLYPHS.SUCCESS} ${user} has been manually verified.`)]
@@ -1817,7 +1825,8 @@ async function handleVerifyCommand(interaction, client, guildConfig) {
       const statusEmbed = await infoEmbed(interaction.guild.id, '🔐 Verification Status',
         `**Enabled:** ${vs.enabled ? '✅ Yes' : '❌ No'}\n` +
         `**Type:** ${vs.type || 'button'}\n` +
-        `**Role:** ${vs.role ? `<@&${vs.role}>` : 'Not set'}\n` +
+        `**Verified Role:** ${vs.role ? `<@&${vs.role}>` : 'Not set'}\n` +
+        `**Unverified Role:** ${vs.unverifiedRole ? `<@&${vs.unverifiedRole}>` : 'Not set'}\n` +
         `**Channel:** ${vs.channel ? `<#${vs.channel}>` : 'Not set'}`);
       await interaction.editReply({ embeds: [statusEmbed] });
       break;
@@ -1853,6 +1862,28 @@ async function handleVerifyCommand(interaction, client, guildConfig) {
         embeds: [await successEmbed(interaction.guild.id, 'Verified Role Set',
           `${GLYPHS.SUCCESS} Verified role set to ${role}`)]
       });
+      break;
+    }
+
+    case 'setunverifiedrole': {
+      const role = interaction.options.getRole('role');
+      if (role) {
+        await Guild.updateGuild(interaction.guild.id, {
+          $set: { 'features.verificationSystem.unverifiedRole': role.id }
+        });
+        await interaction.editReply({
+          embeds: [await successEmbed(interaction.guild.id, 'Unverified Role Set',
+            `${GLYPHS.SUCCESS} Unverified role set to ${role}\n\nThis role will be **removed** when a user verifies.`)]
+        });
+      } else {
+        await Guild.updateGuild(interaction.guild.id, {
+          $unset: { 'features.verificationSystem.unverifiedRole': '' }
+        });
+        await interaction.editReply({
+          embeds: [await successEmbed(interaction.guild.id, 'Unverified Role Cleared',
+            `${GLYPHS.SUCCESS} Unverified role has been cleared.`)]
+        });
+      }
       break;
     }
 

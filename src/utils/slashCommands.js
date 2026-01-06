@@ -155,6 +155,13 @@ const slashCommands = [
             .setDescription('The role to give verified users')
             .setRequired(true)))
     .addSubcommand(subcommand =>
+      subcommand.setName('setunverifiedrole')
+        .setDescription('Set the role to remove when user verifies')
+        .addRoleOption(option =>
+          option.setName('role')
+            .setDescription('The role to remove on verification (leave empty to clear)')
+            .setRequired(false)))
+    .addSubcommand(subcommand =>
       subcommand.setName('setchannel')
         .setDescription('Set the verification channel')
         .addChannelOption(option =>

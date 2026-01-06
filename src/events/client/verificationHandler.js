@@ -126,6 +126,13 @@ async function handleButtonVerification(interaction, verification, verifiedRole,
 
   try {
     await member.roles.add(verifiedRole);
+    
+    // Remove unverified role if configured
+    const unverifiedRole = guildConfig.features?.verificationSystem?.unverifiedRole;
+    if (unverifiedRole && member.roles.cache.has(unverifiedRole)) {
+      await member.roles.remove(unverifiedRole).catch(() => {});
+    }
+    
     await verification.verify('button');
 
     const embed = new EmbedBuilder()
@@ -294,6 +301,13 @@ async function handleCaptchaVerification(interaction, verification, verifiedRole
 
         try {
           await member.roles.add(verifiedRole);
+          
+          // Remove unverified role if configured
+          const unverifiedRole = guildConfig.features?.verificationSystem?.unverifiedRole;
+          if (unverifiedRole && member.roles.cache.has(unverifiedRole)) {
+            await member.roles.remove(unverifiedRole).catch(() => {});
+          }
+          
           await currentVerification.verify('captcha');
 
           const successEmbed = new EmbedBuilder()

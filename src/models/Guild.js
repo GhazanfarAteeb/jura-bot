@@ -130,6 +130,7 @@ const guildSchema = new mongoose.Schema({
       enabled: { type: Boolean, default: false },
       channel: String,
       role: String, // Verified role
+      unverifiedRole: String, // Role to remove on verification
       type: { type: String, enum: ['button', 'reaction', 'captcha'], default: 'button' }
     },
     reactionRoles: {
