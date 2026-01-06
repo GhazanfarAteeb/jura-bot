@@ -220,7 +220,7 @@ const QUICK_RESPONSES = {
         ]
     },
     creator: {
-        patterns: [/who\s+(made|created|developed|built|coded|programmed)\s+(you|raphael)|who('s|\s+is)\s+(your|the)\s+(creator|developer|maker|owner)|your\s+creator|made\s+you/i],
+        patterns: [/who\s+(made|created|developed|built|coded|programmed|master)\s+(you|raphael)|who('s|\s+is)\s+(your|the)\s+(creator|developer|maker|owner|master)|your\s+creator|made\s+you/i],
         responses: [
             "That would be **otaku.x.overlord**! They're the one who brought me to life. 🙌",
             "**otaku.x.overlord** is my creator! Pretty cool person if you ask me.",
