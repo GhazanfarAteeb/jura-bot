@@ -99,11 +99,9 @@ export default {
             return message.reply({ embeds: [embed] });
         }
 
-        guildConfig.features.levelSystem.noXpChannels.push(channel.id);
-        await guildConfig.save();
-
-        // Clear cache
-        if (global.guildCache) global.guildCache.delete(guildId);
+        await Guild.updateGuild(guildId, {
+            $push: { 'features.levelSystem.noXpChannels': channel.id }
+        });
 
         const embed = await successEmbed(guildId, 'Channel Blacklisted',
             `${GLYPHS.SUCCESS} ${channel} has been added to the no-XP list.\n\n` +
@@ -134,11 +132,9 @@ export default {
             return message.reply({ embeds: [embed] });
         }
 
-        guildConfig.features.levelSystem.noXpChannels.splice(index, 1);
-        await guildConfig.save();
-
-        // Clear cache
-        if (global.guildCache) global.guildCache.delete(guildId);
+        await Guild.updateGuild(guildId, {
+            $pull: { 'features.levelSystem.noXpChannels': channel.id }
+        });
 
         const embed = await successEmbed(guildId, 'Channel Removed',
             `${GLYPHS.SUCCESS} ${channel} has been removed from the no-XP list.\n\n` +
@@ -184,11 +180,9 @@ export default {
             return message.reply({ embeds: [embed] });
         }
 
-        guildConfig.features.levelSystem.noXpChannels = [];
-        await guildConfig.save();
-
-        // Clear cache
-        if (global.guildCache) global.guildCache.delete(guildId);
+        await Guild.updateGuild(guildId, {
+            $set: { 'features.levelSystem.noXpChannels': [] }
+        });
 
         const embed = await successEmbed(guildId, 'Channels Cleared',
             `${GLYPHS.SUCCESS} All channels have been removed from the no-XP list.`

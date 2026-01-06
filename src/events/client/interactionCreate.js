@@ -29,7 +29,7 @@ export default {
     );
 
     // Handle special slash commands that need custom handling
-    const specialCommands = ['automod', 'lockdown', 'setrole', 'setchannel', 'slashcommands', 'refreshcache', 'birthdaysettings', 'setbirthday', 'config', 'setup', 'welcome', 'manageshop', 'verify', 'cmdchannels', 'logs', 'autorole', 'feature', 'giveaway', 'award'];
+    const specialCommands = ['automod', 'lockdown', 'setrole', 'setchannel', 'slashcommands', 'refreshcache', 'birthdaysettings', 'setbirthday', 'config', 'setup', 'welcome', 'manageshop', 'verify', 'cmdchannels', 'logs', 'autorole', 'feature', 'giveaway', 'award', 'noxp'];
     if (specialCommands.includes(interaction.commandName)) {
       return handleSpecialCommand(interaction, client, guildConfig, hasAdminRole);
     }
@@ -261,6 +261,9 @@ async function handleSpecialCommand(interaction, client, guildConfig, hasAdminRo
         break;
       case 'award':
         await handleAwardCommand(interaction, client, guildConfig);
+        break;
+      case 'noxp':
+        await handleNoxpCommand(interaction, guildConfig);
         break;
     }
   } catch (error) {
@@ -2774,6 +2777,115 @@ async function handleAwardCommand(interaction, client, guildConfig) {
     return interaction.editReply({
       embeds: [await errorEmbed(guildId, 'Error', 'An error occurred while processing the award.')]
     });
+  }
+}
+
+// Handle noxp command
+async function handleNoxpCommand(interaction, guildConfig) {
+  const { successEmbed, errorEmbed, infoEmbed, GLYPHS } = await import('../../utils/embeds.js');
+  const { EmbedBuilder, ChannelType } = await import('discord.js');
+  const subcommand = interaction.options.getSubcommand();
+
+  // Initialize noXpChannels array if not exists
+  const noXpChannels = guildConfig.features?.levelSystem?.noXpChannels || [];
+
+  switch (subcommand) {
+    case 'add': {
+      const channel = interaction.options.getChannel('channel');
+
+      if (channel.type !== ChannelType.GuildText) {
+        await interaction.editReply({
+          embeds: [await errorEmbed(interaction.guild.id, 'Invalid Channel',
+            `${GLYPHS.ERROR} Please select a text channel.`)]
+        });
+        return;
+      }
+
+      if (noXpChannels.includes(channel.id)) {
+        await interaction.editReply({
+          embeds: [await errorEmbed(interaction.guild.id, 'Already Blacklisted',
+            `${GLYPHS.ERROR} ${channel} is already blacklisted from earning XP.`)]
+        });
+        return;
+      }
+
+      await Guild.updateGuild(interaction.guild.id, {
+        $push: { 'features.levelSystem.noXpChannels': channel.id }
+      });
+
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, 'Channel Blacklisted',
+          `${GLYPHS.SUCCESS} ${channel} has been added to the no-XP list.\n\nMessages in this channel will no longer earn XP.`)]
+      });
+      break;
+    }
+
+    case 'remove': {
+      const channel = interaction.options.getChannel('channel');
+
+      if (!noXpChannels.includes(channel.id)) {
+        await interaction.editReply({
+          embeds: [await errorEmbed(interaction.guild.id, 'Not Blacklisted',
+            `${GLYPHS.ERROR} ${channel} is not in the no-XP list.`)]
+        });
+        return;
+      }
+
+      await Guild.updateGuild(interaction.guild.id, {
+        $pull: { 'features.levelSystem.noXpChannels': channel.id }
+      });
+
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, 'Channel Removed',
+          `${GLYPHS.SUCCESS} ${channel} has been removed from the no-XP list.\n\nMessages in this channel will now earn XP again.`)]
+      });
+      break;
+    }
+
+    case 'list': {
+      if (noXpChannels.length === 0) {
+        await interaction.editReply({
+          embeds: [await infoEmbed(interaction.guild.id, 'No Blacklisted Channels',
+            `${GLYPHS.INFO} No channels are blacklisted from earning XP.\n\nUse \`/noxp add #channel\` to add one!`)]
+        });
+        return;
+      }
+
+      const channelList = noXpChannels.map(id => {
+        const channel = interaction.guild.channels.cache.get(id);
+        return channel ? `${GLYPHS.ARROW_RIGHT} ${channel}` : `${GLYPHS.ARROW_RIGHT} <Deleted Channel>`;
+      }).join('\n');
+
+      const embed = new EmbedBuilder()
+        .setColor('#5865F2')
+        .setTitle('🚫 No-XP Channels')
+        .setDescription(`**Blacklisted Channels:**\n\n${channelList}`)
+        .setFooter({ text: `${noXpChannels.length} channel(s) blacklisted` })
+        .setTimestamp();
+
+      await interaction.editReply({ embeds: [embed] });
+      break;
+    }
+
+    case 'clear': {
+      if (noXpChannels.length === 0) {
+        await interaction.editReply({
+          embeds: [await errorEmbed(interaction.guild.id, 'No Channels',
+            `${GLYPHS.ERROR} There are no blacklisted channels to clear.`)]
+        });
+        return;
+      }
+
+      await Guild.updateGuild(interaction.guild.id, {
+        $set: { 'features.levelSystem.noXpChannels': [] }
+      });
+
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, 'Channels Cleared',
+          `${GLYPHS.SUCCESS} All channels have been removed from the no-XP list.`)]
+      });
+      break;
+    }
   }
 }
 

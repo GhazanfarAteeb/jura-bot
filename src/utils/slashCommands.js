@@ -315,6 +315,32 @@ const slashCommands = [
         .setDescription('Remove all auto-roles'))
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles),
 
+  // No-XP Channels Command
+  new SlashCommandBuilder()
+    .setName('noxp')
+    .setDescription('Manage channels where XP is not earned')
+    .addSubcommand(subcommand =>
+      subcommand.setName('add')
+        .setDescription('Blacklist a channel from earning XP')
+        .addChannelOption(option =>
+          option.setName('channel')
+            .setDescription('The channel to blacklist')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('remove')
+        .setDescription('Remove a channel from the blacklist')
+        .addChannelOption(option =>
+          option.setName('channel')
+            .setDescription('The channel to remove')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('list')
+        .setDescription('View all blacklisted channels'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('clear')
+        .setDescription('Clear all blacklisted channels'))
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
+
   // AutoMod Configuration Commands
   new SlashCommandBuilder()
     .setName('automod')

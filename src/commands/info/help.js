@@ -38,9 +38,18 @@ const COMMANDS_BY_CATEGORY = {
 
 // Slash commands available
 const SLASH_COMMANDS = [
-  'ban', 'kick', 'warn', 'timeout', 'purge', 'userhistory', 'untimeout', 'verify',
-  'lockdown', 'feature', 'giveaway', 'award', 'play', 'pause', 'resume', 'skip', 'stop', 'queue',
-  'nowplaying', 'volume', 'shuffle', 'loop', 'seek', 'remove', 'clear', 'skipto'
+  // Moderation
+  'ban', 'kick', 'warn', 'timeout', 'purge', 'userhistory', 'untimeout', 'verify', 'lockdown',
+  // Config
+  'welcome', 'autorole', 'noxp', 'automod', 'cmdchannels', 'logs', 'feature', 'setrole', 'setchannel', 'config', 'setup', 'manageshop', 'setprefix',
+  // Admin
+  'giveaway', 'award',
+  // Music
+  'play', 'pause', 'resume', 'skip', 'stop', 'queue', 'nowplaying', 'volume', 'shuffle', 'loop', 'seek', 'remove', 'clear', 'skipto',
+  // Economy
+  'balance', 'daily', 'level', 'profile', 'shop', 'inventory', 'rep',
+  // Info
+  'help', 'ping', 'serverinfo', 'userinfo', 'channelinfo', 'roleinfo'
 ];
 
 const CATEGORY_INFO = {
@@ -137,7 +146,8 @@ const COMMAND_EXAMPLES = {
   feature: ['feature economy enable', 'feature gambling disable', 'feature list'],
   lockdown: ['lockdown', 'lockdown #channel', 'lockdown unlock'],
   verify: ['verify setup', 'verify panel', 'verify manual @user', 'verify config role @Verified', 'verify config unverifiedrole @Unverified', 'verify status'],
-  welcome: ['welcome enable', 'welcome disable', 'welcome channel #welcome', 'welcome message Welcome {user} to {server}!', 'welcome title ✦ Welcome ✦', 'welcome color #5432A6', 'welcome image <url>', 'welcome thumbnail avatar', 'welcome author username', 'welcome mention on', 'welcome greet Hey {user}!', 'welcome role @Member', 'welcome status', 'welcome test', 'welcome reset']
+  welcome: ['welcome enable', 'welcome disable', 'welcome channel #welcome', 'welcome message Welcome {user} to {server}!', 'welcome title ✦ Welcome ✦', 'welcome color #5432A6', 'welcome image <url>', 'welcome thumbnail avatar', 'welcome author username', 'welcome mention on', 'welcome greet Hey {user}!', 'welcome role @Member', 'welcome status', 'welcome test', 'welcome reset'],
+  noxp: ['noxp add #channel', 'noxp remove #channel', 'noxp list', 'noxp clear']
 };
 
 export default {
