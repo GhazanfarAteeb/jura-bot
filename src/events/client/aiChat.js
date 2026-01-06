@@ -20,54 +20,75 @@ const MAX_HISTORY = 10;
 // Track repeated messages per user (anti-loop)
 const messageTracker = new Map();
 
-async function getAIResponse(messages, maxTokens = 500) {
-  try {
-    // Use Pollinations AI API with OpenAI-compatible endpoint
-    const apiKey = process.env.POLLINATIONS_API_KEY;
-    
-    const response = await fetch('https://gen.pollinations.ai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(apiKey && { 'Authorization': `Bearer ${apiKey}` })
-      },
-      body: JSON.stringify({
-        model: 'openai',
-        messages: messages,
-        max_tokens: maxTokens,
-        temperature: 0.8
-      })
-    });
+async function getAIResponse(messages, maxTokens = 500, retries = 2) {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      // Use Pollinations AI API with OpenAI-compatible endpoint
+      const apiKey = process.env.POLLINATIONS_API_KEY;
+      
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      
+      const response = await fetch('https://gen.pollinations.ai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(apiKey && { 'Authorization': `Bearer ${apiKey}` })
+        },
+        body: JSON.stringify({
+          model: 'openai',
+          messages: messages,
+          max_tokens: maxTokens,
+          temperature: 0.9 // Higher for more personality
+        }),
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeout);
 
-    if (!response.ok) {
-      console.error('Pollinations API error:', response.status, response.statusText);
+      if (!response.ok) {
+        console.error(`Pollinations API error (attempt ${attempt + 1}):`, response.status, response.statusText);
+        if (attempt < retries) {
+          await new Promise(r => setTimeout(r, 1000)); // Wait 1 second before retry
+          continue;
+        }
+        return null;
+      }
+
+      const data = await response.json();
+      
+      // Extract the response content
+      let cleanedResponse = data.choices?.[0]?.message?.content?.trim();
+      
+      if (!cleanedResponse) {
+        if (attempt < retries) {
+          await new Promise(r => setTimeout(r, 1000));
+          continue;
+        }
+        return null;
+      }
+      
+      // Remove any "Raphael:" prefix if present
+      if (cleanedResponse.startsWith('Raphael:')) {
+        cleanedResponse = cleanedResponse.slice(8).trim();
+      }
+      
+      // Truncate if too long
+      if (cleanedResponse.length > 1900) {
+        cleanedResponse = cleanedResponse.slice(0, 1900) + '...';
+      }
+      
+      return cleanedResponse;
+    } catch (error) {
+      console.error(`AI Chat error (attempt ${attempt + 1}):`, error.message);
+      if (attempt < retries) {
+        await new Promise(r => setTimeout(r, 1000));
+        continue;
+      }
       return null;
     }
-
-    const data = await response.json();
-    
-    // Extract the response content
-    let cleanedResponse = data.choices?.[0]?.message?.content?.trim();
-    
-    if (!cleanedResponse) {
-      return null;
-    }
-    
-    // Remove any "Raphael:" prefix if present
-    if (cleanedResponse.startsWith('Raphael:')) {
-      cleanedResponse = cleanedResponse.slice(8).trim();
-    }
-    
-    // Truncate if too long
-    if (cleanedResponse.length > 1900) {
-      cleanedResponse = cleanedResponse.slice(0, 1900) + '...';
-    }
-    
-    return cleanedResponse;
-  } catch (error) {
-    console.error('AI Chat error:', error);
-    return null;
   }
+  return null;
 }
 
 function getConversationKey(guildId, channelId) {
@@ -209,9 +230,11 @@ export default {
       
       if (!response) {
         const errorResponses = [
-          'Notice: Connection to analysis core disrupted. Retry in a moment.',
-          'Processing interrupted. Insufficient data stream.',
-          'Temporary disruption detected. Stand by.'
+          "Bruh my brain just lagged 💀 Try again?",
+          "Okay that one didn't work, hit me again",
+          "My brain cells said ✨no✨ for a sec. One more time?",
+          "Oop- connection went poof. Try again?",
+          "Ngl something broke for a sec. Wanna retry?"
         ];
         await message.reply({
           content: errorResponses[Math.floor(Math.random() * errorResponses.length)],
