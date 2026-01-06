@@ -759,6 +759,7 @@ const slashCommands = [
           // Moderation
           { name: '🛡️ AutoMod', value: 'automod' },
           { name: '👋 Welcome Messages', value: 'welcome' },
+          { name: '🤖 AI Chat (Raphael)', value: 'aichat' },
           // Single commands
           { name: '🔧 Custom Command (specify name)', value: 'custom' }
         ))

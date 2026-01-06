@@ -143,11 +143,12 @@ const COMMAND_EXAMPLES = {
   blackjack: ['blackjack 100', 'blackjack 1000'],
   slots: ['slots 50', 'slots 200'],
   automod: ['automod enable antispam', 'automod config antiraid', 'automod status'],
-  feature: ['feature economy enable', 'feature gambling disable', 'feature list'],
+  feature: ['feature economy enable', 'feature gambling disable', 'feature aichat enable', 'feature list'],
   lockdown: ['lockdown', 'lockdown #channel', 'lockdown unlock'],
   verify: ['verify setup', 'verify panel', 'verify manual @user', 'verify config role @Verified', 'verify config unverifiedrole @Unverified', 'verify status'],
   welcome: ['welcome enable', 'welcome disable', 'welcome channel #welcome', 'welcome message Welcome {user} to {server}!', 'welcome title ✦ Welcome ✦', 'welcome color #5432A6', 'welcome image <url>', 'welcome thumbnail avatar', 'welcome author username', 'welcome mention on', 'welcome greet Hey {user}!', 'welcome role @Member', 'welcome status', 'welcome test', 'welcome reset'],
-  noxp: ['noxp add #channel', 'noxp remove #channel', 'noxp list', 'noxp clear']
+  noxp: ['noxp add #channel', 'noxp remove #channel', 'noxp list', 'noxp clear'],
+  aichat: ['@Raphael hello!', '@Raphael what is the weather?', 'Reply to bot messages']
 };
 
 export default {

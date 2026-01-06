@@ -173,6 +173,13 @@ const guildSchema = new mongoose.Schema({
       interfaceChannelId: String, // Interface channel for button controls
       defaultName: { type: String, default: "{user}'s Channel" },
       defaultLimit: { type: Number, default: 0 }
+    },
+    aiChat: {
+      enabled: { type: Boolean, default: false },
+      allowedChannels: [String], // If empty, works everywhere
+      ignoredChannels: [String], // Channels to ignore
+      personality: { type: String, default: 'raphael' }, // Personality preset
+      maxTokens: { type: Number, default: 500 }
     }
   },
   roles: {

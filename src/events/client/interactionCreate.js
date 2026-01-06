@@ -2266,6 +2266,42 @@ async function handleFeatureCommand(interaction, client, guildConfig) {
     welcome: ['welcome']
   };
 
+  // Handle AI Chat specially (it's a feature toggle, not command-based)
+  if (featureType === 'aichat') {
+    if (status === 'status') {
+      const aiConfig = guildConfig.features?.aiChat || {};
+      const embed = new EmbedBuilder()
+        .setTitle('🤖 AI Chat (Raphael) Status')
+        .setColor(aiConfig.enabled ? '#00FF7F' : '#FF4757')
+        .setDescription(
+          `**Status:** ${aiConfig.enabled ? '✅ Enabled' : '❌ Disabled'}\n\n` +
+          `**How to use:**\n` +
+          `• Mention the bot: <@${client.user.id}> hello!\n` +
+          `• Reply to the bot's messages\n\n` +
+          `**Personality:** Raphael (from Tensura)\n` +
+          `**Powered by:** Pollinations AI (Free)`
+        )
+        .setFooter({ text: 'No API key required - uses free Pollinations AI' });
+      
+      return interaction.editReply({ embeds: [embed] });
+    }
+
+    const isEnabling = status === 'enable';
+    await Guild.updateGuild(guildId, {
+      $set: { 'features.aiChat.enabled': isEnabling }
+    });
+
+    return interaction.editReply({
+      embeds: [await successEmbed(guildId,
+        `AI Chat ${isEnabling ? 'Enabled' : 'Disabled'}`,
+        `${GLYPHS.SUCCESS} **🤖 AI Chat (Raphael)** has been ${isEnabling ? 'enabled' : 'disabled'}.\n\n` +
+        (isEnabling 
+          ? `Users can now chat with Raphael by mentioning <@${client.user.id}> or replying to the bot's messages.`
+          : `The AI chat feature is now disabled.`)
+      )]
+    });
+  }
+
   // Get commands for the selected feature
   let commandsToManage = [];
   let featureName = '';

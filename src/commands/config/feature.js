@@ -59,6 +59,11 @@ const featureCategories = {
   welcome: {
     name: '👋 Welcome',
     commands: ['welcome']
+  },
+  aichat: {
+    name: '🤖 AI Chat (Raphael)',
+    commands: [], // Special feature - not command-based
+    isFeatureToggle: true
   }
 };
 
@@ -136,12 +141,26 @@ async function showFeatureMenu(message, guildConfig) {
   let description = `**Manage bot features and commands**\n\n`;
 
   for (const [key, category] of Object.entries(featureCategories)) {
+    // Handle special feature toggles
+    if (category.isFeatureToggle) {
+      if (key === 'aichat') {
+        const aiEnabled = guildConfig.features?.aiChat?.enabled;
+        const status = aiEnabled ? '✅' : '❌';
+        description += `${status} **${category.name}** - Feature toggle\n`;
+      }
+      continue;
+    }
+    
     const disabledCount = category.commands.filter(cmd =>
       disabledText.includes(cmd) || disabledSlash.includes(cmd)
     ).length;
     const status = disabledCount === 0 ? '✅' : disabledCount === category.commands.length ? '❌' : '⚠️';
     description += `${status} **${category.name}** - ${category.commands.length} commands\n`;
   }
+  
+  // Add AI Chat separately at the end
+  const aiEnabled = guildConfig.features?.aiChat?.enabled;
+  description += `${aiEnabled ? '✅' : '❌'} **🤖 AI Chat (Raphael)** - Feature toggle\n`;
 
   description += `\n**Commands:**\n`;
   description += `${GLYPHS.ARROW_RIGHT} \`feature enable <feature>\` - Enable a feature\n`;
@@ -188,6 +207,29 @@ async function showDisabledList(message, guildConfig) {
 
 async function showFeatureStatus(message, guildConfig, feature) {
   const guildId = message.guild.id;
+
+  // Handle AI Chat specially
+  if (feature === 'aichat' || feature === 'ai' || feature === 'raphael') {
+    const aiConfig = guildConfig.features?.aiChat || {};
+    const embed = new EmbedBuilder()
+      .setTitle('🤖 AI Chat (Raphael) Status')
+      .setColor(aiConfig.enabled ? '#00FF7F' : '#FF4757')
+      .setDescription(
+        `**Status:** ${aiConfig.enabled ? '✅ Enabled' : '❌ Disabled'}\n\n` +
+        `**How to use:**\n` +
+        `• Mention the bot and ask a question\n` +
+        `• Reply to the bot's messages\n\n` +
+        `**Personality:** Raphael (from Tensura)\n` +
+        `**Powered by:** Pollinations AI (Free)\n\n` +
+        `**Commands:**\n` +
+        `${GLYPHS.ARROW_RIGHT} \`feature enable aichat\` - Enable AI Chat\n` +
+        `${GLYPHS.ARROW_RIGHT} \`feature disable aichat\` - Disable AI Chat`
+      )
+      .setFooter({ text: 'No API key required - uses free Pollinations AI' });
+    
+    return message.reply({ embeds: [embed] });
+  }
+
   const category = featureCategories[feature];
 
   if (!category) {
@@ -231,6 +273,22 @@ async function showFeatureStatus(message, guildConfig, feature) {
 async function toggleFeature(message, guildConfig, target, isEnabling, client) {
   const guildId = message.guild.id;
   const category = featureCategories[target];
+
+  // Handle AI Chat specially (it's a feature toggle, not command-based)
+  if (target === 'aichat' || target === 'ai' || target === 'raphael') {
+    await Guild.updateGuild(guildId, {
+      $set: { 'features.aiChat.enabled': isEnabling }
+    });
+
+    const embed = await successEmbed(guildId,
+      `AI Chat ${isEnabling ? 'Enabled' : 'Disabled'}`,
+      `${GLYPHS.SUCCESS} **🤖 AI Chat (Raphael)** has been ${isEnabling ? 'enabled' : 'disabled'}.\n\n` +
+      (isEnabling 
+        ? `Users can now chat with Raphael by mentioning <@${client.user.id}> or replying to the bot's messages.`
+        : `The AI chat feature is now disabled.`)
+    );
+    return message.reply({ embeds: [embed] });
+  }
 
   let commandsToManage = [];
   let featureName = '';
