@@ -13,11 +13,11 @@ const TEMPVC_BUTTONS = {
     { id: 'tempvc_status', emoji: '📝', label: 'Status', style: ButtonStyle.Secondary }
   ],
   row2: [
-    { id: 'tempvc_permit', emoji: '◎', label: 'Permit', style: ButtonStyle.Success },
-    { id: 'tempvc_reject', emoji: '○', label: 'Reject', style: ButtonStyle.Danger },
+    { id: 'tempvc_permit', emoji: '✅', label: 'Permit', style: ButtonStyle.Success },
+    { id: 'tempvc_reject', emoji: '⛔', label: 'Reject', style: ButtonStyle.Danger },
     { id: 'tempvc_invite', emoji: '📨', label: 'Invite', style: ButtonStyle.Primary },
     { id: 'tempvc_kick', emoji: '👢', label: 'Kick', style: ButtonStyle.Danger },
-    { id: 'tempvc_info', emoji: '◈', label: 'Info', style: ButtonStyle.Secondary }
+    { id: 'tempvc_info', emoji: 'ℹ️', label: 'Info', style: ButtonStyle.Secondary }
   ],
   row3: [
     { id: 'tempvc_claim', emoji: '👑', label: 'Claim', style: ButtonStyle.Primary },
@@ -42,8 +42,8 @@ function createInterfaceEmbed() {
       '`🔒 PRIVACY` - Lock/Unlock/Hide options\n' +
       '`🎵 BITRATE` - Set audio quality\n' +
       '`📝 STATUS` - Set channel status\n' +
-      '`◎ PERMIT` - Authorize user access\n' +
-      '`○ REJECT` - Deny user access\n' +
+      '`✅ PERMIT` - Authorize user access\n' +
+      '`⛔ REJECT` - Deny user access\n' +
       '`📨 INVITE` - Send invite link\n' +
       '`👢 KICK` - Remove user\n' +
       '`👑 CLAIM` - Claim abandoned channel\n' +

@@ -104,21 +104,21 @@ export default {
                 `▸ Customizable profiles\n\n` +
                 `**Notice:** Use \`${process.env.DEFAULT_PREFIX || '!'}help\` to begin, Master.`,
               thumbnail: {
-              url: guild.client.user.displayAvatarURL({ size: 256 })
-            },
+                url: guild.client.user.displayAvatarURL({ size: 256 })
+              },
               footer: {
-              text: `Profile recording completed in ${duration}s`
-            },
+                text: `Profile recording completed in ${duration}s`
+              },
               timestamp: new Date()
             }]
           });
-      }
+        }
       } catch (error) {
-      console.error('[GUILD JOIN] Could not send welcome message:', error);
-    }
+        console.error('[GUILD JOIN] Could not send welcome message:', error);
+      }
 
-  } catch(error) {
-    console.error('[GUILD JOIN] Error in guildCreate event:', error);
+    } catch (error) {
+      console.error('[GUILD JOIN] Error in guildCreate event:', error);
+    }
   }
-}
 };
