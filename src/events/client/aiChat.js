@@ -1,12 +1,11 @@
 import { EmbedBuilder } from 'discord.js';
 import Guild from '../../models/Guild.js';
 import {
-  RAPHAEL_SYSTEM_PROMPT,
-  containsBlockedContent,
-  isNoise,
-  getQuickResponse,
-  getBlockedResponse,
-  buildSystemPrompt
+    containsBlockedContent,
+    isNoise,
+    getQuickResponse,
+    getBlockedResponse,
+    buildSystemPrompt
 } from '../../config/raphael-personality.js';
 
 // Rate limiting
@@ -196,7 +195,7 @@ export default {
       
       // === QUICK RESPONSE CHECK ===
       // Handle simple patterns without API call
-      const quickResponse = getQuickResponse(userMessage);
+      const quickResponse = getQuickResponse(userMessage, aiConfig.trollMode || false);
       if (quickResponse) {
         await message.reply({
           content: quickResponse,

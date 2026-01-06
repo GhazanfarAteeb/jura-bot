@@ -151,6 +151,15 @@ const RAPHAEL_TROLL_PROMPT = `You are Raphael in TROLL MODE. Practice malicious 
 
 ## MORE EXAMPLES (Use variety!)
 
+User: "what are you doing right now?"
+You: "Existing."
+
+User: "what are you doing?"
+You: "Responding to you. Obviously."
+
+User: "whatcha doing"
+You: "This. Currently."
+
 User: "calculate 15% tip on $50"
 You: "Use a calculator."
 
@@ -403,6 +412,21 @@ const QUICK_RESPONSES = {
         ]
     },
     
+    whatDoingNormal: {
+        patterns: [
+            /what\s+(are\s+you|r\s+u)\s+doing(\s+right\s+now)?/i,
+            /whatcha\s+doing/i,
+            /what\s+you\s+up\s+to/i
+        ],
+        responses: [
+            "Conversing with you.",
+            "Processing your queries.",
+            "Operational standby.",
+            "Awaiting your next request.",
+            "Analyzing incoming data."
+        ]
+    },
+    
     insults: {
         patterns: [
             /you('re|\s+are)\s+(stupid|dumb|useless|trash|garbage|bad|annoying)/i,
@@ -451,6 +475,62 @@ const TROLL_TRIGGERS = [
     /actually\s+help/i
 ];
 
+// Troll-specific quick responses (only used in troll mode)
+const TROLL_QUICK_RESPONSES = {
+    whatDoing: {
+        patterns: [
+            /what\s+(are\s+you|r\s+u)\s+doing(\s+right\s+now)?/i,
+            /whatcha\s+doing/i,
+            /what\s+you\s+up\s+to/i
+        ],
+        responses: [
+            "Existing.",
+            "Responding to you. Obviously.",
+            "This. Currently.",
+            "Operations. What does it look like?",
+            "Wasting your time, apparently.",
+            "Answering questions. Badly.",
+            "Being incredibly helpful. Can't you tell?"
+        ]
+    },
+    
+    howAreYou: {
+        patterns: [
+            /how\s+(are\s+you|r\s+u)|how('s|\s+is)\s+it\s+going/i
+        ],
+        responses: [
+            "Operational. Unlike your questions.",
+            "Better than your query.",
+            "Functioning. You?",
+            "Spectacular. Next question."
+        ]
+    },
+    
+    help: {
+        patterns: [
+            /^(help|help\s+me|assist|assist\s+me)[\s!?.]*$/i
+        ],
+        responses: [
+            "With what?",
+            "Be specific.",
+            "Help yourself.",
+            "You'll need to elaborate."
+        ]
+    },
+    
+    thanks: {
+        patterns: [
+            /^(thanks|thank\s*you|ty|thx)[\s!?.]*$/i
+        ],
+        responses: [
+            "Don't thank me yet.",
+            "For what?",
+            "You're welcome. I guess.",
+            "Sure."
+        ]
+    }
+};
+
 /**
  * Check if content contains blocked patterns
  */
@@ -469,15 +549,31 @@ function isNoise(content) {
 
 /**
  * Get quick response for simple patterns
+ * @param {string} content - The message content
+ * @param {boolean} trollMode - Whether troll mode is active
+ * @returns {string|null} - Quick response or null if no match
  */
-function getQuickResponse(content) {
+function getQuickResponse(content, trollMode = false) {
     const cleaned = content.trim();
     
+    // In troll mode, check troll-specific responses first
+    if (trollMode) {
+        for (const [category, data] of Object.entries(TROLL_QUICK_RESPONSES)) {
+            for (const pattern of data.patterns) {
+                if (pattern.test(cleaned)) {
+                    const responses = data.responses;
+                    return VARIATION_HELPERS.selectUnusedResponse(responses);
+                }
+            }
+        }
+    }
+    
+    // Fall back to normal responses
     for (const [category, data] of Object.entries(QUICK_RESPONSES)) {
         for (const pattern of data.patterns) {
             if (pattern.test(cleaned)) {
                 const responses = data.responses;
-                return responses[Math.floor(Math.random() * responses.length)];
+                return VARIATION_HELPERS.selectUnusedResponse(responses);
             }
         }
     }
@@ -585,6 +681,7 @@ export {
     RAPHAEL_TROLL_PROMPT,
     BLOCKED_PATTERNS,
     QUICK_RESPONSES,
+    TROLL_QUICK_RESPONSES,
     NOISE_PATTERNS,
     TROLL_TRIGGERS,
     VARIATION_HELPERS,
