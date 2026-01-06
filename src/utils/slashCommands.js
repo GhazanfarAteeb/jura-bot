@@ -760,6 +760,7 @@ const slashCommands = [
           { name: '🛡️ AutoMod', value: 'automod' },
           { name: '👋 Welcome Messages', value: 'welcome' },
           { name: '🤖 AI Chat (Raphael)', value: 'aichat' },
+          { name: '😈 Troll Mode (AI Chat)', value: 'troll' },
           // Single commands
           { name: '🔧 Custom Command (specify name)', value: 'custom' }
         ))

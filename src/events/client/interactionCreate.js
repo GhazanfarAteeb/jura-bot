@@ -2274,14 +2274,15 @@ async function handleFeatureCommand(interaction, client, guildConfig) {
         .setTitle('🤖 AI Chat (Raphael) Status')
         .setColor(aiConfig.enabled ? '#00FF7F' : '#FF4757')
         .setDescription(
-          `**Status:** ${aiConfig.enabled ? '✅ Enabled' : '❌ Disabled'}\n\n` +
+          `**Status:** ${aiConfig.enabled ? '✅ Enabled' : '❌ Disabled'}\n` +
+          `**Troll Mode:** ${aiConfig.trollMode ? '😈 Enabled' : '😇 Disabled'}\n\n` +
           `**How to use:**\n` +
           `• Mention the bot: <@${client.user.id}> hello!\n` +
           `• Reply to the bot's messages\n\n` +
           `**Personality:** Raphael (from Tensura)\n` +
           `**Powered by:** Pollinations AI (Free)`
         )
-        .setFooter({ text: 'No API key required - uses free Pollinations AI' });
+        .setFooter({ text: 'Use /feature type:troll to toggle chaos mode' });
       
       return interaction.editReply({ embeds: [embed] });
     }
@@ -2298,6 +2299,53 @@ async function handleFeatureCommand(interaction, client, guildConfig) {
         (isEnabling 
           ? `Users can now chat with Raphael by mentioning <@${client.user.id}> or replying to the bot's messages.`
           : `The AI chat feature is now disabled.`)
+      )]
+    });
+  }
+
+  // Handle Troll Mode toggle
+  if (featureType === 'troll') {
+    if (status === 'status') {
+      const aiConfig = guildConfig.features?.aiChat || {};
+      const embed = new EmbedBuilder()
+        .setTitle('😈 Troll Mode Status')
+        .setColor(aiConfig.trollMode ? '#FF4757' : '#667eea')
+        .setDescription(
+          `**AI Chat:** ${aiConfig.enabled ? '✅ Enabled' : '❌ Disabled'}\n` +
+          `**Troll Mode:** ${aiConfig.trollMode ? '😈 Enabled' : '😇 Disabled'}\n\n` +
+          (aiConfig.trollMode 
+            ? `Raphael is in **chaos mode** - expect unhinged, chaotic responses! 💀`
+            : `Raphael is being normal... for now.`)
+        )
+        .setFooter({ text: 'Enable troll mode for maximum chaos' });
+      
+      return interaction.editReply({ embeds: [embed] });
+    }
+
+    // Check if AI Chat is enabled first
+    const aiEnabled = guildConfig.features?.aiChat?.enabled;
+    const isEnabling = status === 'enable';
+    
+    if (!aiEnabled && isEnabling) {
+      return interaction.editReply({
+        embeds: [await errorEmbed(guildId, 'AI Chat Disabled',
+          `${GLYPHS.ERROR} AI Chat must be enabled before you can enable Troll Mode!\n\n` +
+          `Use \`/feature type:aichat status:enable\` first.`
+        )]
+      });
+    }
+
+    await Guild.updateGuild(guildId, {
+      $set: { 'features.aiChat.trollMode': isEnabling }
+    });
+
+    return interaction.editReply({
+      embeds: [await successEmbed(guildId,
+        `Troll Mode ${isEnabling ? 'Enabled 😈' : 'Disabled 😇'}`,
+        `${GLYPHS.SUCCESS} **Troll Mode** has been ${isEnabling ? 'enabled' : 'disabled'}.\n\n` +
+        (isEnabling 
+          ? `Raphael is now in **chaos mode** - expect unhinged, chaotic, and absolutely based responses. 💀`
+          : `Raphael is back to normal - cheeky but reasonable.`)
       )]
     });
   }
