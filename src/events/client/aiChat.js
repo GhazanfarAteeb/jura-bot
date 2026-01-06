@@ -236,11 +236,10 @@ export default {
       
       if (!response) {
         const errorResponses = [
-          "Bruh my brain just lagged 💀 Try again?",
-          "Okay that one didn't work, hit me again",
-          "My brain cells said ✨no✨ for a sec. One more time?",
-          "Oop- connection went poof. Try again?",
-          "Ngl something broke for a sec. Wanna retry?"
+          "Connection error. Try again.",
+          "Failed to process. Retry?",
+          "Something went wrong. Try again.",
+          "Processing failed. One more time?"
         ];
         await message.reply({
           content: errorResponses[Math.floor(Math.random() * errorResponses.length)],
