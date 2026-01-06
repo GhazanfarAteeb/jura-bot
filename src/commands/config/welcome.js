@@ -187,6 +187,85 @@ export default {
             `${GLYPHS.SUCCESS} Welcome banner has been set.`)]
         });
 
+      case 'title':
+        const titleText = args.slice(1).join(' ');
+
+        if (!titleText) {
+          return message.reply({
+            embeds: [await infoEmbed(message.guild.id, 'Embed Title',
+              `**Current Title:**\n${guildConfig.features.welcomeSystem.embedTitle || 'Default decorative stars'}\n\n` +
+              `Use \`welcome title <text>\` to set a custom title, or \`welcome title reset\` for default.`)]
+          });
+        }
+
+        if (titleText === 'reset' || titleText === 'default') {
+          await Guild.updateGuild(message.guild.id, {
+            $set: { 'features.welcomeSystem.embedTitle': null }
+          });
+          return message.reply({
+            embeds: [await successEmbed(message.guild.id, 'Title Reset',
+              `${GLYPHS.SUCCESS} Welcome embed title reset to default decorative style.`)]
+          });
+        }
+
+        await Guild.updateGuild(message.guild.id, {
+          $set: { 'features.welcomeSystem.embedTitle': titleText }
+        });
+
+        return message.reply({
+          embeds: [await successEmbed(message.guild.id, 'Title Set',
+            `${GLYPHS.SUCCESS} Welcome embed title set to:\n${titleText}`)]
+        });
+
+      case 'color':
+        const colorValue = args[1];
+
+        if (!colorValue) {
+          return message.reply({
+            embeds: [await infoEmbed(message.guild.id, 'Embed Color',
+              `**Current Color:** ${guildConfig.features.welcomeSystem.embedColor || 'Default'}\n\n` +
+              `Use \`welcome color #HEX\` to set (e.g., \`welcome color #5432A6\`)`)]
+          });
+        }
+
+        if (!colorValue.match(/^#?[0-9A-Fa-f]{6}$/)) {
+          return message.reply({
+            embeds: [await errorEmbed(message.guild.id, 'Invalid Color',
+              'Please provide a valid hex color (e.g., `#5432A6`)')]
+          });
+        }
+
+        const hex = colorValue.startsWith('#') ? colorValue : `#${colorValue}`;
+        await Guild.updateGuild(message.guild.id, {
+          $set: { 'features.welcomeSystem.embedColor': hex }
+        });
+
+        return message.reply({
+          embeds: [await successEmbed(message.guild.id, 'Color Set',
+            `${GLYPHS.SUCCESS} Welcome embed color set to \`${hex}\``)]
+        });
+
+      case 'mention':
+        const mentionOption = args[1]?.toLowerCase();
+
+        if (!['on', 'off', 'enable', 'disable'].includes(mentionOption)) {
+          return message.reply({
+            embeds: [await errorEmbed(message.guild.id, 'Invalid Option',
+              'Use `welcome mention on` or `welcome mention off`\n\n' +
+              'When enabled, sends "welcome, @user!" above the embed (Mimu style).')]
+          });
+        }
+
+        const mentionEnabled = ['on', 'enable'].includes(mentionOption);
+        await Guild.updateGuild(message.guild.id, {
+          $set: { 'features.welcomeSystem.mentionUser': mentionEnabled }
+        });
+
+        return message.reply({
+          embeds: [await successEmbed(message.guild.id, 'Mention Setting Updated',
+            `${GLYPHS.SUCCESS} User mention above embed is now **${mentionEnabled ? 'enabled' : 'disabled'}**`)]
+        });
+
       default:
         return showStatus(message, guildConfig);
     }
@@ -202,14 +281,20 @@ async function showStatus(message, guildConfig) {
     `**▸ Channel:** ${channel ? channel : 'Not configured'}\n` +
     `**▸ Embed Mode:** ${welcome.embedEnabled ? '◉' : '○'}\n` +
     `**▸ DM Welcome:** ${welcome.dmWelcome ? '◉' : '○'}\n` +
-    `**▸ Banner:** ${welcome.bannerUrl ? '◉ Set' : '○ Not set'}\n\n` +
+    `**▸ Mention User:** ${welcome.mentionUser ? '◉' : '○'}\n` +
+    `**▸ Banner:** ${welcome.bannerUrl ? '◉ Set' : '○ Not set'}\n` +
+    `**▸ Color:** ${welcome.embedColor || 'Default'}\n` +
+    `**▸ Title:** ${welcome.embedTitle ? 'Custom' : 'Decorative stars'}\n\n` +
     `**Current Message:**\n\`\`\`${welcome.message || 'Welcome {user} to {server}!'}\`\`\`\n` +
     `**Commands:**\n` +
     `${GLYPHS.DOT} \`welcome enable/disable\` - Toggle system\n` +
     `${GLYPHS.DOT} \`welcome channel #channel\` - Set welcome channel\n` +
-    `${GLYPHS.DOT} \`welcome message <text>\` - Set welcome message\n` +
+    `${GLYPHS.DOT} \`welcome message <text>\` - Set embed description\n` +
     `${GLYPHS.DOT} \`welcome embed on/off\` - Toggle embed mode\n` +
     `${GLYPHS.DOT} \`welcome dm on/off\` - Toggle DM welcomes\n` +
+    `${GLYPHS.DOT} \`welcome mention on/off\` - "welcome, @user!" above embed\n` +
+    `${GLYPHS.DOT} \`welcome title <text>\` - Set embed title\n` +
+    `${GLYPHS.DOT} \`welcome color #HEX\` - Set embed color\n` +
     `${GLYPHS.DOT} \`welcome image <url>\` - Set banner image\n` +
     `${GLYPHS.DOT} \`welcome test\` - Test welcome message`
   );
@@ -231,11 +316,17 @@ async function sendTestWelcome(message, guildConfig) {
   const welcomeMsg = parseWelcomeMessage(welcome.message || 'Welcome {user} to {server}!', message.member);
 
   if (welcome.embedEnabled) {
+    // Decorative title with stars (Mimu style)
+    const decorativeTitle = '˚　　　　✦　　　.　　. 　 ˚　.　　　　　 . ✦　　　 　˚　　　　 . ★⋆. ࿐࿔  　　　.　　 　　˚　　 　　*　　 　　✦　　　.　　.　　　✦　˚ 　　　　 ˚　.˚　　　　✦　　　.　　. 　 ˚　.　　　　 　　 　　　　        ੈ✧̣̇˳·˖✶   ✦';
+    
     const embed = new EmbedBuilder()
-      .setColor(guildConfig.embedStyle?.color || '#5865F2')
-      .setTitle('👋 Welcome!')
+      .setColor(welcome.embedColor || guildConfig.embedStyle?.color || '#5865F2')
+      .setAuthor({
+        name: message.author.username,
+        iconURL: message.author.displayAvatarURL({ dynamic: true, size: 128 })
+      })
+      .setTitle(welcome.embedTitle || decorativeTitle)
       .setDescription(welcomeMsg)
-      .setThumbnail(message.author.displayAvatarURL({ dynamic: true, size: 256 }))
       .setFooter({ text: `Member #${message.guild.memberCount}` })
       .setTimestamp();
 
@@ -243,7 +334,9 @@ async function sendTestWelcome(message, guildConfig) {
       embed.setImage(welcome.bannerUrl);
     }
 
-    await channel.send({ embeds: [embed] });
+    // Send with optional mention outside embed
+    const content = welcome.mentionUser ? `welcome, ${message.author}!` : undefined;
+    await channel.send({ content, embeds: [embed] });
   } else {
     await channel.send(welcomeMsg);
   }

@@ -244,11 +244,17 @@ async function sendWelcomeMessage(member, guildConfig) {
 
       if (channel) {
         if (welcome.embedEnabled) {
+          // Decorative title with stars (Mimu style)
+          const decorativeTitle = '˚　　　　✦　　　.　　. 　 ˚　.　　　　　 . ✦　　　 　˚　　　　 . ★⋆. ࿐࿔  　　　.　　 　　˚　　 　　*　　 　　✦　　　.　　.　　　✦　˚ 　　　　 ˚　.˚　　　　✦　　　.　　. 　 ˚　.　　　　 　　 　　　　        ੈ✧̣̇˳·˖✶   ✦';
+          
           const embed = new EmbedBuilder()
-            .setColor(guildConfig.embedStyle?.color || '#5865F2')
-            .setTitle('👋 Welcome!')
+            .setColor(welcome.embedColor || guildConfig.embedStyle?.color || '#5865F2')
+            .setAuthor({
+              name: member.user.username,
+              iconURL: member.user.displayAvatarURL({ dynamic: true, size: 128 })
+            })
+            .setTitle(welcome.embedTitle || decorativeTitle)
             .setDescription(welcomeMsg)
-            .setThumbnail(member.user.displayAvatarURL({ dynamic: true, size: 256 }))
             .setFooter({ text: `Member #${member.guild.memberCount}` })
             .setTimestamp();
 
@@ -256,7 +262,9 @@ async function sendWelcomeMessage(member, guildConfig) {
             embed.setImage(welcome.bannerUrl);
           }
 
-          await channel.send({ embeds: [embed] });
+          // Send with optional mention outside embed
+          const content = welcome.mentionUser ? `welcome, ${member}!` : undefined;
+          await channel.send({ content, embeds: [embed] });
         } else {
           await channel.send(welcomeMsg);
         }
