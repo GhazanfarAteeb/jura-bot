@@ -136,7 +136,7 @@ const COMMAND_EXAMPLES = {
   automod: ['automod enable antispam', 'automod config antiraid', 'automod status'],
   feature: ['feature economy enable', 'feature gambling disable', 'feature list'],
   lockdown: ['lockdown', 'lockdown #channel', 'lockdown unlock'],
-  verify: ['verify setup', 'verify panel', 'verify @user']
+  verify: ['verify setup', 'verify panel', 'verify manual @user', 'verify config role @Verified', 'verify config unverifiedrole @Unverified', 'verify status']
 };
 
 export default {
