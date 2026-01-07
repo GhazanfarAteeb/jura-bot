@@ -159,14 +159,14 @@ async function showFeatureMenu(message, guildConfig) {
       }
       continue;
     }
-    
+
     const disabledCount = category.commands.filter(cmd =>
       disabledText.includes(cmd) || disabledSlash.includes(cmd)
     ).length;
     const status = disabledCount === 0 ? '✅' : disabledCount === category.commands.length ? '❌' : '⚠️';
     description += `${status} **${category.name}** - ${category.commands.length} commands\n`;
   }
-  
+
   // Add AI Chat separately at the end
   const aiEnabled = guildConfig.features?.aiChat?.enabled;
   const trollEnabled = guildConfig.features?.aiChat?.trollMode;
@@ -242,7 +242,7 @@ async function showFeatureStatus(message, guildConfig, feature) {
         `${GLYPHS.ARROW_RIGHT} \`feature disable troll\` - Disable Troll Mode`
       )
       .setFooter({ text: 'No API key required - uses free Pollinations AI' });
-    
+
     return message.reply({ embeds: [embed] });
   }
 
@@ -250,30 +250,30 @@ async function showFeatureStatus(message, guildConfig, feature) {
   if (feature === 'profilecustomization' || feature === 'profilecustom' || feature === 'customization') {
     const profileEnabled = guildConfig.economy?.profileCustomization?.enabled !== false; // Default true
     const cardOverlay = guildConfig.economy?.cardOverlay || { color: '#000000', opacity: 0.5 };
-    
+
     const embed = new EmbedBuilder()
       .setTitle('🎨 Profile Customization Status')
       .setColor(profileEnabled ? '#00FF7F' : '#FF4757')
       .setDescription(
         `**Status:** ${profileEnabled ? '✅ Enabled (Users can customize)' : '❌ Disabled (Admin controls)'}\n\n` +
-        (profileEnabled 
+        (profileEnabled
           ? `**When enabled (current):**\n` +
-            `Users can customize their own overlay:\n` +
-            `• \`setprofile overlay color <hex>\`\n` +
-            `• \`setprofile overlay opacity <0-100>\`\n\n` +
-            `**Commands:**\n` +
-            `${GLYPHS.ARROW_RIGHT} \`feature disable profilecustomization\` - Take control as admin`
+          `Users can customize their own overlay:\n` +
+          `• \`setprofile overlay color <hex>\`\n` +
+          `• \`setprofile overlay opacity <0-100>\`\n\n` +
+          `**Commands:**\n` +
+          `${GLYPHS.ARROW_RIGHT} \`feature disable profilecustomization\` - Take control as admin`
           : `**When disabled (current):**\n` +
-            `Server overlay applies to all profiles:\n` +
-            `• Color: \`${cardOverlay.color}\`\n` +
-            `• Opacity: \`${Math.round(cardOverlay.opacity * 100)}%\`\n\n` +
-            `**Admin Commands:**\n` +
-            `${GLYPHS.ARROW_RIGHT} \`setoverlay color <hex>\` - Set overlay color\n` +
-            `${GLYPHS.ARROW_RIGHT} \`setoverlay opacity <0-100>\` - Set overlay opacity\n\n` +
-            `${GLYPHS.ARROW_RIGHT} \`feature enable profilecustomization\` - Let users customize`)
+          `Server overlay applies to all profiles:\n` +
+          `• Color: \`${cardOverlay.color}\`\n` +
+          `• Opacity: \`${Math.round(cardOverlay.opacity * 100)}%\`\n\n` +
+          `**Admin Commands:**\n` +
+          `${GLYPHS.ARROW_RIGHT} \`setoverlay color <hex>\` - Set overlay color\n` +
+          `${GLYPHS.ARROW_RIGHT} \`setoverlay opacity <0-100>\` - Set overlay opacity\n\n` +
+          `${GLYPHS.ARROW_RIGHT} \`feature enable profilecustomization\` - Let users customize`)
       )
       .setFooter({ text: 'Background changes via shop/inventory always work' });
-    
+
     return message.reply({ embeds: [embed] });
   }
 
@@ -340,7 +340,7 @@ async function toggleFeature(message, guildConfig, target, isEnabling, client) {
     const embed = await successEmbed(guildId,
       `Troll Mode ${isEnabling ? 'Enabled 😈' : 'Disabled 😇'}`,
       `${GLYPHS.SUCCESS} **Troll Mode** has been ${isEnabling ? 'enabled' : 'disabled'}.\n\n` +
-      (isEnabling 
+      (isEnabling
         ? `Raphael is now in **chaos mode** - expect unhinged, chaotic, and absolutely based responses. 💀`
         : `Raphael is back to normal - cheeky but reasonable.`)
     );
@@ -356,7 +356,7 @@ async function toggleFeature(message, guildConfig, target, isEnabling, client) {
     const embed = await successEmbed(guildId,
       `AI Chat ${isEnabling ? 'Enabled' : 'Disabled'}`,
       `${GLYPHS.SUCCESS} **🤖 AI Chat (Raphael)** has been ${isEnabling ? 'enabled' : 'disabled'}.\n\n` +
-      (isEnabling 
+      (isEnabling
         ? `Users can now chat with Raphael by mentioning <@${client.user.id}> or replying to the bot's messages.`
         : `The AI chat feature is now disabled.`)
     );
@@ -372,13 +372,13 @@ async function toggleFeature(message, guildConfig, target, isEnabling, client) {
     const embed = await successEmbed(guildId,
       `Profile Customization ${isEnabling ? 'Enabled' : 'Disabled'}`,
       `${GLYPHS.SUCCESS} **🎨 Profile Customization** has been ${isEnabling ? 'enabled' : 'disabled'}.\n\n` +
-      (isEnabling 
+      (isEnabling
         ? `Users can now customize their own overlay color and opacity using:\n` +
-          `• \`setprofile overlay color <hex>\`\n` +
-          `• \`setprofile overlay opacity <0-100>\``
+        `• \`setprofile overlay color <hex>\`\n` +
+        `• \`setprofile overlay opacity <0-100>\``
         : `Users can no longer customize their overlay. Use \`setoverlay\` to set server-wide overlay settings:\n` +
-          `• \`setoverlay color <hex>\`\n` +
-          `• \`setoverlay opacity <0-100>\``)
+        `• \`setoverlay color <hex>\`\n` +
+        `• \`setoverlay opacity <0-100>\``)
     );
     return message.reply({ embeds: [embed] });
   }

@@ -9,6 +9,9 @@ import { buildWelcomeEmbed, parseWelcomeMessage } from '../../commands/config/we
 export default {
   name: Events.GuildMemberAdd,
   async execute(member, client) {
+    // Skip bots - they don't need member tracking or economy
+    if (member.user.bot) return;
+
     const guildId = member.guild.id;
 
     try {

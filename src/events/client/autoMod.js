@@ -29,6 +29,12 @@ export default {
       const autoMod = guildConfig.features.autoMod;
       const userId = message.author.id;
 
+      // Check if channel is ignored
+      if (autoMod.ignoredChannels?.includes(message.channel.id)) return;
+
+      // Check if user has bypass role
+      if (autoMod.ignoredRoles?.some(roleId => message.member.roles.cache.has(roleId))) return;
+
       // Helper to safely check if a feature is enabled (handles legacy boolean values and missing objects)
       const isFeatureEnabled = (feature) => {
         if (!feature) return false;

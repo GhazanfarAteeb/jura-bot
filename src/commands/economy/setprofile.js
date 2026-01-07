@@ -222,8 +222,8 @@ async function showHelp(context, guildId, prefix, customizationEnabled) {
   const embed = new EmbedBuilder()
     .setColor('#00CED1')
     .setTitle('『 Profile Customization 』')
-    .setDescription(customizationEnabled 
-      ? '**Customize your profile, Master:**' 
+    .setDescription(customizationEnabled
+      ? '**Customize your profile, Master:**'
       : '**Profile customization is managed by admins.**\nYou can only set your description.')
     .addFields(fields)
     .setFooter({ text: `Use ${prefix}profile to preview your card` });
@@ -271,8 +271,8 @@ async function showProfileSettings(context, userId, guildId, customizationEnable
   const embed = new EmbedBuilder()
     .setColor('#00CED1')
     .setTitle('『 Your Profile Settings 』')
-    .setDescription(customizationEnabled 
-      ? '**You can customize your overlay.**' 
+    .setDescription(customizationEnabled
+      ? '**You can customize your overlay.**'
       : '**Overlay is controlled by server admins.**')
     .addFields(fields)
     .setFooter({ text: 'Use /profile to preview your card' });

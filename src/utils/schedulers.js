@@ -266,6 +266,54 @@ export function startReminderChecker(client) {
   console.log('[RAPHAEL] Reminder monitoring system initialized.');
 }
 
+// Clean up bot economy entries hourly
+export function startBotEconomyCleanup(client) {
+  cron.schedule('0 * * * *', async () => {
+    console.log('🧹 Cleaning up bot economy entries...');
+
+    try {
+      const Economy = (await import('../models/Economy.js')).default;
+      
+      let totalDeleted = 0;
+      const guilds = client.guilds.cache;
+
+      for (const [guildId, guild] of guilds) {
+        try {
+          // Fetch all members to ensure we have the latest data
+          await guild.members.fetch();
+          
+          // Get all economy entries for this guild
+          const economyEntries = await Economy.find({ guildId });
+          
+          for (const entry of economyEntries) {
+            try {
+              // Try to get the user from Discord
+              const user = await client.users.fetch(entry.userId).catch(() => null);
+              
+              // Delete if user is a bot
+              if (user && user.bot) {
+                await Economy.deleteOne({ _id: entry._id });
+                totalDeleted++;
+                console.log(`Deleted economy entry for bot: ${user.tag} (${user.id})`);
+              }
+            } catch (error) {
+              console.error(`Error checking user ${entry.userId}:`, error.message);
+            }
+          }
+        } catch (error) {
+          console.error(`Error processing guild ${guildId}:`, error.message);
+        }
+      }
+
+      console.log(`🧹 Bot economy cleanup complete. Deleted ${totalDeleted} bot entries.`);
+    } catch (error) {
+      console.error('Error in bot economy cleanup:', error);
+    }
+  });
+
+  console.log('[RAPHAEL] Bot economy cleanup scheduler initialized (runs hourly).');
+}
+
 // Initialize all schedulers
 export function initializeSchedulers(client) {
   startBirthdayChecker(client);
@@ -273,6 +321,7 @@ export function initializeSchedulers(client) {
   startBirthdayRoleRemover(client);
   startGiveawayChecker(client);
   startReminderChecker(client);
+  startBotEconomyCleanup(client);
 
   // Cleanup orphaned temp channels on startup
   cleanupTempChannels(client);

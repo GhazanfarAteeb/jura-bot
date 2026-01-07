@@ -2677,6 +2677,14 @@ async function handleAwardCommand(interaction, client, guildConfig) {
   const amount = interaction.options.getInteger('amount');
   const reason = interaction.options.getString('reason') || 'No reason provided';
 
+  // Check if target is a bot
+  if (targetUser.bot) {
+    return interaction.editReply({
+      embeds: [await errorEmbed(interaction.guild.id, 'Invalid Target',
+        'Automated systems cannot receive awards.')]
+    });
+  }
+
   if (amount === 0) {
     return interaction.editReply({
       embeds: [await errorEmbed(interaction.guild.id, 'Invalid Amount',
@@ -3006,7 +3014,7 @@ async function handleSetoverlayCommand(interaction, guildConfig) {
       const embed = new EmbedBuilder()
         .setColor(cardOverlay.color || '#667eea')
         .setTitle('『 Server Overlay Settings 』')
-        .setDescription(customizationEnabled 
+        .setDescription(customizationEnabled
           ? '⚠️ **User customization is enabled** - these settings are not active.\nUse `feature disable profilecustomization` to take control.'
           : '✅ **These settings apply to all profiles.**')
         .addFields(
@@ -3195,8 +3203,8 @@ async function handleSetprofileCommand(interaction) {
       const embed = new EmbedBuilder()
         .setColor('#00CED1')
         .setTitle('『 Your Profile Settings 』')
-        .setDescription(customizationEnabled 
-          ? '**You can customize your overlay.**' 
+        .setDescription(customizationEnabled
+          ? '**You can customize your overlay.**'
           : '**Overlay is controlled by server admins.**')
         .addFields(
           {

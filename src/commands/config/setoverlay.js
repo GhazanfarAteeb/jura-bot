@@ -161,9 +161,9 @@ async function showHelp(context, prefix, customizationEnabled, guildConfig) {
     .setTitle('『 Server Overlay Settings 』')
     .setDescription(
       `**Configure server-wide overlay for profile/level cards.**\n\n` +
-      `${customizationEnabled 
+      `${customizationEnabled
         ? `⚠️ **Note:** User customization is currently enabled.\n` +
-          `These settings only apply when \`feature disable profilecustomization\` is used.\n\n`
+        `These settings only apply when \`feature disable profilecustomization\` is used.\n\n`
         : `✅ **Active:** These settings apply to all profiles.\n\n`
       }` +
       `**Current Settings:**\n` +
@@ -200,7 +200,7 @@ async function showOverlaySettings(context, guildId, guildConfig, isSlash = fals
   const embed = new EmbedBuilder()
     .setColor(cardOverlay.color || '#667eea')
     .setTitle('『 Server Overlay Settings 』')
-    .setDescription(customizationEnabled 
+    .setDescription(customizationEnabled
       ? '⚠️ **User customization is enabled** - these settings are not active.'
       : '✅ **These settings apply to all profiles.**')
     .addFields(

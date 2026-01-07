@@ -47,7 +47,13 @@ export default {
           `**Notice:** Please specify a subject, Master.\n\nSyntax: \`${prefix}award <type> @user <amount>\``)]
       });
     }
-
+    // Check if target is a bot
+    if (targetUser.bot) {
+      return message.reply({
+        embeds: [await errorEmbed(guildId, 'Invalid Target',
+          '**Warning:** Automated systems cannot receive awards, Master.')]
+      });
+    }
     // Validate amount
     if (isNaN(amount) || amount === 0) {
       return message.reply({

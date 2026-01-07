@@ -32,6 +32,8 @@ const guildSchema = new mongoose.Schema({
     },
     autoMod: {
       enabled: { type: Boolean, default: true },
+      ignoredChannels: [String], // Channels where automod is disabled
+      ignoredRoles: [String], // Roles that bypass automod
       antiSpam: {
         enabled: { type: Boolean, default: true },
         messageLimit: { type: Number, default: 5 }, // messages
