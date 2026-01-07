@@ -266,38 +266,78 @@ export function startReminderChecker(client) {
   console.log('[RAPHAEL] Reminder monitoring system initialized.');
 }
 
-// Clean up bot economy entries every 5 minutes (for monitoring)
+// Clean up bot economy and member entries every 5 minutes (for monitoring)
 export function startBotEconomyCleanup(client) {
   cron.schedule('*/5 * * * *', async () => {
-    console.log('🧹 Cleaning up bot economy entries...');
+    console.log('🧹 Cleaning up bot economy and member entries...');
 
     try {
       const Economy = (await import('../models/Economy.js')).default;
-      
-      let totalDeleted = 0;
+      const Member = (await import('../models/Member.js')).default;
+
+      let totalEconomyDeleted = 0;
+      let totalMemberDeleted = 0;
       const guilds = client.guilds.cache;
 
       for (const [guildId, guild] of guilds) {
         try {
           // Fetch all members to ensure we have the latest data
           await guild.members.fetch();
-          
+
           // Get all economy entries for this guild
           const economyEntries = await Economy.find({ guildId });
-          
+          const memberEntries = await Member.find({ guildId });
+
           for (const entry of economyEntries) {
             try {
               // Try to get the user from Discord
               const user = await client.users.fetch(entry.userId).catch(() => null);
-              
+
               // Delete if user is a bot
               if (user && user.bot) {
+                // Log the data before deletion
+                console.log(`[BOT CLEANUP] Deleting economy data for bot: ${user.tag} (${user.id})`);
+                console.log(`  Guild: ${guild.name} (${guildId})`);
+                console.log(`  Coins: ${entry.coins || 0}`);
+                console.log(`  Bank: ${entry.bank || 0}`);
+                console.log(`  Total Wealth: ${(entry.coins || 0) + (entry.bank || 0)}`);
+                console.log(`  Daily Streak: ${entry.dailyStreak || 0}`);
+                console.log(`  Last Daily: ${entry.lastDaily || 'Never'}`);
+                console.log(`  Rep Given: ${entry.repGiven || 0}`);
+                console.log(`  Profile Background: ${entry.profileBackground || 'None'}`);
+                console.log(`  Entry Created: ${entry.createdAt || 'Unknown'}`);
+                console.log(`---`);
+                
                 await Economy.deleteOne({ _id: entry._id });
-                totalDeleted++;
-                console.log(`Deleted economy entry for bot: ${user.tag} (${user.id})`);
+                totalEconomyDeleted++;
               }
             } catch (error) {
               console.error(`Error checking user ${entry.userId}:`, error.message);
+            }
+          }
+
+          for (const entry of memberEntries) {
+            try {
+              // Try to get the user from Discord
+              const user = await client.users.fetch(entry.userId).catch(() => null);
+
+              // Delete if user is a bot
+              if (user && user.bot) {
+                // Log the member data before deletion
+                console.log(`[BOT CLEANUP] Deleting member data for bot: ${user.tag} (${user.id})`);
+                console.log(`  Guild: ${guild.name} (${guildId})`);
+                console.log(`  Warnings: ${entry.warnings?.length || 0}`);
+                console.log(`  Mutes: ${entry.mutes?.length || 0}`);
+                console.log(`  Kicks: ${entry.kicks?.length || 0}`);
+                console.log(`  Bans: ${entry.bans?.length || 0}`);
+                console.log(`  Entry Created: ${entry.createdAt || 'Unknown'}`);
+                console.log(`---`);
+                
+                await Member.deleteOne({ _id: entry._id });
+                totalMemberDeleted++;
+              }
+            } catch (error) {
+              console.error(`Error checking member ${entry.userId}:`, error.message);
             }
           }
         } catch (error) {
@@ -305,13 +345,13 @@ export function startBotEconomyCleanup(client) {
         }
       }
 
-      console.log(`🧹 Bot economy cleanup complete. Deleted ${totalDeleted} bot entries.`);
+      console.log(`🧹 Bot cleanup complete. Deleted ${totalEconomyDeleted} economy entries and ${totalMemberDeleted} member entries.`);
     } catch (error) {
-      console.error('Error in bot economy cleanup:', error);
+      console.error('Error in bot economy and member cleanup:', error);
     }
   });
 
-  console.log('[RAPHAEL] Bot economy cleanup scheduler initialized (runs every 5 minutes).');
+  console.log('[RAPHAEL] Bot economy and member cleanup scheduler initialized (runs every 5 minutes).');
 }
 
 // Initialize all schedulers
