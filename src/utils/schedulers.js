@@ -273,7 +273,7 @@ export function startBotEconomyCleanup(client) {
 
     try {
       const Economy = (await import('../models/Economy.js')).default;
-      
+
       let totalDeleted = 0;
       const guilds = client.guilds.cache;
 
@@ -281,15 +281,15 @@ export function startBotEconomyCleanup(client) {
         try {
           // Fetch all members to ensure we have the latest data
           await guild.members.fetch();
-          
+
           // Get all economy entries for this guild
           const economyEntries = await Economy.find({ guildId });
-          
+
           for (const entry of economyEntries) {
             try {
               // Try to get the user from Discord
               const user = await client.users.fetch(entry.userId).catch(() => null);
-              
+
               // Delete if user is a bot
               if (user && user.bot) {
                 await Economy.deleteOne({ _id: entry._id });

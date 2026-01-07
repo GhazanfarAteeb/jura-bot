@@ -8,8 +8,8 @@ import Guild from '../../models/Guild.js';
 const COMMANDS_BY_CATEGORY = {
   admin: ['deployment', 'logs', 'award'],
   config: [
-    'setup', 'config', 'feature', 'setprefix', 'setchannel', 'setrole', 'setcoin',
-    'automod', 'welcome', 'antinuke', 'autopublish', 'autorole', 'cmdchannels',
+    'setup', 'config', 'feature', 'setprefix', 'setchannel', 'setrole', 'setcoin', 'setoverlay',
+    'automod', 'automodignore', 'welcome', 'antinuke', 'autopublish', 'autorole', 'cmdchannels',
     'manageshop', 'colorroles', 'levelroles', 'noxp', 'reactionroles', 'xpmultiplier', 'cleanup', 'logs'
   ],
   moderation: ['warn', 'kick', 'ban', 'purge', 'userhistory', 'timeout', 'untimeout', 'lockdown', 'verify'],
@@ -143,6 +143,8 @@ const COMMAND_EXAMPLES = {
   blackjack: ['blackjack 100', 'blackjack 1000'],
   slots: ['slots 50', 'slots 200'],
   automod: ['automod enable antispam', 'automod config antiraid', 'automod status'],
+  automodignore: ['automodignore add channel #general', 'automodignore remove channel #general', 'automodignore add role @Moderator', 'automodignore list'],
+  setoverlay: ['setoverlay color #FF5733', 'setoverlay opacity 0.7', 'setoverlay color #000000 opacity 0.5', 'setoverlay reset'],
   feature: ['feature economy enable', 'feature gambling disable', 'feature aichat enable', 'feature list'],
   lockdown: ['lockdown', 'lockdown #channel', 'lockdown unlock'],
   verify: ['verify setup', 'verify panel', 'verify manual @user', 'verify config role @Verified', 'verify config unverifiedrole @Unverified', 'verify status'],

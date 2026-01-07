@@ -243,7 +243,7 @@ async function sendWelcomeMessage(member, guildConfig) {
       if (channel) {
         // Use the shared buildWelcomeEmbed function for consistency
         const { embed, content } = buildWelcomeEmbed(member, welcome, guildConfig);
-        
+
         if (embed) {
           await channel.send({ content, embeds: [embed] });
         } else {
