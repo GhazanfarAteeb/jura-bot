@@ -21,10 +21,10 @@ const messageTracker = new Map();
 
 async function getAIResponse(messages, maxTokens = 500, retries = 3) {
   // Models to try in order
-  const models = ['openai'];
+  // const models = ['openai'];
 
   for (let attempt = 0; attempt <= retries; attempt++) {
-    const modelToUse = models[attempt % models.length];
+    // const modelToUse = models[attempt % models.length];
 
     try {
       // Use Pollinations AI API with OpenAI-compatible endpoint
@@ -37,7 +37,7 @@ async function getAIResponse(messages, maxTokens = 500, retries = 3) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(apiKey && { 'Authorization': `Bearer ${apiKey}` })
+          'Authorization': `Bearer ${apiKey}`
         },
         body: JSON.stringify({
           model: modelToUse,
