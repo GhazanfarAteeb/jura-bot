@@ -40,7 +40,7 @@ async function getAIResponse(messages, maxTokens = 500, retries = 3) {
           'Authorization': `Bearer ${apiKey}`
         },
         body: JSON.stringify({
-          model: modelToUse,
+          model: 'openai',
           messages: messages,
           max_tokens: maxTokens,
           temperature: 0.98 // Higher for more personality and chaos
