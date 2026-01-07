@@ -21,7 +21,7 @@ const messageTracker = new Map();
 
 async function getAIResponse(messages, maxTokens = 500, retries = 3) {
   // Models to try in order
-  const models = ['openai', 'mistral', 'llama'];
+  const models = ['openai'];
   
   for (let attempt = 0; attempt <= retries; attempt++) {
     const modelToUse = models[attempt % models.length];
@@ -33,7 +33,7 @@ async function getAIResponse(messages, maxTokens = 500, retries = 3) {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 45000); // 45 second timeout
       
-      const response = await fetch('https://text.pollinations.ai/openai', {
+      const response = await fetch('https://gen.pollinations.ai/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -231,7 +231,7 @@ export default {
       ];
       
       // Get AI response
-      const response = await getAIResponse(messages, aiConfig.maxTokens || 500);
+      const response = await getAIResponse(messages, aiConfig.maxTokens || 1000);
       
       if (!response) {
         const errorResponses = [
