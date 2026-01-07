@@ -38,10 +38,9 @@ const economySchema = new mongoose.Schema({
     profile: {
         background: { type: String, default: 'default' },
         backgroundColor: { type: String, default: '#2C2F33' },
-        accentColor: { type: String, default: '#7289DA' },
-        blurColor: { type: String, default: 'rgba(0, 0, 0, 0.5)' }, // Custom blur overlay
-        bio: { type: String, default: '', maxlength: 200 },
-        description: { type: String, default: '', maxlength: 500 }, // Longer description
+        overlayColor: { type: String, default: '#000000' }, // Hex color for user overlay
+        overlayOpacity: { type: Number, default: 0.5, min: 0, max: 1 }, // User overlay opacity 0-1
+        description: { type: String, default: '', maxlength: 500 }, // Profile description
         title: { type: String, default: '' },
         badge: String,
         frame: String,

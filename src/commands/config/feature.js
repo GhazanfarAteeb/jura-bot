@@ -60,6 +60,11 @@ const featureCategories = {
     name: '👋 Welcome',
     commands: ['welcome']
   },
+  profilecustomization: {
+    name: '🎨 Profile Customization',
+    commands: [], // Special feature - not command-based
+    isFeatureToggle: true
+  },
   aichat: {
     name: '🤖 AI Chat (Raphael)',
     commands: [], // Special feature - not command-based
@@ -146,6 +151,10 @@ async function showFeatureMenu(message, guildConfig) {
       if (key === 'aichat') {
         const aiEnabled = guildConfig.features?.aiChat?.enabled;
         const status = aiEnabled ? '✅' : '❌';
+        description += `${status} **${category.name}** - Feature toggle\n`;
+      } else if (key === 'profilecustomization') {
+        const profileEnabled = guildConfig.economy?.profileCustomization?.enabled !== false; // Default true
+        const status = profileEnabled ? '✅' : '❌';
         description += `${status} **${category.name}** - Feature toggle\n`;
       }
       continue;
@@ -237,6 +246,37 @@ async function showFeatureStatus(message, guildConfig, feature) {
     return message.reply({ embeds: [embed] });
   }
 
+  // Handle Profile Customization specially
+  if (feature === 'profilecustomization' || feature === 'profilecustom' || feature === 'customization') {
+    const profileEnabled = guildConfig.economy?.profileCustomization?.enabled !== false; // Default true
+    const cardOverlay = guildConfig.economy?.cardOverlay || { color: '#000000', opacity: 0.5 };
+    
+    const embed = new EmbedBuilder()
+      .setTitle('🎨 Profile Customization Status')
+      .setColor(profileEnabled ? '#00FF7F' : '#FF4757')
+      .setDescription(
+        `**Status:** ${profileEnabled ? '✅ Enabled (Users can customize)' : '❌ Disabled (Admin controls)'}\n\n` +
+        (profileEnabled 
+          ? `**When enabled (current):**\n` +
+            `Users can customize their own overlay:\n` +
+            `• \`setprofile overlay color <hex>\`\n` +
+            `• \`setprofile overlay opacity <0-100>\`\n\n` +
+            `**Commands:**\n` +
+            `${GLYPHS.ARROW_RIGHT} \`feature disable profilecustomization\` - Take control as admin`
+          : `**When disabled (current):**\n` +
+            `Server overlay applies to all profiles:\n` +
+            `• Color: \`${cardOverlay.color}\`\n` +
+            `• Opacity: \`${Math.round(cardOverlay.opacity * 100)}%\`\n\n` +
+            `**Admin Commands:**\n` +
+            `${GLYPHS.ARROW_RIGHT} \`setoverlay color <hex>\` - Set overlay color\n` +
+            `${GLYPHS.ARROW_RIGHT} \`setoverlay opacity <0-100>\` - Set overlay opacity\n\n` +
+            `${GLYPHS.ARROW_RIGHT} \`feature enable profilecustomization\` - Let users customize`)
+      )
+      .setFooter({ text: 'Background changes via shop/inventory always work' });
+    
+    return message.reply({ embeds: [embed] });
+  }
+
   const category = featureCategories[feature];
 
   if (!category) {
@@ -319,6 +359,26 @@ async function toggleFeature(message, guildConfig, target, isEnabling, client) {
       (isEnabling 
         ? `Users can now chat with Raphael by mentioning <@${client.user.id}> or replying to the bot's messages.`
         : `The AI chat feature is now disabled.`)
+    );
+    return message.reply({ embeds: [embed] });
+  }
+
+  // Handle Profile Customization toggle
+  if (target === 'profilecustomization' || target === 'profilecustom' || target === 'customization') {
+    await Guild.updateGuild(guildId, {
+      $set: { 'economy.profileCustomization.enabled': isEnabling }
+    });
+
+    const embed = await successEmbed(guildId,
+      `Profile Customization ${isEnabling ? 'Enabled' : 'Disabled'}`,
+      `${GLYPHS.SUCCESS} **🎨 Profile Customization** has been ${isEnabling ? 'enabled' : 'disabled'}.\n\n` +
+      (isEnabling 
+        ? `Users can now customize their own overlay color and opacity using:\n` +
+          `• \`setprofile overlay color <hex>\`\n` +
+          `• \`setprofile overlay opacity <0-100>\``
+        : `Users can no longer customize their overlay. Use \`setoverlay\` to set server-wide overlay settings:\n` +
+          `• \`setoverlay color <hex>\`\n` +
+          `• \`setoverlay opacity <0-100>\``)
     );
     return message.reply({ embeds: [embed] });
   }

@@ -249,6 +249,10 @@ const guildSchema = new mongoose.Schema({
     cardOverlay: {
       color: { type: String, default: '#000000' }, // Hex color for overlay
       opacity: { type: Number, default: 0.5, min: 0, max: 1 } // Opacity 0-1
+    },
+    // Profile customization settings
+    profileCustomization: {
+      enabled: { type: Boolean, default: true } // If true (default), users can customize their overlay. If false, admin controls via setoverlay
     }
   },
   // Voice XP settings

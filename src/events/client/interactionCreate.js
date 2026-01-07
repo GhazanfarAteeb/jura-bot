@@ -268,6 +268,9 @@ async function handleSpecialCommand(interaction, client, guildConfig, hasAdminRo
       case 'setoverlay':
         await handleSetoverlayCommand(interaction, guildConfig);
         break;
+      case 'setprofile':
+        await handleSetprofileCommand(interaction);
+        break;
     }
   } catch (error) {
     console.error(`Error handling ${interaction.commandName}:`, error);
@@ -2992,6 +2995,9 @@ async function handleSetoverlayCommand(interaction, guildConfig) {
     return `rgba(${r}, ${g}, ${b}, ${opacity})`;
   }
 
+  // Check if user customization is enabled
+  const customizationEnabled = guildConfig.economy?.profileCustomization?.enabled !== false;
+
   switch (subcommand) {
     case 'view': {
       const cardOverlay = guildConfig.economy?.cardOverlay || { color: '#000000', opacity: 0.5 };
@@ -2999,8 +3005,10 @@ async function handleSetoverlayCommand(interaction, guildConfig) {
 
       const embed = new EmbedBuilder()
         .setColor(cardOverlay.color || '#667eea')
-        .setTitle('『 Current Overlay Settings 』')
-        .setDescription('**Overlay configuration for profile and level cards:**')
+        .setTitle('『 Server Overlay Settings 』')
+        .setDescription(customizationEnabled 
+          ? '⚠️ **User customization is enabled** - these settings are not active.\nUse `feature disable profilecustomization` to take control.'
+          : '✅ **These settings apply to all profiles.**')
         .addFields(
           {
             name: '🎨 Color',
@@ -3033,11 +3041,10 @@ async function handleSetoverlayCommand(interaction, guildConfig) {
 
       await interaction.editReply({
         embeds: [await successEmbed(interaction.guild.id, 'Overlay Settings Reset',
-          `${GLYPHS.SUCCESS} Card overlay settings reset to default.\n\n` +
+          `${GLYPHS.SUCCESS} Server overlay settings reset to default.\n\n` +
           `**Default Values:**\n` +
           `◇ Color: \`#000000\`\n` +
-          `◇ Opacity: \`50%\`\n\n` +
-          `This applies to both **profile** and **level/rank** cards.`)]
+          `◇ Opacity: \`50%\``)]
       });
       break;
     }
@@ -3056,31 +3063,27 @@ async function handleSetoverlayCommand(interaction, guildConfig) {
             `**Examples:**\n` +
             `◇ \`#000000\` - Black\n` +
             `◇ \`#1a1a2e\` - Dark Blue\n` +
-            `◇ \`#2C2F33\` - Discord Dark\n` +
-            `◇ \`#667eea\` - Purple`)]
+            `◇ \`#2C2F33\` - Discord Dark`)]
         });
         return;
       }
 
-      const hexColor = `#${match[1].toUpperCase()}`;
+      const hexColor = `#${match[1].toLowerCase()}`;
 
       await Guild.updateGuild(interaction.guild.id, {
         $set: { 'economy.cardOverlay.color': hexColor }
       });
 
-      const embed = await successEmbed(interaction.guild.id, 'Overlay Color Updated',
-        `${GLYPHS.SUCCESS} Card overlay color set to \`${hexColor}\`\n\n` +
-        `This applies to both **profile** and **level/rank** cards.`
-      );
-      embed.setColor(hexColor);
-
-      await interaction.editReply({ embeds: [embed] });
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, 'Overlay Color Updated',
+          `${GLYPHS.SUCCESS} Server overlay color set to \`${hexColor}\`\n\n` +
+          `This applies to both **profile** and **level/rank** cards.`)]
+      });
       break;
     }
 
     case 'opacity': {
       const opacityPercent = interaction.options.getInteger('percent');
-
       const opacity = opacityPercent / 100;
 
       await Guild.updateGuild(interaction.guild.id, {
@@ -3089,9 +3092,190 @@ async function handleSetoverlayCommand(interaction, guildConfig) {
 
       await interaction.editReply({
         embeds: [await successEmbed(interaction.guild.id, 'Overlay Opacity Updated',
-          `${GLYPHS.SUCCESS} Card overlay opacity set to \`${opacityPercent}%\`\n\n` +
+          `${GLYPHS.SUCCESS} Server overlay opacity set to \`${opacityPercent}%\`\n\n` +
           `This applies to both **profile** and **level/rank** cards.`)]
       });
+      break;
+    }
+  }
+}
+
+// Handle setprofile command
+async function handleSetprofileCommand(interaction) {
+  const Economy = (await import('../../models/Economy.js')).default;
+  const Guild = (await import('../../models/Guild.js')).default;
+  const { successEmbed, errorEmbed, GLYPHS } = await import('../../utils/embeds.js');
+  const { EmbedBuilder } = await import('discord.js');
+
+  const userId = interaction.user.id;
+  const guildId = interaction.guild.id;
+  const subcommandGroup = interaction.options.getSubcommandGroup(false);
+  const subcommand = interaction.options.getSubcommand();
+
+  // Get guild config to check if customization is enabled (default: true)
+  const guildConfig = await Guild.getGuild(guildId);
+  const customizationEnabled = guildConfig.economy?.profileCustomization?.enabled !== false;
+
+  // Helper function to convert hex to rgba
+  function hexToRgba(hex, opacity) {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    if (!result) return null;
+    const r = parseInt(result[1], 16);
+    const g = parseInt(result[2], 16);
+    const b = parseInt(result[3], 16);
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  }
+
+  // Handle overlay subcommand group
+  if (subcommandGroup === 'overlay') {
+    if (!customizationEnabled) {
+      await interaction.editReply({
+        embeds: [await errorEmbed(guildId, 'Customization Disabled',
+          `${GLYPHS.WARNING} Profile customization is disabled on this server.\n\n` +
+          `Server admins control the overlay using \`/setoverlay\`.`)]
+      });
+      return;
+    }
+
+    if (subcommand === 'color') {
+      const hex = interaction.options.getString('hex');
+      const hexRegex = /^#?([0-9A-Fa-f]{6})$/;
+      const match = hex.match(hexRegex);
+
+      if (!match) {
+        await interaction.editReply({
+          embeds: [await errorEmbed(guildId, 'Invalid Color',
+            `${GLYPHS.WARNING} Invalid hex color format, Master.\n\n` +
+            `**Examples:**\n◇ \`#000000\` - Black\n◇ \`#1a1a2e\` - Dark Blue`)]
+        });
+        return;
+      }
+
+      const hexColor = hex.startsWith('#') ? hex.toLowerCase() : `#${hex.toLowerCase()}`;
+      const economy = await Economy.getEconomy(userId, guildId);
+      economy.profile.overlayColor = hexColor;
+      await economy.save();
+
+      const embed = new EmbedBuilder()
+        .setColor(hexColor)
+        .setTitle('『 Overlay Color Updated 』')
+        .setDescription(`${GLYPHS.SUCCESS} **Confirmed:** Set to \`${hexColor}\`, Master.`)
+        .setFooter({ text: 'Applied to your profile and level cards.' });
+
+      await interaction.editReply({ embeds: [embed] });
+      return;
+    }
+
+    if (subcommand === 'opacity') {
+      const opacityPercent = interaction.options.getInteger('percent');
+      const opacity = opacityPercent / 100;
+
+      const economy = await Economy.getEconomy(userId, guildId);
+      economy.profile.overlayOpacity = opacity;
+      await economy.save();
+
+      await interaction.editReply({
+        embeds: [await successEmbed(guildId, 'Overlay Opacity Updated',
+          `${GLYPHS.SUCCESS} **Confirmed:** Set to \`${opacityPercent}%\`, Master.\n\n` +
+          `Applied to your profile and level cards.`)]
+      });
+      return;
+    }
+  }
+
+  switch (subcommand) {
+    case 'view': {
+      const economy = await Economy.getEconomy(userId, guildId);
+      const profile = economy.profile || {};
+
+      const overlayColor = profile.overlayColor || '#000000';
+      const overlayOpacity = profile.overlayOpacity ?? 0.5;
+      const overlayRgba = hexToRgba(overlayColor, overlayOpacity);
+
+      const embed = new EmbedBuilder()
+        .setColor('#00CED1')
+        .setTitle('『 Your Profile Settings 』')
+        .setDescription(customizationEnabled 
+          ? '**You can customize your overlay.**' 
+          : '**Overlay is controlled by server admins.**')
+        .addFields(
+          {
+            name: '📄 Description',
+            value: profile.description ? `\`\`\`${profile.description.substring(0, 150)}${profile.description.length > 150 ? '...' : ''}\`\`\`` : '`Not set`',
+            inline: false
+          },
+          {
+            name: '🎨 Overlay Color',
+            value: `\`${overlayColor}\``,
+            inline: true
+          },
+          {
+            name: '💧 Overlay Opacity',
+            value: `\`${Math.round(overlayOpacity * 100)}%\``,
+            inline: true
+          },
+          {
+            name: '📋 Result',
+            value: `\`${overlayRgba}\``,
+            inline: true
+          },
+          {
+            name: '🖼️ Background',
+            value: `\`${profile.background || 'default'}\``,
+            inline: true
+          }
+        )
+        .setFooter({ text: 'Use /profile to preview your card' });
+
+      await interaction.editReply({ embeds: [embed] });
+      break;
+    }
+
+    case 'reset': {
+      if (!customizationEnabled) {
+        await interaction.editReply({
+          embeds: [await errorEmbed(guildId, 'Customization Disabled',
+            `${GLYPHS.WARNING} Profile customization is disabled.\nOverlay is controlled by server admins.`)]
+        });
+        return;
+      }
+
+      await Economy.updateEconomy(userId, guildId, {
+        $set: {
+          'profile.overlayColor': '#000000',
+          'profile.overlayOpacity': 0.5
+        }
+      });
+
+      await interaction.editReply({
+        embeds: [await successEmbed(guildId, 'Overlay Reset',
+          `${GLYPHS.SUCCESS} Your overlay has been reset to default, Master.\n\n` +
+          `**Default Values:**\n` +
+          `◇ Color: \`#000000\`\n` +
+          `◇ Opacity: \`50%\``)]
+      });
+      break;
+    }
+
+    case 'description': {
+      const text = interaction.options.getString('text') || '';
+      const economy = await Economy.getEconomy(userId, guildId);
+
+      if (!text) {
+        economy.profile.description = '';
+        await economy.save();
+        await interaction.editReply({
+          embeds: [await successEmbed(guildId, 'Description Cleared',
+            `${GLYPHS.SUCCESS} Your description has been cleared, Master.`)]
+        });
+      } else {
+        economy.profile.description = text;
+        await economy.save();
+        await interaction.editReply({
+          embeds: [await successEmbed(guildId, 'Description Updated',
+            `${GLYPHS.SUCCESS} Your description has been updated, Master.\n\n**Length:** ${text.length}/500 characters`)]
+        });
+      }
       break;
     }
   }

@@ -66,10 +66,24 @@ export default {
       const guildConfig = await Guild.getGuild(guildId);
       const fallbackBg = guildConfig.economy?.fallbackBackground;
 
-      // Get card overlay settings (applies to both profile and level cards)
-      const cardOverlay = guildConfig.economy?.cardOverlay || { color: '#000000', opacity: 0.5 };
-      const overlayColor = cardOverlay.color || '#000000';
-      const overlayOpacity = cardOverlay.opacity ?? 0.5;
+      // Check if user customization is enabled (default: true)
+      const customizationEnabled = guildConfig.economy?.profileCustomization?.enabled !== false;
+
+      // Get overlay settings
+      // If customization is enabled, use user's overlay; otherwise use server's cardOverlay
+      let overlayColor = '#000000';
+      let overlayOpacity = 0.5;
+
+      if (customizationEnabled) {
+        // Use user's overlay settings
+        overlayColor = economy.profile.overlayColor || '#000000';
+        overlayOpacity = economy.profile.overlayOpacity ?? 0.5;
+      } else {
+        // Use server's card overlay settings
+        const cardOverlay = guildConfig.economy?.cardOverlay || { color: '#000000', opacity: 0.5 };
+        overlayColor = cardOverlay.color || '#000000';
+        overlayOpacity = cardOverlay.opacity ?? 0.5;
+      }
 
       // Get background - check user's background, then custom shop items, then fallback
       let background = getBackground(economy.profile.background || 'default');
@@ -106,7 +120,7 @@ export default {
           const loadedBg = await loadImage(bgImage).catch(() => null);
           if (loadedBg) {
             ctx.drawImage(loadedBg, 0, 0, canvas.width, canvas.height);
-            // Add overlay for readability (uses guild customization)
+            // Add overlay for readability (uses user or guild customization)
             ctx.fillStyle = hexToRgba(overlayColor, overlayOpacity);
             ctx.fillRect(0, 0, canvas.width, canvas.height);
           } else {

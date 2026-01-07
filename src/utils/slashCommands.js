@@ -547,7 +547,7 @@ const slashCommands = [
   // Set Overlay Command (Admin)
   new SlashCommandBuilder()
     .setName('setoverlay')
-    .setDescription('Configure overlay color and opacity for profile and level cards')
+    .setDescription('Configure server-wide overlay for profile and level cards')
     .addSubcommand(subcommand =>
       subcommand
         .setName('color')
@@ -575,6 +575,50 @@ const slashCommands = [
         .setName('reset')
         .setDescription('Reset overlay settings to default'))
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+
+  // Set Profile Command (User)
+  new SlashCommandBuilder()
+    .setName('setprofile')
+    .setDescription('Customize your profile settings')
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('description')
+        .setDescription('Set your profile description (max 500 chars)')
+        .addStringOption(option =>
+          option.setName('text')
+            .setDescription('Your description text (leave empty to clear)')
+            .setRequired(false)
+            .setMaxLength(500)))
+    .addSubcommandGroup(group =>
+      group
+        .setName('overlay')
+        .setDescription('Customize your card overlay')
+        .addSubcommand(subcommand =>
+          subcommand
+            .setName('color')
+            .setDescription('Set your overlay color')
+            .addStringOption(option =>
+              option.setName('hex')
+                .setDescription('Hex color (e.g., #000000)')
+                .setRequired(true)))
+        .addSubcommand(subcommand =>
+          subcommand
+            .setName('opacity')
+            .setDescription('Set your overlay opacity')
+            .addIntegerOption(option =>
+              option.setName('percent')
+                .setDescription('Opacity percentage (0-100)')
+                .setRequired(true)
+                .setMinValue(0)
+                .setMaxValue(100))))
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('view')
+        .setDescription('View your current profile settings'))
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('reset')
+        .setDescription('Reset overlay customizations to default')),
 
   // Birthday Settings Command (Admin)
   new SlashCommandBuilder()
