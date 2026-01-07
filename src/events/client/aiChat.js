@@ -52,7 +52,7 @@ async function getAIResponse(messages, maxTokens = 500, retries = 3) {
 
       if (!response.ok) {
         const errorText = await response.text().catch(() => 'Unable to read error');
-        console.error(`Pollinations API error (attempt ${attempt + 1}, model: ${modelToUse}):`, response.status, response.statusText);
+        // console.error(`Pollinations API error (attempt ${attempt + 1}, model: ${modelToUse}):`, response.status, response.statusText);
         console.error('Error details:', errorText);
         if (attempt < retries) {
           await new Promise(r => setTimeout(r, 1500 + (attempt * 500))); // Increasing delay: 1.5s, 2s, 2.5s
@@ -86,7 +86,7 @@ async function getAIResponse(messages, maxTokens = 500, retries = 3) {
 
       return cleanedResponse;
     } catch (error) {
-      console.error(`AI Chat error (attempt ${attempt + 1}, model: ${modelToUse}):`, error.message);
+      // console.error(`AI Chat error (attempt ${attempt + 1}, model: ${modelToUse}):`, error.message);
       if (attempt < retries) {
         await new Promise(r => setTimeout(r, 1500 + (attempt * 500)));
         continue;
