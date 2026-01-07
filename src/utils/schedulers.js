@@ -293,10 +293,11 @@ export function startBotEconomyCleanup(client) {
               // Try to get the user from Discord
               const user = await client.users.fetch(entry.userId).catch(() => null);
 
-              // Delete if user is a bot
-              if (user && user.bot) {
+              // Delete if user is a bot (including this bot itself)
+              if ((user && user.bot) || entry.userId === client.user.id) {
                 // Log the data before deletion
-                console.log(`[BOT CLEANUP] Deleting economy data for bot: ${user.tag} (${user.id})`);
+                const username = user ? user.tag : entry.userId;
+                console.log(`[BOT CLEANUP] Deleting economy data for bot: ${username} (${entry.userId})`);
                 console.log(`  Guild: ${guild.name} (${guildId})`);
                 console.log(`  Coins: ${entry.coins || 0}`);
                 console.log(`  Bank: ${entry.bank || 0}`);
@@ -321,10 +322,11 @@ export function startBotEconomyCleanup(client) {
               // Try to get the user from Discord
               const user = await client.users.fetch(entry.userId).catch(() => null);
 
-              // Delete if user is a bot
-              if (user && user.bot) {
+              // Delete if user is a bot (including this bot itself)
+              if ((user && user.bot) || entry.userId === client.user.id) {
                 // Log the member data before deletion
-                console.log(`[BOT CLEANUP] Deleting member data for bot: ${user.tag} (${user.id})`);
+                const username = user ? user.tag : entry.userId;
+                console.log(`[BOT CLEANUP] Deleting member data for bot: ${username} (${entry.userId})`);
                 console.log(`  Guild: ${guild.name} (${guildId})`);
                 console.log(`  Warnings: ${entry.warnings?.length || 0}`);
                 console.log(`  Mutes: ${entry.mutes?.length || 0}`);
