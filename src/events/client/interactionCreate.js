@@ -29,7 +29,7 @@ export default {
     );
 
     // Handle special slash commands that need custom handling
-    const specialCommands = ['automod', 'lockdown', 'setrole', 'setchannel', 'slashcommands', 'refreshcache', 'birthdaysettings', 'setbirthday', 'config', 'setup', 'welcome', 'manageshop', 'verify', 'cmdchannels', 'logs', 'autorole', 'feature', 'giveaway', 'award', 'noxp'];
+    const specialCommands = ['automod', 'lockdown', 'setrole', 'setchannel', 'slashcommands', 'refreshcache', 'birthdaysettings', 'setbirthday', 'config', 'setup', 'welcome', 'manageshop', 'verify', 'cmdchannels', 'logs', 'autorole', 'feature', 'giveaway', 'award', 'noxp', 'setoverlay'];
     if (specialCommands.includes(interaction.commandName)) {
       return handleSpecialCommand(interaction, client, guildConfig, hasAdminRole);
     }
@@ -264,6 +264,9 @@ async function handleSpecialCommand(interaction, client, guildConfig, hasAdminRo
         break;
       case 'noxp':
         await handleNoxpCommand(interaction, guildConfig);
+        break;
+      case 'setoverlay':
+        await handleSetoverlayCommand(interaction, guildConfig);
         break;
     }
   } catch (error) {
@@ -1086,7 +1089,7 @@ async function handleWelcomeCommand(interaction, guildConfig) {
     case 'message': {
       const text = interaction.options.getString('text');
       await Guild.updateGuild(interaction.guild.id, { $set: { 'features.welcomeSystem.message': text } });
-      
+
       // Preview the message
       const previewMsg = text
         .replace(/{user}/gi, interaction.user.toString())
@@ -1094,7 +1097,7 @@ async function handleWelcomeCommand(interaction, guildConfig) {
         .replace(/{server}/gi, interaction.guild.name)
         .replace(/{membercount}/gi, interaction.guild.memberCount.toString())
         .replace(/\\n/g, '\n');
-      
+
       await interaction.editReply({
         embeds: [await successEmbed(interaction.guild.id, 'Welcome Message Set',
           `${GLYPHS.SUCCESS} Welcome message updated!\n\n**Preview:**\n${previewMsg}`)]
@@ -1104,7 +1107,7 @@ async function handleWelcomeCommand(interaction, guildConfig) {
 
     case 'title': {
       const text = interaction.options.getString('text');
-      
+
       if (text.toLowerCase() === 'reset' || text.toLowerCase() === 'default') {
         await Guild.updateGuild(interaction.guild.id, { $set: { 'features.welcomeSystem.embedTitle': null } });
         await interaction.editReply({
@@ -1129,7 +1132,7 @@ async function handleWelcomeCommand(interaction, guildConfig) {
 
     case 'footer': {
       const text = interaction.options.getString('text');
-      
+
       if (text.toLowerCase() === 'reset' || text.toLowerCase() === 'default') {
         await Guild.updateGuild(interaction.guild.id, { $set: { 'features.welcomeSystem.footerText': null } });
         await interaction.editReply({
@@ -1154,7 +1157,7 @@ async function handleWelcomeCommand(interaction, guildConfig) {
 
     case 'greet': {
       const text = interaction.options.getString('text');
-      
+
       if (text.toLowerCase() === 'reset' || text.toLowerCase() === 'default') {
         await Guild.updateGuild(interaction.guild.id, { $set: { 'features.welcomeSystem.greetingText': null } });
         await interaction.editReply({
@@ -1173,7 +1176,7 @@ async function handleWelcomeCommand(interaction, guildConfig) {
 
     case 'color': {
       const hex = interaction.options.getString('hex');
-      
+
       if (hex.toLowerCase() === 'reset' || hex.toLowerCase() === 'default') {
         await Guild.updateGuild(interaction.guild.id, { $set: { 'features.welcomeSystem.embedColor': null } });
         await interaction.editReply({
@@ -1198,7 +1201,7 @@ async function handleWelcomeCommand(interaction, guildConfig) {
 
     case 'image': {
       const url = interaction.options.getString('url');
-      
+
       if (url.toLowerCase() === 'remove' || url.toLowerCase() === 'none') {
         await Guild.updateGuild(interaction.guild.id, { $set: { 'features.welcomeSystem.bannerUrl': null } });
         await interaction.editReply({
@@ -1222,7 +1225,7 @@ async function handleWelcomeCommand(interaction, guildConfig) {
 
     case 'thumbnail': {
       const type = interaction.options.getString('type');
-      
+
       if (type === 'remove') {
         await Guild.updateGuild(interaction.guild.id, {
           $set: { 'features.welcomeSystem.thumbnailUrl': null, 'features.welcomeSystem.thumbnailType': null }
@@ -1303,7 +1306,7 @@ async function handleWelcomeCommand(interaction, guildConfig) {
 
     case 'role': {
       const role = interaction.options.getRole('role');
-      
+
       if (!role) {
         await Guild.updateGuild(interaction.guild.id, { $set: { 'features.welcomeSystem.autoRole': null } });
         await interaction.editReply({
@@ -1346,7 +1349,7 @@ async function handleWelcomeCommand(interaction, guildConfig) {
     case 'test': {
       const channelId = welcome.channel || guildConfig.channels.welcomeChannel;
       const channel = channelId ? interaction.guild.channels.cache.get(channelId) : interaction.channel;
-      
+
       if (!channel) {
         await interaction.editReply({
           embeds: [await errorEmbed(interaction.guild.id, 'No Channel',
@@ -1360,7 +1363,7 @@ async function handleWelcomeCommand(interaction, guildConfig) {
       const freshWelcome = freshConfig.features.welcomeSystem || {};
 
       const { embed, content } = buildWelcomeEmbed(interaction.member, freshWelcome, freshConfig);
-      
+
       if (embed) {
         await channel.send({ content, embeds: [embed] });
       } else {
@@ -1378,9 +1381,9 @@ async function handleWelcomeCommand(interaction, guildConfig) {
     case 'preview': {
       const freshConfig = await Guild.getGuild(interaction.guild.id, interaction.guild.name);
       const freshWelcome = freshConfig.features.welcomeSystem || {};
-      
+
       const { embed, content } = buildWelcomeEmbed(interaction.member, freshWelcome, freshConfig);
-      
+
       await interaction.editReply({
         content: content || undefined,
         embeds: embed ? [embed] : []
@@ -1809,13 +1812,13 @@ async function handleVerifyCommand(interaction, client, guildConfig) {
       }
 
       await member.roles.add(verifiedRoleId);
-      
+
       // Remove unverified role if configured
       const unverifiedRoleId = guildConfig.features?.verificationSystem?.unverifiedRole;
       if (unverifiedRoleId && member.roles.cache.has(unverifiedRoleId)) {
-        await member.roles.remove(unverifiedRoleId).catch(() => {});
+        await member.roles.remove(unverifiedRoleId).catch(() => { });
       }
-      
+
       await interaction.editReply({
         embeds: [await successEmbed(interaction.guild.id, 'User Verified',
           `${GLYPHS.SUCCESS} ${user} has been manually verified.`)]
@@ -2283,7 +2286,7 @@ async function handleFeatureCommand(interaction, client, guildConfig) {
           `**Powered by:** Pollinations AI (Free)`
         )
         .setFooter({ text: 'Use /feature type:troll to toggle chaos mode' });
-      
+
       return interaction.editReply({ embeds: [embed] });
     }
 
@@ -2296,7 +2299,7 @@ async function handleFeatureCommand(interaction, client, guildConfig) {
       embeds: [await successEmbed(guildId,
         `AI Chat ${isEnabling ? 'Enabled' : 'Disabled'}`,
         `${GLYPHS.SUCCESS} **🤖 AI Chat (Raphael)** has been ${isEnabling ? 'enabled' : 'disabled'}.\n\n` +
-        (isEnabling 
+        (isEnabling
           ? `Users can now chat with Raphael by mentioning <@${client.user.id}> or replying to the bot's messages.`
           : `The AI chat feature is now disabled.`)
       )]
@@ -2313,19 +2316,19 @@ async function handleFeatureCommand(interaction, client, guildConfig) {
         .setDescription(
           `**AI Chat:** ${aiConfig.enabled ? '✅ Enabled' : '❌ Disabled'}\n` +
           `**Troll Mode:** ${aiConfig.trollMode ? '😈 Enabled' : '😇 Disabled'}\n\n` +
-          (aiConfig.trollMode 
+          (aiConfig.trollMode
             ? `Raphael is in **chaos mode** - expect unhinged, chaotic responses! 💀`
             : `Raphael is being normal... for now.`)
         )
         .setFooter({ text: 'Enable troll mode for maximum chaos' });
-      
+
       return interaction.editReply({ embeds: [embed] });
     }
 
     // Check if AI Chat is enabled first
     const aiEnabled = guildConfig.features?.aiChat?.enabled;
     const isEnabling = status === 'enable';
-    
+
     if (!aiEnabled && isEnabling) {
       return interaction.editReply({
         embeds: [await errorEmbed(guildId, 'AI Chat Disabled',
@@ -2343,7 +2346,7 @@ async function handleFeatureCommand(interaction, client, guildConfig) {
       embeds: [await successEmbed(guildId,
         `Troll Mode ${isEnabling ? 'Enabled 😈' : 'Disabled 😇'}`,
         `${GLYPHS.SUCCESS} **Troll Mode** has been ${isEnabling ? 'enabled' : 'disabled'}.\n\n` +
-        (isEnabling 
+        (isEnabling
           ? `Raphael is now in **chaos mode** - expect unhinged, chaotic, and absolutely based responses. 💀`
           : `Raphael is back to normal - cheeky but reasonable.`)
       )]
@@ -2967,6 +2970,127 @@ async function handleNoxpCommand(interaction, guildConfig) {
       await interaction.editReply({
         embeds: [await successEmbed(interaction.guild.id, 'Channels Cleared',
           `${GLYPHS.SUCCESS} All channels have been removed from the no-XP list.`)]
+      });
+      break;
+    }
+  }
+}
+
+// Handle setoverlay command
+async function handleSetoverlayCommand(interaction, guildConfig) {
+  const { successEmbed, errorEmbed, GLYPHS } = await import('../../utils/embeds.js');
+  const { EmbedBuilder } = await import('discord.js');
+  const subcommand = interaction.options.getSubcommand();
+
+  // Helper function to convert hex to rgba
+  function hexToRgba(hex, opacity) {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    if (!result) return null;
+    const r = parseInt(result[1], 16);
+    const g = parseInt(result[2], 16);
+    const b = parseInt(result[3], 16);
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  }
+
+  switch (subcommand) {
+    case 'view': {
+      const cardOverlay = guildConfig.economy?.cardOverlay || { color: '#000000', opacity: 0.5 };
+      const overlayRgba = hexToRgba(cardOverlay.color, cardOverlay.opacity);
+
+      const embed = new EmbedBuilder()
+        .setColor(cardOverlay.color || '#667eea')
+        .setTitle('『 Current Overlay Settings 』')
+        .setDescription('**Overlay configuration for profile and level cards:**')
+        .addFields(
+          {
+            name: '🎨 Color',
+            value: `\`${cardOverlay.color}\``,
+            inline: true
+          },
+          {
+            name: '💧 Opacity',
+            value: `\`${Math.round(cardOverlay.opacity * 100)}%\``,
+            inline: true
+          },
+          {
+            name: '📋 Result',
+            value: `\`${overlayRgba}\``,
+            inline: true
+          }
+        )
+        .setFooter({ text: 'Applies to both profile and level/rank cards' });
+
+      await interaction.editReply({ embeds: [embed] });
+      break;
+    }
+
+    case 'reset': {
+      const defaultSettings = { color: '#000000', opacity: 0.5 };
+
+      await Guild.updateGuild(interaction.guild.id, {
+        $set: { 'economy.cardOverlay': defaultSettings }
+      });
+
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, 'Overlay Settings Reset',
+          `${GLYPHS.SUCCESS} Card overlay settings reset to default.\n\n` +
+          `**Default Values:**\n` +
+          `◇ Color: \`#000000\`\n` +
+          `◇ Opacity: \`50%\`\n\n` +
+          `This applies to both **profile** and **level/rank** cards.`)]
+      });
+      break;
+    }
+
+    case 'color': {
+      const hex = interaction.options.getString('hex');
+
+      // Validate hex color
+      const hexRegex = /^#?([0-9A-Fa-f]{6})$/;
+      const match = hex.match(hexRegex);
+
+      if (!match) {
+        await interaction.editReply({
+          embeds: [await errorEmbed(interaction.guild.id, 'Invalid Color',
+            `${GLYPHS.WARNING} Please provide a valid hex color.\n\n` +
+            `**Examples:**\n` +
+            `◇ \`#000000\` - Black\n` +
+            `◇ \`#1a1a2e\` - Dark Blue\n` +
+            `◇ \`#2C2F33\` - Discord Dark\n` +
+            `◇ \`#667eea\` - Purple`)]
+        });
+        return;
+      }
+
+      const hexColor = `#${match[1].toUpperCase()}`;
+
+      await Guild.updateGuild(interaction.guild.id, {
+        $set: { 'economy.cardOverlay.color': hexColor }
+      });
+
+      const embed = await successEmbed(interaction.guild.id, 'Overlay Color Updated',
+        `${GLYPHS.SUCCESS} Card overlay color set to \`${hexColor}\`\n\n` +
+        `This applies to both **profile** and **level/rank** cards.`
+      );
+      embed.setColor(hexColor);
+
+      await interaction.editReply({ embeds: [embed] });
+      break;
+    }
+
+    case 'opacity': {
+      const opacityPercent = interaction.options.getInteger('percent');
+
+      const opacity = opacityPercent / 100;
+
+      await Guild.updateGuild(interaction.guild.id, {
+        $set: { 'economy.cardOverlay.opacity': opacity }
+      });
+
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, 'Overlay Opacity Updated',
+          `${GLYPHS.SUCCESS} Card overlay opacity set to \`${opacityPercent}%\`\n\n` +
+          `This applies to both **profile** and **level/rank** cards.`)]
       });
       break;
     }

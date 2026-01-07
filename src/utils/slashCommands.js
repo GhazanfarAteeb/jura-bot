@@ -544,6 +544,38 @@ const slashCommands = [
         ))
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
+  // Set Overlay Command (Admin)
+  new SlashCommandBuilder()
+    .setName('setoverlay')
+    .setDescription('Configure overlay color and opacity for profile and level cards')
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('color')
+        .setDescription('Set the overlay color for all cards')
+        .addStringOption(option =>
+          option.setName('hex')
+            .setDescription('Hex color (e.g., #000000, #1a1a2e)')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('opacity')
+        .setDescription('Set the overlay opacity for all cards')
+        .addIntegerOption(option =>
+          option.setName('percent')
+            .setDescription('Opacity percentage (0-100)')
+            .setRequired(true)
+            .setMinValue(0)
+            .setMaxValue(100)))
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('view')
+        .setDescription('View current overlay settings'))
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('reset')
+        .setDescription('Reset overlay settings to default'))
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+
   // Birthday Settings Command (Admin)
   new SlashCommandBuilder()
     .setName('birthdaysettings')

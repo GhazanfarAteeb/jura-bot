@@ -244,6 +244,11 @@ const guildSchema = new mongoose.Schema({
     fallbackBackground: {
       image: { type: String, default: '' },
       color: { type: String, default: '#2C2F33' }
+    },
+    // Card overlay customization (applies to both profile and level cards)
+    cardOverlay: {
+      color: { type: String, default: '#000000' }, // Hex color for overlay
+      opacity: { type: Number, default: 0.5, min: 0, max: 1 } // Opacity 0-1
     }
   },
   // Voice XP settings

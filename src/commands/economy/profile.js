@@ -14,6 +14,16 @@ try {
   console.log('Custom fonts not found, using system fonts');
 }
 
+// Helper function to convert hex to rgba
+function hexToRgba(hex, opacity) {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  if (!result) return `rgba(0, 0, 0, ${opacity})`;
+  const r = parseInt(result[1], 16);
+  const g = parseInt(result[2], 16);
+  const b = parseInt(result[3], 16);
+  return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+}
+
 // Helper function to wrap text
 function wrapText(ctx, text, maxWidth) {
   const words = text.split(' ');
@@ -110,6 +120,11 @@ export default {
       const guildConfig = await Guild.getGuild(guildId);
       const fallbackBg = guildConfig.economy?.fallbackBackground;
 
+      // Get card overlay settings (applies to both profile and level cards)
+      const cardOverlay = guildConfig.economy?.cardOverlay || { color: '#000000', opacity: 0.5 };
+      const overlayColor = cardOverlay.color || '#000000';
+      const overlayOpacity = cardOverlay.opacity ?? 0.5;
+
       // Get background - check user's background, then custom shop items, then fallback
       let background = getBackground(economy.profile.background || 'default');
 
@@ -141,8 +156,8 @@ export default {
           const loadedBg = await loadImage(bgImage).catch(() => null);
           if (loadedBg) {
             ctx.drawImage(loadedBg, 0, 0, canvas.width, canvas.height);
-            // Add overlay for readability
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            // Add overlay for readability (uses guild customization)
+            ctx.fillStyle = hexToRgba(overlayColor, overlayOpacity);
             ctx.fillRect(0, 0, canvas.width, canvas.height);
           } else {
             // Background gradient fallback
