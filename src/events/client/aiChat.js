@@ -20,11 +20,11 @@ const MAX_HISTORY = 10;
 const messageTracker = new Map();
 
 async function getAIResponse(messages, maxTokens = 500, retries = 3) {
-  // Models to try in order
-  // const models = ['openai'];
+  // Models to try in order - avoiding Azure OpenAI due to strict content filtering
+  const models = ['mistral', 'deepseek', 'gemini-fast'];
 
   for (let attempt = 0; attempt <= retries; attempt++) {
-    // const modelToUse = models[attempt % models.length];
+    const modelToUse = models[attempt % models.length];
 
     try {
       // Use Pollinations AI API with OpenAI-compatible endpoint
@@ -40,7 +40,7 @@ async function getAIResponse(messages, maxTokens = 500, retries = 3) {
           'Authorization': `Bearer ${apiKey}`
         },
         body: JSON.stringify({
-          model: 'openai',
+          model: modelToUse,
           messages: messages,
           max_tokens: maxTokens,
           temperature: 0.98 // Higher for more personality and chaos
@@ -52,7 +52,7 @@ async function getAIResponse(messages, maxTokens = 500, retries = 3) {
 
       if (!response.ok) {
         const errorText = await response.text().catch(() => 'Unable to read error');
-        // console.error(`Pollinations API error (attempt ${attempt + 1}, model: ${modelToUse}):`, response.status, response.statusText);
+        console.error(`Pollinations API error (attempt ${attempt + 1}, model: ${modelToUse}):`, response.status, response.statusText);
         console.error('Error details:', errorText);
         if (attempt < retries) {
           await new Promise(r => setTimeout(r, 1500 + (attempt * 500))); // Increasing delay: 1.5s, 2s, 2.5s
@@ -86,7 +86,7 @@ async function getAIResponse(messages, maxTokens = 500, retries = 3) {
 
       return cleanedResponse;
     } catch (error) {
-      // console.error(`AI Chat error (attempt ${attempt + 1}, model: ${modelToUse}):`, error.message);
+      console.error(`AI Chat error (attempt ${attempt + 1}, model: ${modelToUse}):`, error.message);
       if (attempt < retries) {
         await new Promise(r => setTimeout(r, 1500 + (attempt * 500)));
         continue;
