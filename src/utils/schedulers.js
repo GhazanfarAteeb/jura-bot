@@ -308,7 +308,7 @@ export function startBotEconomyCleanup(client) {
                 console.log(`  Profile Background: ${entry.profileBackground || 'None'}`);
                 console.log(`  Entry Created: ${entry.createdAt || 'Unknown'}`);
                 console.log(`---`);
-                
+
                 await Economy.deleteOne({ _id: entry._id });
                 totalEconomyDeleted++;
               }
@@ -334,7 +334,7 @@ export function startBotEconomyCleanup(client) {
                 console.log(`  Bans: ${entry.bans?.length || 0}`);
                 console.log(`  Entry Created: ${entry.createdAt || 'Unknown'}`);
                 console.log(`---`);
-                
+
                 await Member.deleteOne({ _id: entry._id });
                 totalMemberDeleted++;
               }

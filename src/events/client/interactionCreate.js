@@ -395,7 +395,181 @@ async function handleAutomodCommand(interaction, guildConfig) {
           `${GLYPHS.DOT} Action: ${antiNukeConfig.action}`)]
       });
       break;
+
+    case 'ignore-add-channel':
+      await handleIgnoreAddChannel(interaction, guildConfig);
+      break;
+
+    case 'ignore-remove-channel':
+      await handleIgnoreRemoveChannel(interaction, guildConfig);
+      break;
+
+    case 'ignore-add-role':
+      await handleIgnoreAddRole(interaction, guildConfig);
+      break;
+
+    case 'ignore-remove-role':
+      await handleIgnoreRemoveRole(interaction, guildConfig);
+      break;
+
+    case 'ignore-list':
+      await handleIgnoreList(interaction, guildConfig);
+      break;
   }
+}
+
+// AutoMod Ignore Handlers
+async function handleIgnoreAddChannel(interaction, guildConfig) {
+  const { successEmbed, errorEmbed, GLYPHS } = await import('../../utils/embeds.js');
+  const channel = interaction.options.getChannel('channel');
+  const guildId = interaction.guild.id;
+
+  if (!guildConfig.features) guildConfig.features = {};
+  if (!guildConfig.features.autoMod) guildConfig.features.autoMod = {};
+  if (!guildConfig.features.autoMod.ignoredChannels) guildConfig.features.autoMod.ignoredChannels = [];
+
+  if (guildConfig.features.autoMod.ignoredChannels.includes(channel.id)) {
+    return interaction.editReply({
+      embeds: [await errorEmbed(guildId, 'Already Ignored',
+        `${channel} is already in the automod ignore list.`)]
+    });
+  }
+
+  guildConfig.features.autoMod.ignoredChannels.push(channel.id);
+  await guildConfig.save();
+  await Guild.invalidateCache(guildId);
+
+  return interaction.editReply({
+    embeds: [await successEmbed(guildId, 'AutoMod Ignore Updated',
+      `${GLYPHS.SUCCESS} Successfully added ${channel} to the automod ignored channels list.\n\n` +
+      `**Effect:** AutoMod will no longer monitor messages in this channel.`)]
+  });
+}
+
+async function handleIgnoreRemoveChannel(interaction, guildConfig) {
+  const { successEmbed, errorEmbed, GLYPHS } = await import('../../utils/embeds.js');
+  const channel = interaction.options.getChannel('channel');
+  const guildId = interaction.guild.id;
+
+  if (!guildConfig?.features?.autoMod?.ignoredChannels) {
+    return interaction.editReply({
+      embeds: [await errorEmbed(guildId, 'Not Found',
+        'No automod ignore settings found.')]
+    });
+  }
+
+  const list = guildConfig.features.autoMod.ignoredChannels || [];
+
+  if (!list.includes(channel.id)) {
+    return interaction.editReply({
+      embeds: [await errorEmbed(guildId, 'Not Found',
+        `${channel} is not in the automod ignore list.`)]
+    });
+  }
+
+  guildConfig.features.autoMod.ignoredChannels = list.filter(id => id !== channel.id);
+  await guildConfig.save();
+  await Guild.invalidateCache(guildId);
+
+  return interaction.editReply({
+    embeds: [await successEmbed(guildId, 'AutoMod Ignore Updated',
+      `${GLYPHS.SUCCESS} Successfully removed ${channel} from the automod ignored channels list.\n\n` +
+      `**Effect:** AutoMod will now monitor messages in this channel.`)]
+  });
+}
+
+async function handleIgnoreAddRole(interaction, guildConfig) {
+  const { successEmbed, errorEmbed, GLYPHS } = await import('../../utils/embeds.js');
+  const role = interaction.options.getRole('role');
+  const guildId = interaction.guild.id;
+
+  if (!guildConfig.features) guildConfig.features = {};
+  if (!guildConfig.features.autoMod) guildConfig.features.autoMod = {};
+  if (!guildConfig.features.autoMod.ignoredRoles) guildConfig.features.autoMod.ignoredRoles = [];
+
+  if (guildConfig.features.autoMod.ignoredRoles.includes(role.id)) {
+    return interaction.editReply({
+      embeds: [await errorEmbed(guildId, 'Already Ignored',
+        `${role} is already in the automod bypass list.`)]
+    });
+  }
+
+  guildConfig.features.autoMod.ignoredRoles.push(role.id);
+  await guildConfig.save();
+  await Guild.invalidateCache(guildId);
+
+  return interaction.editReply({
+    embeds: [await successEmbed(guildId, 'AutoMod Ignore Updated',
+      `${GLYPHS.SUCCESS} Successfully added ${role} to the automod bypass roles list.\n\n` +
+      `**Effect:** AutoMod will no longer monitor users with this role.`)]
+  });
+}
+
+async function handleIgnoreRemoveRole(interaction, guildConfig) {
+  const { successEmbed, errorEmbed, GLYPHS } = await import('../../utils/embeds.js');
+  const role = interaction.options.getRole('role');
+  const guildId = interaction.guild.id;
+
+  if (!guildConfig?.features?.autoMod?.ignoredRoles) {
+    return interaction.editReply({
+      embeds: [await errorEmbed(guildId, 'Not Found',
+        'No automod ignore settings found.')]
+    });
+  }
+
+  const list = guildConfig.features.autoMod.ignoredRoles || [];
+
+  if (!list.includes(role.id)) {
+    return interaction.editReply({
+      embeds: [await errorEmbed(guildId, 'Not Found',
+        `${role} is not in the automod bypass list.`)]
+    });
+  }
+
+  guildConfig.features.autoMod.ignoredRoles = list.filter(id => id !== role.id);
+  await guildConfig.save();
+  await Guild.invalidateCache(guildId);
+
+  return interaction.editReply({
+    embeds: [await successEmbed(guildId, 'AutoMod Ignore Updated',
+      `${GLYPHS.SUCCESS} Successfully removed ${role} from the automod bypass roles list.\n\n` +
+      `**Effect:** AutoMod will now monitor users with this role.`)]
+  });
+}
+
+async function handleIgnoreList(interaction, guildConfig) {
+  const { infoEmbed, GLYPHS } = await import('../../utils/embeds.js');
+  const guildId = interaction.guild.id;
+
+  const ignoredChannels = guildConfig?.features?.autoMod?.ignoredChannels || [];
+  const ignoredRoles = guildConfig?.features?.autoMod?.ignoredRoles || [];
+
+  let description = '**Ignored Channels:**\n';
+  if (ignoredChannels.length === 0) {
+    description += `${GLYPHS.DOT} None\n`;
+  } else {
+    for (const channelId of ignoredChannels) {
+      const channel = interaction.guild.channels.cache.get(channelId);
+      description += `${GLYPHS.DOT} ${channel || `<#${channelId}> (deleted)`}\n`;
+    }
+  }
+
+  description += '\n**Bypass Roles:**\n';
+  if (ignoredRoles.length === 0) {
+    description += `${GLYPHS.DOT} None\n`;
+  } else {
+    for (const roleId of ignoredRoles) {
+      const role = interaction.guild.roles.cache.get(roleId);
+      description += `${GLYPHS.DOT} ${role || `<@&${roleId}> (deleted)`}\n`;
+    }
+  }
+
+  const embed = await infoEmbed(guildId,
+    '『 AutoMod Ignore Settings 』',
+    description
+  );
+
+  return interaction.editReply({ embeds: [embed] });
 }
 
 async function handleBadwordsSubcommand(interaction, guildConfig) {

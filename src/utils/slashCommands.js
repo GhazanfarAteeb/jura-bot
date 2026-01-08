@@ -440,6 +440,37 @@ const slashCommands = [
               { name: 'Kick user', value: 'kick' },
               { name: 'Ban user', value: 'ban' }
             )))
+    .addSubcommand(subcommand =>
+      subcommand.setName('ignore-add-channel')
+        .setDescription('Add a channel to automod ignore list')
+        .addChannelOption(option =>
+          option.setName('channel')
+            .setDescription('The channel to ignore')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('ignore-remove-channel')
+        .setDescription('Remove a channel from automod ignore list')
+        .addChannelOption(option =>
+          option.setName('channel')
+            .setDescription('The channel to stop ignoring')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('ignore-add-role')
+        .setDescription('Add a role to automod bypass list')
+        .addRoleOption(option =>
+          option.setName('role')
+            .setDescription('The role to bypass automod')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('ignore-remove-role')
+        .setDescription('Remove a role from automod bypass list')
+        .addRoleOption(option =>
+          option.setName('role')
+            .setDescription('The role to remove from bypass')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('ignore-list')
+        .setDescription('List all automod ignore settings'))
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
   // Lockdown Command

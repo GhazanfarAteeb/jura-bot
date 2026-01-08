@@ -79,6 +79,9 @@ export default {
       case 'invites':
         return handleAntiinvites(message, args.slice(1), guildConfig);
 
+      case 'ignore':
+        return handleIgnore(message, args.slice(1), guildConfig);
+
       default:
         return message.reply({
           embeds: [await errorEmbed(message.guild.id, 'Unknown Setting',
@@ -91,7 +94,8 @@ export default {
             `${GLYPHS.DOT} \`antiraid\` - Configure anti-raid\n` +
             `${GLYPHS.DOT} \`antinuke\` - Configure anti-nuke\n` +
             `${GLYPHS.DOT} \`antilinks\` - Configure anti-links\n` +
-            `${GLYPHS.DOT} \`antiinvites\` - Configure anti-invites`)]
+            `${GLYPHS.DOT} \`antiinvites\` - Configure anti-invites\n` +
+            `${GLYPHS.DOT} \`ignore\` - Configure ignored channels/roles`)]
         });
     }
   }
@@ -669,4 +673,173 @@ async function handleAntiinvites(message, args, guildConfig) {
         embeds: [await successEmbed(message.guild.id, 'Action Updated', `${GLYPHS.SUCCESS} Anti-invites action set to: **${inviteAction}**`)]
       });
   }
+}
+
+async function handleIgnore(message, args, guildConfig) {
+  const guildId = message.guild.id;
+  const { getPrefix } = await import('../../utils/helpers.js');
+  const prefix = await getPrefix(guildId);
+
+  // Show help if no args
+  if (!args[0]) {
+    return showIgnoreHelp(message, prefix);
+  }
+
+  const action = args[0].toLowerCase();
+  const type = args[1]?.toLowerCase();
+
+  // List command
+  if (action === 'list') {
+    return listIgnored(message, guildConfig);
+  }
+
+  // Validate action
+  if (!['add', 'remove'].includes(action)) {
+    return showIgnoreHelp(message, prefix);
+  }
+
+  // Validate type for add/remove
+  if (!['channel', 'role', 'channels', 'roles'].includes(type)) {
+    return message.reply({
+      embeds: [await errorEmbed(guildId, 'Invalid Type',
+        `**Notice:** Please specify \`channel\` or \`role\`.\n\n**Usage:** \`${prefix}automod ignore <add|remove> <channel|role> <#channel/@role>\``)]
+    });
+  }
+
+  const isChannel = ['channel', 'channels'].includes(type);
+
+  // Get the target
+  let target;
+  if (isChannel) {
+    target = message.mentions.channels.first() || message.guild.channels.cache.get(args[2]);
+  } else {
+    target = message.mentions.roles.first() || message.guild.roles.cache.get(args[2]);
+  }
+
+  if (!target) {
+    return message.reply({
+      embeds: [await errorEmbed(guildId, 'Target Required',
+        `**Notice:** Please mention a ${isChannel ? 'channel' : 'role'}.\n\n**Usage:** \`${prefix}automod ignore ${action} ${type} ${isChannel ? '#channel' : '@role'}\``)]
+    });
+  }
+
+  if (action === 'add') {
+    return addIgnored(message, guildConfig, target, isChannel);
+  } else if (action === 'remove') {
+    return removeIgnored(message, guildConfig, target, isChannel);
+  }
+}
+
+async function showIgnoreHelp(message, prefix) {
+  const embed = await infoEmbed(message.guild.id,
+    '『 AutoMod Ignore Settings 』',
+    `Configure channels and roles that bypass automod.\n\n` +
+    `**Commands:**\n` +
+    `${GLYPHS.DOT} \`${prefix}automod ignore add channel #channel\` - Ignore a channel\n` +
+    `${GLYPHS.DOT} \`${prefix}automod ignore remove channel #channel\` - Stop ignoring a channel\n` +
+    `${GLYPHS.DOT} \`${prefix}automod ignore add role @role\` - Add role bypass\n` +
+    `${GLYPHS.DOT} \`${prefix}automod ignore remove role @role\` - Remove role bypass\n` +
+    `${GLYPHS.DOT} \`${prefix}automod ignore list\` - List all ignored channels/roles\n\n` +
+    `**Note:** Ignored channels and bypass roles will not trigger any automod actions.`
+  );
+
+  return message.reply({ embeds: [embed] });
+}
+
+async function addIgnored(message, guildConfig, target, isChannel) {
+  const guildId = message.guild.id;
+
+  if (!guildConfig.features) {
+    guildConfig.features = {};
+  }
+  if (!guildConfig.features.autoMod) {
+    guildConfig.features.autoMod = {};
+  }
+
+  const field = isChannel ? 'ignoredChannels' : 'ignoredRoles';
+  if (!guildConfig.features.autoMod[field]) {
+    guildConfig.features.autoMod[field] = [];
+  }
+
+  if (guildConfig.features.autoMod[field].includes(target.id)) {
+    return message.reply({
+      embeds: [await errorEmbed(guildId, 'Already Ignored',
+        `**Notice:** ${target} is already in the automod ignore list.`)]
+    });
+  }
+
+  guildConfig.features.autoMod[field].push(target.id);
+  await guildConfig.save();
+  await Guild.invalidateCache(guildId);
+
+  return message.reply({
+    embeds: [await successEmbed(guildId, 'AutoMod Ignore Updated',
+      `${GLYPHS.SUCCESS} Successfully added ${target} to the automod ${isChannel ? 'ignored channels' : 'bypass roles'} list.\n\n` +
+      `**Effect:** AutoMod will no longer monitor ${isChannel ? 'messages in this channel' : 'users with this role'}.`)]
+  });
+}
+
+async function removeIgnored(message, guildConfig, target, isChannel) {
+  const guildId = message.guild.id;
+
+  if (!guildConfig?.features?.autoMod) {
+    return message.reply({
+      embeds: [await errorEmbed(guildId, 'Not Found',
+        `**Notice:** No automod ignore settings found.`)]
+    });
+  }
+
+  const field = isChannel ? 'ignoredChannels' : 'ignoredRoles';
+  const list = guildConfig.features.autoMod[field] || [];
+
+  if (!list.includes(target.id)) {
+    return message.reply({
+      embeds: [await errorEmbed(guildId, 'Not Found',
+        `**Notice:** ${target} is not in the automod ignore list.`)]
+    });
+  }
+
+  guildConfig.features.autoMod[field] = list.filter(id => id !== target.id);
+  await guildConfig.save();
+  await Guild.invalidateCache(guildId);
+
+  return message.reply({
+    embeds: [await successEmbed(guildId, 'AutoMod Ignore Updated',
+      `${GLYPHS.SUCCESS} Successfully removed ${target} from the automod ${isChannel ? 'ignored channels' : 'bypass roles'} list.\n\n` +
+      `**Effect:** AutoMod will now monitor ${isChannel ? 'messages in this channel' : 'users with this role'}.`)]
+  });
+}
+
+async function listIgnored(message, guildConfig) {
+  const guildId = message.guild.id;
+
+  const ignoredChannels = guildConfig?.features?.autoMod?.ignoredChannels || [];
+  const ignoredRoles = guildConfig?.features?.autoMod?.ignoredRoles || [];
+
+  let description = '**Ignored Channels:**\n';
+  if (ignoredChannels.length === 0) {
+    description += `${GLYPHS.DOT} None\n`;
+  } else {
+    for (const channelId of ignoredChannels) {
+      const channel = message.guild.channels.cache.get(channelId);
+      description += `${GLYPHS.DOT} ${channel || `<#${channelId}> (deleted)`}\n`;
+    }
+  }
+
+  description += '\n**Bypass Roles:**\n';
+  if (ignoredRoles.length === 0) {
+    description += `${GLYPHS.DOT} None\n`;
+  } else {
+    for (const roleId of ignoredRoles) {
+      const role = message.guild.roles.cache.get(roleId);
+      description += `${GLYPHS.DOT} ${role || `<@&${roleId}> (deleted)`}\n`;
+    }
+  }
+
+  const embed = await infoEmbed(guildId,
+    '『 AutoMod Ignore Settings 』',
+    description
+  );
+
+  return message.reply({ embeds: [embed] });
 }
