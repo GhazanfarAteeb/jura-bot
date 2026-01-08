@@ -749,28 +749,20 @@ async function showIgnoreHelp(message, prefix) {
 async function addIgnored(message, guildConfig, target, isChannel) {
   const guildId = message.guild.id;
 
-  if (!guildConfig.features) {
-    guildConfig.features = {};
-  }
-  if (!guildConfig.features.autoMod) {
-    guildConfig.features.autoMod = {};
-  }
-
   const field = isChannel ? 'ignoredChannels' : 'ignoredRoles';
-  if (!guildConfig.features.autoMod[field]) {
-    guildConfig.features.autoMod[field] = [];
-  }
+  const currentList = guildConfig?.features?.autoMod?.[field] || [];
 
-  if (guildConfig.features.autoMod[field].includes(target.id)) {
+  if (currentList.includes(target.id)) {
     return message.reply({
       embeds: [await errorEmbed(guildId, 'Already Ignored',
         `**Notice:** ${target} is already in the automod ignore list.`)]
     });
   }
 
-  guildConfig.features.autoMod[field].push(target.id);
-  await guildConfig.save();
-  await Guild.invalidateCache(guildId);
+  const newList = [...currentList, target.id];
+  await Guild.updateGuild(guildId, { 
+    $set: { [`features.autoMod.${field}`]: newList } 
+  });
 
   return message.reply({
     embeds: [await successEmbed(guildId, 'AutoMod Ignore Updated',
@@ -799,9 +791,10 @@ async function removeIgnored(message, guildConfig, target, isChannel) {
     });
   }
 
-  guildConfig.features.autoMod[field] = list.filter(id => id !== target.id);
-  await guildConfig.save();
-  await Guild.invalidateCache(guildId);
+  const newList = list.filter(id => id !== target.id);
+  await Guild.updateGuild(guildId, { 
+    $set: { [`features.autoMod.${field}`]: newList } 
+  });
 
   return message.reply({
     embeds: [await successEmbed(guildId, 'AutoMod Ignore Updated',
