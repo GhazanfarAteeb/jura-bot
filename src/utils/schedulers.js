@@ -266,9 +266,9 @@ export function startReminderChecker(client) {
   console.log('[RAPHAEL] Reminder monitoring system initialized.');
 }
 
-// Clean up bot economy and member entries every 5 minutes (for monitoring)
+// Clean up bot economy and member entries daily at midnight
 export function startBotEconomyCleanup(client) {
-  cron.schedule('*/5 * * * *', async () => {
+  cron.schedule('0 0 * * *', async () => {
     console.log('🧹 Cleaning up bot economy and member entries...');
 
     try {
@@ -353,7 +353,7 @@ export function startBotEconomyCleanup(client) {
     }
   });
 
-  console.log('[RAPHAEL] Bot economy and member cleanup scheduler initialized (runs every 5 minutes).');
+  console.log('[RAPHAEL] Bot economy and member cleanup scheduler initialized (runs daily at midnight).');
 }
 
 // Initialize all schedulers
