@@ -176,13 +176,17 @@ async function handleConfessionModalSubmit(interaction, client) {
   confessionData.confessionCount++;
   const confessionNumber = confessionData.confessionCount;
 
-  // Delete the old panel message
-  if (confessionData.panelMessageId) {
+  // Find the previous latest confession and remove all buttons from it
+  const previousConfession = confessionData.confessions[confessionData.confessions.length - 1];
+  if (previousConfession && previousConfession.messageId) {
     try {
-      const oldPanel = await channel.messages.fetch(confessionData.panelMessageId).catch(() => null);
-      if (oldPanel) await oldPanel.delete().catch(() => {});
+      const prevMessage = await channel.messages.fetch(previousConfession.messageId).catch(() => null);
+      if (prevMessage) {
+        // Remove all buttons from the previous confession
+        await prevMessage.edit({ components: [] }).catch(() => {});
+      }
     } catch (error) {
-      // Ignore if message doesn't exist
+      // Ignore errors
     }
   }
 
@@ -194,10 +198,17 @@ async function handleConfessionModalSubmit(interaction, client) {
     .setColor('#9b59b6')
     .setTimestamp();
 
-  // Confession only gets Reply button (not submit)
-  const confessionButtons = [];
+  // Latest confession gets both Submit and Reply buttons
+  const buttons = [
+    new ButtonBuilder()
+      .setCustomId('confession_submit')
+      .setLabel('Submit a confession!')
+      .setStyle(ButtonStyle.Primary)
+      .setEmoji('📝')
+  ];
+
   if (confessionData.settings.allowReplies) {
-    confessionButtons.push(
+    buttons.push(
       new ButtonBuilder()
         .setCustomId(`confession_reply_${confessionNumber}`)
         .setLabel('Reply')
@@ -206,34 +217,33 @@ async function handleConfessionModalSubmit(interaction, client) {
     );
   }
 
-  const confessionRow = confessionButtons.length > 0 ? new ActionRowBuilder().addComponents(confessionButtons) : null;
+  const row = new ActionRowBuilder().addComponents(buttons);
 
-  const sentMessage = await channel.send({ 
-    embeds: [confessionEmbed], 
-    components: confessionRow ? [confessionRow] : [] 
+  const sentMessage = await channel.send({
+    embeds: [confessionEmbed],
+    components: [row]
   });
 
-  // Post a new panel at the bottom
-  const panelEmbed = new EmbedBuilder()
-    .setDescription('Click the button below to submit an anonymous confession!')
-    .setColor('#9b59b6');
-
-  const panelRow = new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId('confession_submit')
-      .setLabel('Submit a confession!')
-      .setStyle(ButtonStyle.Primary)
-      .setEmoji('📝')
-  );
-
-  const panelMessage = await channel.send({ embeds: [panelEmbed], components: [panelRow] });
-  confessionData.panelMessageId = panelMessage.id;
+  // Create a thread for replies
+  let threadId = null;
+  if (confessionData.settings.allowReplies) {
+    try {
+      const thread = await sentMessage.startThread({
+        name: `Confession #${confessionNumber} Replies`,
+        autoArchiveDuration: 1440 // 24 hours
+      });
+      threadId = thread.id;
+    } catch (error) {
+      console.error('Failed to create confession thread:', error);
+    }
+  }
 
   // Save the confession
   confessionData.confessions.push({
     number: confessionNumber,
     content: confessionContent,
     messageId: sentMessage.id,
+    threadId: threadId,
     userId: interaction.user.id, // Stored for moderation purposes only
     timestamp: new Date()
   });
@@ -278,7 +288,7 @@ async function handleConfessionReplyModalSubmit(interaction, client) {
   confessionData.confessionCount++;
   const replyNumber = confessionData.confessionCount;
 
-  // Create reply embed (styled like the example - Anonymous Reply with its own number)
+  // Create reply embed
   const replyEmbed = new EmbedBuilder()
     .setAuthor({
       name: `Anonymous Reply (#${replyNumber})`
@@ -287,31 +297,54 @@ async function handleConfessionReplyModalSubmit(interaction, client) {
     .setColor('#7289da')
     .setTimestamp();
 
-  // Create Reply button for this reply (so people can reply to replies)
-  const row = new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId(`confession_reply_${replyNumber}`)
-      .setLabel('Reply')
-      .setStyle(ButtonStyle.Secondary)
-      .setEmoji('💬')
-  );
+  // Post the reply in the confession's thread
+  let thread = null;
+  try {
+    if (confession.threadId) {
+      // Try to get the existing thread
+      thread = await channel.threads.fetch(confession.threadId).catch(() => null);
+    }
+    
+    if (!thread) {
+      // Thread doesn't exist or was archived, try to create from original message
+      const originalMessage = await channel.messages.fetch(confession.messageId).catch(() => null);
+      if (originalMessage) {
+        thread = await originalMessage.startThread({
+          name: `Confession #${confessionNumber} Replies`,
+          autoArchiveDuration: 1440
+        }).catch(() => null);
+        if (thread) {
+          confession.threadId = thread.id;
+        }
+      }
+    }
 
-  // Post the reply as a new message in the channel
-  const sentMessage = await channel.send({ embeds: [replyEmbed], components: [row] });
+    if (thread) {
+      await thread.send({ embeds: [replyEmbed] });
+    } else {
+      // Fallback: send to channel as a message if thread creation fails
+      await channel.send({ embeds: [replyEmbed] });
+    }
+  } catch (error) {
+    console.error('Failed to post reply:', error);
+    // Fallback: send to channel
+    await channel.send({ embeds: [replyEmbed] });
+  }
 
-  // Save the reply as a new confession entry (since it has its own number)
+  // Save the reply
   confessionData.confessions.push({
     number: replyNumber,
     content: replyContent,
-    messageId: sentMessage.id,
+    messageId: null, // Reply is in thread
+    threadId: confession.threadId,
     userId: interaction.user.id,
-    replyTo: parseInt(confessionNumber), // Track which confession this is replying to
+    replyTo: parseInt(confessionNumber),
     timestamp: new Date()
   });
   await confessionData.save();
 
   return interaction.reply({
-    content: `✅ Your anonymous reply (#${replyNumber}) to confession #${confessionNumber} has been posted!`,
+    content: `✅ Your anonymous reply (#${replyNumber}) to confession #${confessionNumber} has been posted in the thread!`,
     ephemeral: true
   });
 }

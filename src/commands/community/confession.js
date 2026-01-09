@@ -168,7 +168,7 @@ export default class ConfessionCommand extends Command {
 
     // Send the confession panel to the channel
     const panelMessage = await this.sendPanel(channel);
-    
+
     // Save the panel message ID
     confessionData.panelMessageId = panelMessage.id;
     await confessionData.save();
@@ -496,13 +496,17 @@ export default class ConfessionCommand extends Command {
     confessionData.confessionCount++;
     const confessionNumber = confessionData.confessionCount;
 
-    // Delete the old panel message
-    if (confessionData.panelMessageId) {
+    // Find the previous latest confession and remove all buttons from it
+    const previousConfession = confessionData.confessions[confessionData.confessions.length - 1];
+    if (previousConfession && previousConfession.messageId) {
       try {
-        const oldPanel = await channel.messages.fetch(confessionData.panelMessageId).catch(() => null);
-        if (oldPanel) await oldPanel.delete().catch(() => {});
+        const prevMessage = await channel.messages.fetch(previousConfession.messageId).catch(() => null);
+        if (prevMessage) {
+          // Remove all buttons from the previous confession
+          await prevMessage.edit({ components: [] }).catch(() => {});
+        }
       } catch (error) {
-        // Ignore if message doesn't exist
+        // Ignore errors
       }
     }
 
@@ -512,39 +516,40 @@ export default class ConfessionCommand extends Command {
       .setColor('#9b59b6')
       .setTimestamp();
 
-    // Only Reply button on the confession
-    const confessionRow = new ActionRowBuilder()
-      .addComponents(
-        new ButtonBuilder()
-          .setCustomId(`confession_reply_${confessionNumber}`)
-          .setLabel('Reply')
-          .setStyle(ButtonStyle.Secondary)
-          .setEmoji('💬')
-      );
-
-    const sentMessage = await channel.send({ embeds: [confessionEmbed], components: [confessionRow] });
-
-    // Post a new panel at the bottom
-    const panelEmbed = new EmbedBuilder()
-      .setDescription('Click the button below to submit an anonymous confession!')
-      .setColor('#9b59b6');
-
-    const panelRow = new ActionRowBuilder().addComponents(
+    // Latest confession gets both Submit and Reply buttons
+    const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId('confession_submit')
         .setLabel('Submit a confession!')
         .setStyle(ButtonStyle.Primary)
-        .setEmoji('📝')
+        .setEmoji('📝'),
+      new ButtonBuilder()
+        .setCustomId(`confession_reply_${confessionNumber}`)
+        .setLabel('Reply')
+        .setStyle(ButtonStyle.Secondary)
+        .setEmoji('💬')
     );
 
-    const panelMessage = await channel.send({ embeds: [panelEmbed], components: [panelRow] });
-    confessionData.panelMessageId = panelMessage.id;
+    const sentMessage = await channel.send({ embeds: [confessionEmbed], components: [row] });
+
+    // Create a thread for replies
+    let threadId = null;
+    try {
+      const thread = await sentMessage.startThread({
+        name: `Confession #${confessionNumber} Replies`,
+        autoArchiveDuration: 1440
+      });
+      threadId = thread.id;
+    } catch (error) {
+      console.error('Failed to create confession thread:', error);
+    }
 
     // Save confession and remove from pending
     confessionData.confessions.push({
       number: confessionNumber,
       content: pending.content,
       messageId: sentMessage.id,
+      threadId: threadId,
       userId: pending.userId,
       timestamp: new Date()
     });
