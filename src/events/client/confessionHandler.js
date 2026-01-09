@@ -183,7 +183,7 @@ async function handleConfessionModalSubmit(interaction, client) {
       const prevMessage = await channel.messages.fetch(previousMainConfession.messageId).catch(() => null);
       if (prevMessage) {
         // Remove all buttons from the previous confession
-        await prevMessage.edit({ components: [] }).catch(() => {});
+        await prevMessage.edit({ components: [] }).catch(() => { });
       }
     } catch (error) {
       // Ignore errors
@@ -320,7 +320,7 @@ async function handleConfessionReplyModalSubmit(interaction, client) {
         try {
           const prevReply = await thread.messages.fetch(confession.lastReplyMessageId).catch(() => null);
           if (prevReply) {
-            await prevReply.edit({ components: [] }).catch(() => {});
+            await prevReply.edit({ components: [] }).catch(() => { });
           }
         } catch (error) {
           // Ignore

@@ -504,7 +504,7 @@ export default class ConfessionCommand extends Command {
         const prevMessage = await channel.messages.fetch(previousMainConfession.messageId).catch(() => null);
         if (prevMessage) {
           // Remove all buttons from the previous confession
-          await prevMessage.edit({ components: [] }).catch(() => {});
+          await prevMessage.edit({ components: [] }).catch(() => { });
         }
       } catch (error) {
         // Ignore errors
