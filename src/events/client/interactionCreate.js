@@ -181,10 +181,10 @@ async function handleSpecialCommand(interaction, client, guildConfig, hasAdminRo
 
   // Commands that only require ManageGuild permission (or mod role)
   const manageGuildCommands = ['feature'];
-  
+
   // Commands that moderators/staff can use (not just admins)
   const moderatorCommands = ['welcome', 'giveaway', 'automod', 'logs', 'noxp', 'manageshop', 'award', 'confession', 'cmdchannels', 'setoverlay', 'lockdown', 'verify', 'birthdaysettings', 'setbirthday', 'feature'];
-  
+
   // Admin-only commands (require Administrator or admin role)
   const adminOnlyCommands = ['setup', 'setrole', 'setchannel', 'config', 'slashcommands', 'autorole', 'refreshcache'];
 
@@ -200,8 +200,8 @@ async function handleSpecialCommand(interaction, client, guildConfig, hasAdminRo
   } else if (moderatorCommands.includes(interaction.commandName)) {
     // Moderator commands: allow Admin, admin role, ManageGuild, or mod/staff role
     const hasPermission = interaction.member.permissions.has(PermissionFlagsBits.Administrator) ||
-                          interaction.member.permissions.has(PermissionFlagsBits.ManageGuild) ||
-                          hasAdminRole || hasModRole;
+      interaction.member.permissions.has(PermissionFlagsBits.ManageGuild) ||
+      hasAdminRole || hasModRole;
     if (!hasPermission) {
       return interaction.reply({
         content: '**Error:** You need Moderator/Staff permissions to use this function, Master.',
