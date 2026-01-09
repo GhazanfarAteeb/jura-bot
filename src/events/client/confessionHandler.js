@@ -41,7 +41,7 @@ async function handleConfessionSubmit(interaction) {
   if (!confessionData || !confessionData.enabled) {
     return interaction.reply({
       content: '❌ The confession system is not enabled in this server.',
-      ephemeral: true
+      flags: 64
     });
   }
 
@@ -49,7 +49,7 @@ async function handleConfessionSubmit(interaction) {
   if (confessionData.settings.bannedUsers.includes(interaction.user.id)) {
     return interaction.reply({
       content: '❌ You have been banned from submitting confessions.',
-      ephemeral: true
+      flags: 64
     });
   }
 
@@ -61,7 +61,7 @@ async function handleConfessionSubmit(interaction) {
       const remaining = Math.ceil((cooldownEnd - Date.now()) / 1000);
       return interaction.reply({
         content: `⏳ Please wait **${remaining} seconds** before submitting another confession.`,
-        ephemeral: true
+        flags: 64
       });
     }
   }
@@ -92,7 +92,7 @@ async function handleConfessionReply(interaction) {
   if (!confessionData || !confessionData.settings.allowReplies) {
     return interaction.reply({
       content: '❌ Replies are not enabled for this server.',
-      ephemeral: true
+      flags: 64
     });
   }
 
@@ -119,21 +119,22 @@ async function handleConfessionReply(interaction) {
 }
 
 async function handleConfessionModalSubmit(interaction, client) {
+  // Defer reply immediately to prevent timeout
+  await interaction.deferReply({ flags: 64 }); // 64 = ephemeral
+
   const confessionContent = interaction.fields.getTextInputValue('confession_content');
   const confessionData = await Confession.findOne({ guildId: interaction.guild.id });
 
   if (!confessionData || !confessionData.enabled) {
-    return interaction.reply({
-      content: '❌ The confession system is not enabled in this server.',
-      ephemeral: true
+    return interaction.editReply({
+      content: '❌ The confession system is not enabled in this server.'
     });
   }
 
   const channel = interaction.guild.channels.cache.get(confessionData.channelId);
   if (!channel) {
-    return interaction.reply({
-      content: '❌ The confession channel no longer exists.',
-      ephemeral: true
+    return interaction.editReply({
+      content: '❌ The confession channel no longer exists.'
     });
   }
 
@@ -144,9 +145,8 @@ async function handleConfessionModalSubmit(interaction, client) {
       lowerContent.includes(word.toLowerCase())
     );
     if (hasBlockedWord) {
-      return interaction.reply({
-        content: '❌ Your confession contains blocked words. Please revise and try again.',
-        ephemeral: true
+      return interaction.editReply({
+        content: '❌ Your confession contains blocked words. Please revise and try again.'
       });
     }
   }
@@ -166,9 +166,8 @@ async function handleConfessionModalSubmit(interaction, client) {
     });
     await confessionData.save();
 
-    return interaction.reply({
-      content: '✅ Your confession has been submitted and is pending approval by moderators.',
-      ephemeral: true
+    return interaction.editReply({
+      content: '✅ Your confession has been submitted and is pending approval by moderators.'
     });
   }
 
@@ -183,7 +182,7 @@ async function handleConfessionModalSubmit(interaction, client) {
       const prevMessage = await channel.messages.fetch(previousConfession.messageId).catch(() => null);
       if (prevMessage) {
         // Remove all buttons from the previous confession
-        await prevMessage.edit({ components: [] }).catch(() => {});
+        await prevMessage.edit({ components: [] }).catch(() => { });
       }
     } catch (error) {
       // Ignore errors
@@ -224,63 +223,48 @@ async function handleConfessionModalSubmit(interaction, client) {
     components: [row]
   });
 
-  // Create a thread for replies
-  let threadId = null;
-  if (confessionData.settings.allowReplies) {
-    try {
-      const thread = await sentMessage.startThread({
-        name: `Confession #${confessionNumber} Replies`,
-        autoArchiveDuration: 1440 // 24 hours
-      });
-      threadId = thread.id;
-    } catch (error) {
-      console.error('Failed to create confession thread:', error);
-    }
-  }
-
-  // Save the confession
+  // Save the confession (thread will be created when first reply is submitted)
   confessionData.confessions.push({
     number: confessionNumber,
     content: confessionContent,
     messageId: sentMessage.id,
-    threadId: threadId,
+    threadId: null,
     userId: interaction.user.id, // Stored for moderation purposes only
     timestamp: new Date()
   });
   await confessionData.save();
 
-  return interaction.reply({
-    content: `✅ Your anonymous confession (#${confessionNumber}) has been posted!`,
-    ephemeral: true
+  return interaction.editReply({
+    content: `✅ Your anonymous confession (#${confessionNumber}) has been posted!`
   });
 }
 
 async function handleConfessionReplyModalSubmit(interaction, client) {
+  // Defer reply immediately to prevent timeout
+  await interaction.deferReply({ flags: 64 }); // 64 = ephemeral
+
   const replyContent = interaction.fields.getTextInputValue('reply_content');
   const confessionNumber = interaction.customId.replace('confession_reply_modal_', '');
 
   const confessionData = await Confession.findOne({ guildId: interaction.guild.id });
 
   if (!confessionData) {
-    return interaction.reply({
-      content: '❌ Confession data not found.',
-      ephemeral: true
+    return interaction.editReply({
+      content: '❌ Confession data not found.'
     });
   }
 
   const confession = confessionData.confessions.find(c => c.number === parseInt(confessionNumber));
   if (!confession) {
-    return interaction.reply({
-      content: '❌ Original confession not found.',
-      ephemeral: true
+    return interaction.editReply({
+      content: '❌ Original confession not found.'
     });
   }
 
   const channel = interaction.guild.channels.cache.get(confessionData.channelId);
   if (!channel) {
-    return interaction.reply({
-      content: '❌ The confession channel no longer exists.',
-      ephemeral: true
+    return interaction.editReply({
+      content: '❌ The confession channel no longer exists.'
     });
   }
 
@@ -304,7 +288,7 @@ async function handleConfessionReplyModalSubmit(interaction, client) {
       // Try to get the existing thread
       thread = await channel.threads.fetch(confession.threadId).catch(() => null);
     }
-    
+
     if (!thread) {
       // Thread doesn't exist or was archived, try to create from original message
       const originalMessage = await channel.messages.fetch(confession.messageId).catch(() => null);
@@ -343,8 +327,7 @@ async function handleConfessionReplyModalSubmit(interaction, client) {
   });
   await confessionData.save();
 
-  return interaction.reply({
-    content: `✅ Your anonymous reply (#${replyNumber}) to confession #${confessionNumber} has been posted in the thread!`,
-    ephemeral: true
+  return interaction.editReply({
+    content: `✅ Your anonymous reply (#${replyNumber}) to confession #${confessionNumber} has been posted in the thread!`
   });
 }

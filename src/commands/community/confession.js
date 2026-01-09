@@ -503,7 +503,7 @@ export default class ConfessionCommand extends Command {
         const prevMessage = await channel.messages.fetch(previousConfession.messageId).catch(() => null);
         if (prevMessage) {
           // Remove all buttons from the previous confession
-          await prevMessage.edit({ components: [] }).catch(() => {});
+          await prevMessage.edit({ components: [] }).catch(() => { });
         }
       } catch (error) {
         // Ignore errors
@@ -532,24 +532,12 @@ export default class ConfessionCommand extends Command {
 
     const sentMessage = await channel.send({ embeds: [confessionEmbed], components: [row] });
 
-    // Create a thread for replies
-    let threadId = null;
-    try {
-      const thread = await sentMessage.startThread({
-        name: `Confession #${confessionNumber} Replies`,
-        autoArchiveDuration: 1440
-      });
-      threadId = thread.id;
-    } catch (error) {
-      console.error('Failed to create confession thread:', error);
-    }
-
-    // Save confession and remove from pending
+    // Save confession and remove from pending (thread will be created when first reply is submitted)
     confessionData.confessions.push({
       number: confessionNumber,
       content: pending.content,
       messageId: sentMessage.id,
-      threadId: threadId,
+      threadId: null,
       userId: pending.userId,
       timestamp: new Date()
     });
