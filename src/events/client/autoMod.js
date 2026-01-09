@@ -69,7 +69,7 @@ export default {
 
         // If not found, do advanced check for bypass attempts (e.g., "f u c k", "f.u.c.k")
         if (!result.found) {
-          result = checkBadWordsAdvanced(message.content, customWords);
+          result = checkBadWordsAdvanced(message.content, customWords, ignoredWords);
         }
 
         if (result.found) {

@@ -123,12 +123,13 @@ function checkBadWords(message, customWords = [], ignoredWords = [], useBuiltIn 
  * This is now handled by bad-words-next's built-in lookalike detection
  * @param {string} message - The message to check
  * @param {string[]} customWords - Additional custom words
+ * @param {string[]} ignoredWords - Words to ignore/whitelist
  * @returns {{ found: boolean, word: string | null }}
  */
-function checkBadWordsAdvanced(message, customWords = []) {
+function checkBadWordsAdvanced(message, customWords = [], ignoredWords = []) {
   // bad-words-next already handles leetspeak and lookalikes,
   // so we just call the regular check
-  const result = checkBadWords(message, customWords, [], true);
+  const result = checkBadWords(message, customWords, ignoredWords, true);
   return { found: result.found, word: result.word };
 }
 
