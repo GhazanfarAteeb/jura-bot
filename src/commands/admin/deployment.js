@@ -1,12 +1,25 @@
 import logger from '../../utils/logger.js';
+import { PermissionFlagsBits } from 'discord.js';
+import Guild from '../../models/Guild.js';
 
 export default {
   name: 'deployment',
   description: 'Log deployment and build information',
   usage: 'deployment [start|complete|rollback]',
   category: 'admin',
-  permissions: ['Administrator'],
+  permissions: [PermissionFlagsBits.Administrator],
   execute: async (message, args) => {
+    const guildConfig = await Guild.getGuild(message.guild.id);
+
+    // Check for admin role
+    const hasAdminRole = guildConfig.roles.adminRoles?.some(roleId =>
+      message.member.roles.cache.has(roleId)
+    );
+
+    if (!message.member.permissions.has(PermissionFlagsBits.Administrator) && !hasAdminRole) {
+      return message.reply('**Warning:** Administrator permission required, Master.');
+    }
+
     const action = args[0]?.toLowerCase();
 
     if (!action || !['start', 'complete', 'rollback', 'status'].includes(action)) {

@@ -21,16 +21,26 @@ export default {
   usage: 'logs | logs set <type> #channel | logs disable <type> | logs all #channel',
   category: 'config',
   aliases: ['logging', 'setlog', 'logchannel'],
-  permissions: {
-    user: PermissionFlagsBits.ManageGuild
-  },
+  permissions: [PermissionFlagsBits.Administrator],
   cooldown: 5,
 
   async execute(message, args) {
     const guildId = message.guild.id;
-    const subCommand = args[0]?.toLowerCase();
-
     const guildConfig = await Guild.getGuild(guildId);
+
+    // Check for admin role
+    const hasAdminRole = guildConfig.roles.adminRoles?.some(roleId =>
+      message.member.roles.cache.has(roleId)
+    );
+
+    if (!message.member.permissions.has(PermissionFlagsBits.Administrator) && !hasAdminRole) {
+      return message.reply({
+        embeds: [await errorEmbed(guildId, 'Permission Denied',
+          `${GLYPHS.LOCK} You need Administrator permissions to configure logging.`)]
+      });
+    }
+
+    const subCommand = args[0]?.toLowerCase();
 
     // No args - show current config
     if (!subCommand) {

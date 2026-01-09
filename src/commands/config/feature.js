@@ -80,15 +80,24 @@ export default {
   usage: '<enable|disable|status> <feature|command>',
   aliases: ['features', 'toggle', 'cmd', 'command'],
   category: 'config',
-  permissions: {
-    user: PermissionFlagsBits.ManageGuild,
-    client: ['SendMessages', 'EmbedLinks']
-  },
+  permissions: [PermissionFlagsBits.Administrator],
   cooldown: 3,
 
   async execute(message, args, client) {
     const guildId = message.guild.id;
     const guildConfig = await Guild.getGuild(guildId);
+
+    // Check for admin role
+    const hasAdminRole = guildConfig.roles.adminRoles?.some(roleId =>
+      message.member.roles.cache.has(roleId)
+    );
+
+    if (!message.member.permissions.has(PermissionFlagsBits.Administrator) && !hasAdminRole) {
+      return message.reply({
+        embeds: [await errorEmbed(guildId, 'Permission Denied',
+          `${GLYPHS.LOCK} You need Administrator permissions to manage features.`)]
+      });
+    }
 
     // No args - show interactive menu
     if (!args[0]) {

@@ -9,12 +9,24 @@ export default {
   usage: '<enable|disable|add|remove|bypass|list> [options]',
   aliases: ['commandchannels', 'allowedchannels', 'botchannels'],
   category: 'config',
-  permissions: [PermissionFlagsBits.ManageGuild],
+  permissions: [PermissionFlagsBits.Administrator],
   cooldown: 3,
 
   async execute(message, args, client) {
     const prefix = await getPrefix(message.guild.id);
     const guildConfig = await Guild.getGuild(message.guild.id, message.guild.name);
+
+    // Check for admin role
+    const hasAdminRole = guildConfig.roles.adminRoles?.some(roleId =>
+      message.member.roles.cache.has(roleId)
+    );
+
+    if (!message.member.permissions.has(PermissionFlagsBits.Administrator) && !hasAdminRole) {
+      return message.reply({
+        embeds: [await errorEmbed(message.guild.id, 'Permission Denied',
+          `${GLYPHS.LOCK} You need Administrator permissions to manage command channels.`)]
+      });
+    }
 
     // Initialize if not exists
     if (!guildConfig.commandChannels) {

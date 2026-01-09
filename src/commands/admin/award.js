@@ -25,6 +25,19 @@ export default {
   async execute(message, args) {
     const guildId = message.guild.id;
     const prefix = await getPrefix(guildId);
+    const guildConfig = await Guild.getGuild(guildId);
+
+    // Check for admin role
+    const hasAdminRole = guildConfig.roles.adminRoles?.some(roleId =>
+      message.member.roles.cache.has(roleId)
+    );
+
+    if (!message.member.permissions.has(PermissionFlagsBits.Administrator) && !hasAdminRole) {
+      return message.reply({
+        embeds: [await errorEmbed(guildId, 'Permission Denied',
+          `${GLYPHS.LOCK} You need Administrator permissions to award users.`)]
+      });
+    }
 
     // No args - show help
     if (!args[0]) {
@@ -70,7 +83,6 @@ export default {
       });
     }
 
-    const guildConfig = await Guild.getGuild(guildId);
     const isAdding = amount > 0;
     const absAmount = Math.abs(amount);
 

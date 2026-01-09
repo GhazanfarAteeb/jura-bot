@@ -8,9 +8,7 @@ export default {
   description: 'Configure automod settings (bad words filter with multi-language support, anti-spam, anti-raid, etc.)',
   usage: '<setting> [options]',
   aliases: ['am'],
-  permissions: {
-    user: PermissionFlagsBits.Administrator
-  },
+  permissions: [PermissionFlagsBits.Administrator],
   cooldown: 3,
 
   async execute(message, args) {

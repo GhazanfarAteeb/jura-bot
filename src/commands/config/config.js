@@ -12,6 +12,18 @@ export default {
     
     async execute(message, args) {
         const guild = await Guild.getGuild(message.guild.id, message.guild.name);
+
+        // Check for admin role
+        const hasAdminRole = guild.roles.adminRoles?.some(roleId =>
+            message.member.roles.cache.has(roleId)
+        );
+
+        if (!message.member.permissions.has(PermissionFlagsBits.Administrator) && !hasAdminRole) {
+            return message.reply({
+                embeds: [await errorEmbed(message.guild.id, 'Permission Denied',
+                    `${GLYPHS.LOCK} You need Administrator permissions to view or edit configuration.`)]
+            });
+        }
         
         // If no args, show current config
         if (args.length === 0) {

@@ -16,6 +16,18 @@ export default {
     const prefix = await getPrefix(message.guild.id);
     const guildConfig = await Guild.getGuild(message.guild.id, message.guild.name);
 
+    // Check for admin role
+    const hasAdminRole = guildConfig.roles.adminRoles?.some(roleId =>
+      message.member.roles.cache.has(roleId)
+    );
+
+    if (!message.member.permissions.has(PermissionFlagsBits.Administrator) && !hasAdminRole) {
+      return message.reply({
+        embeds: [await errorEmbed(message.guild.id, 'Permission Denied',
+          `${GLYPHS.LOCK} You need Administrator permissions to configure anti-nuke.`)]
+      });
+    }
+
     // Use the same path as automod antinuke for consistency
     if (!guildConfig.features.autoMod.antiNuke) {
       guildConfig.features.autoMod.antiNuke = {

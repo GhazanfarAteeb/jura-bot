@@ -11,6 +11,20 @@ export default {
     cooldown: 3,
     
     async execute(message, args) {
+        const guild = await Guild.getGuild(message.guild.id, message.guild.name);
+
+        // Check for admin role
+        const hasAdminRole = guild.roles.adminRoles?.some(roleId =>
+            message.member.roles.cache.has(roleId)
+        );
+
+        if (!message.member.permissions.has(PermissionFlagsBits.Administrator) && !hasAdminRole) {
+            return message.reply({
+                embeds: [await errorEmbed(message.guild.id, 'Permission Denied',
+                    `${GLYPHS.LOCK} You need Administrator permissions to set channels.`)]
+            });
+        }
+
         if (args.length < 2) {
             const embed = await errorEmbed(message.guild.id, 'Invalid Usage',
                 `${GLYPHS.ARROW_RIGHT} Usage: \`setchannel <type> <#channel|channel_id>\`\n\n` +

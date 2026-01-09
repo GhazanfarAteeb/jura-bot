@@ -9,16 +9,26 @@ export default {
     usage: 'noxp add #channel | noxp remove #channel | noxp list',
     category: 'config',
     aliases: ['xpblacklist', 'ignorexp', 'noxpchannel'],
-    permissions: {
-        user: PermissionFlagsBits.ManageGuild
-    },
+    permissions: [PermissionFlagsBits.Administrator],
     cooldown: 5,
 
     async execute(message, args) {
         const guildId = message.guild.id;
-        const subCommand = args[0]?.toLowerCase();
-
         const guildConfig = await Guild.getGuild(guildId);
+
+        // Check for admin role
+        const hasAdminRole = guildConfig.roles.adminRoles?.some(roleId =>
+            message.member.roles.cache.has(roleId)
+        );
+
+        if (!message.member.permissions.has(PermissionFlagsBits.Administrator) && !hasAdminRole) {
+            return message.reply({
+                embeds: [await errorEmbed(guildId, 'Permission Denied',
+                    `${GLYPHS.LOCK} You need Administrator permissions to manage XP channels.`)]
+            });
+        }
+
+        const subCommand = args[0]?.toLowerCase();
 
         // Initialize noXpChannels array if not exists
         if (!guildConfig.features.levelSystem.noXpChannels) {

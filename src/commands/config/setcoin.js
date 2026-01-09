@@ -14,6 +14,19 @@ export default {
 
   execute: async (message, args) => {
     const guildId = message.guild.id;
+    const guildConfig = await Guild.getGuild(guildId);
+
+    // Check for admin role
+    const hasAdminRole = guildConfig.roles.adminRoles?.some(roleId =>
+      message.member.roles.cache.has(roleId)
+    );
+
+    if (!message.member.permissions.has(PermissionFlagsBits.Administrator) && !hasAdminRole) {
+      return message.reply({
+        embeds: [await errorEmbed(guildId, 'Permission Denied',
+          `${GLYPHS.LOCK} You need Administrator permissions to configure coins.`)]
+      });
+    }
 
     try {
       if (!args[0]) {

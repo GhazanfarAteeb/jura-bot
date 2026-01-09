@@ -8,10 +8,7 @@ export default {
   description: 'Manage reaction role panels',
   usage: 'reactionroles <list|add|remove|clear>',
   aliases: ['rr', 'rroles'],
-  permissions: {
-    user: PermissionFlagsBits.ManageRoles,
-    client: PermissionFlagsBits.ManageRoles
-  },
+  permissions: [PermissionFlagsBits.Administrator],
   cooldown: 5,
 
   async execute(message, args) {
@@ -21,6 +18,18 @@ export default {
 
     try {
       const guildConfig = await Guild.getGuild(guildId);
+
+      // Check for admin role
+      const hasAdminRole = guildConfig.roles.adminRoles?.some(roleId =>
+        message.member.roles.cache.has(roleId)
+      );
+
+      if (!message.member.permissions.has(PermissionFlagsBits.Administrator) && !hasAdminRole) {
+        return message.reply({
+          embeds: [await errorEmbed(guildId, 'Permission Denied',
+            `${GLYPHS.LOCK} You need Administrator permissions to manage reaction roles.`)]
+        });
+      }
 
       if (!subCommand || subCommand === 'list') {
         // List all reaction role panels

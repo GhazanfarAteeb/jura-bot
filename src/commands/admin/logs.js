@@ -16,20 +16,22 @@ export default {
   category: 'admin',
   permissions: [], // Custom permission check below
   execute: async (message, args) => {
-    // Check for Administrator OR staff/moderator roles
+    // Check for Administrator OR admin/staff/moderator roles
     const hasAdmin = message.member.permissions.has('Administrator');
 
     if (!hasAdmin) {
       const guildConfig = await Guild.getGuild(message.guild.id);
       const memberRoles = message.member.roles.cache.map(r => r.id);
+      const adminRoles = guildConfig?.roles?.adminRoles || [];
       const staffRoles = guildConfig?.roles?.staffRoles || [];
       const modRoles = guildConfig?.roles?.moderatorRoles || [];
 
+      const hasAdminRole = adminRoles.some(roleId => memberRoles.includes(roleId));
       const hasStaffRole = staffRoles.some(roleId => memberRoles.includes(roleId));
       const hasModRole = modRoles.some(roleId => memberRoles.includes(roleId));
 
-      if (!hasStaffRole && !hasModRole) {
-        return message.reply('**Warning:** Administrator permission or staff/moderator role required, Master.');
+      if (!hasAdminRole && !hasStaffRole && !hasModRole) {
+        return message.reply('**Warning:** Administrator permission or admin/staff/moderator role required, Master.');
       }
     }
     const action = args[0]?.toLowerCase() || 'stats';

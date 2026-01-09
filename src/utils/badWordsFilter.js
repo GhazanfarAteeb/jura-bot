@@ -21,7 +21,7 @@ let badWordsFilter = null;
  */
 function getFilter(exclusions = []) {
   if (!badWordsFilter || exclusions.length > 0) {
-    badWordsFilter = new BadWordsNext({ 
+    badWordsFilter = new BadWordsNext({
       data: en,
       exclusions: exclusions,
       placeholder: '***',
@@ -51,7 +51,7 @@ function checkBadWords(message, customWords = [], ignoredWords = [], useBuiltIn 
     }
 
     // Create filter instance with exclusions
-    const filter = new BadWordsNext({ 
+    const filter = new BadWordsNext({
       data: en,
       exclusions: ignoredWords,
       placeholder: '***'
@@ -99,7 +99,7 @@ function checkBadWords(message, customWords = [], ignoredWords = [], useBuiltIn 
       });
 
       // Determine if it's a custom word or built-in
-      const isCustom = customWords.some(w => 
+      const isCustom = customWords.some(w =>
         detectedWord?.toLowerCase().includes(w.toLowerCase()) ||
         w.toLowerCase().includes(detectedWord?.toLowerCase())
       );
@@ -167,7 +167,7 @@ function getWordSeverity(word) {
  */
 function censorMessage(text, customWords = [], ignoredWords = []) {
   try {
-    const filter = new BadWordsNext({ 
+    const filter = new BadWordsNext({
       data: en,
       exclusions: ignoredWords,
       placeholder: '***',

@@ -15,6 +15,15 @@ export default {
   async execute(message) {
     const guildId = message.guild.id;
 
+    // HIGHEST AUTHORITY - Only Discord Administrator permission allowed (no admin role bypass)
+    if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) {
+      return message.reply({
+        embeds: [await errorEmbed(guildId, 'Permission Denied',
+          `${GLYPHS.LOCK} This command requires Discord Administrator permissions.\n\n` +
+          `**Note:** Admin roles cannot bypass this check for safety reasons.`)]
+      });
+    }
+
     try {
       const guildConfig = await Guild.getGuild(guildId);
 

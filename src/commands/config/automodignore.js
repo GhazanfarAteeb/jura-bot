@@ -18,6 +18,19 @@ export default {
   async execute(message, args) {
     const guildId = message.guild.id;
     const prefix = await getPrefix(guildId);
+    const guildConfig = await Guild.getGuild(guildId);
+
+    // Check for admin role
+    const hasAdminRole = guildConfig.roles.adminRoles?.some(roleId =>
+      message.member.roles.cache.has(roleId)
+    );
+
+    if (!message.member.permissions.has(PermissionFlagsBits.Administrator) && !hasAdminRole) {
+      return message.reply({
+        embeds: [await errorEmbed(guildId, 'Permission Denied',
+          `${GLYPHS.LOCK} You need Administrator permissions to configure automod ignore settings.`)]
+      });
+    }
 
     // Show help if no args
     if (!args[0]) {
@@ -56,8 +69,6 @@ export default {
           `**Notice:** Please mention a ${isChannel ? 'channel' : 'role'}, Master.\n\n**Usage:** \`${prefix}automodignore ${action} ${type} ${isChannel ? '#channel' : '@role'}\``)]
       });
     }
-
-    const guildConfig = await Guild.findOne({ guildId });
 
     if (action === 'add') {
       return addIgnored(message, guildConfig, target, isChannel);

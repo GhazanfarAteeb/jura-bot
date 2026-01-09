@@ -8,12 +8,26 @@ export default {
   usage: '<enable|disable|add|remove|list>',
   aliases: ['autopub'],
   category: 'config',
-  permissions: [PermissionFlagsBits.ManageGuild],
+  permissions: [PermissionFlagsBits.Administrator],
   cooldown: 5,
 
   async execute(message, args, client) {
     const guildId = message.guild.id;
     const prefix = await getPrefix(guildId);
+    const guildConfig = await Guild.getGuild(guildId);
+
+    // Check for admin role
+    const hasAdminRole = guildConfig.roles.adminRoles?.some(roleId =>
+      message.member.roles.cache.has(roleId)
+    );
+
+    if (!message.member.permissions.has(PermissionFlagsBits.Administrator) && !hasAdminRole) {
+      const { errorEmbed, GLYPHS } = await import('../../utils/embeds.js');
+      return message.reply({
+        embeds: [await errorEmbed(guildId, 'Permission Denied',
+          `${GLYPHS.LOCK} You need Administrator permissions to manage auto-publish.`)]
+      });
+    }
 
     const subCommand = args[0]?.toLowerCase();
 
@@ -32,8 +46,6 @@ export default {
 
       return message.reply({ embeds: [embed] });
     }
-
-    const guildConfig = await Guild.getGuild(guildId);
 
     if (!guildConfig.autoPublish) {
       guildConfig.autoPublish = { enabled: false, channels: [] };

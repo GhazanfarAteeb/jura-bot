@@ -1,6 +1,6 @@
 import { PermissionFlagsBits, ChannelType, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import Guild from '../../models/Guild.js';
-import { successEmbed, infoEmbed, GLYPHS } from '../../utils/embeds.js';
+import { successEmbed, infoEmbed, errorEmbed, GLYPHS } from '../../utils/embeds.js';
 import RateLimitQueue from '../../utils/RateLimitQueue.js';
 
 export default {
@@ -12,6 +12,20 @@ export default {
   cooldown: 30,
 
   async execute(message) {
+    const guildConfig = await Guild.getGuild(message.guild.id, message.guild.name);
+
+    // Check for admin role
+    const hasAdminRole = guildConfig.roles.adminRoles?.some(roleId =>
+      message.member.roles.cache.has(roleId)
+    );
+
+    if (!message.member.permissions.has(PermissionFlagsBits.Administrator) && !hasAdminRole) {
+      return message.reply({
+        embeds: [await errorEmbed(message.guild.id, 'Permission Denied',
+          `${GLYPHS.LOCK} You need Administrator permissions to run setup.`)]
+      });
+    }
+
     const embed = await infoEmbed(message.guild.id, 'Setting Up RAPHAEL',
       `${GLYPHS.LOADING} Starting setup process...\n\n` +
       `This may take a minute as we create roles and channels safely.`

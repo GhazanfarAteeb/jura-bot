@@ -1,6 +1,7 @@
 import { PermissionFlagsBits } from 'discord.js';
 import Guild from '../../models/Guild.js';
 import { successEmbed, errorEmbed, GLYPHS } from '../../utils/embeds.js';
+import { getPrefix } from '../../utils/helpers.js';
 
 export default {
     name: 'setprefix',
@@ -11,6 +12,20 @@ export default {
     cooldown: 5,
     
     async execute(message, args) {
+        const guild = await Guild.getGuild(message.guild.id, message.guild.name);
+
+        // Check for admin role
+        const hasAdminRole = guild.roles.adminRoles?.some(roleId =>
+            message.member.roles.cache.has(roleId)
+        );
+
+        if (!message.member.permissions.has(PermissionFlagsBits.Administrator) && !hasAdminRole) {
+            return message.reply({
+                embeds: [await errorEmbed(message.guild.id, 'Permission Denied',
+                    `${GLYPHS.LOCK} You need Administrator permissions to change the prefix.`)]
+            });
+        }
+
         if (!args[0]) {
             const embed = await errorEmbed(message.guild.id, 'Invalid Usage',
                 `${GLYPHS.ARROW_RIGHT} Usage: \`${await getPrefix(message.guild.id)}setprefix <new_prefix>\``

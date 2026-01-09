@@ -19,10 +19,7 @@ export default {
   usage: 'setoverlay <color|opacity|view|reset> [value]',
   aliases: ['overlay', 'cardoverlay'],
   category: 'config',
-  permissions: {
-    user: PermissionFlagsBits.Administrator,
-    client: null
-  },
+  permissions: [PermissionFlagsBits.Administrator],
   cooldown: 5,
 
   // Slash command data
@@ -62,6 +59,18 @@ export default {
     const guildId = message.guild.id;
     const prefix = await getPrefix(guildId);
     const guildConfig = await Guild.getGuild(guildId);
+
+    // Check for admin role
+    const hasAdminRole = guildConfig.roles.adminRoles?.some(roleId =>
+      message.member.roles.cache.has(roleId)
+    );
+
+    if (!message.member.permissions.has(PermissionFlagsBits.Administrator) && !hasAdminRole) {
+      return message.reply({
+        embeds: [await errorEmbed(guildId, 'Permission Denied',
+          `${GLYPHS.LOCK} You need Administrator permissions to configure overlays.`)]
+      });
+    }
 
     // Check if profile customization is enabled
     const customizationEnabled = guildConfig.economy?.profileCustomization?.enabled !== false;
