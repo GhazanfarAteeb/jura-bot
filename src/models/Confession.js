@@ -27,6 +27,7 @@ const confessionSchema = new mongoose.Schema({
     content: String,
     messageId: String,
     threadId: String, // Thread for replies
+    lastReplyMessageId: String, // Last reply message in thread (to remove its button)
     replyTo: Number, // If this is a reply, the confession number it's replying to
     userId: String, // Encrypted or hashed for admin use only
     timestamp: {

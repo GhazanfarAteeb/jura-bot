@@ -175,14 +175,15 @@ async function handleConfessionModalSubmit(interaction, client) {
   confessionData.confessionCount++;
   const confessionNumber = confessionData.confessionCount;
 
-  // Find the previous latest confession and remove all buttons from it
-  const previousConfession = confessionData.confessions[confessionData.confessions.length - 1];
-  if (previousConfession && previousConfession.messageId) {
+  // Find the previous main confession (not a reply) and remove all buttons from it
+  const mainConfessions = confessionData.confessions.filter(c => !c.replyTo && c.messageId);
+  const previousMainConfession = mainConfessions[mainConfessions.length - 1];
+  if (previousMainConfession && previousMainConfession.messageId) {
     try {
-      const prevMessage = await channel.messages.fetch(previousConfession.messageId).catch(() => null);
+      const prevMessage = await channel.messages.fetch(previousMainConfession.messageId).catch(() => null);
       if (prevMessage) {
         // Remove all buttons from the previous confession
-        await prevMessage.edit({ components: [] }).catch(() => { });
+        await prevMessage.edit({ components: [] }).catch(() => {});
       }
     } catch (error) {
       // Ignore errors
@@ -281,8 +282,18 @@ async function handleConfessionReplyModalSubmit(interaction, client) {
     .setColor('#7289da')
     .setTimestamp();
 
+  // Create Reply button for this reply
+  const replyRow = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`confession_reply_${confessionNumber}`)
+      .setLabel('Reply')
+      .setStyle(ButtonStyle.Secondary)
+      .setEmoji('💬')
+  );
+
   // Post the reply in the confession's thread
   let thread = null;
+  let sentReplyMessage = null;
   try {
     if (confession.threadId) {
       // Try to get the existing thread
@@ -304,15 +315,28 @@ async function handleConfessionReplyModalSubmit(interaction, client) {
     }
 
     if (thread) {
-      await thread.send({ embeds: [replyEmbed] });
+      // Remove Reply button from the previous reply in this thread
+      if (confession.lastReplyMessageId) {
+        try {
+          const prevReply = await thread.messages.fetch(confession.lastReplyMessageId).catch(() => null);
+          if (prevReply) {
+            await prevReply.edit({ components: [] }).catch(() => {});
+          }
+        } catch (error) {
+          // Ignore
+        }
+      }
+
+      sentReplyMessage = await thread.send({ embeds: [replyEmbed], components: [replyRow] });
+      confession.lastReplyMessageId = sentReplyMessage.id;
     } else {
       // Fallback: send to channel as a message if thread creation fails
-      await channel.send({ embeds: [replyEmbed] });
+      sentReplyMessage = await channel.send({ embeds: [replyEmbed], components: [replyRow] });
     }
   } catch (error) {
     console.error('Failed to post reply:', error);
     // Fallback: send to channel
-    await channel.send({ embeds: [replyEmbed] });
+    sentReplyMessage = await channel.send({ embeds: [replyEmbed], components: [replyRow] });
   }
 
   // Save the reply

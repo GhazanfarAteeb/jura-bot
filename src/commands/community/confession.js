@@ -496,14 +496,15 @@ export default class ConfessionCommand extends Command {
     confessionData.confessionCount++;
     const confessionNumber = confessionData.confessionCount;
 
-    // Find the previous latest confession and remove all buttons from it
-    const previousConfession = confessionData.confessions[confessionData.confessions.length - 1];
-    if (previousConfession && previousConfession.messageId) {
+    // Find the previous main confession (not a reply) and remove all buttons from it
+    const mainConfessions = confessionData.confessions.filter(c => !c.replyTo && c.messageId);
+    const previousMainConfession = mainConfessions[mainConfessions.length - 1];
+    if (previousMainConfession && previousMainConfession.messageId) {
       try {
-        const prevMessage = await channel.messages.fetch(previousConfession.messageId).catch(() => null);
+        const prevMessage = await channel.messages.fetch(previousMainConfession.messageId).catch(() => null);
         if (prevMessage) {
           // Remove all buttons from the previous confession
-          await prevMessage.edit({ components: [] }).catch(() => { });
+          await prevMessage.edit({ components: [] }).catch(() => {});
         }
       } catch (error) {
         // Ignore errors
