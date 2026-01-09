@@ -415,6 +415,18 @@ async function handleAutomodCommand(interaction, guildConfig) {
     case 'ignore-list':
       await handleIgnoreList(interaction, guildConfig);
       break;
+
+    case 'badwords-ignore':
+      await handleBadwordsIgnore(interaction, guildConfig);
+      break;
+
+    case 'badwords-unignore':
+      await handleBadwordsUnignore(interaction, guildConfig);
+      break;
+
+    case 'badwords-ignoredlist':
+      await handleBadwordsIgnoredList(interaction, guildConfig);
+      break;
   }
 }
 
@@ -670,6 +682,81 @@ async function handleBadwordsSubcommand(interaction, guildConfig) {
       });
       break;
   }
+}
+
+// Handle badwords ignore - add words to whitelist
+async function handleBadwordsIgnore(interaction, guildConfig) {
+  const { successEmbed, errorEmbed, GLYPHS } = await import('../../utils/embeds.js');
+  const words = interaction.options.getString('words');
+
+  if (!words) {
+    return interaction.editReply({
+      embeds: [await errorEmbed(interaction.guild.id, 'Missing Words',
+        'Please provide words to ignore (comma separated).')]
+    });
+  }
+
+  const ignoreWords = words.split(',').map(w => w.trim().toLowerCase()).filter(w => w);
+  const existingIgnored = guildConfig.features.autoMod.badWords?.ignoredWords || [];
+  const updatedIgnored = [...new Set([...existingIgnored, ...ignoreWords])];
+
+  await Guild.updateGuild(interaction.guild.id, { $set: { 'features.autoMod.badWords.ignoredWords': updatedIgnored } });
+
+  await interaction.editReply({
+    embeds: [await successEmbed(interaction.guild.id, 'Words Ignored',
+      `${GLYPHS.SUCCESS} Added ${ignoreWords.length} word(s) to whitelist.\n` +
+      `These words will not trigger the filter.\n\n` +
+      `**Total Ignored Words:** ${updatedIgnored.length}`)]
+  });
+}
+
+// Handle badwords unignore - remove words from whitelist
+async function handleBadwordsUnignore(interaction, guildConfig) {
+  const { successEmbed, errorEmbed, GLYPHS } = await import('../../utils/embeds.js');
+  const words = interaction.options.getString('words');
+
+  if (!words) {
+    return interaction.editReply({
+      embeds: [await errorEmbed(interaction.guild.id, 'Missing Words',
+        'Please provide words to remove from whitelist (comma separated).')]
+    });
+  }
+
+  const unignoreWords = words.split(',').map(w => w.trim().toLowerCase());
+  const existingIgnored = guildConfig.features.autoMod.badWords?.ignoredWords || [];
+  const updatedIgnored = existingIgnored.filter(w => !unignoreWords.includes(w));
+
+  await Guild.updateGuild(interaction.guild.id, { $set: { 'features.autoMod.badWords.ignoredWords': updatedIgnored } });
+
+  await interaction.editReply({
+    embeds: [await successEmbed(interaction.guild.id, 'Words Unignored',
+      `${GLYPHS.SUCCESS} Removed word(s) from whitelist.\n\n` +
+      `**Total Ignored Words:** ${updatedIgnored.length}`)]
+  });
+}
+
+// Handle badwords ignored list - view all whitelisted words
+async function handleBadwordsIgnoredList(interaction, guildConfig) {
+  const { infoEmbed } = await import('../../utils/embeds.js');
+
+  const ignoredList = guildConfig.features.autoMod.badWords?.ignoredWords || [];
+
+  if (ignoredList.length === 0) {
+    return interaction.editReply({
+      embeds: [await infoEmbed(interaction.guild.id, 'Ignored Words List',
+        'No words are currently whitelisted/ignored.\n\n' +
+        'Use `/automod badwords-ignore` to add words to the whitelist.')]
+    });
+  }
+
+  // Show the ignored words (these are safe to display since they're whitelisted)
+  const displayWords = ignoredList.slice(0, 50).join(', ');
+
+  await interaction.editReply({
+    embeds: [await infoEmbed(interaction.guild.id, 'Ignored Words List',
+      `**Total Ignored Words:** ${ignoredList.length}\n\n` +
+      `**Words:**\n${displayWords}${ignoredList.length > 50 ? '\n\n*...and more*' : ''}`)]
+  });
 }
 
 async function handleLockdownCommand(interaction, guildConfig) {

@@ -471,6 +471,23 @@ const slashCommands = [
     .addSubcommand(subcommand =>
       subcommand.setName('ignore-list')
         .setDescription('List all automod ignore settings'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('badwords-ignore')
+        .setDescription('Add words to the bad words whitelist/ignore list')
+        .addStringOption(option =>
+          option.setName('words')
+            .setDescription('Words to ignore (comma separated)')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('badwords-unignore')
+        .setDescription('Remove words from the bad words whitelist')
+        .addStringOption(option =>
+          option.setName('words')
+            .setDescription('Words to remove from whitelist (comma separated)')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('badwords-ignoredlist')
+        .setDescription('View all ignored/whitelisted bad words'))
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
   // Lockdown Command

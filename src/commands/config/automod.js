@@ -148,6 +148,7 @@ async function handleBadwords(message, args, guildConfig) {
         `${GLYPHS.DOT} \`automod badwords remove <words>\` - Remove custom words\n` +
         `${GLYPHS.DOT} \`automod badwords ignore <words>\` - Whitelist/ignore words\n` +
         `${GLYPHS.DOT} \`automod badwords unignore <words>\` - Remove from whitelist\n` +
+        `${GLYPHS.DOT} \`automod badwords ignoredlist\` - View ignored/whitelisted words\n` +
         `${GLYPHS.DOT} \`automod badwords list\` - List custom words\n` +
         `${GLYPHS.DOT} \`automod badwords builtin on/off\` - Toggle built-in word list\n` +
         `${GLYPHS.DOT} \`automod badwords escalate on/off\` - Auto-escalate for slurs\n` +
@@ -308,6 +309,24 @@ async function handleBadwords(message, args, guildConfig) {
       return message.reply({
         embeds: [await successEmbed(message.guild.id, 'Words Unignored',
           `${GLYPHS.SUCCESS} Removed word(s) from whitelist.`)]
+      });
+
+    case 'ignoredlist':
+    case 'whitelist':
+    case 'ignored':
+      const ignoredList = guildConfig.features.autoMod.badWords.ignoredWords || [];
+      if (ignoredList.length === 0) {
+        return message.reply({
+          embeds: [await infoEmbed(message.guild.id, 'Ignored Words List',
+            'No words are currently whitelisted/ignored.')]
+        });
+      }
+      // Show the ignored words (these are safe to display since they're whitelisted)
+      const displayWords = ignoredList.slice(0, 50).join(', ');
+      return message.reply({
+        embeds: [await infoEmbed(message.guild.id, 'Ignored Words List',
+          `**Total Ignored Words:** ${ignoredList.length}\n\n` +
+          `**Words:**\n${displayWords}${ignoredList.length > 50 ? '\n\n*...and more*' : ''}`)]
       });
 
     default:
@@ -760,8 +779,8 @@ async function addIgnored(message, guildConfig, target, isChannel) {
   }
 
   const newList = [...currentList, target.id];
-  await Guild.updateGuild(guildId, { 
-    $set: { [`features.autoMod.${field}`]: newList } 
+  await Guild.updateGuild(guildId, {
+    $set: { [`features.autoMod.${field}`]: newList }
   });
 
   return message.reply({
@@ -792,8 +811,8 @@ async function removeIgnored(message, guildConfig, target, isChannel) {
   }
 
   const newList = list.filter(id => id !== target.id);
-  await Guild.updateGuild(guildId, { 
-    $set: { [`features.autoMod.${field}`]: newList } 
+  await Guild.updateGuild(guildId, {
+    $set: { [`features.autoMod.${field}`]: newList }
   });
 
   return message.reply({
