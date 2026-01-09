@@ -156,7 +156,7 @@ export default class ConfessionCommand extends Command {
       });
     }
 
-    await Confession.findOneAndUpdate(
+    const confessionData = await Confession.findOneAndUpdate(
       { guildId: message.guild.id },
       {
         guildId: message.guild.id,
@@ -167,7 +167,11 @@ export default class ConfessionCommand extends Command {
     );
 
     // Send the confession panel to the channel
-    await this.sendPanel(channel);
+    const panelMessage = await this.sendPanel(channel);
+    
+    // Save the panel message ID
+    confessionData.panelMessageId = panelMessage.id;
+    await confessionData.save();
 
     return message.reply({
       embeds: [new EmbedBuilder()
@@ -492,19 +496,25 @@ export default class ConfessionCommand extends Command {
     confessionData.confessionCount++;
     const confessionNumber = confessionData.confessionCount;
 
+    // Delete the old panel message
+    if (confessionData.panelMessageId) {
+      try {
+        const oldPanel = await channel.messages.fetch(confessionData.panelMessageId).catch(() => null);
+        if (oldPanel) await oldPanel.delete().catch(() => {});
+      } catch (error) {
+        // Ignore if message doesn't exist
+      }
+    }
+
     const confessionEmbed = new EmbedBuilder()
-      .setAuthor({ name: `Anonymous Confession (#${confessionNumber})`, iconURL: message.guild.iconURL() })
+      .setAuthor({ name: `Anonymous Confession (#${confessionNumber})` })
       .setDescription(`"${pending.content}"`)
       .setColor('#9b59b6')
       .setTimestamp();
 
-    const row = new ActionRowBuilder()
+    // Only Reply button on the confession
+    const confessionRow = new ActionRowBuilder()
       .addComponents(
-        new ButtonBuilder()
-          .setCustomId('confession_submit')
-          .setLabel('Submit a confession!')
-          .setStyle(ButtonStyle.Primary)
-          .setEmoji('📝'),
         new ButtonBuilder()
           .setCustomId(`confession_reply_${confessionNumber}`)
           .setLabel('Reply')
@@ -512,7 +522,23 @@ export default class ConfessionCommand extends Command {
           .setEmoji('💬')
       );
 
-    const sentMessage = await channel.send({ embeds: [confessionEmbed], components: [row] });
+    const sentMessage = await channel.send({ embeds: [confessionEmbed], components: [confessionRow] });
+
+    // Post a new panel at the bottom
+    const panelEmbed = new EmbedBuilder()
+      .setDescription('Click the button below to submit an anonymous confession!')
+      .setColor('#9b59b6');
+
+    const panelRow = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId('confession_submit')
+        .setLabel('Submit a confession!')
+        .setStyle(ButtonStyle.Primary)
+        .setEmoji('📝')
+    );
+
+    const panelMessage = await channel.send({ embeds: [panelEmbed], components: [panelRow] });
+    confessionData.panelMessageId = panelMessage.id;
 
     // Save confession and remove from pending
     confessionData.confessions.push({

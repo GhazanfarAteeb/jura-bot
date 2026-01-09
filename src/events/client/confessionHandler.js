@@ -176,6 +176,16 @@ async function handleConfessionModalSubmit(interaction, client) {
   confessionData.confessionCount++;
   const confessionNumber = confessionData.confessionCount;
 
+  // Delete the old panel message
+  if (confessionData.panelMessageId) {
+    try {
+      const oldPanel = await channel.messages.fetch(confessionData.panelMessageId).catch(() => null);
+      if (oldPanel) await oldPanel.delete().catch(() => {});
+    } catch (error) {
+      // Ignore if message doesn't exist
+    }
+  }
+
   const confessionEmbed = new EmbedBuilder()
     .setAuthor({
       name: `Anonymous Confession (#${confessionNumber})`
@@ -184,16 +194,10 @@ async function handleConfessionModalSubmit(interaction, client) {
     .setColor('#9b59b6')
     .setTimestamp();
 
-  const buttons = [
-    new ButtonBuilder()
-      .setCustomId('confession_submit')
-      .setLabel('Submit a confession!')
-      .setStyle(ButtonStyle.Primary)
-      .setEmoji('📝')
-  ];
-
+  // Confession only gets Reply button (not submit)
+  const confessionButtons = [];
   if (confessionData.settings.allowReplies) {
-    buttons.push(
+    confessionButtons.push(
       new ButtonBuilder()
         .setCustomId(`confession_reply_${confessionNumber}`)
         .setLabel('Reply')
@@ -202,9 +206,28 @@ async function handleConfessionModalSubmit(interaction, client) {
     );
   }
 
-  const row = new ActionRowBuilder().addComponents(buttons);
+  const confessionRow = confessionButtons.length > 0 ? new ActionRowBuilder().addComponents(confessionButtons) : null;
 
-  const sentMessage = await channel.send({ embeds: [confessionEmbed], components: [row] });
+  const sentMessage = await channel.send({ 
+    embeds: [confessionEmbed], 
+    components: confessionRow ? [confessionRow] : [] 
+  });
+
+  // Post a new panel at the bottom
+  const panelEmbed = new EmbedBuilder()
+    .setDescription('Click the button below to submit an anonymous confession!')
+    .setColor('#9b59b6');
+
+  const panelRow = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId('confession_submit')
+      .setLabel('Submit a confession!')
+      .setStyle(ButtonStyle.Primary)
+      .setEmoji('📝')
+  );
+
+  const panelMessage = await channel.send({ embeds: [panelEmbed], components: [panelRow] });
+  confessionData.panelMessageId = panelMessage.id;
 
   // Save the confession
   confessionData.confessions.push({

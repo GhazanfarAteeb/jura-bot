@@ -10,6 +10,10 @@ const confessionSchema = new mongoose.Schema({
     type: String,
     default: null
   },
+  panelMessageId: {
+    type: String,
+    default: null
+  },
   enabled: {
     type: Boolean,
     default: false
