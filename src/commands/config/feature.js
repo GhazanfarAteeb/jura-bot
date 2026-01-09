@@ -1,6 +1,7 @@
 import { PermissionFlagsBits, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder } from 'discord.js';
 import Guild from '../../models/Guild.js';
 import { successEmbed, errorEmbed, infoEmbed, GLYPHS } from '../../utils/embeds.js';
+import { hasModPerms } from '../../utils/helpers.js';
 
 // Define feature categories and their associated commands
 const featureCategories = {
@@ -80,22 +81,18 @@ export default {
   usage: '<enable|disable|status> <feature|command>',
   aliases: ['features', 'toggle', 'cmd', 'command'],
   category: 'config',
-  permissions: [PermissionFlagsBits.Administrator],
+  permissions: [PermissionFlagsBits.ManageGuild],
   cooldown: 3,
 
   async execute(message, args, client) {
     const guildId = message.guild.id;
     const guildConfig = await Guild.getGuild(guildId);
 
-    // Check for admin role
-    const hasAdminRole = guildConfig.roles.adminRoles?.some(roleId =>
-      message.member.roles.cache.has(roleId)
-    );
-
-    if (!message.member.permissions.has(PermissionFlagsBits.Administrator) && !hasAdminRole) {
+    // Check for moderator permissions (admin, mod role, or ManageGuild)
+    if (!hasModPerms(message.member, guildConfig)) {
       return message.reply({
         embeds: [await errorEmbed(guildId, 'Permission Denied',
-          `${GLYPHS.LOCK} You need Administrator permissions to manage features.`)]
+          `${GLYPHS.LOCK} You need Moderator/Staff permissions to manage features.`)]
       });
     }
 

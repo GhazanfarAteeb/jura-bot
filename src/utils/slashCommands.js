@@ -1128,6 +1128,98 @@ const slashCommands = [
             .setDescription('Role to give (leave empty to remove)')
             .setRequired(false)))
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
+
+  // Confession System Command
+  new SlashCommandBuilder()
+    .setName('confession')
+    .setDescription('Configure the anonymous confession system')
+    .addSubcommand(subcommand =>
+      subcommand.setName('setup')
+        .setDescription('Set up the confession channel')
+        .addChannelOption(option =>
+          option.setName('channel')
+            .setDescription('The channel to post confessions in')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('disable')
+        .setDescription('Disable the confession system'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('settings')
+        .setDescription('View current confession settings'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('cooldown')
+        .setDescription('Set confession cooldown')
+        .addIntegerOption(option =>
+          option.setName('seconds')
+            .setDescription('Cooldown in seconds (0-3600)')
+            .setRequired(true)
+            .setMinValue(0)
+            .setMaxValue(3600)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('replies')
+        .setDescription('Toggle confession replies')
+        .addBooleanOption(option =>
+          option.setName('enabled')
+            .setDescription('Enable or disable replies')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('anonymous-replies')
+        .setDescription('Toggle anonymous replies')
+        .addBooleanOption(option =>
+          option.setName('enabled')
+            .setDescription('Make replies anonymous')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('approval')
+        .setDescription('Toggle confession approval requirement')
+        .addBooleanOption(option =>
+          option.setName('enabled')
+            .setDescription('Require approval before posting')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('ban')
+        .setDescription('Ban a user from confessions')
+        .addUserOption(option =>
+          option.setName('user')
+            .setDescription('The user to ban')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('unban')
+        .setDescription('Unban a user from confessions')
+        .addUserOption(option =>
+          option.setName('user')
+            .setDescription('The user to unban')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('pending')
+        .setDescription('View pending confessions'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('approve')
+        .setDescription('Approve a pending confession')
+        .addIntegerOption(option =>
+          option.setName('id')
+            .setDescription('The pending confession ID')
+            .setRequired(true)
+            .setMinValue(1)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('reject')
+        .setDescription('Reject a pending confession')
+        .addIntegerOption(option =>
+          option.setName('id')
+            .setDescription('The pending confession ID')
+            .setRequired(true)
+            .setMinValue(1)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('send')
+        .setDescription('Send confession panel to a channel')
+        .addChannelOption(option =>
+          option.setName('channel')
+            .setDescription('Channel to send panel (defaults to confession channel)')
+            .setRequired(false)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('stats')
+        .setDescription('View confession statistics'))
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 ];
 
 export async function registerSlashCommands(client) {

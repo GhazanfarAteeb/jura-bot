@@ -2,27 +2,24 @@ import { PermissionFlagsBits } from 'discord.js';
 import Guild from '../../models/Guild.js';
 import { successEmbed, errorEmbed, infoEmbed, GLYPHS } from '../../utils/embeds.js';
 import { getBuiltInWordCount } from '../../utils/badWordsFilter.js';
+import { hasModPerms } from '../../utils/helpers.js';
 
 export default {
   name: 'automod',
   description: 'Configure automod settings (bad words filter with multi-language support, anti-spam, anti-raid, etc.)',
   usage: '<setting> [options]',
   aliases: ['am'],
-  permissions: [PermissionFlagsBits.Administrator],
+  permissions: [PermissionFlagsBits.ManageGuild],
   cooldown: 3,
 
   async execute(message, args) {
     const guildConfig = await Guild.getGuild(message.guild.id, message.guild.name);
 
-    // Check for admin role
-    const hasAdminRole = guildConfig.roles.adminRoles?.some(roleId =>
-      message.member.roles.cache.has(roleId)
-    );
-
-    if (!message.member.permissions.has(PermissionFlagsBits.Administrator) && !hasAdminRole) {
+    // Check for moderator permissions (admin, mod role, or ManageGuild)
+    if (!hasModPerms(message.member, guildConfig)) {
       return message.reply({
         embeds: [await errorEmbed(message.guild.id, 'Permission Denied',
-          `${GLYPHS.LOCK} You need Administrator permissions to configure AutoMod.`)]
+          `${GLYPHS.LOCK} You need Moderator/Staff permissions to configure AutoMod.`)]
       });
     }
 

@@ -1,7 +1,7 @@
 import { EmbedBuilder, PermissionFlagsBits, ChannelType } from 'discord.js';
 import Guild from '../../models/Guild.js';
 import { successEmbed, errorEmbed, infoEmbed, GLYPHS } from '../../utils/embeds.js';
-import { getPrefix } from '../../utils/helpers.js';
+import { getPrefix, hasModPerms } from '../../utils/helpers.js';
 
 export default {
   name: 'noxp',
@@ -9,22 +9,18 @@ export default {
   usage: 'noxp add #channel | noxp remove #channel | noxp list',
   category: 'config',
   aliases: ['xpblacklist', 'ignorexp', 'noxpchannel'],
-  permissions: [PermissionFlagsBits.Administrator],
+  permissions: [PermissionFlagsBits.ManageGuild],
   cooldown: 5,
 
   async execute(message, args) {
     const guildId = message.guild.id;
     const guildConfig = await Guild.getGuild(guildId);
 
-    // Check for admin role
-    const hasAdminRole = guildConfig.roles.adminRoles?.some(roleId =>
-      message.member.roles.cache.has(roleId)
-    );
-
-    if (!message.member.permissions.has(PermissionFlagsBits.Administrator) && !hasAdminRole) {
+    // Check for moderator permissions (admin, mod role, or ManageGuild)
+    if (!hasModPerms(message.member, guildConfig)) {
       return message.reply({
         embeds: [await errorEmbed(guildId, 'Permission Denied',
-          `${GLYPHS.LOCK} You need Administrator permissions to manage XP channels.`)]
+          `${GLYPHS.LOCK} You need Moderator/Staff permissions to manage XP channels.`)]
       });
     }
 

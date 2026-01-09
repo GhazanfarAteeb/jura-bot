@@ -1,7 +1,7 @@
 import { EmbedBuilder, PermissionFlagsBits, SlashCommandBuilder } from 'discord.js';
 import Guild from '../../models/Guild.js';
 import { successEmbed, errorEmbed, infoEmbed, GLYPHS } from '../../utils/embeds.js';
-import { getPrefix } from '../../utils/helpers.js';
+import { getPrefix, hasModPerms } from '../../utils/helpers.js';
 
 // Helper function to convert hex to rgba
 function hexToRgba(hex, opacity) {
@@ -53,22 +53,18 @@ export default {
       subcommand
         .setName('reset')
         .setDescription('Reset overlay settings to default'))
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
 
   async execute(message, args) {
     const guildId = message.guild.id;
     const prefix = await getPrefix(guildId);
     const guildConfig = await Guild.getGuild(guildId);
 
-    // Check for admin role
-    const hasAdminRole = guildConfig.roles.adminRoles?.some(roleId =>
-      message.member.roles.cache.has(roleId)
-    );
-
-    if (!message.member.permissions.has(PermissionFlagsBits.Administrator) && !hasAdminRole) {
+    // Check for moderator permissions (admin, mod role, or ManageGuild)
+    if (!hasModPerms(message.member, guildConfig)) {
       return message.reply({
         embeds: [await errorEmbed(guildId, 'Permission Denied',
-          `${GLYPHS.LOCK} You need Administrator permissions to configure overlays.`)]
+          `${GLYPHS.LOCK} You need Moderator/Staff permissions to configure overlays.`)]
       });
     }
 

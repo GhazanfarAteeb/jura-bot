@@ -4,7 +4,7 @@ import Level from '../../models/Level.js';
 import Guild from '../../models/Guild.js';
 import ModLog from '../../models/ModLog.js';
 import { successEmbed, errorEmbed, infoEmbed, GLYPHS, createEmbed } from '../../utils/embeds.js';
-import { getPrefix } from '../../utils/helpers.js';
+import { getPrefix, hasModPerms } from '../../utils/helpers.js';
 import { getRandomFooter } from '../../utils/raphael.js';
 
 export default {
@@ -13,7 +13,7 @@ export default {
   usage: '<xp|coins|rep> <@user> <amount>',
   category: 'admin',
   aliases: ['give', 'take', 'modify'],
-  permissions: [PermissionFlagsBits.Administrator],
+  permissions: [PermissionFlagsBits.ManageGuild],
   cooldown: 3,
   examples: [
     'award xp @user 500',
@@ -27,15 +27,11 @@ export default {
     const prefix = await getPrefix(guildId);
     const guildConfig = await Guild.getGuild(guildId);
 
-    // Check for admin role
-    const hasAdminRole = guildConfig.roles.adminRoles?.some(roleId =>
-      message.member.roles.cache.has(roleId)
-    );
-
-    if (!message.member.permissions.has(PermissionFlagsBits.Administrator) && !hasAdminRole) {
+    // Check for moderator permissions (admin, mod role, or ManageGuild)
+    if (!hasModPerms(message.member, guildConfig)) {
       return message.reply({
         embeds: [await errorEmbed(guildId, 'Permission Denied',
-          `${GLYPHS.LOCK} You need Administrator permissions to award users.`)]
+          `${GLYPHS.LOCK} You need Moderator/Staff permissions to award users.`)]
       });
     }
 

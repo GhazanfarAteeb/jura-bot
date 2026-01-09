@@ -1,27 +1,24 @@
 import { PermissionFlagsBits, EmbedBuilder, ChannelType } from 'discord.js';
 import Guild from '../../models/Guild.js';
 import { successEmbed, errorEmbed, infoEmbed, GLYPHS } from '../../utils/embeds.js';
+import { hasModPerms } from '../../utils/helpers.js';
 
 export default {
   name: 'welcome',
   description: 'Configure welcome messages for new members',
   usage: '<enable|disable|channel|message|embed|dm|test|...>',
   aliases: ['welcomemsg', 'greet'],
-  permissions: [PermissionFlagsBits.Administrator],
+  permissions: [PermissionFlagsBits.ManageGuild],
   cooldown: 3,
 
   async execute(message, args) {
     const guildConfig = await Guild.getGuild(message.guild.id, message.guild.name);
 
-    // Check for admin role
-    const hasAdminRole = guildConfig.roles.adminRoles?.some(roleId =>
-      message.member.roles.cache.has(roleId)
-    );
-
-    if (!message.member.permissions.has(PermissionFlagsBits.Administrator) && !hasAdminRole) {
+    // Check for moderator permissions (admin, mod role, or ManageGuild)
+    if (!hasModPerms(message.member, guildConfig)) {
       return message.reply({
         embeds: [await errorEmbed(message.guild.id, 'Permission Denied',
-          `${GLYPHS.LOCK} You need Administrator permissions to configure welcome messages.`)]
+          `${GLYPHS.LOCK} You need Moderator/Staff permissions to configure welcome messages.`)]
       });
     }
 

@@ -1,4 +1,5 @@
 import Guild from '../models/Guild.js';
+import { PermissionFlagsBits } from 'discord.js';
 
 // Get guild prefix
 export async function getPrefix(guildId) {
@@ -15,6 +16,36 @@ export function hasPermission(member, permission) {
 export function hasRole(member, roleIds) {
     if (!roleIds || roleIds.length === 0) return false;
     return roleIds.some(roleId => member.roles.cache.has(roleId));
+}
+
+// Check if user has admin permissions (Administrator or admin role)
+export function hasAdminPerms(member, guildConfig) {
+    if (member.permissions.has(PermissionFlagsBits.Administrator)) return true;
+    if (guildConfig?.roles?.adminRoles) {
+        return hasRole(member, guildConfig.roles.adminRoles);
+    }
+    return false;
+}
+
+// Check if user has moderator permissions (ManageGuild, admin role, or mod/staff role)
+export function hasModPerms(member, guildConfig) {
+    // Admins always have mod perms
+    if (hasAdminPerms(member, guildConfig)) return true;
+    
+    // Check ManageGuild permission
+    if (member.permissions.has(PermissionFlagsBits.ManageGuild)) return true;
+    
+    // Check moderator roles
+    if (guildConfig?.roles?.moderatorRoles) {
+        if (hasRole(member, guildConfig.roles.moderatorRoles)) return true;
+    }
+    
+    // Check staff roles
+    if (guildConfig?.roles?.staffRoles) {
+        if (hasRole(member, guildConfig.roles.staffRoles)) return true;
+    }
+    
+    return false;
 }
 
 // Check if user is staff

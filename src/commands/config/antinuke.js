@@ -1,6 +1,6 @@
 import { EmbedBuilder, PermissionFlagsBits } from 'discord.js';
 import Guild from '../../models/Guild.js';
-import { getPrefix } from '../../utils/helpers.js';
+import { getPrefix, hasModPerms } from '../../utils/helpers.js';
 import { successEmbed, errorEmbed, infoEmbed, GLYPHS } from '../../utils/embeds.js';
 
 export default {
@@ -8,7 +8,7 @@ export default {
   description: 'Configure anti-nuke protection to prevent server raiding/nuking',
   usage: '<enable|disable|config|whitelist|status> [options]',
   aliases: ['an', 'nuke'],
-  permissions: [PermissionFlagsBits.Administrator],
+  permissions: [PermissionFlagsBits.ManageGuild],
   category: 'config',
   cooldown: 3,
 
@@ -16,15 +16,11 @@ export default {
     const prefix = await getPrefix(message.guild.id);
     const guildConfig = await Guild.getGuild(message.guild.id, message.guild.name);
 
-    // Check for admin role
-    const hasAdminRole = guildConfig.roles.adminRoles?.some(roleId =>
-      message.member.roles.cache.has(roleId)
-    );
-
-    if (!message.member.permissions.has(PermissionFlagsBits.Administrator) && !hasAdminRole) {
+    // Check for moderator permissions (admin, mod role, or ManageGuild)
+    if (!hasModPerms(message.member, guildConfig)) {
       return message.reply({
         embeds: [await errorEmbed(message.guild.id, 'Permission Denied',
-          `${GLYPHS.LOCK} You need Administrator permissions to configure anti-nuke.`)]
+          `${GLYPHS.LOCK} You need Moderator/Staff permissions to configure anti-nuke.`)]
       });
     }
 

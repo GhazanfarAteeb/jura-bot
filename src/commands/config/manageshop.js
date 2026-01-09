@@ -1,7 +1,7 @@
 import { EmbedBuilder, PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import Guild from '../../models/Guild.js';
 import { successEmbed, errorEmbed, infoEmbed, GLYPHS } from '../../utils/embeds.js';
-import { getPrefix, formatNumber } from '../../utils/helpers.js';
+import { getPrefix, formatNumber, hasModPerms } from '../../utils/helpers.js';
 
 export default {
   name: 'manageshop',
@@ -9,22 +9,18 @@ export default {
   usage: '<add|remove|edit|list|setprice> [options]',
   aliases: ['shopmanage', 'editshop', 'customshop'],
   category: 'config',
-  permissions: [PermissionFlagsBits.Administrator],
+  permissions: [PermissionFlagsBits.ManageGuild],
   cooldown: 3,
 
   async execute(message, args, client) {
     const prefix = await getPrefix(message.guild.id);
     const guildConfig = await Guild.getGuild(message.guild.id, message.guild.name);
 
-    // Check for admin role
-    const hasAdminRole = guildConfig.roles.adminRoles?.some(roleId =>
-      message.member.roles.cache.has(roleId)
-    );
-
-    if (!message.member.permissions.has(PermissionFlagsBits.Administrator) && !hasAdminRole) {
+    // Check for moderator permissions (admin, mod role, or ManageGuild)
+    if (!hasModPerms(message.member, guildConfig)) {
       return message.reply({
         embeds: [await errorEmbed(message.guild.id, 'Permission Denied',
-          `${GLYPHS.LOCK} You need Administrator permissions to manage the shop.`)]
+          `${GLYPHS.LOCK} You need Moderator/Staff permissions to manage the shop.`)]
       });
     }
 

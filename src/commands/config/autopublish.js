@@ -1,6 +1,6 @@
 import { PermissionFlagsBits, ChannelType, EmbedBuilder } from 'discord.js';
 import Guild from '../../models/Guild.js';
-import { getPrefix } from '../../utils/helpers.js';
+import { getPrefix, hasModPerms } from '../../utils/helpers.js';
 
 export default {
   name: 'autopublish',
@@ -8,7 +8,7 @@ export default {
   usage: '<enable|disable|add|remove|list>',
   aliases: ['autopub'],
   category: 'config',
-  permissions: [PermissionFlagsBits.Administrator],
+  permissions: [PermissionFlagsBits.ManageGuild],
   cooldown: 5,
 
   async execute(message, args, client) {
@@ -16,16 +16,12 @@ export default {
     const prefix = await getPrefix(guildId);
     const guildConfig = await Guild.getGuild(guildId);
 
-    // Check for admin role
-    const hasAdminRole = guildConfig.roles.adminRoles?.some(roleId =>
-      message.member.roles.cache.has(roleId)
-    );
-
-    if (!message.member.permissions.has(PermissionFlagsBits.Administrator) && !hasAdminRole) {
+    // Check for moderator permissions (admin, mod role, or ManageGuild)
+    if (!hasModPerms(message.member, guildConfig)) {
       const { errorEmbed, GLYPHS } = await import('../../utils/embeds.js');
       return message.reply({
         embeds: [await errorEmbed(guildId, 'Permission Denied',
-          `${GLYPHS.LOCK} You need Administrator permissions to manage auto-publish.`)]
+          `${GLYPHS.LOCK} You need Moderator/Staff permissions to manage auto-publish.`)]
       });
     }
 

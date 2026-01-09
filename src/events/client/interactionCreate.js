@@ -29,9 +29,9 @@ export default {
     );
 
     // Handle special slash commands that need custom handling
-    const specialCommands = ['automod', 'lockdown', 'setrole', 'setchannel', 'slashcommands', 'refreshcache', 'birthdaysettings', 'setbirthday', 'config', 'setup', 'welcome', 'manageshop', 'verify', 'cmdchannels', 'logs', 'autorole', 'feature', 'giveaway', 'award', 'noxp', 'setoverlay'];
+    const specialCommands = ['automod', 'lockdown', 'setrole', 'setchannel', 'slashcommands', 'refreshcache', 'birthdaysettings', 'setbirthday', 'config', 'setup', 'welcome', 'manageshop', 'verify', 'cmdchannels', 'logs', 'autorole', 'feature', 'giveaway', 'award', 'noxp', 'setoverlay', 'confession'];
     if (specialCommands.includes(interaction.commandName)) {
-      return handleSpecialCommand(interaction, client, guildConfig, hasAdminRole);
+      return handleSpecialCommand(interaction, client, guildConfig, hasAdminRole, hasModRole);
     }
 
     const command = client.commands.get(interaction.commandName);
@@ -176,23 +176,48 @@ export default {
 };
 
 // Handle special slash commands that need custom implementations
-async function handleSpecialCommand(interaction, client, guildConfig, hasAdminRole) {
+async function handleSpecialCommand(interaction, client, guildConfig, hasAdminRole, hasModRole) {
   const { successEmbed, errorEmbed, infoEmbed, GLYPHS } = await import('../../utils/embeds.js');
 
-  // Commands that only require ManageGuild permission
+  // Commands that only require ManageGuild permission (or mod role)
   const manageGuildCommands = ['feature'];
+  
+  // Commands that moderators/staff can use (not just admins)
+  const moderatorCommands = ['welcome', 'giveaway', 'automod', 'logs', 'noxp', 'manageshop', 'award', 'confession', 'cmdchannels', 'setoverlay', 'lockdown', 'verify', 'birthdaysettings', 'setbirthday', 'feature'];
+  
+  // Admin-only commands (require Administrator or admin role)
+  const adminOnlyCommands = ['setup', 'setrole', 'setchannel', 'config', 'slashcommands', 'autorole', 'refreshcache'];
 
   // Check permissions based on command type
-  if (manageGuildCommands.includes(interaction.commandName)) {
+  if (adminOnlyCommands.includes(interaction.commandName)) {
+    // Admin-only: require Administrator permission or admin role
+    if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator) && !hasAdminRole) {
+      return interaction.reply({
+        content: '**Error:** Administrator permissions required for this function, Master.',
+        flags: MessageFlags.Ephemeral
+      });
+    }
+  } else if (moderatorCommands.includes(interaction.commandName)) {
+    // Moderator commands: allow Admin, admin role, ManageGuild, or mod/staff role
+    const hasPermission = interaction.member.permissions.has(PermissionFlagsBits.Administrator) ||
+                          interaction.member.permissions.has(PermissionFlagsBits.ManageGuild) ||
+                          hasAdminRole || hasModRole;
+    if (!hasPermission) {
+      return interaction.reply({
+        content: '**Error:** You need Moderator/Staff permissions to use this function, Master.',
+        flags: MessageFlags.Ephemeral
+      });
+    }
+  } else if (manageGuildCommands.includes(interaction.commandName)) {
     // For manage guild commands, check ManageGuild permission
-    if (!interaction.member.permissions.has(PermissionFlagsBits.ManageGuild) && !hasAdminRole) {
+    if (!interaction.member.permissions.has(PermissionFlagsBits.ManageGuild) && !hasAdminRole && !hasModRole) {
       return interaction.reply({
         content: '**Error:** Manage Server permissions required for this function, Master.',
         flags: MessageFlags.Ephemeral
       });
     }
   } else {
-    // For other commands, require Administrator permissions
+    // Default: require Administrator permissions
     if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator) && !hasAdminRole) {
       return interaction.reply({
         content: '**Error:** Administrator permissions required for this function, Master.',
@@ -270,6 +295,9 @@ async function handleSpecialCommand(interaction, client, guildConfig, hasAdminRo
         break;
       case 'setprofile':
         await handleSetprofileCommand(interaction);
+        break;
+      case 'confession':
+        await handleConfessionCommand(interaction, client, guildConfig);
         break;
     }
   } catch (error) {
@@ -3597,5 +3625,371 @@ async function announceLevelUpFromAward(guild, guildConfig, user, levelData, lev
 
   } catch (error) {
     console.error('Error announcing level up:', error);
+  }
+}
+
+// Handle Confession slash command
+async function handleConfessionCommand(interaction, client, guildConfig) {
+  const { successEmbed, errorEmbed, infoEmbed, GLYPHS } = await import('../../utils/embeds.js');
+  const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType } = await import('discord.js');
+  const Confession = (await import('../../models/Confession.js')).default;
+  const subcommand = interaction.options.getSubcommand();
+
+  let confessionData = await Confession.findOne({ guildId: interaction.guild.id });
+  if (!confessionData) {
+    confessionData = new Confession({ guildId: interaction.guild.id });
+  }
+
+  switch (subcommand) {
+    case 'setup': {
+      const channel = interaction.options.getChannel('channel');
+
+      if (channel.type !== ChannelType.GuildText) {
+        await interaction.editReply({
+          embeds: [await errorEmbed(interaction.guild.id, 'Invalid Channel',
+            `${GLYPHS.ERROR} Please select a text channel.`)]
+        });
+        return;
+      }
+
+      const botPerms = channel.permissionsFor(interaction.guild.members.me);
+      if (!botPerms.has(['SendMessages', 'EmbedLinks'])) {
+        await interaction.editReply({
+          embeds: [await errorEmbed(interaction.guild.id, 'Missing Permissions',
+            `${GLYPHS.ERROR} I need \`Send Messages\` and \`Embed Links\` permissions in ${channel}.`)]
+        });
+        return;
+      }
+
+      confessionData.channelId = channel.id;
+      confessionData.enabled = true;
+      await confessionData.save();
+
+      // Send confession panel
+      const panelEmbed = new EmbedBuilder()
+        .setTitle('📝 Anonymous Confessions')
+        .setDescription('Click the button below to submit an anonymous confession!\n\n*Your identity will remain completely anonymous to other members.*')
+        .setColor('#9b59b6')
+        .setFooter({ text: 'Confessions are moderated • Be respectful' });
+
+      const row = new ActionRowBuilder()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId('confession_submit')
+            .setLabel('Submit a confession!')
+            .setStyle(ButtonStyle.Primary)
+            .setEmoji('📝')
+        );
+
+      await channel.send({ embeds: [panelEmbed], components: [row] });
+
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, 'Confession System Enabled',
+          `${GLYPHS.SUCCESS} Confession system has been set up in ${channel}!\n\nA confession panel has been sent to the channel.`)]
+      });
+      break;
+    }
+
+    case 'disable': {
+      confessionData.enabled = false;
+      confessionData.channelId = null;
+      await confessionData.save();
+
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, 'Confession System Disabled',
+          `${GLYPHS.SUCCESS} The confession system has been disabled.`)]
+      });
+      break;
+    }
+
+    case 'settings': {
+      const embed = new EmbedBuilder()
+        .setTitle('⚙️ Confession Settings')
+        .setColor('#9b59b6')
+        .addFields(
+          { name: 'Status', value: confessionData.enabled ? '✅ Enabled' : '❌ Disabled', inline: true },
+          { name: 'Channel', value: confessionData.channelId ? `<#${confessionData.channelId}>` : 'Not set', inline: true },
+          { name: 'Total Confessions', value: `${confessionData.confessionCount}`, inline: true },
+          { name: 'Cooldown', value: `${confessionData.settings.cooldown} seconds`, inline: true },
+          { name: 'Allow Replies', value: confessionData.settings.allowReplies ? '✅ Yes' : '❌ No', inline: true },
+          { name: 'Anonymous Replies', value: confessionData.settings.anonymousReplies ? '✅ Yes' : '❌ No', inline: true },
+          { name: 'Require Approval', value: confessionData.settings.requireApproval ? '✅ Yes' : '❌ No', inline: true },
+          { name: 'Min Length', value: `${confessionData.settings.minLength} chars`, inline: true },
+          { name: 'Max Length', value: `${confessionData.settings.maxLength} chars`, inline: true },
+          { name: 'Banned Users', value: `${confessionData.settings.bannedUsers.length} users`, inline: true }
+        )
+        .setTimestamp();
+
+      await interaction.editReply({ embeds: [embed] });
+      break;
+    }
+
+    case 'cooldown': {
+      const seconds = interaction.options.getInteger('seconds');
+      confessionData.settings.cooldown = seconds;
+      await confessionData.save();
+
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, 'Cooldown Updated',
+          `${GLYPHS.SUCCESS} Confession cooldown set to **${seconds} seconds**.`)]
+      });
+      break;
+    }
+
+    case 'replies': {
+      const enabled = interaction.options.getBoolean('enabled');
+      confessionData.settings.allowReplies = enabled;
+      await confessionData.save();
+
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, 'Replies Setting Updated',
+          `${GLYPHS.SUCCESS} Confession replies have been ${enabled ? 'enabled' : 'disabled'}.`)]
+      });
+      break;
+    }
+
+    case 'anonymous-replies': {
+      const enabled = interaction.options.getBoolean('enabled');
+      confessionData.settings.anonymousReplies = enabled;
+      await confessionData.save();
+
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, 'Anonymous Replies Updated',
+          `${GLYPHS.SUCCESS} Anonymous replies have been ${enabled ? 'enabled' : 'disabled'}.`)]
+      });
+      break;
+    }
+
+    case 'approval': {
+      const enabled = interaction.options.getBoolean('enabled');
+      confessionData.settings.requireApproval = enabled;
+      await confessionData.save();
+
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, 'Approval Setting Updated',
+          `${GLYPHS.SUCCESS} Confession approval requirement has been ${enabled ? 'enabled' : 'disabled'}.`)]
+      });
+      break;
+    }
+
+    case 'ban': {
+      const user = interaction.options.getUser('user');
+
+      if (confessionData.settings.bannedUsers.includes(user.id)) {
+        await interaction.editReply({
+          embeds: [await errorEmbed(interaction.guild.id, 'Already Banned',
+            `${GLYPHS.ERROR} ${user.tag} is already banned from confessions.`)]
+        });
+        return;
+      }
+
+      confessionData.settings.bannedUsers.push(user.id);
+      await confessionData.save();
+
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, 'User Banned',
+          `${GLYPHS.SUCCESS} **${user.tag}** has been banned from submitting confessions.`)]
+      });
+      break;
+    }
+
+    case 'unban': {
+      const user = interaction.options.getUser('user');
+      const index = confessionData.settings.bannedUsers.indexOf(user.id);
+
+      if (index === -1) {
+        await interaction.editReply({
+          embeds: [await errorEmbed(interaction.guild.id, 'Not Banned',
+            `${GLYPHS.ERROR} ${user.tag} is not banned from confessions.`)]
+        });
+        return;
+      }
+
+      confessionData.settings.bannedUsers.splice(index, 1);
+      await confessionData.save();
+
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, 'User Unbanned',
+          `${GLYPHS.SUCCESS} **${user.tag}** has been unbanned from confessions.`)]
+      });
+      break;
+    }
+
+    case 'pending': {
+      if (!confessionData.pendingConfessions || confessionData.pendingConfessions.length === 0) {
+        await interaction.editReply({
+          embeds: [await infoEmbed(interaction.guild.id, 'No Pending Confessions',
+            `${GLYPHS.INFO} There are no confessions pending approval.`)]
+        });
+        return;
+      }
+
+      const embed = new EmbedBuilder()
+        .setTitle('📝 Pending Confessions')
+        .setColor('#9b59b6')
+        .setDescription(confessionData.pendingConfessions.slice(0, 10).map((c, i) =>
+          `**${i + 1}.** ${c.content.substring(0, 100)}${c.content.length > 100 ? '...' : ''}\n*Submitted <t:${Math.floor(c.timestamp.getTime() / 1000)}:R>*`
+        ).join('\n\n'))
+        .setFooter({ text: `Showing ${Math.min(10, confessionData.pendingConfessions.length)} of ${confessionData.pendingConfessions.length} pending` });
+
+      await interaction.editReply({ embeds: [embed] });
+      break;
+    }
+
+    case 'approve': {
+      const id = interaction.options.getInteger('id') - 1;
+
+      if (!confessionData.pendingConfessions || !confessionData.pendingConfessions[id]) {
+        await interaction.editReply({
+          embeds: [await errorEmbed(interaction.guild.id, 'Confession Not Found',
+            `${GLYPHS.ERROR} Could not find a pending confession with that ID.`)]
+        });
+        return;
+      }
+
+      const channel = interaction.guild.channels.cache.get(confessionData.channelId);
+      if (!channel) {
+        await interaction.editReply({
+          embeds: [await errorEmbed(interaction.guild.id, 'Channel Not Found',
+            `${GLYPHS.ERROR} The confession channel no longer exists.`)]
+        });
+        return;
+      }
+
+      const pending = confessionData.pendingConfessions[id];
+      confessionData.confessionCount++;
+      const confessionNumber = confessionData.confessionCount;
+
+      const confessionEmbed = new EmbedBuilder()
+        .setAuthor({ name: `Anonymous Confession (#${confessionNumber})`, iconURL: interaction.guild.iconURL() })
+        .setDescription(`"${pending.content}"`)
+        .setColor('#9b59b6')
+        .setTimestamp();
+
+      const buttons = [
+        new ButtonBuilder()
+          .setCustomId('confession_submit')
+          .setLabel('Submit a confession!')
+          .setStyle(ButtonStyle.Primary)
+          .setEmoji('📝')
+      ];
+
+      if (confessionData.settings.allowReplies) {
+        buttons.push(
+          new ButtonBuilder()
+            .setCustomId(`confession_reply_${confessionNumber}`)
+            .setLabel('Reply')
+            .setStyle(ButtonStyle.Secondary)
+            .setEmoji('💬')
+        );
+      }
+
+      const row = new ActionRowBuilder().addComponents(buttons);
+      const sentMessage = await channel.send({ embeds: [confessionEmbed], components: [row] });
+
+      confessionData.confessions.push({
+        number: confessionNumber,
+        content: pending.content,
+        messageId: sentMessage.id,
+        userId: pending.userId,
+        timestamp: new Date()
+      });
+      confessionData.pendingConfessions.splice(id, 1);
+      await confessionData.save();
+
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, 'Confession Approved',
+          `${GLYPHS.SUCCESS} Confession #${confessionNumber} has been approved and posted.`)]
+      });
+      break;
+    }
+
+    case 'reject': {
+      const id = interaction.options.getInteger('id') - 1;
+
+      if (!confessionData.pendingConfessions || !confessionData.pendingConfessions[id]) {
+        await interaction.editReply({
+          embeds: [await errorEmbed(interaction.guild.id, 'Confession Not Found',
+            `${GLYPHS.ERROR} Could not find a pending confession with that ID.`)]
+        });
+        return;
+      }
+
+      confessionData.pendingConfessions.splice(id, 1);
+      await confessionData.save();
+
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, 'Confession Rejected',
+          `${GLYPHS.SUCCESS} The confession has been rejected and removed.`)]
+      });
+      break;
+    }
+
+    case 'send': {
+      if (!confessionData.enabled) {
+        await interaction.editReply({
+          embeds: [await errorEmbed(interaction.guild.id, 'System Not Enabled',
+            `${GLYPHS.ERROR} Please set up the confession system first with \`/confession setup\`.`)]
+        });
+        return;
+      }
+
+      const channel = interaction.options.getChannel('channel') ||
+        interaction.guild.channels.cache.get(confessionData.channelId);
+
+      if (!channel) {
+        await interaction.editReply({
+          embeds: [await errorEmbed(interaction.guild.id, 'Channel Not Found',
+            `${GLYPHS.ERROR} Could not find a valid channel.`)]
+        });
+        return;
+      }
+
+      const panelEmbed = new EmbedBuilder()
+        .setTitle('📝 Anonymous Confessions')
+        .setDescription('Click the button below to submit an anonymous confession!\n\n*Your identity will remain completely anonymous to other members.*')
+        .setColor('#9b59b6')
+        .setFooter({ text: 'Confessions are moderated • Be respectful' });
+
+      const row = new ActionRowBuilder()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId('confession_submit')
+            .setLabel('Submit a confession!')
+            .setStyle(ButtonStyle.Primary)
+            .setEmoji('📝')
+        );
+
+      await channel.send({ embeds: [panelEmbed], components: [row] });
+
+      await interaction.editReply({
+        embeds: [await successEmbed(interaction.guild.id, 'Panel Sent',
+          `${GLYPHS.SUCCESS} Confession panel sent to ${channel}.`)]
+      });
+      break;
+    }
+
+    case 'stats': {
+      const totalConfessions = confessionData.confessionCount;
+      const totalReplies = confessionData.confessions?.reduce((acc, c) => acc + (c.replies?.length || 0), 0) || 0;
+      const pendingCount = confessionData.pendingConfessions?.length || 0;
+      const bannedCount = confessionData.settings.bannedUsers?.length || 0;
+
+      const embed = new EmbedBuilder()
+        .setTitle('📊 Confession Statistics')
+        .setColor('#9b59b6')
+        .addFields(
+          { name: 'Total Confessions', value: `${totalConfessions}`, inline: true },
+          { name: 'Total Replies', value: `${totalReplies}`, inline: true },
+          { name: 'Pending Approval', value: `${pendingCount}`, inline: true },
+          { name: 'Banned Users', value: `${bannedCount}`, inline: true },
+          { name: 'Status', value: confessionData.enabled ? '✅ Active' : '❌ Disabled', inline: true },
+          { name: 'Channel', value: confessionData.channelId ? `<#${confessionData.channelId}>` : 'Not set', inline: true }
+        )
+        .setTimestamp();
+
+      await interaction.editReply({ embeds: [embed] });
+      break;
+    }
   }
 }
