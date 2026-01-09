@@ -1,7 +1,6 @@
 import { Events, EmbedBuilder } from 'discord.js';
 import Guild from '../../models/Guild.js';
 import { GLYPHS } from '../../utils/embeds.js';
-import { cacheEditedMessage } from '../../commands/utility/editsnipe.js';
 
 export default {
   name: 'messageLogging',
@@ -18,9 +17,6 @@ export default {
     client.on(Events.MessageUpdate, async (oldMessage, newMessage) => {
       if (!newMessage.guild || newMessage.author?.bot) return;
       if (oldMessage.content === newMessage.content) return; // Embed updates, etc.
-      
-      // Cache for editsnipe command
-      cacheEditedMessage(oldMessage, newMessage);
       
       await logMessageEdit(oldMessage, newMessage);
     });
