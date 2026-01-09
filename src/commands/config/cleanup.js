@@ -77,7 +77,7 @@ export default {
 
       // Find channels by name pattern
       for (const channelName of botChannelPatterns) {
-        const channel = message.guild.channels.cache.find(c => 
+        const channel = message.guild.channels.cache.find(c =>
           c.name === channelName || c.name.toLowerCase().includes(channelName.toLowerCase())
         );
         if (channel && !itemsToDelete.channels.find(c => c.id === channel.id)) {
@@ -88,7 +88,7 @@ export default {
       // Find categories
       const botCategoryPatterns = ['📋 Logs', 'Logs', '🎫 Tickets', 'Tickets'];
       for (const catName of botCategoryPatterns) {
-        const category = message.guild.channels.cache.find(c => 
+        const category = message.guild.channels.cache.find(c =>
           c.name === catName && c.type === 4 // GuildCategory
         );
         if (category && !itemsToDelete.categories.find(c => c.id === category.id)) {
@@ -289,7 +289,7 @@ export default {
             `**Successfully deleted ${deletedItems.length} items:**\n` +
             `${deletedItems.slice(0, 15).map(i => `${GLYPHS.SUCCESS} ${i}`).join('\n')}` +
             `${deletedItems.length > 15 ? `\n... and ${deletedItems.length - 15} more` : ''}\n\n` +
-            (failedItems.length > 0 ? 
+            (failedItems.length > 0 ?
               `**Failed operations:**\n` +
               `${failedItems.map(i => `${GLYPHS.ERROR} ${i}`).join('\n')}\n\n` : '') +
             `${GLYPHS.SUCCESS} Bot configuration has been reset.\n` +

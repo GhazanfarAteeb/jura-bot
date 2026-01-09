@@ -49,8 +49,6 @@ export default {
       return message.reply({ embeds: [embed] });
     }
 
-    const guild = await Guild.getGuild(message.guild.id, message.guild.name);
-
     let updateData = {};
 
     switch (type) {

@@ -55,8 +55,8 @@ export default {
     }
 
     // Find specific log type
-    const logType = LOG_CHANNELS.find(l => 
-      l.key.toLowerCase() === target || 
+    const logType = LOG_CHANNELS.find(l =>
+      l.key.toLowerCase() === target ||
       l.name.toLowerCase().replace(/-/g, '') === target.replace(/-/g, '')
     );
 
@@ -106,7 +106,7 @@ async function showHelp(message, prefix, guildConfig) {
 async function fixAllLogChannels(message, guildConfig) {
   const guildId = message.guild.id;
   const queue = RateLimitQueue.forDiscord();
-  
+
   const statusEmbed = await infoEmbed(guildId, '🔧 Fixing Log Permissions',
     `${GLYPHS.LOADING} Processing log channels...`
   );

@@ -211,10 +211,10 @@ export default {
               guildConfig.features.welcomeSystem.thumbnailUrl
                 ? `**Current Thumbnail:**\n${guildConfig.features.welcomeSystem.thumbnailUrl}`
                 : 'No thumbnail set.\n\n' +
-                  '`welcome thumbnail <url>` - Set custom thumbnail\n' +
-                  '`welcome thumbnail avatar` - Use user\'s avatar\n' +
-                  '`welcome thumbnail server` - Use server icon\n' +
-                  '`welcome thumbnail remove` - Remove thumbnail')]
+                '`welcome thumbnail <url>` - Set custom thumbnail\n' +
+                '`welcome thumbnail avatar` - Use user\'s avatar\n' +
+                '`welcome thumbnail server` - Use server icon\n' +
+                '`welcome thumbnail remove` - Remove thumbnail')]
           });
         }
 
@@ -506,9 +506,9 @@ export default {
       case 'autorole':
       case 'role':
         const roleArg = args[1];
-        
+
         if (!roleArg) {
-          const currentRole = guildConfig.features.welcomeSystem.autoRole 
+          const currentRole = guildConfig.features.welcomeSystem.autoRole
             ? message.guild.roles.cache.get(guildConfig.features.welcomeSystem.autoRole)
             : null;
           return message.reply({
@@ -658,7 +658,7 @@ async function showHelp(message, guildConfig) {
 async function showPreview(message, guildConfig) {
   const welcome = guildConfig.features.welcomeSystem || {};
   const { embed, content } = buildWelcomeEmbed(message.member, welcome, guildConfig);
-  
+
   await message.reply({
     embeds: [await infoEmbed(message.guild.id, 'Welcome Preview',
       'Here\'s how your welcome message will look:')]
@@ -679,7 +679,7 @@ async function sendTestWelcome(message, guildConfig) {
   }
 
   const { embed, content } = buildWelcomeEmbed(message.member, welcome, guildConfig);
-  
+
   if (embed) {
     await channel.send({ content, embeds: [embed] });
   } else {
@@ -705,9 +705,9 @@ function buildWelcomeEmbed(member, welcome, guildConfig) {
 
   // Decorative title with stars (Mimu style)
   const decorativeTitle = '˚　　　　✦　　　.　　. 　 ˚　.　　　　　 . ✦　　　 　˚　　　　 . ★⋆. ࿐࿔  　　　.　　 　　˚　　 　　*　　 　　✦　　　.　　.　　　✦　˚ 　　　　 ˚　.˚　　　　✦　　　.　　. 　 ˚　.　　　　 　　 　　　　        ੈ✧̣̇˳·˖✶   ✦';
-  
+
   const welcomeMsg = parseWelcomeMessage(welcome.message || 'Welcome {user} to {server}!', member);
-  
+
   const embed = new EmbedBuilder()
     .setColor(welcome.embedColor || guildConfig?.embedStyle?.color || '#5865F2');
 
