@@ -689,7 +689,7 @@ export default {
         },
         '😠 Aggressive': {
           subtitle: 'Express your anger (playfully!)',
-          reactions: ['slap', 'punch', 'kick', 'push', 'throw', 'tackle', 'grab', 'headbutt', 'stab', 'bite', 'kill', 'spit', 'angry', 'angrystare', 'rage', 'triggered', 'bully', 'smack'] // Removed: spank, steal
+          reactions: ['slap', 'punch', 'kick', 'push', 'throw', 'tackle', 'grab', 'headbutt', 'stab', 'bite', 'kill', 'spit', 'angry', 'angrystare', 'rage', 'triggered', 'bully', 'smack', 'spank', 'steal'] // Removed: spank, steal
         },
         '💦 Physical Actions': {
           subtitle: 'Get physical with these moves',
