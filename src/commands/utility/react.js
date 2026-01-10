@@ -153,23 +153,21 @@ const reactions = {
     endpoints: ['otaku'],
     titles: ['Stabby Stabby! 🔪', 'Yandere Mode! 😈', 'Dangerous! ⚠️', 'Knife-kun Says Hi! 🗡️']
   },
-  // DISABLED - spank reaction commented out
-  // spank: {
-  //   queries: ['spank'],
-  //   endpoints: ['rndm'],
-  //   titles: ['*SPANK!* 🍑', 'Naughty! 😈', 'Spanking Time! 👋', 'Bad Behavior! 😤', 'Punishment! 💥', 'Spank Attack! ✋', 'Discipline! 😠', 'Booty Slap! 🍑']
-  // },
+  spank: {
+    queries: ['spank'],
+    endpoints: ['rndm'],
+    titles: ['*SPANK!* 🍑', 'Naughty! 😈', 'Spanking Time! 👋', 'Bad Behavior! 😤', 'Punishment! 💥', 'Spank Attack! ✋', 'Discipline! 😠', 'Booty Slap! 🍑']
+  },
   spit: {
     queries: ['spit'],
     endpoints: ['rndm'],
     titles: ['*SPIT!* 💦', 'Gross! 🤢', 'Spitting Mad! 😤', 'Disgusted! 🤮', 'Ptooey! 💧', 'Disrespect! 😠', 'Spit Take! 😲', 'Rejection! 🚫']
   },
-  // DISABLED - steal reaction commented out
-  // steal: {
-  //   queries: ['steal'],
-  //   endpoints: ['rndm'],
-  //   titles: ['Yoink! 🤏', 'Stealing! 😈', 'Mine Now! 😏', 'Thief Mode! 🦝', 'Sneaky Steal! 🥷', 'Got Your Stuff! 😼', 'Kleptomaniac! 💰', 'Stolen! 🏃💨']
-  // },
+  steal: {
+    queries: ['steal'],
+    endpoints: ['rndm'],
+    titles: ['Yoink! 🤏', 'Stealing! 😈', 'Mine Now! 😏', 'Thief Mode! 🦝', 'Sneaky Steal! 🥷', 'Got Your Stuff! 😼', 'Kleptomaniac! 💰', 'Stolen! 🏃💨']
+  },
   bite: {
     queries: ['bite', 'nom'],
     endpoints: ['otaku', 'rndm'],
@@ -371,11 +369,7 @@ const reactions = {
     endpoints: ["otaku"],
     titles: ['*PUSH!* 😈', 'YEET! Out the Way! 🫸', 'Outta My Way! 💥', 'Down You Go! 😂']
   },
-  splash: {
-    queries: ['smack'],
-    endpoints: ["otaku"],
-    titles: ['Splash Attack! 💦', 'Water Fight! 🌊', '*splashes water* 💧', 'Get Wet! 🏖️']
-  },
+
   tackle: {
     queries: ['hug'],
     endpoints: ["otaku", "rndm"],
@@ -699,7 +693,7 @@ export default {
         },
         '💦 Physical Actions': {
           subtitle: 'Get physical with these moves',
-          reactions: ['splash', 'spray', 'run', 'chase', 'piggyback', 'trip', 'faint', 'roll']
+          reactions: ['spray', 'run', 'chase', 'piggyback', 'trip', 'faint', 'roll']
         },
         '😴 Sleepy Time': {
           subtitle: 'When you\'re feeling tired',

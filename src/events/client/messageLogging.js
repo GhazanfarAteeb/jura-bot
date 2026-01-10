@@ -9,7 +9,7 @@ export default {
     // Message Delete
     client.on(Events.MessageDelete, async (message) => {
       if (!message.guild || message.author?.bot) return;
-      
+
       await logMessageDelete(message);
     });
 
@@ -17,7 +17,7 @@ export default {
     client.on(Events.MessageUpdate, async (oldMessage, newMessage) => {
       if (!newMessage.guild || newMessage.author?.bot) return;
       if (oldMessage.content === newMessage.content) return; // Embed updates, etc.
-      
+
       await logMessageEdit(oldMessage, newMessage);
     });
 
