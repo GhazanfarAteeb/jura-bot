@@ -83,6 +83,37 @@ export default {
                             }
                         }
                     }
+                    
+                    // Check for embeds with images/GIFs in forwarded message
+                    if (snapshot.embeds?.length > 0) {
+                        for (const embed of snapshot.embeds) {
+                            if (embed.video?.url) {
+                                let gifUrl = embed.thumbnail?.url || embed.image?.url;
+                                if (gifUrl) {
+                                    stealableItems.push({
+                                        type: 'image',
+                                        name: args[0] || 'stolen_gif',
+                                        url: gifUrl,
+                                        isAnimated: true
+                                    });
+                                }
+                            } else if (embed.image?.url) {
+                                stealableItems.push({
+                                    type: 'image',
+                                    name: args[0] || 'stolen_image',
+                                    url: embed.image.url,
+                                    isAnimated: embed.image.url.toLowerCase().includes('.gif')
+                                });
+                            } else if (embed.thumbnail?.url && !embed.video) {
+                                stealableItems.push({
+                                    type: 'image',
+                                    name: args[0] || 'stolen_image',
+                                    url: embed.thumbnail.url,
+                                    isAnimated: embed.thumbnail.url.toLowerCase().includes('.gif')
+                                });
+                            }
+                        }
+                    }
                 }
             }
             
@@ -125,6 +156,67 @@ export default {
                             name: args[0] || attachment.name?.split('.')[0] || 'stolen',
                             url: attachment.url,
                             isAnimated: attachment.contentType === 'image/gif'
+                        });
+                    }
+                }
+            }
+            
+            // Check for embeds with images/GIFs (Tenor, Giphy, etc.)
+            if (repliedMessage.embeds?.length > 0) {
+                for (const embed of repliedMessage.embeds) {
+                    // Check for video embeds (Tenor/Giphy GIFs are usually video type)
+                    if (embed.video?.url) {
+                        // Try to get the GIF URL from Tenor/Giphy
+                        let gifUrl = null;
+                        let gifName = args[0] || 'stolen_gif';
+                        
+                        // Tenor GIFs
+                        if (embed.url?.includes('tenor.com')) {
+                            // Use the thumbnail or image as it's usually a GIF
+                            gifUrl = embed.thumbnail?.url || embed.image?.url;
+                            if (!gifUrl && embed.video?.url) {
+                                // Convert mp4 to gif for tenor
+                                gifUrl = embed.video.url.replace('.mp4', '.gif');
+                            }
+                        }
+                        // Giphy GIFs
+                        else if (embed.url?.includes('giphy.com')) {
+                            gifUrl = embed.thumbnail?.url || embed.image?.url;
+                        }
+                        // Generic video embed with thumbnail
+                        else if (embed.thumbnail?.url) {
+                            gifUrl = embed.thumbnail.url;
+                        }
+                        
+                        if (gifUrl) {
+                            stealableItems.push({
+                                type: 'image',
+                                name: gifName,
+                                url: gifUrl,
+                                isAnimated: true
+                            });
+                        }
+                    }
+                    // Check for image embeds
+                    else if (embed.image?.url) {
+                        const url = embed.image.url;
+                        const isGif = url.toLowerCase().includes('.gif');
+                        stealableItems.push({
+                            type: 'image',
+                            name: args[0] || 'stolen_image',
+                            url: url,
+                            isAnimated: isGif
+                        });
+                    }
+                    // Check for thumbnail only embeds
+                    else if (embed.thumbnail?.url && !embed.video) {
+                        const url = embed.thumbnail.url;
+                        const isGif = url.toLowerCase().includes('.gif');
+                        stealableItems.push({
+                            type: 'image',
+                            name: args[0] || 'stolen_image',
+                            url: url,
+                            isAnimated: isGif
                         });
                     }
                 }
