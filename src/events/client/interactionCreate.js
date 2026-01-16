@@ -7,6 +7,14 @@ export default {
   async execute(interaction, client) {
     if (!interaction.isChatInputCommand()) return;
 
+    // Ignore DM interactions - commands only work in guilds
+    if (!interaction.guild) {
+      return interaction.reply({
+        content: '❌ Commands can only be used in servers, not in DMs.',
+        flags: MessageFlags.Ephemeral
+      }).catch(() => {});
+    }
+
     // Check if slash commands are enabled for this guild
     const guildConfig = await Guild.getGuild(interaction.guild.id, interaction.guild.name);
 
