@@ -483,9 +483,8 @@ async function handleIgnoreAddChannel(interaction, guildConfig) {
     });
   }
 
-  guildConfig.features.autoMod.ignoredChannels.push(channel.id);
-  await guildConfig.save();
-  await Guild.invalidateCache(guildId);
+  const updatedIgnoredChannels = [...(guildConfig.features?.autoMod?.ignoredChannels || []), channel.id];
+  await Guild.updateGuild(guildId, { $set: { 'features.autoMod.ignoredChannels': updatedIgnoredChannels } });
 
   return interaction.editReply({
     embeds: [await successEmbed(guildId, 'AutoMod Ignore Updated',
@@ -515,9 +514,8 @@ async function handleIgnoreRemoveChannel(interaction, guildConfig) {
     });
   }
 
-  guildConfig.features.autoMod.ignoredChannels = list.filter(id => id !== channel.id);
-  await guildConfig.save();
-  await Guild.invalidateCache(guildId);
+  const filteredChannels = list.filter(id => id !== channel.id);
+  await Guild.updateGuild(guildId, { $set: { 'features.autoMod.ignoredChannels': filteredChannels } });
 
   return interaction.editReply({
     embeds: [await successEmbed(guildId, 'AutoMod Ignore Updated',
@@ -542,9 +540,8 @@ async function handleIgnoreAddRole(interaction, guildConfig) {
     });
   }
 
-  guildConfig.features.autoMod.ignoredRoles.push(role.id);
-  await guildConfig.save();
-  await Guild.invalidateCache(guildId);
+  const updatedIgnoredRoles = [...(guildConfig.features?.autoMod?.ignoredRoles || []), role.id];
+  await Guild.updateGuild(guildId, { $set: { 'features.autoMod.ignoredRoles': updatedIgnoredRoles } });
 
   return interaction.editReply({
     embeds: [await successEmbed(guildId, 'AutoMod Ignore Updated',
@@ -574,9 +571,8 @@ async function handleIgnoreRemoveRole(interaction, guildConfig) {
     });
   }
 
-  guildConfig.features.autoMod.ignoredRoles = list.filter(id => id !== role.id);
-  await guildConfig.save();
-  await Guild.invalidateCache(guildId);
+  const filteredRoles = list.filter(id => id !== role.id);
+  await Guild.updateGuild(guildId, { $set: { 'features.autoMod.ignoredRoles': filteredRoles } });
 
   return interaction.editReply({
     embeds: [await successEmbed(guildId, 'AutoMod Ignore Updated',
