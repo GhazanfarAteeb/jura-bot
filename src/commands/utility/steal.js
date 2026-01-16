@@ -92,7 +92,7 @@ export default {
                                 if (gifUrl) {
                                     stealableItems.push({
                                         type: 'image',
-                                        name: args[0] || 'stolen_gif',
+                                        name: args[0] || '',
                                         url: gifUrl,
                                         isAnimated: true
                                     });
@@ -100,14 +100,14 @@ export default {
                             } else if (embed.image?.url) {
                                 stealableItems.push({
                                     type: 'image',
-                                    name: args[0] || 'stolen_image',
+                                    name: args[0] || '',
                                     url: embed.image.url,
                                     isAnimated: embed.image.url.toLowerCase().includes('.gif')
                                 });
                             } else if (embed.thumbnail?.url && !embed.video) {
                                 stealableItems.push({
                                     type: 'image',
-                                    name: args[0] || 'stolen_image',
+                                    name: args[0] || '',
                                     url: embed.thumbnail.url,
                                     isAnimated: embed.thumbnail.url.toLowerCase().includes('.gif')
                                 });
@@ -203,7 +203,7 @@ export default {
                         const isGif = url.toLowerCase().includes('.gif');
                         stealableItems.push({
                             type: 'image',
-                            name: args[0] || 'stolen_image',
+                            name: args[0] || '',
                             url: url,
                             isAnimated: isGif
                         });
@@ -214,7 +214,7 @@ export default {
                         const isGif = url.toLowerCase().includes('.gif');
                         stealableItems.push({
                             type: 'image',
-                            name: args[0] || 'stolen_image',
+                            name: args[0] || '',
                             url: url,
                             isAnimated: isGif
                         });
@@ -333,7 +333,7 @@ export default {
 async function showStealOptions(message, item, itemName, guildId) {
     // Sanitize name
     let sanitizedName = itemName.replace(/[^a-zA-Z0-9_]/g, '_');
-    if (sanitizedName.length < 2) sanitizedName = 'stolen_' + sanitizedName;
+    if (sanitizedName.length < 2) sanitizedName = '' + sanitizedName;
     if (sanitizedName.length > 32) sanitizedName = sanitizedName.substring(0, 32);
     
     const embed = new EmbedBuilder()
