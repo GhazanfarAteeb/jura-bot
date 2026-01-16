@@ -1,4 +1,4 @@
-import { PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, EmbedBuilder } from 'discord.js';
+import { PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, EmbedBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
 import { successEmbed, errorEmbed, infoEmbed, GLYPHS } from '../../utils/embeds.js';
 import { getPrefix } from '../../utils/helpers.js';
 
@@ -35,7 +35,58 @@ export default {
         let stealableItems = [];
         
         if (repliedMessage) {
-            // Check for stickers in replied message
+            // Check if it's a forwarded message (has messageSnapshots)
+            if (repliedMessage.messageSnapshots?.size > 0) {
+                for (const snapshot of repliedMessage.messageSnapshots.values()) {
+                    // Check for stickers in forwarded message
+                    if (snapshot.stickers?.size > 0) {
+                        for (const sticker of snapshot.stickers.values()) {
+                            stealableItems.push({
+                                type: 'sticker',
+                                name: sticker.name,
+                                url: sticker.url,
+                                id: sticker.id,
+                                format: sticker.format,
+                                isAnimated: sticker.format === 2 // APNG
+                            });
+                        }
+                    }
+                    
+                    // Check for custom emojis in forwarded message content
+                    if (snapshot.content) {
+                        const emojiRegex = /<(a)?:(\w{2,32}):(\d{17,19})>/g;
+                        let match;
+                        while ((match = emojiRegex.exec(snapshot.content)) !== null) {
+                            const isAnimated = !!match[1];
+                            const emojiName = match[2];
+                            const emojiId = match[3];
+                            stealableItems.push({
+                                type: 'emoji',
+                                name: emojiName,
+                                id: emojiId,
+                                url: `https://cdn.discordapp.com/emojis/${emojiId}.${isAnimated ? 'gif' : 'png'}?size=128`,
+                                isAnimated
+                            });
+                        }
+                    }
+                    
+                    // Check for image attachments in forwarded message
+                    if (snapshot.attachments?.size > 0) {
+                        for (const attachment of snapshot.attachments.values()) {
+                            if (attachment.contentType?.startsWith('image/')) {
+                                stealableItems.push({
+                                    type: 'image',
+                                    name: args[0] || attachment.name?.split('.')[0] || 'stolen',
+                                    url: attachment.url,
+                                    isAnimated: attachment.contentType === 'image/gif'
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Check for stickers in replied message (non-forwarded)
             if (repliedMessage.stickers?.size > 0) {
                 for (const sticker of repliedMessage.stickers.values()) {
                     stealableItems.push({
@@ -78,6 +129,11 @@ export default {
                     }
                 }
             }
+            
+            // Remove duplicates based on URL
+            stealableItems = stealableItems.filter((item, index, self) =>
+                index === self.findIndex((t) => t.url === item.url)
+            );
         }
         
         // If we have stealable items from reply, show options
@@ -241,104 +297,178 @@ async function showStealOptions(message, item, itemName, guildId) {
         }
         
         if (customId.startsWith('steal_emoji_')) {
-            await interaction.update({
-                embeds: [embed.setFooter({ text: '⏳ Adding emoji...' })],
-                components: []
-            });
+            // Show modal for emoji name
+            const modal = new ModalBuilder()
+                .setCustomId(`steal_emoji_modal_${message.id}`)
+                .setTitle('Add as Emoji');
             
+            const nameInput = new TextInputBuilder()
+                .setCustomId('emoji_name')
+                .setLabel('Emoji Name')
+                .setPlaceholder('Enter emoji name (2-32 characters)')
+                .setStyle(TextInputStyle.Short)
+                .setValue(sanitizedName)
+                .setMinLength(2)
+                .setMaxLength(32)
+                .setRequired(true);
+            
+            const actionRow = new ActionRowBuilder().addComponents(nameInput);
+            modal.addComponents(actionRow);
+            
+            await interaction.showModal(modal);
+            
+            // Wait for modal submission
             try {
-                const newEmoji = await message.guild.emojis.create({
-                    attachment: item.url,
-                    name: sanitizedName,
-                    reason: `Stolen by ${message.author.tag}`
+                const modalInteraction = await interaction.awaitModalSubmit({
+                    time: 120000,
+                    filter: (i) => i.customId === `steal_emoji_modal_${message.id}` && i.user.id === message.author.id
                 });
                 
+                const finalName = modalInteraction.fields.getTextInputValue('emoji_name').replace(/[^a-zA-Z0-9_]/g, '_');
+                
+                await modalInteraction.deferUpdate();
                 await response.edit({
-                    embeds: [await successEmbed(guildId, 'Emoji Added!',
-                        `Successfully added ${newEmoji} as **:${newEmoji.name}:**\n\n` +
-                        `**ID:** \`${newEmoji.id}\`\n` +
-                        `**Animated:** ${newEmoji.animated ? 'Yes' : 'No'}\n` +
-                        `**Added by:** ${message.author}`
-                    )],
+                    embeds: [embed.setFooter({ text: '⏳ Adding emoji...' })],
                     components: []
                 });
-            } catch (error) {
-                console.error('Steal emoji error:', error);
-                let errorMessage = 'Failed to add emoji. ';
                 
-                if (error.message.includes('Maximum number of emojis reached')) {
-                    errorMessage += 'This server has reached the maximum number of emojis!';
-                } else if (error.message.includes('File cannot be larger than')) {
-                    errorMessage += 'The image is too large! Discord emojis must be under 256KB.';
-                } else if (error.message.includes('Invalid Form Body')) {
-                    errorMessage += 'The image format is not supported.';
-                } else {
-                    errorMessage += error.message;
+                try {
+                    const newEmoji = await message.guild.emojis.create({
+                        attachment: item.url,
+                        name: finalName,
+                        reason: `Stolen by ${message.author.tag}`
+                    });
+                    
+                    await response.edit({
+                        embeds: [await successEmbed(guildId, 'Emoji Added!',
+                            `Successfully added ${newEmoji} as **:${newEmoji.name}:**\n\n` +
+                            `**ID:** \`${newEmoji.id}\`\n` +
+                            `**Animated:** ${newEmoji.animated ? 'Yes' : 'No'}\n` +
+                            `**Added by:** ${message.author}`
+                        )],
+                        components: []
+                    });
+                } catch (error) {
+                    console.error('Steal emoji error:', error);
+                    let errorMessage = 'Failed to add emoji. ';
+                    
+                    if (error.message.includes('Maximum number of emojis reached')) {
+                        errorMessage += 'This server has reached the maximum number of emojis!';
+                    } else if (error.message.includes('File cannot be larger than')) {
+                        errorMessage += 'The image is too large! Discord emojis must be under 256KB.';
+                    } else if (error.message.includes('Invalid Form Body')) {
+                        errorMessage += 'The image format is not supported.';
+                    } else {
+                        errorMessage += error.message;
+                    }
+                    
+                    await response.edit({
+                        embeds: [await errorEmbed(guildId, errorMessage)],
+                        components: []
+                    });
                 }
-                
+            } catch (err) {
+                // Modal timed out or was dismissed
                 await response.edit({
-                    embeds: [await errorEmbed(guildId, errorMessage)],
+                    embeds: [await infoEmbed(guildId, 'Cancelled', 'Modal was closed or timed out.')],
                     components: []
-                });
+                }).catch(() => {});
             }
             collector.stop();
             return;
         }
         
         if (customId.startsWith('steal_sticker_')) {
-            await interaction.update({
-                embeds: [embed.setFooter({ text: '⏳ Adding sticker...' })],
-                components: []
-            });
+            // Show modal for sticker name
+            const modal = new ModalBuilder()
+                .setCustomId(`steal_sticker_modal_${message.id}`)
+                .setTitle('Add as Sticker');
             
+            const nameInput = new TextInputBuilder()
+                .setCustomId('sticker_name')
+                .setLabel('Sticker Name')
+                .setPlaceholder('Enter sticker name (2-30 characters)')
+                .setStyle(TextInputStyle.Short)
+                .setValue(sanitizedName.substring(0, 30))
+                .setMinLength(2)
+                .setMaxLength(30)
+                .setRequired(true);
+            
+            const actionRow = new ActionRowBuilder().addComponents(nameInput);
+            modal.addComponents(actionRow);
+            
+            await interaction.showModal(modal);
+            
+            // Wait for modal submission
             try {
-                // Check sticker permissions
-                if (!message.guild.members.me.permissions.has(PermissionFlagsBits.ManageGuildExpressions)) {
+                const modalInteraction = await interaction.awaitModalSubmit({
+                    time: 120000,
+                    filter: (i) => i.customId === `steal_sticker_modal_${message.id}` && i.user.id === message.author.id
+                });
+                
+                const finalName = modalInteraction.fields.getTextInputValue('sticker_name').replace(/[^a-zA-Z0-9_]/g, '_');
+                
+                await modalInteraction.deferUpdate();
+                await response.edit({
+                    embeds: [embed.setFooter({ text: '⏳ Adding sticker...' })],
+                    components: []
+                });
+                
+                try {
+                    // Check sticker permissions
+                    if (!message.guild.members.me.permissions.has(PermissionFlagsBits.ManageGuildExpressions)) {
+                        await response.edit({
+                            embeds: [await errorEmbed(guildId, 'I need **Manage Expressions** permission to add stickers!')],
+                            components: []
+                        });
+                        collector.stop();
+                        return;
+                    }
+                    
+                    const newSticker = await message.guild.stickers.create({
+                        file: item.url,
+                        name: finalName,
+                        tags: 'stolen',
+                        description: `Stolen by ${message.author.tag}`,
+                        reason: `Stolen by ${message.author.tag}`
+                    });
+                    
                     await response.edit({
-                        embeds: [await errorEmbed(guildId, 'I need **Manage Expressions** permission to add stickers!')],
+                        embeds: [await successEmbed(guildId, 'Sticker Added!',
+                            `Successfully added sticker **${newSticker.name}**\n\n` +
+                            `**ID:** \`${newSticker.id}\`\n` +
+                            `**Format:** ${newSticker.format === 1 ? 'PNG' : newSticker.format === 2 ? 'APNG' : 'Lottie'}\n` +
+                            `**Added by:** ${message.author}`
+                        )],
                         components: []
                     });
-                    collector.stop();
-                    return;
+                } catch (error) {
+                    console.error('Steal sticker error:', error);
+                    let errorMessage = 'Failed to add sticker. ';
+                    
+                    if (error.message.includes('Maximum number of stickers reached')) {
+                        errorMessage += 'This server has reached the maximum number of stickers!';
+                    } else if (error.message.includes('File cannot be larger than')) {
+                        errorMessage += 'The image is too large! Discord stickers must be under 512KB.';
+                    } else if (error.message.includes('Invalid Form Body')) {
+                        errorMessage += 'The image format is not supported for stickers. Stickers require PNG or APNG format.';
+                    } else if (error.message.includes('Invalid Asset')) {
+                        errorMessage += 'Invalid image. Stickers must be exactly 320x320 pixels in PNG format.';
+                    } else {
+                        errorMessage += error.message;
+                    }
+                    
+                    await response.edit({
+                        embeds: [await errorEmbed(guildId, errorMessage)],
+                        components: []
+                    });
                 }
-                
-                const newSticker = await message.guild.stickers.create({
-                    file: item.url,
-                    name: sanitizedName,
-                    tags: 'stolen',
-                    description: `Stolen by ${message.author.tag}`,
-                    reason: `Stolen by ${message.author.tag}`
-                });
-                
+            } catch (err) {
+                // Modal timed out or was dismissed
                 await response.edit({
-                    embeds: [await successEmbed(guildId, 'Sticker Added!',
-                        `Successfully added sticker **${newSticker.name}**\n\n` +
-                        `**ID:** \`${newSticker.id}\`\n` +
-                        `**Format:** ${newSticker.format === 1 ? 'PNG' : newSticker.format === 2 ? 'APNG' : 'Lottie'}\n` +
-                        `**Added by:** ${message.author}`
-                    )],
+                    embeds: [await infoEmbed(guildId, 'Cancelled', 'Modal was closed or timed out.')],
                     components: []
-                });
-            } catch (error) {
-                console.error('Steal sticker error:', error);
-                let errorMessage = 'Failed to add sticker. ';
-                
-                if (error.message.includes('Maximum number of stickers reached')) {
-                    errorMessage += 'This server has reached the maximum number of stickers!';
-                } else if (error.message.includes('File cannot be larger than')) {
-                    errorMessage += 'The image is too large! Discord stickers must be under 512KB.';
-                } else if (error.message.includes('Invalid Form Body')) {
-                    errorMessage += 'The image format is not supported for stickers. Stickers require PNG or APNG format.';
-                } else if (error.message.includes('Invalid Asset')) {
-                    errorMessage += 'Invalid image. Stickers must be exactly 320x320 pixels in PNG format.';
-                } else {
-                    errorMessage += error.message;
-                }
-                
-                await response.edit({
-                    embeds: [await errorEmbed(guildId, errorMessage)],
-                    components: []
-                });
+                }).catch(() => {});
             }
             collector.stop();
             return;
