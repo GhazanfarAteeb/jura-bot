@@ -15,7 +15,7 @@ const featureCategories = {
   },
   leveling: {
     name: '📊 Leveling',
-    commands: ['level', 'rank', 'top', 'leaderboard', 'xp']
+    commands: ['level', 'rank', 'top', 'leaderboard', 'xp', 'levelup']
   },
   games: {
     name: '🎮 Games',
@@ -27,7 +27,7 @@ const featureCategories = {
   },
   birthdays: {
     name: '🎂 Birthdays',
-    commands: ['birthday', 'setbirthday', 'mybirthday', 'birthdays', 'requestbirthday', 'approvebday', 'rejectbday', 'cancelbirthday', 'removebirthday', 'birthdaypreference', 'birthdayrequests']
+    commands: ['birthday', 'setbirthday', 'mybirthday', 'birthdays', 'requestbirthday', 'approvebday', 'rejectbday', 'cancelbirthday', 'removebirthday', 'birthdaypreference', 'birthdayrequests', 'birthdayconfig']
   },
   giveaways: {
     name: '🎉 Giveaways',
@@ -58,8 +58,14 @@ const featureCategories = {
     commands: ['automod']
   },
   welcome: {
-    name: '👋 Welcome',
-    commands: ['welcome']
+    name: '👋 Welcome & Goodbye',
+    commands: ['welcome', 'goodbye']
+  },
+  boost: {
+    name: '💎 Server Boost',
+    commands: ['boost'],
+    isFeatureToggle: true,
+    featurePath: 'features.boostSystem.enabled'
   },
   profilecustomization: {
     name: '🎨 Profile Customization',
@@ -162,6 +168,10 @@ async function showFeatureMenu(message, guildConfig) {
         const profileEnabled = guildConfig.economy?.profileCustomization?.enabled !== false; // Default true
         const status = profileEnabled ? '✅' : '❌';
         description += `${status} **${category.name}** - Feature toggle\n`;
+      } else if (key === 'boost') {
+        const boostEnabled = guildConfig.features?.boostSystem?.enabled;
+        const status = boostEnabled ? '✅' : '❌';
+        description += `${status} **${category.name}** - Feature toggle\n`;
       }
       continue;
     }
@@ -176,7 +186,8 @@ async function showFeatureMenu(message, guildConfig) {
   // Add AI Chat separately at the end
   const aiEnabled = guildConfig.features?.aiChat?.enabled;
   const trollEnabled = guildConfig.features?.aiChat?.trollMode;
-  description += `${aiEnabled ? '✅' : '❌'} **🤖 AI Chat (Raphael)** - Feature toggle\n`;
+  description += `\n**Special Features:**\n`;
+  description += `${aiEnabled ? '✅' : '❌'} **🤖 AI Chat (Raphael)**\n`;
   if (aiEnabled) {
     description += `  └─ ${trollEnabled ? '😈' : '😇'} Troll Mode: ${trollEnabled ? 'Enabled' : 'Disabled'}\n`;
   }
@@ -283,6 +294,31 @@ async function showFeatureStatus(message, guildConfig, feature) {
     return message.reply({ embeds: [embed] });
   }
 
+  // Handle Boost System specially
+  if (feature === 'boost' || feature === 'boostsystem' || feature === 'boosts') {
+    const boostConfig = guildConfig.features?.boostSystem || {};
+    const boostChannel = boostConfig.channelId ? message.guild.channels.cache.get(boostConfig.channelId) : null;
+
+    const embed = new EmbedBuilder()
+      .setTitle('🚀 Boost Announcements Status')
+      .setColor(boostConfig.enabled ? '#FF73FA' : '#FF4757')
+      .setDescription(
+        `**Status:** ${boostConfig.enabled ? '✅ Enabled' : '❌ Disabled'}\n` +
+        `**Channel:** ${boostChannel ? `<#${boostChannel.id}>` : 'Not set'}\n` +
+        `**Embed Mode:** ${boostConfig.embedEnabled !== false ? '✅' : '❌'}\n\n` +
+        `**Commands:**\n` +
+        `${GLYPHS.ARROW_RIGHT} \`feature enable boost\` - Enable boost announcements\n` +
+        `${GLYPHS.ARROW_RIGHT} \`feature disable boost\` - Disable boost announcements\n` +
+        `${GLYPHS.ARROW_RIGHT} \`boost channel #channel\` - Set boost channel\n` +
+        `${GLYPHS.ARROW_RIGHT} \`boost message <text>\` - Set thank you message\n` +
+        `${GLYPHS.ARROW_RIGHT} \`boost embed\` - Toggle embed format\n` +
+        `${GLYPHS.ARROW_RIGHT} \`boost test\` - Preview boost message`
+      )
+      .setFooter({ text: 'Configure with the boost command' });
+
+    return message.reply({ embeds: [embed] });
+  }
+
   const category = featureCategories[feature];
 
   if (!category) {
@@ -385,6 +421,26 @@ async function toggleFeature(message, guildConfig, target, isEnabling, client) {
         : `Users can no longer customize their overlay. Use \`setoverlay\` to set server-wide overlay settings:\n` +
         `• \`setoverlay color <hex>\`\n` +
         `• \`setoverlay opacity <0-100>\``)
+    );
+    return message.reply({ embeds: [embed] });
+  }
+
+  // Handle Boost System toggle
+  if (target === 'boost' || target === 'boostsystem' || target === 'boosts') {
+    await Guild.updateGuild(guildId, {
+      $set: { 'features.boostSystem.enabled': isEnabling }
+    });
+
+    const embed = await successEmbed(guildId,
+      `Boost Announcements ${isEnabling ? 'Enabled' : 'Disabled'}`,
+      `${GLYPHS.SUCCESS} **🚀 Boost Announcements** have been ${isEnabling ? 'enabled' : 'disabled'}.\n\n` +
+      (isEnabling
+        ? `The bot will now send thank you messages when members boost the server.\n\n` +
+        `**Configure with:**\n` +
+        `• \`boost channel #channel\` - Set boost channel\n` +
+        `• \`boost message <text>\` - Set thank you message\n` +
+        `• \`boost embed\` - Enable/disable embed format`
+        : `Boost thank you messages have been disabled.`)
     );
     return message.reply({ embeds: [embed] });
   }

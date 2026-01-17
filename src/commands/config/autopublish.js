@@ -115,9 +115,9 @@ export default {
         const channelList = guildConfig.autoPublish?.channels || [];
         const channels = channelList.length > 0
           ? channelList.map(id => {
-              const channel = message.guild.channels.cache.get(id);
-              return channel ? `<#${id}>` : `Unknown (${id})`;
-            }).join('\n')
+            const channel = message.guild.channels.cache.get(id);
+            return channel ? `<#${id}>` : `Unknown (${id})`;
+          }).join('\n')
           : 'No channels configured';
 
         const embed = new EmbedBuilder()

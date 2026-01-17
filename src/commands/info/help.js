@@ -9,8 +9,8 @@ const COMMANDS_BY_CATEGORY = {
   admin: ['deployment', 'logs', 'award'],
   config: [
     'setup', 'config', 'feature', 'setprefix', 'setchannel', 'setrole', 'setcoin', 'setoverlay',
-    'automod', 'automodignore', 'welcome', 'antinuke', 'autopublish', 'autorole', 'cmdchannels',
-    'manageshop', 'colorroles', 'levelroles', 'noxp', 'reactionroles', 'xpmultiplier', 'cleanup', 'logs'
+    'automod', 'automodignore', 'welcome', 'goodbye', 'boost', 'antinuke', 'autopublish', 'autorole', 'cmdchannels',
+    'manageshop', 'colorroles', 'levelroles', 'levelup', 'noxp', 'reactionroles', 'xpmultiplier', 'cleanup', 'logs', 'rules'
   ],
   moderation: ['warn', 'kick', 'ban', 'purge', 'userhistory', 'timeout', 'untimeout', 'lockdown', 'verify'],
   economy: [
@@ -23,7 +23,7 @@ const COMMANDS_BY_CATEGORY = {
     'shuffle', 'loop', 'seek', 'remove', 'clear', 'skipto'
   ],
   community: [
-    'setbirthday', 'birthdays', 'removebirthday', 'birthdaypreference', 'mybirthday',
+    'setbirthday', 'birthdays', 'removebirthday', 'birthdaypreference', 'birthdayconfig', 'mybirthday',
     'requestbirthday', 'approvebday', 'rejectbday', 'birthdayrequests', 'cancelbirthday',
     'createevent', 'events', 'joinevent', 'cancelevent', 'giveaway', 'starboard'
   ],

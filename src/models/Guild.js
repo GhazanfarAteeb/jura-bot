@@ -88,7 +88,17 @@ const guildSchema = new mongoose.Schema({
       enabled: { type: Boolean, default: true },
       channel: String,
       role: String, // Birthday role
-      message: { type: String, default: '**Notice:** Birthday celebration detected for {user}. Congratulations, Master.' }
+      message: { type: String, default: '🎂 Happy Birthday {user}! 🎉' },
+      embedEnabled: { type: Boolean, default: true },
+      embedColor: { type: String, default: '#FF69B4' },
+      embedTitle: { type: String, default: '🎂 Happy Birthday!' },
+      bannerUrl: String,
+      thumbnailType: { type: String, enum: ['avatar', 'server', 'custom', null], default: 'avatar' },
+      thumbnailUrl: String,
+      footerText: String,
+      showTimestamp: { type: Boolean, default: true },
+      mentionUser: { type: Boolean, default: true },
+      showAge: { type: Boolean, default: false } // Show age if birth year provided
     },
     eventSystem: {
       enabled: { type: Boolean, default: true },
@@ -100,8 +110,18 @@ const guildSchema = new mongoose.Schema({
       maxXpPerMessage: { type: Number, default: 25 },
       xpCooldown: { type: Number, default: 60 }, // seconds between XP gains
       levelUpChannel: String,
-      levelUpMessage: { type: String, default: '**Confirmed:** {user} has advanced to level {level}, Master.' },
+      levelUpMessage: { type: String, default: '🎉 Congratulations {user}! You reached level {level}!' },
       announceLevelUp: { type: Boolean, default: true },
+      embedEnabled: { type: Boolean, default: true },
+      embedColor: { type: String, default: '#FFD700' },
+      embedTitle: String,
+      bannerUrl: String,
+      thumbnailType: { type: String, enum: ['avatar', 'server', 'custom', null], default: 'avatar' },
+      thumbnailUrl: String,
+      footerText: String,
+      showTimestamp: { type: Boolean, default: true },
+      mentionUser: { type: Boolean, default: true },
+      showProgress: { type: Boolean, default: true }, // Show XP progress in level up
       rewards: [{
         level: Number,
         roleId: String
@@ -127,6 +147,36 @@ const guildSchema = new mongoose.Schema({
       embedEnabled: { type: Boolean, default: true },
       dmWelcome: { type: Boolean, default: false },
       bannerUrl: String // Optional banner image for welcome embed
+    },
+    boostSystem: {
+      enabled: { type: Boolean, default: false },
+      channel: String,
+      message: { type: String, default: 'Thank you {user} for boosting {server}! 🎉' },
+      embedEnabled: { type: Boolean, default: true },
+      embedColor: { type: String, default: '#f47fff' },
+      embedTitle: String,
+      bannerUrl: String,
+      thumbnailType: { type: String, enum: ['avatar', 'server', 'custom', null], default: 'avatar' },
+      thumbnailUrl: String,
+      footerText: String,
+      showTimestamp: { type: Boolean, default: true },
+      mentionUser: { type: Boolean, default: true },
+      greetingText: { type: String, default: '💎 {user} just boosted the server!' }
+    },
+    leaveSystem: {
+      enabled: { type: Boolean, default: false },
+      channel: String,
+      message: { type: String, default: 'Goodbye {username}! We hope to see you again.' },
+      embedEnabled: { type: Boolean, default: true },
+      embedColor: { type: String, default: '#FF4757' },
+      embedTitle: String,
+      bannerUrl: String,
+      thumbnailType: { type: String, enum: ['avatar', 'server', 'custom', null], default: 'avatar' },
+      thumbnailUrl: String,
+      footerText: String,
+      showTimestamp: { type: Boolean, default: true },
+      showJoinDate: { type: Boolean, default: true },
+      showMemberCount: { type: Boolean, default: true }
     },
     verificationSystem: {
       enabled: { type: Boolean, default: false },
@@ -256,6 +306,15 @@ const guildSchema = new mongoose.Schema({
     profileCustomization: {
       enabled: { type: Boolean, default: true } // If true (default), users can customize their overlay. If false, admin controls via setoverlay
     }
+  },
+  // Server Rules System
+  rulesSystem: {
+    rules: [String], // Array of rule strings
+    channel: String, // Default channel to send rules
+    title: { type: String, default: '📜 Server Rules' },
+    embedColor: { type: String, default: '#5865F2' },
+    footer: String,
+    bannerUrl: String
   },
   // Voice XP settings
   voiceXP: {
