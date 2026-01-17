@@ -43,14 +43,9 @@ export default {
       return message.reply({ embeds: [embed] });
     }
 
-    if (!guildConfig.autoPublish) {
-      guildConfig.autoPublish = { enabled: false, channels: [] };
-    }
-
     switch (subCommand) {
       case 'enable': {
-        guildConfig.autoPublish.enabled = true;
-        await guildConfig.save();
+        await Guild.updateGuild(guildId, { $set: { 'autoPublish.enabled': true } });
 
         const embed = new EmbedBuilder()
           .setColor('#00FF7F')
@@ -61,8 +56,7 @@ export default {
       }
 
       case 'disable': {
-        guildConfig.autoPublish.enabled = false;
-        await guildConfig.save();
+        await Guild.updateGuild(guildId, { $set: { 'autoPublish.enabled': false } });
 
         const embed = new EmbedBuilder()
           .setColor('#FFD700')
@@ -84,12 +78,11 @@ export default {
           return message.reply(`**Error:** ${channel} is not an announcement channel. Only channels with "Announcement" type are valid, Master.`);
         }
 
-        if (guildConfig.autoPublish.channels.includes(channel.id)) {
+        if (guildConfig.autoPublish?.channels?.includes(channel.id)) {
           return message.reply(`**Notice:** ${channel} is already in the auto-publish list, Master.`);
         }
 
-        guildConfig.autoPublish.channels.push(channel.id);
-        await guildConfig.save();
+        await Guild.updateGuild(guildId, { $push: { 'autoPublish.channels': channel.id } });
 
         const embed = new EmbedBuilder()
           .setColor('#00FF7F')
@@ -105,13 +98,11 @@ export default {
           return message.reply(`**Error:** Please mention a channel. Usage: \`${prefix}autopublish remove #channel\`, Master.`);
         }
 
-        const index = guildConfig.autoPublish.channels.indexOf(channel.id);
-        if (index === -1) {
+        if (!guildConfig.autoPublish?.channels?.includes(channel.id)) {
           return message.reply(`**Notice:** ${channel} is not in the auto-publish list, Master.`);
         }
 
-        guildConfig.autoPublish.channels.splice(index, 1);
-        await guildConfig.save();
+        await Guild.updateGuild(guildId, { $pull: { 'autoPublish.channels': channel.id } });
 
         const embed = new EmbedBuilder()
           .setColor('#00FF7F')
@@ -121,18 +112,19 @@ export default {
       }
 
       case 'list': {
-        const channels = guildConfig.autoPublish.channels
-          .map(id => {
-            const channel = message.guild.channels.cache.get(id);
-            return channel ? `<#${id}>` : `Unknown (${id})`;
-          })
-          .join('\n') || 'No channels configured';
+        const channelList = guildConfig.autoPublish?.channels || [];
+        const channels = channelList.length > 0
+          ? channelList.map(id => {
+              const channel = message.guild.channels.cache.get(id);
+              return channel ? `<#${id}>` : `Unknown (${id})`;
+            }).join('\n')
+          : 'No channels configured';
 
         const embed = new EmbedBuilder()
           .setColor('#00CED1')
           .setTitle('『 Auto-Publish Channels 』')
           .addFields(
-            { name: '▸ Status', value: guildConfig.autoPublish.enabled ? '◉ Active' : '○ Inactive', inline: true },
+            { name: '▸ Status', value: guildConfig.autoPublish?.enabled ? '◉ Active' : '○ Inactive', inline: true },
             { name: '▸ Channels', value: channels }
           );
 
