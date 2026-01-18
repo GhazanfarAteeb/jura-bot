@@ -82,7 +82,7 @@ export default {
         }
 
         await Guild.updateGuild(message.guild.id, {
-          $set: { 
+          $set: {
             'features.levelSystem.levelUpChannel': channel.id,
             'channels.levelUpChannel': channel.id
           }
@@ -449,13 +449,15 @@ async function showStatus(message, guildConfig, prefix) {
       { name: '▸ Message', value: `\`\`\`${(level.levelUpMessage || '🎉 Congratulations {user}! You reached level {level}!').slice(0, 100)}\`\`\``, inline: false }
     )
     .addFields(
-      { name: '📝 Commands', value:
-        `\`${prefix}levelup enable\` - Enable level up messages\n` +
-        `\`${prefix}levelup disable\` - Disable level up messages\n` +
-        `\`${prefix}levelup channel #channel\` - Set announcement channel\n` +
-        `\`${prefix}levelup message <text>\` - Set level up message\n` +
-        `\`${prefix}levelup test\` - Send a test message\n` +
-        `\`${prefix}levelup help\` - Show all options`, inline: false }
+      {
+        name: '📝 Commands', value:
+          `\`${prefix}levelup enable\` - Enable level up messages\n` +
+          `\`${prefix}levelup disable\` - Disable level up messages\n` +
+          `\`${prefix}levelup channel #channel\` - Set announcement channel\n` +
+          `\`${prefix}levelup message <text>\` - Set level up message\n` +
+          `\`${prefix}levelup test\` - Send a test message\n` +
+          `\`${prefix}levelup help\` - Show all options`, inline: false
+      }
     )
     .setFooter({ text: `Use ${prefix}levelup help for all customization options` });
 
@@ -468,25 +470,33 @@ async function showHelp(message, prefix) {
     .setTitle('🎉 Level Up Message Configuration')
     .setDescription('All available commands for customizing level up announcements.')
     .addFields(
-      { name: '🔧 Basic Setup', value:
-        `\`${prefix}levelup enable\` - Enable announcements\n` +
-        `\`${prefix}levelup disable\` - Disable announcements\n` +
-        `\`${prefix}levelup channel #channel\` - Set channel\n` +
-        `\`${prefix}levelup channel current\` - Use same channel\n` +
-        `\`${prefix}levelup message <text>\` - Set message`, inline: false },
-      { name: '🎨 Embed Customization', value:
-        `\`${prefix}levelup embed on/off\` - Toggle embed mode\n` +
-        `\`${prefix}levelup color #hex\` - Set embed color\n` +
-        `\`${prefix}levelup title <text>\` - Set embed title\n` +
-        `\`${prefix}levelup footer <text>\` - Set embed footer\n` +
-        `\`${prefix}levelup image <url>\` - Set banner image\n` +
-        `\`${prefix}levelup thumbnail <type>\` - Set thumbnail`, inline: false },
-      { name: '⚙️ Display Options', value:
-        `\`${prefix}levelup mention on/off\` - Toggle user ping\n` +
-        `\`${prefix}levelup progress on/off\` - Show XP progress`, inline: false },
-      { name: '🔍 Preview & Test', value:
-        `\`${prefix}levelup test\` - Send test to channel\n` +
-        `\`${prefix}levelup preview\` - Preview here`, inline: false }
+      {
+        name: '🔧 Basic Setup', value:
+          `\`${prefix}levelup enable\` - Enable announcements\n` +
+          `\`${prefix}levelup disable\` - Disable announcements\n` +
+          `\`${prefix}levelup channel #channel\` - Set channel\n` +
+          `\`${prefix}levelup channel current\` - Use same channel\n` +
+          `\`${prefix}levelup message <text>\` - Set message`, inline: false
+      },
+      {
+        name: '🎨 Embed Customization', value:
+          `\`${prefix}levelup embed on/off\` - Toggle embed mode\n` +
+          `\`${prefix}levelup color #hex\` - Set embed color\n` +
+          `\`${prefix}levelup title <text>\` - Set embed title\n` +
+          `\`${prefix}levelup footer <text>\` - Set embed footer\n` +
+          `\`${prefix}levelup image <url>\` - Set banner image\n` +
+          `\`${prefix}levelup thumbnail <type>\` - Set thumbnail`, inline: false
+      },
+      {
+        name: '⚙️ Display Options', value:
+          `\`${prefix}levelup mention on/off\` - Toggle user ping\n` +
+          `\`${prefix}levelup progress on/off\` - Show XP progress`, inline: false
+      },
+      {
+        name: '🔍 Preview & Test', value:
+          `\`${prefix}levelup test\` - Send test to channel\n` +
+          `\`${prefix}levelup preview\` - Preview here`, inline: false
+      }
     );
 
   const varsEmbed = new EmbedBuilder()

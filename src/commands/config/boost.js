@@ -439,13 +439,15 @@ async function showStatus(message, guildConfig, prefix) {
       { name: '▸ Message', value: `\`\`\`${(boost.message || 'Thank you {user} for boosting {server}! 🎉').slice(0, 100)}\`\`\``, inline: false }
     )
     .addFields(
-      { name: '📝 Commands', value:
-        `\`${prefix}boost enable\` - Enable boost messages\n` +
-        `\`${prefix}boost disable\` - Disable boost messages\n` +
-        `\`${prefix}boost channel #channel\` - Set boost channel\n` +
-        `\`${prefix}boost message <text>\` - Set thank you message\n` +
-        `\`${prefix}boost test\` - Send a test message\n` +
-        `\`${prefix}boost help\` - Show all options`, inline: false }
+      {
+        name: '📝 Commands', value:
+          `\`${prefix}boost enable\` - Enable boost messages\n` +
+          `\`${prefix}boost disable\` - Disable boost messages\n` +
+          `\`${prefix}boost channel #channel\` - Set boost channel\n` +
+          `\`${prefix}boost message <text>\` - Set thank you message\n` +
+          `\`${prefix}boost test\` - Send a test message\n` +
+          `\`${prefix}boost help\` - Show all options`, inline: false
+      }
     )
     .setFooter({ text: `Use ${prefix}boost help for all customization options` });
 
@@ -458,24 +460,32 @@ async function showHelp(message, prefix) {
     .setTitle('💎 Boost Message Configuration')
     .setDescription('All available commands for customizing boost thank you messages.')
     .addFields(
-      { name: '🔧 Basic Setup', value:
-        `\`${prefix}boost enable\` - Enable boost messages\n` +
-        `\`${prefix}boost disable\` - Disable boost messages\n` +
-        `\`${prefix}boost channel #channel\` - Set boost channel\n` +
-        `\`${prefix}boost message <text>\` - Set thank you message`, inline: false },
-      { name: '🎨 Embed Customization', value:
-        `\`${prefix}boost embed on/off\` - Toggle embed mode\n` +
-        `\`${prefix}boost color #hex\` - Set embed color\n` +
-        `\`${prefix}boost title <text>\` - Set embed title\n` +
-        `\`${prefix}boost footer <text>\` - Set embed footer\n` +
-        `\`${prefix}boost image <url>\` - Set banner image\n` +
-        `\`${prefix}boost thumbnail <type>\` - Set thumbnail`, inline: false },
-      { name: '💬 Content Options', value:
-        `\`${prefix}boost mention on/off\` - Toggle user ping\n` +
-        `\`${prefix}boost greeting <text>\` - Text above embed`, inline: false },
-      { name: '🔍 Preview & Test', value:
-        `\`${prefix}boost test\` - Send test message to channel\n` +
-        `\`${prefix}boost preview\` - Preview in current channel`, inline: false }
+      {
+        name: '🔧 Basic Setup', value:
+          `\`${prefix}boost enable\` - Enable boost messages\n` +
+          `\`${prefix}boost disable\` - Disable boost messages\n` +
+          `\`${prefix}boost channel #channel\` - Set boost channel\n` +
+          `\`${prefix}boost message <text>\` - Set thank you message`, inline: false
+      },
+      {
+        name: '🎨 Embed Customization', value:
+          `\`${prefix}boost embed on/off\` - Toggle embed mode\n` +
+          `\`${prefix}boost color #hex\` - Set embed color\n` +
+          `\`${prefix}boost title <text>\` - Set embed title\n` +
+          `\`${prefix}boost footer <text>\` - Set embed footer\n` +
+          `\`${prefix}boost image <url>\` - Set banner image\n` +
+          `\`${prefix}boost thumbnail <type>\` - Set thumbnail`, inline: false
+      },
+      {
+        name: '💬 Content Options', value:
+          `\`${prefix}boost mention on/off\` - Toggle user ping\n` +
+          `\`${prefix}boost greeting <text>\` - Text above embed`, inline: false
+      },
+      {
+        name: '🔍 Preview & Test', value:
+          `\`${prefix}boost test\` - Send test message to channel\n` +
+          `\`${prefix}boost preview\` - Preview in current channel`, inline: false
+      }
     );
 
   const varsEmbed = new EmbedBuilder()

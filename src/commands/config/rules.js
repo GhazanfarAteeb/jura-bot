@@ -99,13 +99,15 @@ async function showStatus(message, guildConfig, prefix) {
       { name: '▸ Title', value: `\`${rulesConfig.title || 'Server Rules'}\``, inline: true }
     )
     .addFields(
-      { name: '📝 Commands', value:
-        `\`${prefix}rules add <rule>\` - Add a new rule\n` +
-        `\`${prefix}rules remove <#>\` - Remove a rule\n` +
-        `\`${prefix}rules list\` - View all rules\n` +
-        `\`${prefix}rules preview\` - Preview the embed\n` +
-        `\`${prefix}rules send [#channel]\` - Send rules\n` +
-        `\`${prefix}rules help\` - All options`, inline: false }
+      {
+        name: '📝 Commands', value:
+          `\`${prefix}rules add <rule>\` - Add a new rule\n` +
+          `\`${prefix}rules remove <#>\` - Remove a rule\n` +
+          `\`${prefix}rules list\` - View all rules\n` +
+          `\`${prefix}rules preview\` - Preview the embed\n` +
+          `\`${prefix}rules send [#channel]\` - Send rules\n` +
+          `\`${prefix}rules help\` - All options`, inline: false
+      }
     )
     .setFooter({ text: `Use ${prefix}rules help for all customization options` });
 
@@ -118,29 +120,37 @@ async function showHelp(message, prefix) {
     .setTitle('📜 Rules Command Help')
     .setDescription('All available commands for managing server rules.')
     .addFields(
-      { name: '📋 Rule Management', value:
-        `\`${prefix}rules add <rule>\` - Add a new rule\n` +
-        `\`${prefix}rules remove <number>\` - Remove a rule by number\n` +
-        `\`${prefix}rules edit <number> <new text>\` - Edit a rule\n` +
-        `\`${prefix}rules set <rule1 | rule2 | ...>\` - Set all rules at once\n` +
-        `\`${prefix}rules list\` - View all current rules\n` +
-        `\`${prefix}rules clear\` - Remove all rules`, inline: false },
-      { name: '🎨 Customization', value:
-        `\`${prefix}rules title <text>\` - Set embed title\n` +
-        `\`${prefix}rules color #hex\` - Set embed color\n` +
-        `\`${prefix}rules footer <text>\` - Set embed footer\n` +
-        `\`${prefix}rules image <url>\` - Set banner image\n` +
-        `\`${prefix}rules channel #channel\` - Set default channel`, inline: false },
-      { name: '📤 Sending', value:
-        `\`${prefix}rules preview\` - Preview rules in current channel\n` +
-        `\`${prefix}rules send\` - Send to default channel\n` +
-        `\`${prefix}rules send #channel\` - Send to specific channel`, inline: false }
+      {
+        name: '📋 Rule Management', value:
+          `\`${prefix}rules add <rule>\` - Add a new rule\n` +
+          `\`${prefix}rules remove <number>\` - Remove a rule by number\n` +
+          `\`${prefix}rules edit <number> <new text>\` - Edit a rule\n` +
+          `\`${prefix}rules set <rule1 | rule2 | ...>\` - Set all rules at once\n` +
+          `\`${prefix}rules list\` - View all current rules\n` +
+          `\`${prefix}rules clear\` - Remove all rules`, inline: false
+      },
+      {
+        name: '🎨 Customization', value:
+          `\`${prefix}rules title <text>\` - Set embed title\n` +
+          `\`${prefix}rules color #hex\` - Set embed color\n` +
+          `\`${prefix}rules footer <text>\` - Set embed footer\n` +
+          `\`${prefix}rules image <url>\` - Set banner image\n` +
+          `\`${prefix}rules channel #channel\` - Set default channel`, inline: false
+      },
+      {
+        name: '📤 Sending', value:
+          `\`${prefix}rules preview\` - Preview rules in current channel\n` +
+          `\`${prefix}rules send\` - Send to default channel\n` +
+          `\`${prefix}rules send #channel\` - Send to specific channel`, inline: false
+      }
     )
     .addFields(
-      { name: '💡 Tips', value:
-        `• Use \`|\` to separate multiple rules with \`${prefix}rules set\`\n` +
-        `• Rule numbers start at 1\n` +
-        `• Use \`\\n\` for line breaks within a rule`, inline: false }
+      {
+        name: '💡 Tips', value:
+          `• Use \`|\` to separate multiple rules with \`${prefix}rules set\`\n` +
+          `• Rule numbers start at 1\n` +
+          `• Use \`\\n\` for line breaks within a rule`, inline: false
+      }
     );
 
   return message.reply({ embeds: [embed] });

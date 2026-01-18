@@ -71,7 +71,7 @@ export default {
         }
 
         await Guild.updateGuild(message.guild.id, {
-          $set: { 
+          $set: {
             'features.birthdaySystem.channel': channel.id,
             'channels.birthdayChannel': channel.id
           }
@@ -108,7 +108,7 @@ export default {
         }
 
         await Guild.updateGuild(message.guild.id, {
-          $set: { 
+          $set: {
             'features.birthdaySystem.role': role.id,
             'roles.birthdayRole': role.id
           }
@@ -476,12 +476,14 @@ async function showStatus(message, guildConfig, prefix) {
       { name: '▸ Message', value: `\`\`\`${(bday.message || '🎂 Happy Birthday {user}! 🎉').slice(0, 80)}\`\`\``, inline: false }
     )
     .addFields(
-      { name: '📝 Quick Commands', value:
-        `\`${prefix}birthdayconfig channel #channel\` - Set channel\n` +
-        `\`${prefix}birthdayconfig role @role\` - Set birthday role\n` +
-        `\`${prefix}birthdayconfig message <text>\` - Set message\n` +
-        `\`${prefix}birthdayconfig test\` - Send test message\n` +
-        `\`${prefix}birthdayconfig help\` - All options`, inline: false }
+      {
+        name: '📝 Quick Commands', value:
+          `\`${prefix}birthdayconfig channel #channel\` - Set channel\n` +
+          `\`${prefix}birthdayconfig role @role\` - Set birthday role\n` +
+          `\`${prefix}birthdayconfig message <text>\` - Set message\n` +
+          `\`${prefix}birthdayconfig test\` - Send test message\n` +
+          `\`${prefix}birthdayconfig help\` - All options`, inline: false
+      }
     )
     .setFooter({ text: `Use ${prefix}birthdayconfig help for all customization options` });
 
@@ -494,25 +496,33 @@ async function showHelp(message, prefix) {
     .setTitle('🎂 Birthday Configuration')
     .setDescription('All available commands for customizing birthday announcements.')
     .addFields(
-      { name: '🔧 Basic Setup', value:
-        `\`${prefix}birthdayconfig enable\` - Enable system\n` +
-        `\`${prefix}birthdayconfig disable\` - Disable system\n` +
-        `\`${prefix}birthdayconfig channel #channel\` - Set channel\n` +
-        `\`${prefix}birthdayconfig role @role\` - Set birthday role\n` +
-        `\`${prefix}birthdayconfig message <text>\` - Set message`, inline: false },
-      { name: '🎨 Embed Customization', value:
-        `\`${prefix}birthdayconfig embed on/off\` - Toggle embed\n` +
-        `\`${prefix}birthdayconfig color #hex\` - Set color\n` +
-        `\`${prefix}birthdayconfig title <text>\` - Set title\n` +
-        `\`${prefix}birthdayconfig footer <text>\` - Set footer\n` +
-        `\`${prefix}birthdayconfig image <url>\` - Set banner\n` +
-        `\`${prefix}birthdayconfig thumbnail <type>\` - Set thumbnail`, inline: false },
-      { name: '⚙️ Display Options', value:
-        `\`${prefix}birthdayconfig mention on/off\` - Toggle ping\n` +
-        `\`${prefix}birthdayconfig age on/off\` - Show user age`, inline: false },
-      { name: '🔍 Preview & Test', value:
-        `\`${prefix}birthdayconfig test\` - Send test to channel\n` +
-        `\`${prefix}birthdayconfig preview\` - Preview here`, inline: false }
+      {
+        name: '🔧 Basic Setup', value:
+          `\`${prefix}birthdayconfig enable\` - Enable system\n` +
+          `\`${prefix}birthdayconfig disable\` - Disable system\n` +
+          `\`${prefix}birthdayconfig channel #channel\` - Set channel\n` +
+          `\`${prefix}birthdayconfig role @role\` - Set birthday role\n` +
+          `\`${prefix}birthdayconfig message <text>\` - Set message`, inline: false
+      },
+      {
+        name: '🎨 Embed Customization', value:
+          `\`${prefix}birthdayconfig embed on/off\` - Toggle embed\n` +
+          `\`${prefix}birthdayconfig color #hex\` - Set color\n` +
+          `\`${prefix}birthdayconfig title <text>\` - Set title\n` +
+          `\`${prefix}birthdayconfig footer <text>\` - Set footer\n` +
+          `\`${prefix}birthdayconfig image <url>\` - Set banner\n` +
+          `\`${prefix}birthdayconfig thumbnail <type>\` - Set thumbnail`, inline: false
+      },
+      {
+        name: '⚙️ Display Options', value:
+          `\`${prefix}birthdayconfig mention on/off\` - Toggle ping\n` +
+          `\`${prefix}birthdayconfig age on/off\` - Show user age`, inline: false
+      },
+      {
+        name: '🔍 Preview & Test', value:
+          `\`${prefix}birthdayconfig test\` - Send test to channel\n` +
+          `\`${prefix}birthdayconfig preview\` - Preview here`, inline: false
+      }
     );
 
   const varsEmbed = new EmbedBuilder()

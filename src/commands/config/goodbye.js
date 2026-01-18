@@ -415,13 +415,15 @@ async function showStatus(message, guildConfig, prefix) {
       { name: '▸ Message', value: `\`\`\`${(leave.message || 'Goodbye {username}! We hope to see you again.').slice(0, 100)}\`\`\``, inline: false }
     )
     .addFields(
-      { name: '📝 Commands', value:
-        `\`${prefix}goodbye enable\` - Enable goodbye messages\n` +
-        `\`${prefix}goodbye disable\` - Disable goodbye messages\n` +
-        `\`${prefix}goodbye channel #channel\` - Set goodbye channel\n` +
-        `\`${prefix}goodbye message <text>\` - Set farewell message\n` +
-        `\`${prefix}goodbye test\` - Send a test message\n` +
-        `\`${prefix}goodbye help\` - Show all options`, inline: false }
+      {
+        name: '📝 Commands', value:
+          `\`${prefix}goodbye enable\` - Enable goodbye messages\n` +
+          `\`${prefix}goodbye disable\` - Disable goodbye messages\n` +
+          `\`${prefix}goodbye channel #channel\` - Set goodbye channel\n` +
+          `\`${prefix}goodbye message <text>\` - Set farewell message\n` +
+          `\`${prefix}goodbye test\` - Send a test message\n` +
+          `\`${prefix}goodbye help\` - Show all options`, inline: false
+      }
     )
     .setFooter({ text: `Use ${prefix}goodbye help for all customization options` });
 
@@ -434,23 +436,31 @@ async function showHelp(message, prefix) {
     .setTitle('👋 Goodbye Message Configuration')
     .setDescription('All available commands for customizing goodbye messages.')
     .addFields(
-      { name: '🔧 Basic Setup', value:
-        `\`${prefix}goodbye enable\` - Enable goodbye messages\n` +
-        `\`${prefix}goodbye disable\` - Disable goodbye messages\n` +
-        `\`${prefix}goodbye channel #channel\` - Set goodbye channel\n` +
-        `\`${prefix}goodbye message <text>\` - Set farewell message`, inline: false },
-      { name: '🎨 Embed Customization', value:
-        `\`${prefix}goodbye embed on/off\` - Toggle embed mode\n` +
-        `\`${prefix}goodbye color #hex\` - Set embed color\n` +
-        `\`${prefix}goodbye title <text>\` - Set embed title\n` +
-        `\`${prefix}goodbye footer <text>\` - Set embed footer\n` +
-        `\`${prefix}goodbye image <url>\` - Set banner image\n` +
-        `\`${prefix}goodbye thumbnail <type>\` - Set thumbnail`, inline: false },
-      { name: '⚙️ Display Options', value:
-        `\`${prefix}goodbye joindate on/off\` - Show when they joined`, inline: false },
-      { name: '🔍 Preview & Test', value:
-        `\`${prefix}goodbye test\` - Send test message to channel\n` +
-        `\`${prefix}goodbye preview\` - Preview in current channel`, inline: false }
+      {
+        name: '🔧 Basic Setup', value:
+          `\`${prefix}goodbye enable\` - Enable goodbye messages\n` +
+          `\`${prefix}goodbye disable\` - Disable goodbye messages\n` +
+          `\`${prefix}goodbye channel #channel\` - Set goodbye channel\n` +
+          `\`${prefix}goodbye message <text>\` - Set farewell message`, inline: false
+      },
+      {
+        name: '🎨 Embed Customization', value:
+          `\`${prefix}goodbye embed on/off\` - Toggle embed mode\n` +
+          `\`${prefix}goodbye color #hex\` - Set embed color\n` +
+          `\`${prefix}goodbye title <text>\` - Set embed title\n` +
+          `\`${prefix}goodbye footer <text>\` - Set embed footer\n` +
+          `\`${prefix}goodbye image <url>\` - Set banner image\n` +
+          `\`${prefix}goodbye thumbnail <type>\` - Set thumbnail`, inline: false
+      },
+      {
+        name: '⚙️ Display Options', value:
+          `\`${prefix}goodbye joindate on/off\` - Show when they joined`, inline: false
+      },
+      {
+        name: '🔍 Preview & Test', value:
+          `\`${prefix}goodbye test\` - Send test message to channel\n` +
+          `\`${prefix}goodbye preview\` - Preview in current channel`, inline: false
+      }
     );
 
   const varsEmbed = new EmbedBuilder()

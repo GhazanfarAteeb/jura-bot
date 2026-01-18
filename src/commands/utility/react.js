@@ -6,50 +6,58 @@ const reactions = {
   // Positive reactions
   hug: {
     queries: ['hug'],
-    endpoints: ['otaku', 'rndm', 'kawaii'],
+    endpoints: ['otaku', 'rndm', 'kawaii', 'nekos'],
     kawaiiEndpoint: 'hug',
+    nekosEndpoint: 'hug',
     titles: ['Warm Hugs Incoming! 🤗', 'Hug Attack! 💕', 'Spreading the Love! ❤️', 'Cuddle Mode: Activated! 🫂', 'Virtual Hugs! 🥰', 'Bear Hug Time! 🐻', 'Group Hug Energy! 👥', 'Sending Warm Vibes! ✨']
   },
   kiss: {
     queries: ['kiss', 'airkiss'],
-    endpoints: ['otaku', 'rndm', 'kawaii'],
+    endpoints: ['otaku', 'rndm', 'kawaii', 'nekos'],
     kawaiiEndpoint: 'kiss',
+    nekosEndpoint: 'kiss',
     titles: ['Smooch Alert! 💋', 'Kiss Kiss! 😘', 'Love is in the Air! 💕', 'Mwah! 😚', 'Kissing Spree! 💏', 'Sweet Kiss! 😗', 'Blown Kisses! 😙', 'Romantic Moment! 💖']
   },
   pat: {
     queries: ['pat'],
-    endpoints: ['otaku', 'rndm', 'kawaii'],
+    endpoints: ['otaku', 'rndm', 'kawaii', 'nekos'],
     kawaiiEndpoint: 'pat',
+    nekosEndpoint: 'pat',
     titles: ['Good Job! *pat pat* 👋', 'Head Pats for Days! 😊', 'You Deserve This! *pat*', 'Pat Pat Time! 🥰', 'Gentle Pats! 🌸', 'Encouraging Pats! ⭐', '*pats gently* 💫', 'Proud of You! *pats* 🎊']
   },
   cuddle: {
     queries: ['cuddle'],
-    endpoints: ['otaku', 'rndm', 'kawaii'],
+    endpoints: ['otaku', 'rndm', 'kawaii', 'nekos'],
     kawaiiEndpoint: 'cuddle',
+    nekosEndpoint: 'cuddle',
     titles: ['Cuddle Puddle Time! 🥺', 'Maximum Comfy Mode! 💗', 'Snuggle Party! 🤗', 'Warm & Fuzzy! 💝', 'Cozy Cuddles! 🛋️', 'Comfort Zone Activated! 🌟', 'Snug Life! 😌', 'Ultimate Cuddle Session! 💞']
   },
   highfive: {
     queries: ['brofist', 'clap'],
-    endpoints: ['otaku', 'kawaii'],
+    endpoints: ['otaku', 'kawaii', 'nekos'],
     kawaiiEndpoint: 'highfive',
+    nekosEndpoint: 'highfive',
     titles: ['Up Top! ✋', 'High Five Energy! 🙌', 'Slap Hands! 👏', 'Yeah! *high five*', 'Epic High Five! 🌟', 'Hand Slap Success! ✨', 'Celebration High Five! 🎉', 'Perfect Sync! 👌']
   },
   wave: {
     queries: ['wave'],
-    endpoints: ['otaku', 'kawaii'],
+    endpoints: ['otaku', 'kawaii', 'nekos'],
     kawaiiEndpoint: 'wave',
+    nekosEndpoint: 'wave',
     titles: ['Hellooo! 👋', 'Wave Squad! 🌊', '*waves enthusiastically*', 'Greetings! 😄', 'Friendly Wave! 🙋', 'Hey There! 👋✨', 'Big Wave Energy! 🌊', 'Waving Back! 😊']
   },
   smile: {
     queries: ['smile'],
-    endpoints: ['otaku', 'kawaii'],
+    endpoints: ['otaku', 'kawaii', 'nekos'],
     kawaiiEndpoint: 'smile',
+    nekosEndpoint: 'smile',
     titles: ['Smile Time! 😊', 'Happiness Overload! 😁', 'Grinning! ☺️', 'Wholesome Vibes! 😌', 'Beaming with Joy! ✨', 'Radiant Smile! 🌟', 'Smiling Ear to Ear! 😄', 'Pure Happiness! 💛']
   },
   blush: {
     queries: ['blush'],
-    endpoints: ['otaku', 'kawaii'],
+    endpoints: ['otaku', 'kawaii', 'nekos'],
     kawaiiEndpoint: 'blush',
+    nekosEndpoint: 'blush',
     titles: ['So Flustered! 😳', 'Blushing Hard! >///<', 'Aww Shucks! 😊', 'Getting All Red! 😚', 'Shy Mode Activated! 🙈', 'Blushing Intensifies! 💗', 'Face Red Alert! 🔴', 'Embarrassed Cuteness! 💝']
   },
   love: {
@@ -60,16 +68,18 @@ const reactions = {
   },
   headpat: {
     queries: ['pat'],
-    endpoints: ['otaku', 'rndm', 'kawaii'],
+    endpoints: ['otaku', 'rndm', 'kawaii', 'nekos'],
     kawaiiEndpoint: 'pat',
+    nekosEndpoint: 'pat',
     titles: ['*pat pat pat* 🥰', 'You\'re Doing Great! 👍', 'Good Human! *pats*', 'Headpat Combo! ✨', 'Infinite Headpats! 🌟', 'Supreme Headpat! 👑', 'Legendary Pats! ⚡', 'Headpat Heaven! ☁️']
   },
 
   // Fun reactions
   dance: {
     queries: ['dance'],
-    endpoints: ['otaku', 'rndm', 'kawaii'],
+    endpoints: ['otaku', 'rndm', 'kawaii', 'nekos'],
     kawaiiEndpoint: 'dance',
+    nekosEndpoint: 'dance',
     titles: ['Dance Party! 💃', 'Busting Moves! 🕺', 'Groove Time! 🎵', 'Dance Like Nobody\'s Watching! 🎶', 'Dancing Queen! 👑', 'Rhythm Master! 🎼', 'Dance Floor Domination! ⚡', 'Let\'s Boogie! 🪩']
   },
   celebrate: {
@@ -79,20 +89,23 @@ const reactions = {
   },
   laugh: {
     queries: ['laugh'],
-    endpoints: ['otaku', 'rndm', 'kawaii'],
+    endpoints: ['otaku', 'rndm', 'kawaii', 'nekos'],
     kawaiiEndpoint: 'laugh',
+    nekosEndpoint: 'laugh',
     titles: ['HAHAHA! 😂', 'Can\'t Stop Laughing! 🤣', 'Too Funny! 😆', 'LOL Moment! 😹', 'Dying of Laughter! 💀', 'Cracking Up! 🤪', 'Giggle Fest! 😄', 'Comedy Gold! 🥇']
   },
   cry: {
     queries: ['cry', 'sad'],
-    endpoints: ['otaku', 'kawaii'],
+    endpoints: ['otaku', 'kawaii', 'nekos'],
     kawaiiEndpoint: 'cry',
+    nekosEndpoint: 'cry',
     titles: ['The Tears! 😭', 'Waterworks! 💧', 'Big Sad Energy... 😢', 'Need Tissues! 🥺', 'Crying Rivers! 🌊', 'Emotional Breakdown! 💔', 'Tear Fountain! ⛲', 'Sad Hours... 😿']
   },
   poke: {
     queries: ['poke'],
-    endpoints: ['otaku', 'rndm', 'kawaii'],
+    endpoints: ['otaku', 'rndm', 'kawaii', 'nekos'],
     kawaiiEndpoint: 'poke',
+    nekosEndpoint: 'poke',
     titles: ['Poke! *boop* 👉', 'Poke Poke! 🫵', 'Gotcha! *pokes*', 'Boop the Snoot! 👆', 'Poke War! ☝️', 'Annoying Pokes! 😝', 'Poke Combo! 👇', 'Surprise Poke! ✨']
   },
   bonk: {
@@ -102,7 +115,8 @@ const reactions = {
   },
   nom: {
     queries: ['nom', 'bite'],
-    endpoints: ['otaku', 'rndm'],
+    endpoints: ['otaku', 'rndm', 'nekos'],
+    nekosEndpoint: 'nom',
     titles: ['Nom Nom Nom! 😋', 'Munch Time! 🍔', 'Tasty! 🤤', 'Food Coma Incoming! 🍕', 'Delicious! 🍰', 'Eating Everything! 🍱', 'Foodie Mode! 🍜', 'Can\'t Stop Eating! 🌮']
   },
   bread: {
@@ -122,13 +136,15 @@ const reactions = {
   },
   wink: {
     queries: ['wink'],
-    endpoints: ['otaku', 'kawaii'],
+    endpoints: ['otaku', 'kawaii', 'nekos'],
     kawaiiEndpoint: 'wink',
+    nekosEndpoint: 'wink',
     titles: ['*wink wink* 😉', 'Smooth! 😎', 'Wink Attack! ✨', 'You Know It! 😏', 'Sly Wink! 🦊', 'Charming Wink! 💫', 'Sneaky Wink! 👀', 'Flirty Wink! 😘']
   },
   thumbsup: {
     queries: ['thumbsup'],
-    endpoints: ['otaku'],
+    endpoints: ['otaku', 'nekos'],
+    nekosEndpoint: 'thumbsup',
     titles: ['Nicely Done! 👍', 'Approved! ✅', 'You Got This! 💪', 'Great Work! 🌟', 'Excellent! 🎯', 'Perfect Score! 💯', 'Amazing Job! 🏅', 'You\'re the Best! 👏']
   },
   salute: {
@@ -141,24 +157,28 @@ const reactions = {
   // Negative reactions
   slap: {
     queries: ['slap'],
-    endpoints: ['otaku', 'rndm', 'kawaii'],
+    endpoints: ['otaku', 'rndm', 'kawaii', 'nekos'],
     kawaiiEndpoint: 'slap',
+    nekosEndpoint: 'slap',
     titles: ['*SLAP!* 😠', 'Ouch! That Hurts! 🤚', 'Take That! 💢', 'Slap Delivered! ✋', 'Face Slap! 👋💥', 'Reality Check! 😤', 'Slap of Justice! ⚖️', 'Wake Up Call! 🔔']
   },
   punch: {
     queries: ['punch'],
-    endpoints: ['otaku', 'rndm', 'kawaii'],
+    endpoints: ['otaku', 'rndm', 'kawaii', 'nekos'],
     kawaiiEndpoint: 'punch',
+    nekosEndpoint: 'punch',
     titles: ['POW! Right in the Kisser! 👊', 'Falcon PUNCH! 💥', 'Taste My Fist! 🥊', 'K.O.! 💪', 'One Punch! 🔥', 'Critical Hit! 💫', 'Knockout Blow! ⚡', 'Fist of Fury! 👊💢']
   },
   kick: {
     queries: ['kick'],
-    endpoints: ['rndm'],
+    endpoints: ['rndm', 'nekos'],
+    nekosEndpoint: 'kick',
     titles: ['YEET! 🦵', 'Kicked to the Curb! 👢', 'Sparta Kick! ⚔️', 'Boot to the Head! 🥾', 'Flying Kick! 🦅', 'Roundhouse! 🌪️', 'Kick Attack! 💥', 'Sent Flying! 🚀']
   },
   angry: {
     queries: ['angry'],
-    endpoints: ['rndm'],
+    endpoints: ['rndm', 'nekos'],
+    nekosEndpoint: 'angry',
     titles: ['Big Mad! 😡', 'Rage Mode! 💢', 'Not Happy! 😤', 'Fuming! 🔥', 'Angry Face! 😠', 'Grumpy! 😑', 'Irritated! 😣', 'Furious! 🤬']
   },
   rage: {
@@ -188,20 +208,23 @@ const reactions = {
   },
   bite: {
     queries: ['bite', 'nom'],
-    endpoints: ['otaku', 'rndm', 'kawaii'],
+    endpoints: ['otaku', 'rndm', 'kawaii', 'nekos'],
     kawaiiEndpoint: 'bite',
+    nekosEndpoint: 'bite',
     titles: ['Chomp! 😬', 'Bite Attack! 🦷', 'Nom... Wait, OW! 😤', 'Vampire Mode! 🧛']
   },
 
   // Misc
   think: {
     queries: ['confused', 'huh'],
-    endpoints: ["otaku"],
+    endpoints: ["otaku", "nekos"],
+    nekosEndpoint: 'think',
     titles: ['Hmm... 🤔', 'Big Brain Time! 🧠', 'Thinking Hard! 💭', 'Processing... ⚙️']
   },
   bored: {
     queries: ['bored'],
-    endpoints: ['rndm'],
+    endpoints: ['rndm', 'nekos'],
+    nekosEndpoint: 'bored',
     titles: ['So Bored... 😑', 'Nothing to Do! 🥱', 'Boredom Strikes! 😐', 'Ugh, Boring! 😒', 'Yawn Fest! 💤', 'Need Entertainment! 📺', 'Tedious! 😶', 'Dullsville! 🙄']
   },
   drunk: {
@@ -211,19 +234,22 @@ const reactions = {
   },
   shrug: {
     queries: ['shrug'],
-    endpoints: ["otaku", "kawaii"],
+    endpoints: ["otaku", "kawaii", "nekos"],
     kawaiiEndpoint: 'shrug',
+    nekosEndpoint: 'shrug',
     titles: ['¯\\_(ツ)_/¯', 'I Dunno! 🤷', 'Not My Problem! 😐', 'Whatever! 🙄']
   },
   sleep: {
     queries: ['sleep'],
-    endpoints: ["otaku", "rndm", "kawaii"],
+    endpoints: ["otaku", "rndm", "kawaii", "nekos"],
     kawaiiEndpoint: 'sleepy',
+    nekosEndpoint: 'sleep',
     titles: ['Zzz... 😴', 'Nap Time! 💤', 'Gone to Dreamland! 🌙', 'Sleep Mode: ON ⏰']
   },
   yawn: {
     queries: ['yawn', 'tired'],
-    endpoints: ["otaku"],
+    endpoints: ["otaku", "nekos"],
+    nekosEndpoint: 'yawn',
     titles: ['*yawns* So Tired... 🥱', 'Need Coffee! ☕', 'Sleepy Vibes! 😪', 'Big Yawn Energy! 💤']
   },
   confused: {
@@ -234,8 +260,9 @@ const reactions = {
   },
   facepalm: {
     queries: ['facepalm'],
-    endpoints: ["otaku", "kawaii"],
+    endpoints: ["otaku", "kawaii", "nekos"],
     kawaiiEndpoint: 'facepalm',
+    nekosEndpoint: 'facepalm',
     titles: ['*facepalm* 🤦', 'Seriously? 😑', 'I Can\'t Even... 🫠', 'Done with This! 😩']
   },
   nervous: {
@@ -256,8 +283,9 @@ const reactions = {
   },
   smug: {
     queries: ['smug'],
-    endpoints: ["otaku", "kawaii"],
+    endpoints: ["otaku", "kawaii", "nekos"],
     kawaiiEndpoint: 'smug',
+    nekosEndpoint: 'smug',
     titles: ['Feeling Smug! 😏', 'I Told You So! 😎', 'Smugness Overload! 😼', 'Too Cool! 🕶️']
   },
 
@@ -286,8 +314,9 @@ const reactions = {
   },
   tickle: {
     queries: ['tickle'],
-    endpoints: ['otaku', 'rndm', 'kawaii'],
+    endpoints: ['otaku', 'rndm', 'kawaii', 'nekos'],
     kawaiiEndpoint: 'tickle',
+    nekosEndpoint: 'tickle',
     titles: ['Tickle Attack! ✋😆', 'Tickle Tickle! 🤣', 'Can\'t Stop Laughing! 😂', 'Tickle Monster! 👹']
   },
   kill: {
@@ -324,14 +353,16 @@ const reactions = {
   },
   stare: {
     queries: ['stare'],
-    endpoints: ["otaku", "kawaii"],
+    endpoints: ["otaku", "kawaii", "nekos"],
     kawaiiEndpoint: 'stare',
+    nekosEndpoint: 'stare',
     titles: ['Staring Intensely! 👁️👁️', '*stares*', 'The Stare Down! 😐', 'What You Looking At? 🤨']
   },
   pout: {
     queries: ['pout'],
-    endpoints: ["otaku", "kawaii"],
+    endpoints: ["otaku", "kawaii", "nekos"],
     kawaiiEndpoint: 'pout',
+    nekosEndpoint: 'pout',
     titles: ['*pouts* 😤', 'Hmph! 💢', 'Not Fair! 😾', 'Pouting Face! 😠']
   },
   lewd: {
@@ -352,8 +383,9 @@ const reactions = {
   },
   happy: {
     queries: ['happy'],
-    endpoints: ["otaku", "rndm", "kawaii"],
+    endpoints: ["otaku", "rndm", "kawaii", "nekos"],
     kawaiiEndpoint: 'happy',
+    nekosEndpoint: 'happy',
     titles: ['So Happy! 😊', 'Pure Joy! ✨', 'Happiness! 🌈', 'Feeling Great! 🎉']
   },
   thumbs: {
@@ -450,19 +482,22 @@ const reactions = {
   // More fun actions
   run: {
     queries: ['run'],
-    endpoints: ["otaku", "rndm", "kawaii"],
+    endpoints: ["otaku", "rndm", "kawaii", "nekos"],
     kawaiiEndpoint: 'run',
+    nekosEndpoint: 'run',
     titles: ['Running Away! 🏃', 'Gotta Go Fast! 💨', 'Escape! 🏃‍♀️', 'Nope! *runs* 🚶💨']
   },
   chase: {
     queries: ['run'],
-    endpoints: ["otaku", "rndm", "kawaii"],
+    endpoints: ["otaku", "rndm", "kawaii", "nekos"],
     kawaiiEndpoint: 'run',
+    nekosEndpoint: 'run',
     titles: ['Get Back Here! 🏃‍♂️💨', 'Chasing You! 🏃', 'Can\'t Escape! 👟', 'Pursuit! 🎯']
   },
   feed: {
     queries: ['nom'],
-    endpoints: ["otaku", "rndm"],
+    endpoints: ["otaku", "rndm", "nekos"],
+    nekosEndpoint: 'feed',
     titles: ['Say Ahh! 😋', 'Feeding Time! 🍽️', 'Open Wide! 👄', 'Nom Time! 🥄']
   },
   piggyback: {
@@ -483,7 +518,8 @@ const reactions = {
   },
   nod: {
     queries: ['yes'],
-    endpoints: ["otaku"],
+    endpoints: ["otaku", "nekos"],
+    nekosEndpoint: 'nod',
     titles: ['*nods* 🙂', 'Yep! 👍', 'Agreed! ✅', 'Understood! 📝']
   },
   peek: {
@@ -510,8 +546,9 @@ const reactions = {
   },
   lurk: {
     queries: ['peek', 'stare'],
-    endpoints: ["otaku", "kawaii"],
+    endpoints: ["otaku", "kawaii", "nekos"],
     kawaiiEndpoint: 'stare',
+    nekosEndpoint: 'lurk',
     titles: ['Lurking... 👁️', 'In the Shadows... 🌑', 'Watching... 🕵️', 'Stalker Mode! 🔍']
   },
   spray: {
@@ -584,7 +621,8 @@ const reactions = {
   },
   handhold: {
     queries: ['handhold'],
-    endpoints: ["otaku", "rndm"],
+    endpoints: ["otaku", "rndm", "nekos"],
+    nekosEndpoint: 'handhold',
     titles: ['Hand Holding! 🤝', 'So Lewd! 😳', 'Holding Hands! 💕', 'Together! 👫']
   },
   headbang: {
@@ -837,7 +875,7 @@ export default {
           } else if (endpoint === 'rndm') {
             logger.info(`React command: Fetching from RndmServ for action ${action} with query ${randomQuery}`);
             response = await fetch(
-              `https://gifs.rndmserv.de/api/api/endpoint/${randomQuery}`
+              `https://gifs.rndmserv.de/api/gif/${randomQuery}`
             );
           } else if (endpoint === 'kawaii') {
             const kawaiiEndpoint = reactionData.kawaiiEndpoint || randomQuery;
@@ -845,6 +883,12 @@ export default {
             logger.info(`React command: Fetching from Kawaii API for action ${action} with endpoint ${kawaiiEndpoint}`);
             response = await fetch(
               `https://kawaii.red/api/gif/${kawaiiEndpoint}?token=${kawaiiToken}`
+            );
+          } else if (endpoint === 'nekos') {
+            const nekosEndpoint = reactionData.nekosEndpoint || randomQuery;
+            logger.info(`React command: Fetching from Nekos.best API for action ${action} with endpoint ${nekosEndpoint}`);
+            response = await fetch(
+              `https://nekos.best/api/v2/${nekosEndpoint}?amount=1`
             );
           }
 
@@ -867,6 +911,11 @@ export default {
               logger.info(`React command: Received data from Kawaii API: ${JSON.stringify(data)}`);
               gifUrl = data.response;
               usedEndpoint = 'Kawaii API';
+              break;
+            } else if (endpoint === 'nekos' && data && data.results && data.results.length > 0) {
+              logger.info(`React command: Received data from Nekos.best: ${JSON.stringify(data)}`);
+              gifUrl = data.results[0].url;
+              usedEndpoint = 'Nekos.best';
               break;
             }
           }
