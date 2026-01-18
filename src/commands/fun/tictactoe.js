@@ -7,7 +7,7 @@ const activeGames = new Map();
 
 export default {
   name: 'tictactoe',
-  description: 'Play Tic Tac Toe with another user',
+  description: 'Engage in strategic grid-based competition, Master',
   usage: 'tictactoe @user',
   category: 'fun',
   aliases: ['ttt', 'xo'],

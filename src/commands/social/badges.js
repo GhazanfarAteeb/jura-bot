@@ -4,7 +4,7 @@ import { getPrefix } from '../../utils/helpers.js';
 
 export default {
   name: 'badges',
-  description: 'View your or someone\'s badges',
+  description: 'Display achievement records for a user, Master',
   usage: '[@user]',
   aliases: ['mybadges', 'achievements'],
   category: 'social',

@@ -8,7 +8,7 @@ import { getRandomFooter } from '../../utils/raphael.js';
 
 export default {
     name: 'coinflip',
-    description: 'Flip a coin and bet on the outcome!',
+    description: 'Engage in probability-based wagering protocol, Master',
     usage: 'coinflip <amount> <heads|tails>',
     category: 'economy',
     aliases: ['cf', 'flip'],

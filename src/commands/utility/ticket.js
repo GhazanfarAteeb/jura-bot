@@ -16,7 +16,7 @@ import { getPrefix } from '../../utils/helpers.js';
 
 export default {
     name: 'ticket',
-    description: 'Manage support tickets',
+    description: 'Manage support request protocols, Master',
     usage: 'ticket create | ticket close [reason] | ticket add @user | ticket remove @user',
     category: 'utility',
     aliases: ['tickets', 'support'],
@@ -69,7 +69,7 @@ export default {
         const prefix = await getPrefix(guildId);
         const embed = new EmbedBuilder()
             .setColor('#5865F2')
-            .setTitle('🎫 Ticket System')
+            .setTitle('『 Support Protocol 』')
             .setDescription(
                 `**Commands:**\n` +
                 `${GLYPHS.ARROW_RIGHT} \`${prefix}ticket create [subject]\` - Create a new ticket\n` +
@@ -81,7 +81,7 @@ export default {
                 `**Admin Commands:**\n` +
                 `${GLYPHS.ARROW_RIGHT} \`${prefix}ticket panel\` - Create ticket panel`
             )
-            .setFooter({ text: 'Create tickets for support!' })
+            .setFooter({ text: 'Awaiting further directives, Master.' })
             .setTimestamp();
 
         return message.reply({ embeds: [embed] });

@@ -7,7 +7,7 @@ import logger from '../../utils/logger.js';
 
 export default {
   name: 'kick',
-  description: 'Kick a member from the server',
+  description: 'Execute temporary exclusion protocol on a member, Master',
   usage: '<@user|user_id> [reason]',
   aliases: ['boot'],
   permissions: {

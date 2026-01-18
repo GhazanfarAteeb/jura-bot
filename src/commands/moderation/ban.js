@@ -7,7 +7,7 @@ import logger from '../../utils/logger.js';
 
 export default {
   name: 'ban',
-  description: 'Ban a member from the server',
+  description: 'Execute permanent exclusion protocol on a member, Master',
   usage: '<@user|user_id> [reason]',
   aliases: ['hammer'],
   permissions: {

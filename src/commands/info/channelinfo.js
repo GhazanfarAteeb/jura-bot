@@ -5,7 +5,7 @@ import { getRandomFooter } from '../../utils/raphael.js';
 export default {
     name: 'channelinfo',
     aliases: ['ci', 'channel'],
-    description: 'Get information about a channel',
+    description: 'Retrieve analytical data on a channel, Master',
     usage: 'channelinfo [#channel]',
     category: 'info',
     cooldown: 3,

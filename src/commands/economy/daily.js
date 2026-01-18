@@ -6,7 +6,7 @@ import { getRandomFooter } from '../../utils/raphael.js';
 
 export default {
     name: 'daily',
-    description: 'Claim your daily coin reward',
+    description: 'Claim your daily resource allocation, Master',
     usage: 'daily',
     category: 'economy',
     aliases: ['dailyreward'],

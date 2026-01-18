@@ -5,7 +5,7 @@ import { successEmbed, errorEmbed, infoEmbed, GLYPHS } from '../../utils/embeds.
 
 export default {
   name: 'remind',
-  description: 'Set a reminder',
+  description: 'Configure temporal alerts for future notification, Master',
   usage: '<time> <message> | list | delete <id>',
   aliases: ['reminder', 'remindme', 'rm'],
   cooldown: 5,
@@ -31,7 +31,7 @@ export default {
 };
 
 async function showHelp(message) {
-  const embed = await infoEmbed(message.guild.id, '⏰ Reminder Commands',
+  const embed = await infoEmbed(message.guild.id, '『 Temporal Alert Protocol 』',
     `**Create a reminder:**\n` +
     `\`remind <time> <message>\`\n` +
     `Example: \`remind 2h check the oven\`\n\n` +
@@ -59,14 +59,14 @@ async function createReminder(message, args) {
   if (!duration || duration < 10000) { // Minimum 10 seconds
     return message.reply({
       embeds: [await errorEmbed(message.guild.id, 'Invalid Time',
-        'Please provide a valid time (e.g., 10m, 2h, 1d).\nMinimum reminder time is 10 seconds.')]
+        '**Notice:** Invalid temporal format detected, Master. Valid formats: 10m, 2h, 1d. Minimum duration: 10 seconds.')]
     });
   }
 
   if (duration > 30 * 24 * 60 * 60 * 1000) { // Max 30 days
     return message.reply({
       embeds: [await errorEmbed(message.guild.id, 'Time Too Long',
-        'Maximum reminder time is 30 days.')]
+        '**Notice:** Maximum temporal range is 30 days, Master.')]
     });
   }
 
@@ -78,8 +78,7 @@ async function createReminder(message, args) {
   if (userReminders.length >= 25) {
     return message.reply({
       embeds: [await errorEmbed(message.guild.id, 'Reminder Limit',
-        'You have reached the maximum of 25 active reminders.\n' +
-        'Delete some reminders with `remind delete <number>`.')]
+        '**Notice:** Maximum reminder capacity (25) reached, Master. Remove existing entries with `remind delete <number>`.')]
     });
   }
 
@@ -92,8 +91,8 @@ async function createReminder(message, args) {
     remindAt
   });
 
-  const embed = await successEmbed(message.guild.id, '⏰ Reminder Set!',
-    `${GLYPHS.SUCCESS} I'll remind you <t:${Math.floor(remindAt.getTime() / 1000)}:R>\n\n` +
+  const embed = await successEmbed(message.guild.id, '『 Temporal Alert Scheduled 』',
+    `${GLYPHS.SUCCESS} **Confirmed:** Alert scheduled for <t:${Math.floor(remindAt.getTime() / 1000)}:R>, Master.\n\n` +
     `**Message:** ${reminderMessage}`
   );
 
@@ -105,8 +104,8 @@ async function listReminders(message) {
 
   if (reminders.length === 0) {
     return message.reply({
-      embeds: [await infoEmbed(message.guild.id, '⏰ Your Reminders',
-        'You have no active reminders.')]
+      embeds: [await infoEmbed(message.guild.id, '『 Temporal Alerts 』',
+        '**Notice:** No active temporal alerts detected in your registry, Master.')]
     });
   }
 
@@ -115,7 +114,7 @@ async function listReminders(message) {
     `   ${GLYPHS.DOT} Reminds: <t:${Math.floor(r.remindAt.getTime() / 1000)}:R>`
   ).join('\n\n');
 
-  const embed = await infoEmbed(message.guild.id, '⏰ Your Reminders',
+  const embed = await infoEmbed(message.guild.id, '『 Temporal Alerts 』',
     `${reminderList}\n\n` +
     `Use \`remind delete <number>\` to remove a reminder.`
   );

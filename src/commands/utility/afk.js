@@ -13,7 +13,7 @@ const imageUrlPattern = /\.(png|jpg|jpeg|gif|webp)($|\?)/i;
 
 export default {
   name: 'afk',
-  description: 'Set your AFK status with an optional reason and options',
+  description: 'Configure away-from-keyboard status with optional parameters, Master',
   usage: '[reason] [--time <duration>] [--sticky]',
   aliases: ['away', 'brb'],
   cooldown: 5,

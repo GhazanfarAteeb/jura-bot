@@ -6,7 +6,7 @@ const activePolls = new Map();
 
 export default {
   name: 'poll',
-  description: 'Create an interactive poll',
+  description: 'Create an interactive consensus protocol, Master',
   usage: 'poll <question> | <option1> | <option2> | [option3] | [option4]',
   category: 'utility',
   aliases: ['vote', 'survey'],
@@ -49,7 +49,7 @@ export default {
     // Create poll embed
     const pollEmbed = new EmbedBuilder()
       .setColor('#5865F2')
-      .setTitle('📊 Poll')
+      .setTitle('『 Consensus Protocol 』')
       .setDescription(
         `**${question}**\n\n` +
         options.map((opt, i) => `${optionEmojis[i]} ${opt} — **0** votes (0%)`).join('\n\n') +
@@ -156,7 +156,7 @@ export default {
 
     const updatedEmbed = new EmbedBuilder()
       .setColor('#5865F2')
-      .setTitle('📊 Poll')
+      .setTitle('『 Consensus Protocol 』')
       .setDescription(
         `**${poll.question}**\n\n` +
         options.map((opt, i) => {
@@ -242,7 +242,7 @@ export default {
       activePolls.delete(messageId);
 
       const embed = await successEmbed(guildId, 'Poll Ended',
-        `${GLYPHS.SUCCESS} The poll has been ended successfully!`
+        `${GLYPHS.SUCCESS} **Confirmed:** Consensus protocol terminated, Master.`
       );
       return message.reply({ embeds: [embed] });
 

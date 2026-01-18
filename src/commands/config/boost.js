@@ -6,7 +6,7 @@ import { parseBoostMessage, buildBoostEmbed } from '../../events/client/boostHan
 
 export default {
   name: 'boost',
-  description: 'Configure boost thank you messages for server boosters',
+  description: 'Configure server boost appreciation protocols, Master',
   usage: '<enable|disable|channel|message|embed|test|...>',
   aliases: ['boostmsg', 'boostthanks', 'serverboost'],
   permissions: [PermissionFlagsBits.ManageGuild],

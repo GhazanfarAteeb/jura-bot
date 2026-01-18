@@ -8,7 +8,7 @@ import { getRandomFooter } from '../../utils/raphael.js';
 
 export default {
     name: 'slots',
-    description: 'Play the slot machine!',
+    description: 'Engage random outcome wagering protocol, Master',
     usage: 'slots <amount>',
     category: 'economy',
     aliases: ['slot', 'slotmachine'],

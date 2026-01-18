@@ -5,7 +5,7 @@ import { getRandomFooter } from '../../utils/raphael.js';
 
 export default {
     name: 'balance',
-    description: 'Check your coin balance',
+    description: 'Retrieve financial status report, Master',
     usage: 'balance [@user]',
     category: 'economy',
     aliases: ['bal', 'coins', 'money', 'wallet'],

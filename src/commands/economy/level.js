@@ -27,7 +27,7 @@ function hexToRgba(hex, opacity) {
 export default {
   name: 'level',
   aliases: ['lvl', 'rank', 'xp', 'card', 'me'],
-  description: 'View your or another user\'s rank card',
+  description: 'Generate progression status visualization, Master',
   usage: 'level [@user]',
   category: 'economy',
   cooldown: 5,

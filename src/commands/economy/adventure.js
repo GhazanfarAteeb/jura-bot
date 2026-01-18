@@ -6,7 +6,7 @@ import { successEmbed, errorEmbed } from '../../utils/embeds.js';
 
 export default {
     name: 'adventure',
-    description: 'Go on an adventure and earn coins!',
+    description: 'Embark on an expedition to acquire resources, Master',
     usage: 'adventure',
     category: 'economy',
     aliases: ['adv', 'quest'],
@@ -29,7 +29,7 @@ export default {
                     const timeLeft = Math.ceil((cooldownMs - timeSince) / 1000 / 60);
                     return message.reply({
                         embeds: [await errorEmbed(guildId, 
-                            `You're too tired to go on another adventure!\n\nCome back in **${timeLeft}** minutes.`
+                            `**Notice:** Expedition protocol on cooldown, Master.\n\nRecovery time remaining: **${timeLeft}** minutes.`
                         )]
                     });
                 }
@@ -59,11 +59,11 @@ export default {
             
             const embed = new EmbedBuilder()
                 .setColor('#00ff00')
-                .setTitle('🗺️ Adventure Complete!')
+                .setTitle('『 Expedition Report 』')
                 .setDescription(
-                    `You ${adventureMsg}! As a reward, **${npc}** gave you **${reward}** ${coinEmoji} ${coinName}.\n\n` +
-                    `**New Balance:** ${economy.coins} ${coinEmoji} ${coinName}\n` +
-                    `**Adventures Completed:** ${economy.adventuresCompleted}`
+                    `**Notice:** ${adventureMsg}. Resource acquisition from **${npc}**: **${reward}** ${coinEmoji} ${coinName}, Master.\n\n` +
+                    `**Current Balance:** ${economy.coins} ${coinEmoji} ${coinName}\n` +
+                    `**Expeditions Completed:** ${economy.adventuresCompleted}`
                 )
                 .setThumbnail(message.author.displayAvatarURL({ extension: 'png' }))
                 .setFooter({ text: `Previous balance: ${oldBalance} ${coinEmoji} ${coinName}` })
@@ -74,7 +74,7 @@ export default {
         } catch (error) {
             console.error('Error in adventure command:', error);
             return message.reply({
-                embeds: [await errorEmbed(guildId, 'An error occurred during your adventure. Please try again later.')]
+                embeds: [await errorEmbed(guildId, '**Warning:** An anomaly occurred during expedition processing, Master. Please retry.')]
             });
         }
     }

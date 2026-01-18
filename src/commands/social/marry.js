@@ -5,7 +5,7 @@ import { getRandomFooter } from '../../utils/raphael.js';
 
 export default {
   name: 'marry',
-  description: 'Propose marriage to another user',
+  description: 'Initiate a bonding proposal with another user, Master',
   usage: '<@user>',
   aliases: ['propose', 'wedding'],
   category: 'social',

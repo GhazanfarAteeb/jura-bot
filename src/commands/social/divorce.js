@@ -3,7 +3,7 @@ import Social from '../../models/Social.js';
 
 export default {
   name: 'divorce',
-  description: 'Divorce your partner',
+  description: 'Initiate bond dissolution protocol, Master',
   usage: '',
   aliases: ['breakup'],
   category: 'social',

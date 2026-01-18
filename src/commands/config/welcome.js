@@ -5,7 +5,7 @@ import { hasModPerms } from '../../utils/helpers.js';
 
 export default {
   name: 'welcome',
-  description: 'Configure welcome messages for new members',
+  description: 'Configure new member greeting protocols, Master',
   usage: '<enable|disable|channel|message|embed|dm|test|...>',
   aliases: ['welcomemsg', 'greet'],
   permissions: [PermissionFlagsBits.ManageGuild],

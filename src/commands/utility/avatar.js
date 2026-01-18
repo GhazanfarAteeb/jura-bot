@@ -5,7 +5,7 @@ import { getRandomFooter } from '../../utils/raphael.js';
 export default {
     name: 'avatar',
     aliases: ['av', 'pfp', 'icon'],
-    description: 'Get a user\'s avatar in full size',
+    description: 'Retrieve a user\'s visual profile image, Master',
     usage: 'avatar [@user]',
     category: 'utility',
     cooldown: 3,

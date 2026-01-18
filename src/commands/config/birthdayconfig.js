@@ -5,7 +5,7 @@ import { hasModPerms, getPrefix } from '../../utils/helpers.js';
 
 export default {
   name: 'birthdayconfig',
-  description: 'Configure birthday announcement messages',
+  description: 'Configure birth anniversary announcement protocols, Master',
   usage: '<enable|disable|channel|message|embed|role|test|...>',
   aliases: ['bdayconfig', 'birthdaymsg', 'bdaymsg'],
   permissions: [PermissionFlagsBits.ManageGuild],

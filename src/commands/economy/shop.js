@@ -5,7 +5,7 @@ import { getRandomFooter } from '../../utils/raphael.js';
 
 export default {
   name: 'shop',
-  description: 'Browse and purchase profile backgrounds',
+  description: 'Access the acquisition catalog for profile customizations, Master',
   usage: 'shop [category]',
   category: 'economy',
   aliases: ['store', 'buy'],

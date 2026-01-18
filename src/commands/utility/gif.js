@@ -3,7 +3,7 @@ import { getPrefix } from '../../utils/helpers.js';
 
 export default {
   name: 'gif',
-  description: 'Search and send GIFs from Tenor with better results',
+  description: 'Search and retrieve animated images from Tenor, Master',
   usage: 'gif <search query>',
   aliases: ['giphy', 'tenor'],
   category: 'utility',
@@ -64,7 +64,7 @@ export default {
 
     } catch (error) {
       console.error('GIF command error:', error);
-      return message.reply('❌ Failed to fetch GIF. The API might be down or rate limited. Please try again later!');
+      return message.reply('**Warning:** GIF acquisition failed, Master. External API may be unavailable. Please retry.');
     }
   }
 };

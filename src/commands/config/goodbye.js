@@ -5,7 +5,7 @@ import { hasModPerms, getPrefix } from '../../utils/helpers.js';
 
 export default {
   name: 'goodbye',
-  description: 'Configure goodbye messages for when members leave',
+  description: 'Configure departure notification protocols, Master',
   usage: '<enable|disable|channel|message|embed|test|...>',
   aliases: ['leave', 'leavemsg', 'farewell'],
   permissions: [PermissionFlagsBits.ManageGuild],

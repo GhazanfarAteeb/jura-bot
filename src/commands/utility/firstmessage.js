@@ -4,7 +4,7 @@ import { errorEmbed, infoEmbed, GLYPHS } from '../../utils/embeds.js';
 export default {
     name: 'firstmessage',
     aliases: ['firstmsg', 'fm', 'oldestmessage'],
-    description: 'Get a link to the first message in a channel',
+    description: 'Retrieve the earliest message record in a channel, Master',
     usage: 'firstmessage [#channel]',
     category: 'utility',
     cooldown: 10,
@@ -20,13 +20,13 @@ export default {
         // Check if it's a text-based channel
         if (!channel.isTextBased()) {
             return message.reply({
-                embeds: [await errorEmbed(guildId, 'This command only works with text channels!')]
+                embeds: [await errorEmbed(guildId, '**Notice:** This function is restricted to text-based channels, Master.')]
             });
         }
         
         try {
             const statusMsg = await message.reply({
-                content: `${GLYPHS.LOADING || '⏳'} Searching for the first message in ${channel}...`
+                content: `**Notice:** Scanning channel ${channel} for earliest message record, Master...`
             });
             
             // Fetch the first message (oldest)
@@ -35,7 +35,7 @@ export default {
             if (messages.size === 0) {
                 return statusMsg.edit({
                     content: null,
-                    embeds: [await errorEmbed(guildId, 'No messages found in this channel!')]
+                    embeds: [await errorEmbed(guildId, '**Notice:** No message records detected in this channel, Master.')]
                 });
             }
             
@@ -43,7 +43,7 @@ export default {
             
             // Create embed
             const embed = new EmbedBuilder()
-                .setTitle(`📜 First Message in #${channel.name}`)
+                .setTitle(`『 Archive Record: #${channel.name} 』`)
                 .setColor('#5865F2')
                 .setDescription(firstMessage.content?.substring(0, 1024) || '*No text content*')
                 .addFields(
@@ -102,7 +102,7 @@ export default {
         } catch (error) {
             console.error('First message error:', error);
             return message.reply({
-                embeds: [await errorEmbed(guildId, 'Failed to fetch the first message. I may not have permission to view this channel\'s history.')]
+                embeds: [await errorEmbed(guildId, '**Warning:** Message retrieval failed, Master. Possible cause: insufficient channel access permissions.')]
             });
         }
     }
