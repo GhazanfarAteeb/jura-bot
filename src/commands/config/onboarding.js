@@ -58,7 +58,7 @@ export default {
       }
     } catch (error) {
       console.error('Onboarding command error:', error);
-      
+
       // Handle specific Discord API errors
       if (error.code === 50001) {
         return message.reply({
@@ -66,7 +66,7 @@ export default {
             `${GLYPHS.ERROR} I don't have permission to manage onboarding.\n\nMake sure I have the **Manage Server** permission.`)]
         });
       }
-      
+
       if (error.code === 30029) {
         return message.reply({
           embeds: [await errorEmbed(message.guild.id, 'Community Required',
@@ -181,7 +181,7 @@ export default {
         if (prompt.required) flags.push('Required');
         if (prompt.singleSelect) flags.push('Single');
         else flags.push('Multi');
-        
+
         return `**${index + 1}.** ${prompt.title}\n` +
           `   └ ${prompt.options.size} options | ${flags.join(', ')} | ID: \`${prompt.id}\``;
       }).join('\n');
@@ -427,7 +427,7 @@ export default {
 
     if (action === 'add' || action === 'create') {
       const title = args.slice(1).join(' ');
-      
+
       if (!title) {
         return message.reply({
           embeds: [await errorEmbed(message.guild.id, 'Title Required',
@@ -670,14 +670,14 @@ export default {
         embed.setDescription('*No options configured*');
       } else {
         const optionsList = prompt.options.map((opt, index) => {
-          const roles = opt.roleIds?.length > 0 
+          const roles = opt.roleIds?.length > 0
             ? `\n     Roles: ${opt.roleIds.map(id => `<@&${id}>`).join(', ')}`
             : '';
           const channels = opt.channelIds?.length > 0
             ? `\n     Channels: ${opt.channelIds.map(id => `<#${id}>`).join(', ')}`
             : '';
           const emoji = opt.emoji ? `${opt.emoji.name || opt.emoji} ` : '';
-          
+
           return `**${index + 1}. ${emoji}${opt.title}**\n` +
             `   ID: \`${opt.id}\`` +
             (opt.description ? `\n   ${opt.description}` : '') +
@@ -743,7 +743,7 @@ export default {
 
     if (optionAction === 'add' || optionAction === 'create') {
       const title = args.slice(2).join(' ');
-      
+
       if (!title) {
         return message.reply({
           embeds: [await errorEmbed(message.guild.id, 'Title Required',
@@ -834,7 +834,7 @@ export default {
         const currentRoles = option.roleIds?.length > 0
           ? option.roleIds.map(id => `<@&${id}>`).join(', ')
           : '*None*';
-        
+
         return message.reply({
           embeds: [await infoEmbed(message.guild.id, `Roles for "${option.title}"`,
             `**Current Roles:** ${currentRoles}\n\n` +
@@ -847,7 +847,7 @@ export default {
         const opt = promptData.options.find(o => o.id === optionId);
         if (opt) {
           if (!opt.roleIds) opt.roleIds = [];
-          
+
           if (removeFlag && role) {
             opt.roleIds = opt.roleIds.filter(id => id !== role.id);
           } else if (role) {
@@ -891,7 +891,7 @@ export default {
         const currentChannels = option.channelIds?.length > 0
           ? option.channelIds.map(id => `<#${id}>`).join(', ')
           : '*None*';
-        
+
         return message.reply({
           embeds: [await infoEmbed(message.guild.id, `Channels for "${option.title}"`,
             `**Current Channels:** ${currentChannels}\n\n` +
@@ -904,7 +904,7 @@ export default {
         const opt = promptData.options.find(o => o.id === optionId);
         if (opt) {
           if (!opt.channelIds) opt.channelIds = [];
-          
+
           if (removeFlag && channel) {
             opt.channelIds = opt.channelIds.filter(id => id !== channel.id);
           } else if (channel) {

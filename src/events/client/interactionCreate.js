@@ -17,7 +17,7 @@ export default {
       return interaction.reply({
         content: '❌ Commands can only be used in servers, not in DMs.',
         flags: MessageFlags.Ephemeral
-      }).catch(() => {});
+      }).catch(() => { });
     }
 
     // Check if slash commands are enabled for this guild
@@ -4021,14 +4021,15 @@ async function handleAutocomplete(interaction) {
   if (interaction.commandName !== 'onboarding') return;
 
   const focusedOption = interaction.options.getFocused(true);
-  
+
   try {
     const onboarding = await interaction.guild.fetchOnboarding();
+    const prompts = onboarding.prompts || new Map();
     let choices = [];
 
     if (focusedOption.name === 'question') {
       // Return list of questions
-      choices = onboarding.prompts.map(p => ({
+      choices = Array.from(prompts.values()).map(p => ({
         name: p.title.substring(0, 100),
         value: p.id
       }));
@@ -4036,9 +4037,9 @@ async function handleAutocomplete(interaction) {
       // Get the selected question first
       const questionId = interaction.options.getString('question');
       if (questionId) {
-        const prompt = onboarding.prompts.find(p => p.id === questionId);
+        const prompt = prompts.find(p => p.id === questionId);
         if (prompt) {
-          choices = prompt.options.map(o => ({
+          choices = Array.from(prompt.options.values()).map(o => ({
             name: o.title.substring(0, 100),
             value: o.id
           }));
@@ -4068,10 +4069,14 @@ async function handleOnboardingCommand(interaction, guildConfig) {
 
   try {
     const onboarding = await interaction.guild.fetchOnboarding();
+    
+    // Safe access to onboarding properties (may be undefined if not set up)
+    const defaultChannelIds = onboarding.defaultChannelIds || [];
+    const prompts = onboarding.prompts || new Map();
 
     // Helper to build prompts array for update
     const mapPrompts = (modifier) => {
-      return onboarding.prompts.map(p => {
+      return Array.from(prompts.values()).map(p => {
         const promptData = {
           id: p.id,
           title: p.title,
@@ -4095,7 +4100,7 @@ async function handleOnboardingCommand(interaction, guildConfig) {
     const updateOnboarding = async (updates) => {
       await interaction.guild.editOnboarding({
         enabled: updates.enabled ?? onboarding.enabled,
-        defaultChannelIds: updates.defaultChannelIds ?? onboarding.defaultChannelIds,
+        defaultChannelIds: updates.defaultChannelIds ?? defaultChannelIds,
         prompts: updates.prompts ?? mapPrompts()
       });
     };
@@ -4118,25 +4123,25 @@ async function handleOnboardingCommand(interaction, guildConfig) {
             },
             {
               name: '📺 Default Channels',
-              value: onboarding.defaultChannelIds.length > 0
-                ? onboarding.defaultChannelIds.map(id => `<#${id}>`).join('\n')
+              value: defaultChannelIds.length > 0
+                ? defaultChannelIds.map(id => `<#${id}>`).join('\n')
                 : '*No default channels*',
               inline: true
             },
             {
               name: '❓ Questions',
-              value: `${onboarding.prompts.size} question(s) configured`,
+              value: `${prompts.size} question(s) configured`,
               inline: true
             }
           );
 
-        if (onboarding.prompts.size > 0) {
-          const questionsList = onboarding.prompts.map((prompt, index) => {
+        if (prompts.size > 0) {
+          const questionsList = Array.from(prompts.values()).map((prompt, index) => {
             const flags = [];
             if (prompt.required) flags.push('Required');
             if (prompt.singleSelect) flags.push('Single');
             else flags.push('Multi');
-            
+
             return `**${index + 1}.** ${prompt.title}\n   └ ${prompt.options.size} options | ${flags.join(', ')}`;
           }).join('\n');
 
@@ -4152,7 +4157,7 @@ async function handleOnboardingCommand(interaction, guildConfig) {
       }
 
       if (subcommand === 'enable') {
-        if (onboarding.defaultChannelIds.length === 0) {
+        if (defaultChannelIds.length === 0) {
           return interaction.editReply({
             embeds: [await errorEmbed(interaction.guild.id, 'Cannot Enable',
               `${GLYPHS.ERROR} You need at least **1 default channel** before enabling onboarding.\n\n` +
@@ -4183,11 +4188,11 @@ async function handleOnboardingCommand(interaction, guildConfig) {
           .setTitle('『 Default Channels 』')
           .setColor(guildConfig.embedStyle?.color || '#5865F2')
           .setDescription(
-            onboarding.defaultChannelIds.length > 0
-              ? onboarding.defaultChannelIds.map((id, i) => `**${i + 1}.** <#${id}>`).join('\n')
+            defaultChannelIds.length > 0
+              ? defaultChannelIds.map((id, i) => `**${i + 1}.** <#${id}>`).join('\n')
               : '*No default channels configured*'
           )
-          .setFooter({ text: `${onboarding.defaultChannelIds.length} default channel(s)` })
+          .setFooter({ text: `${defaultChannelIds.length} default channel(s)` })
           .setTimestamp();
 
         return interaction.editReply({ embeds: [embed] });
@@ -4196,7 +4201,7 @@ async function handleOnboardingCommand(interaction, guildConfig) {
       if (subcommand === 'add') {
         const channel = interaction.options.getChannel('channel');
 
-        if (onboarding.defaultChannelIds.includes(channel.id)) {
+        if (defaultChannelIds.includes(channel.id)) {
           return interaction.editReply({
             embeds: [await errorEmbed(interaction.guild.id, 'Already Added',
               `${GLYPHS.ERROR} ${channel} is already a default channel.`)]
@@ -4204,7 +4209,7 @@ async function handleOnboardingCommand(interaction, guildConfig) {
         }
 
         await updateOnboarding({
-          defaultChannelIds: [...onboarding.defaultChannelIds, channel.id]
+          defaultChannelIds: [...defaultChannelIds, channel.id]
         });
 
         return interaction.editReply({
@@ -4216,14 +4221,14 @@ async function handleOnboardingCommand(interaction, guildConfig) {
       if (subcommand === 'remove') {
         const channel = interaction.options.getChannel('channel');
 
-        if (!onboarding.defaultChannelIds.includes(channel.id)) {
+        if (!defaultChannelIds.includes(channel.id)) {
           return interaction.editReply({
             embeds: [await errorEmbed(interaction.guild.id, 'Not Found',
               `${GLYPHS.ERROR} ${channel} is not a default channel.`)]
           });
         }
 
-        const newChannelIds = onboarding.defaultChannelIds.filter(id => id !== channel.id);
+        const newChannelIds = defaultChannelIds.filter(id => id !== channel.id);
 
         if (onboarding.enabled && newChannelIds.length === 0) {
           return interaction.editReply({
@@ -4248,10 +4253,10 @@ async function handleOnboardingCommand(interaction, guildConfig) {
           .setTitle('『 Onboarding Questions 』')
           .setColor(guildConfig.embedStyle?.color || '#5865F2');
 
-        if (onboarding.prompts.size === 0) {
+        if (prompts.size === 0) {
           embed.setDescription('*No questions configured*');
         } else {
-          const questionsList = onboarding.prompts.map((prompt, index) => {
+          const questionsList = Array.from(prompts.values()).map((prompt, index) => {
             const flags = [];
             if (prompt.required) flags.push('📌 Required');
             else flags.push('📎 Optional');
@@ -4272,7 +4277,7 @@ async function handleOnboardingCommand(interaction, guildConfig) {
           embed.setDescription(questionsList.substring(0, 4000));
         }
 
-        embed.setFooter({ text: `${onboarding.prompts.size} question(s)` });
+        embed.setFooter({ text: `${prompts.size} question(s)` });
         embed.setTimestamp();
 
         return interaction.editReply({ embeds: [embed] });
@@ -4312,7 +4317,7 @@ async function handleOnboardingCommand(interaction, guildConfig) {
         const required = interaction.options.getBoolean('required');
         const singleSelect = interaction.options.getBoolean('single_select');
 
-        const prompt = onboarding.prompts.find(p => p.id === questionId);
+        const prompt = prompts.find(p => p.id === questionId);
         if (!prompt) {
           return interaction.editReply({
             embeds: [await errorEmbed(interaction.guild.id, 'Not Found',
@@ -4345,7 +4350,7 @@ async function handleOnboardingCommand(interaction, guildConfig) {
       if (subcommand === 'delete') {
         const questionId = interaction.options.getString('question');
 
-        const prompt = onboarding.prompts.find(p => p.id === questionId);
+        const prompt = prompts.find(p => p.id === questionId);
         if (!prompt) {
           return interaction.editReply({
             embeds: [await errorEmbed(interaction.guild.id, 'Not Found',
@@ -4366,7 +4371,7 @@ async function handleOnboardingCommand(interaction, guildConfig) {
     // OPTIONS GROUP
     if (group === 'options') {
       const questionId = interaction.options.getString('question');
-      const prompt = onboarding.prompts.find(p => p.id === questionId);
+      const prompt = prompts.find(p => p.id === questionId);
 
       if (!prompt) {
         return interaction.editReply({
@@ -4384,14 +4389,14 @@ async function handleOnboardingCommand(interaction, guildConfig) {
           embed.setDescription('*No options configured*');
         } else {
           const optionsList = prompt.options.map((opt, index) => {
-            const roles = opt.roleIds?.length > 0 
+            const roles = opt.roleIds?.length > 0
               ? `\n     Roles: ${opt.roleIds.map(id => `<@&${id}>`).join(', ')}`
               : '';
             const channels = opt.channelIds?.length > 0
               ? `\n     Channels: ${opt.channelIds.map(id => `<#${id}>`).join(', ')}`
               : '';
             const emoji = opt.emoji ? `${opt.emoji.name || opt.emoji} ` : '';
-            
+
             return `**${index + 1}. ${emoji}${opt.title}**` +
               (opt.description ? `\n   ${opt.description}` : '') +
               roles + channels;
