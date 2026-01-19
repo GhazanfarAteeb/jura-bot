@@ -4073,6 +4073,14 @@ async function handleOnboardingCommand(interaction, guildConfig) {
     // Safe access to onboarding properties (may be undefined if not set up)
     const defaultChannelIds = onboarding.defaultChannelIds || [];
     const prompts = onboarding.prompts || new Map();
+    
+    // Debug: log current onboarding state
+    console.log('Current onboarding state:', {
+      enabled: onboarding.enabled,
+      defaultChannelIds: defaultChannelIds,
+      defaultChannelIdsLength: defaultChannelIds.length,
+      promptsCount: prompts.size
+    });
 
     // Helper to build prompts array for update
     const mapPrompts = (modifier) => {
@@ -4093,7 +4101,7 @@ async function handleOnboardingCommand(interaction, guildConfig) {
               channelsType: o.channels?.constructor?.name,
               channelsSize: o.channels?.size
             });
-            
+
             // Extract role/channel IDs from Collections
             const roleIds = o.roles instanceof Map || (o.roles && typeof o.roles.keys === 'function')
               ? Array.from(o.roles.keys())
@@ -4101,7 +4109,7 @@ async function handleOnboardingCommand(interaction, guildConfig) {
             const channelIds = o.channels instanceof Map || (o.channels && typeof o.channels.keys === 'function')
               ? Array.from(o.channels.keys())
               : (Array.isArray(o.channels) ? o.channels : []);
-            
+
             return {
               id: o.id,
               title: o.title,
