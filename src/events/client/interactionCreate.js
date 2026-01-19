@@ -4070,29 +4070,13 @@ async function handleOnboardingCommand(interaction, guildConfig) {
   try {
     const onboarding = await interaction.guild.fetchOnboarding();
 
-    // Debug: log raw onboarding object keys to see what properties exist
-    console.log('Raw onboarding properties:', Object.keys(onboarding));
-    console.log('Raw defaultChannelIds:', onboarding.defaultChannelIds);
-    console.log('Raw defaultChannels:', onboarding.defaultChannels);
-    
-    // Discord.js GuildOnboarding has defaultChannelIds (array) AND defaultChannels (Collection)
-    // Let's check both
+    // Discord.js GuildOnboarding has defaultChannels as a Collection, extract IDs from it
     let defaultChannelIds = [];
-    if (onboarding.defaultChannelIds && onboarding.defaultChannelIds.length > 0) {
-      defaultChannelIds = onboarding.defaultChannelIds;
-    } else if (onboarding.defaultChannels && onboarding.defaultChannels.size > 0) {
+    if (onboarding.defaultChannels && onboarding.defaultChannels.size > 0) {
       defaultChannelIds = Array.from(onboarding.defaultChannels.keys());
     }
-    
-    const prompts = onboarding.prompts || new Map();
 
-    // Debug: log current onboarding state
-    console.log('Current onboarding state:', {
-      enabled: onboarding.enabled,
-      defaultChannelIds: defaultChannelIds,
-      defaultChannelIdsLength: defaultChannelIds.length,
-      promptsCount: prompts.size
-    });
+    const prompts = onboarding.prompts || new Map();
 
     // Helper to build prompts array for update
     const mapPrompts = (modifier) => {
@@ -4105,15 +4089,6 @@ async function handleOnboardingCommand(interaction, guildConfig) {
           inOnboarding: p.inOnboarding,
           type: p.type,
           options: Array.from(p.options.values()).map(o => {
-            // Debug: log the raw option data structure
-            console.log('Option raw data:', {
-              title: o.title,
-              rolesType: o.roles?.constructor?.name,
-              rolesSize: o.roles?.size,
-              channelsType: o.channels?.constructor?.name,
-              channelsSize: o.channels?.size
-            });
-
             // Extract role/channel IDs from Collections
             const roleIds = o.roles instanceof Map || (o.roles && typeof o.roles.keys === 'function')
               ? Array.from(o.roles.keys())
@@ -4169,7 +4144,6 @@ async function handleOnboardingCommand(interaction, guildConfig) {
         payload.prompts = validatePrompts(mapPrompts());
       }
 
-      console.log('Onboarding update payload:', JSON.stringify(payload, null, 2));
       await interaction.guild.editOnboarding(payload);
     };
 
