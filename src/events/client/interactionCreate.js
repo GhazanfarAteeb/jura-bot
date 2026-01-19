@@ -4069,7 +4069,7 @@ async function handleOnboardingCommand(interaction, guildConfig) {
 
   try {
     const onboarding = await interaction.guild.fetchOnboarding();
-    
+
     // Safe access to onboarding properties (may be undefined if not set up)
     const defaultChannelIds = onboarding.defaultChannelIds || [];
     const prompts = onboarding.prompts || new Map();
@@ -4098,11 +4098,34 @@ async function handleOnboardingCommand(interaction, guildConfig) {
     };
 
     const updateOnboarding = async (updates) => {
-      await interaction.guild.editOnboarding({
-        enabled: updates.enabled ?? onboarding.enabled,
-        defaultChannelIds: updates.defaultChannelIds ?? defaultChannelIds,
-        prompts: updates.prompts ?? mapPrompts()
-      });
+      const payload = {
+        enabled: updates.enabled ?? onboarding.enabled
+      };
+
+      // Always include defaultChannelIds
+      if (updates.defaultChannelIds !== undefined) {
+        payload.defaultChannelIds = updates.defaultChannelIds;
+      } else {
+        payload.defaultChannelIds = defaultChannelIds;
+      }
+
+      // Include prompts - either the updated ones or existing (mapped properly)
+      if (updates.prompts !== undefined) {
+        payload.prompts = updates.prompts;
+      } else if (prompts.size > 0) {
+        // Only send existing prompts if they have valid options (with roles/channels)
+        const mappedPrompts = mapPrompts();
+        const validPrompts = mappedPrompts.filter(p => 
+          p.options.length === 0 || p.options.every(o => 
+            (o.roleIds && o.roleIds.length > 0) || (o.channelIds && o.channelIds.length > 0)
+          )
+        );
+        if (validPrompts.length > 0) {
+          payload.prompts = validPrompts;
+        }
+      }
+
+      await interaction.guild.editOnboarding(payload);
     };
 
     // SETTINGS GROUP
