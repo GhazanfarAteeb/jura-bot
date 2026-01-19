@@ -1332,6 +1332,14 @@ const slashCommands = [
                 .setDescription('Option title')
                 .setRequired(true)
                 .setMaxLength(50))
+            .addRoleOption(option =>
+              option.setName('role')
+                .setDescription('Role to assign when selected (required if no channel)')
+                .setRequired(false))
+            .addChannelOption(option =>
+              option.setName('channel')
+                .setDescription('Channel to show when selected (required if no role)')
+                .setRequired(false))
             .addStringOption(option =>
               option.setName('description')
                 .setDescription('Option description')

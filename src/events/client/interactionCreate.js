@@ -4084,7 +4084,7 @@ async function handleOnboardingCommand(interaction, guildConfig) {
           required: p.required,
           inOnboarding: p.inOnboarding,
           type: p.type,
-          options: p.options.map(o => ({
+          options: Array.from(p.options.values()).map(o => ({
             id: o.id,
             title: o.title,
             description: o.description,
@@ -4426,14 +4426,26 @@ async function handleOnboardingCommand(interaction, guildConfig) {
           }
         }
 
+        // Discord requires at least one role or channel for each option
+        const role = interaction.options.getRole('role');
+        const channel = interaction.options.getChannel('channel');
+
+        if (!role && !channel) {
+          return interaction.editReply({
+            embeds: [await errorEmbed(interaction.guild.id, 'Role/Channel Required',
+              `${GLYPHS.ERROR} Each option must have at least one **role** or **channel** assigned.\n\n` +
+              `Please provide a \`role\` or \`channel\` option when adding.`)]
+          });
+        }
+
         const updatedPrompts = mapPrompts((promptData, original) => {
           if (original.id === questionId) {
             promptData.options.push({
               title: title,
               description: description || null,
               emoji: emoji,
-              channelIds: [],
-              roleIds: []
+              channelIds: channel ? [channel.id] : [],
+              roleIds: role ? [role.id] : []
             });
           }
           return promptData;
