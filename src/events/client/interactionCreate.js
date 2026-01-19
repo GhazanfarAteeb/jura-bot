@@ -4311,6 +4311,18 @@ async function handleOnboardingCommand(interaction, guildConfig) {
         const title = interaction.options.getString('title');
         const required = interaction.options.getBoolean('required') ?? false;
         const singleSelect = interaction.options.getBoolean('single_select') ?? false;
+        const optionTitle = interaction.options.getString('option_title');
+        const optionRole = interaction.options.getRole('option_role');
+        const optionChannel = interaction.options.getChannel('option_channel');
+
+        // Require at least one role or channel for the initial option
+        if (!optionRole && !optionChannel) {
+          return interaction.editReply({
+            embeds: [await errorEmbed(interaction.guild.id, 'Role/Channel Required',
+              `${GLYPHS.ERROR} Each option must have at least one **role** or **channel** assigned.\n\n` +
+              `Please provide \`option_role\` or \`option_channel\`.`)]
+          });
+        }
 
         const newPrompt = {
           title: title,
@@ -4318,7 +4330,13 @@ async function handleOnboardingCommand(interaction, guildConfig) {
           required: required,
           inOnboarding: true,
           type: GuildOnboardingPromptType.MultipleChoice,
-          options: []
+          options: [{
+            title: optionTitle,
+            description: null,
+            emoji: null,
+            roleIds: optionRole ? [optionRole.id] : [],
+            channelIds: optionChannel ? [optionChannel.id] : []
+          }]
         };
 
         await updateOnboarding({
@@ -4327,12 +4345,12 @@ async function handleOnboardingCommand(interaction, guildConfig) {
 
         return interaction.editReply({
           embeds: [await successEmbed(interaction.guild.id, 'Question Created',
-            `${GLYPHS.SUCCESS} Question created!\n\n` +
-            `**Title:** ${title}\n` +
+            `${GLYPHS.SUCCESS} Question created with initial option!\n\n` +
+            `**Question:** ${title}\n` +
+            `**Option:** ${optionTitle}\n` +
             `**Single Select:** ${singleSelect ? 'Yes' : 'No'}\n` +
             `**Required:** ${required ? 'Yes' : 'No'}\n\n` +
-            `⚠️ **Note:** Questions need at least 1 option to appear in onboarding.\n` +
-            `Use \`/onboarding options add\` to add answer options.`)]
+            `Use \`/onboarding options add\` to add more options.`)]
         });
       }
 

@@ -1265,12 +1265,25 @@ const slashCommands = [
             .setDescription('View all questions'))
         .addSubcommand(subcommand =>
           subcommand.setName('add')
-            .setDescription('Create a new question')
+            .setDescription('Create a new question with initial option')
             .addStringOption(option =>
               option.setName('title')
                 .setDescription('Question title/text')
                 .setRequired(true)
                 .setMaxLength(100))
+            .addStringOption(option =>
+              option.setName('option_title')
+                .setDescription('First option title (required)')
+                .setRequired(true)
+                .setMaxLength(50))
+            .addRoleOption(option =>
+              option.setName('option_role')
+                .setDescription('Role to assign for this option (required if no channel)')
+                .setRequired(false))
+            .addChannelOption(option =>
+              option.setName('option_channel')
+                .setDescription('Channel to show for this option (required if no role)')
+                .setRequired(false))
             .addBooleanOption(option =>
               option.setName('required')
                 .setDescription('Is this question required?')
