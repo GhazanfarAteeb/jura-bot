@@ -4084,15 +4084,33 @@ async function handleOnboardingCommand(interaction, guildConfig) {
           required: p.required,
           inOnboarding: p.inOnboarding,
           type: p.type,
-          options: Array.from(p.options.values()).map(o => ({
-            id: o.id,
-            title: o.title,
-            description: o.description,
-            emoji: o.emoji ? { id: o.emoji.id, name: o.emoji.name } : null,
-            // Discord.js uses `roles` and `channels` (Collections), convert to IDs
-            channelIds: o.channels ? Array.from(o.channels.keys()) : [],
-            roleIds: o.roles ? Array.from(o.roles.keys()) : []
-          }))
+          options: Array.from(p.options.values()).map(o => {
+            // Debug: log the raw option data structure
+            console.log('Option raw data:', {
+              title: o.title,
+              rolesType: o.roles?.constructor?.name,
+              rolesSize: o.roles?.size,
+              channelsType: o.channels?.constructor?.name,
+              channelsSize: o.channels?.size
+            });
+            
+            // Extract role/channel IDs from Collections
+            const roleIds = o.roles instanceof Map || (o.roles && typeof o.roles.keys === 'function')
+              ? Array.from(o.roles.keys())
+              : (Array.isArray(o.roles) ? o.roles : []);
+            const channelIds = o.channels instanceof Map || (o.channels && typeof o.channels.keys === 'function')
+              ? Array.from(o.channels.keys())
+              : (Array.isArray(o.channels) ? o.channels : []);
+            
+            return {
+              id: o.id,
+              title: o.title,
+              description: o.description,
+              emoji: o.emoji ? { id: o.emoji.id, name: o.emoji.name } : null,
+              channels: channelIds,
+              roles: roleIds
+            };
+          })
         };
         return modifier ? modifier(promptData, p) : promptData;
       });
@@ -4103,28 +4121,32 @@ async function handleOnboardingCommand(interaction, guildConfig) {
         enabled: updates.enabled ?? onboarding.enabled
       };
 
-      // Always include defaultChannelIds
-      if (updates.defaultChannelIds !== undefined) {
-        payload.defaultChannelIds = updates.defaultChannelIds;
+      // Always include defaultChannels (Discord.js uses defaultChannels, not defaultChannelIds)
+      if (updates.defaultChannels !== undefined) {
+        payload.defaultChannels = updates.defaultChannels;
       } else if (defaultChannelIds.length > 0) {
-        payload.defaultChannelIds = defaultChannelIds;
+        payload.defaultChannels = defaultChannelIds;
       }
+
+      // Helper to validate and filter prompts
+      const validatePrompts = (promptsArray) => {
+        return promptsArray
+          .map(p => ({
+            ...p,
+            // Filter options to only those with at least one role or channel
+            options: p.options.filter(o =>
+              (o.roles && o.roles.length > 0) || (o.channels && o.channels.length > 0)
+            )
+          }))
+          // Only keep prompts that have at least one valid option
+          .filter(p => p.options && p.options.length > 0);
+      };
 
       // Include prompts - either the updated ones or existing (mapped properly)
       if (updates.prompts !== undefined) {
-        // Filter out prompts with no options (Discord requires 1-50 options per prompt)
-        payload.prompts = updates.prompts.filter(p => p.options && p.options.length > 0);
+        payload.prompts = validatePrompts(updates.prompts);
       } else if (prompts.size > 0) {
-        // Only send existing prompts if they have valid options (at least 1 option with roles/channels)
-        const mappedPrompts = mapPrompts();
-        const validPrompts = mappedPrompts.filter(p =>
-          p.options.length > 0 && p.options.every(o =>
-            (o.roleIds && o.roleIds.length > 0) || (o.channelIds && o.channelIds.length > 0)
-          )
-        );
-        if (validPrompts.length > 0) {
-          payload.prompts = validPrompts;
-        }
+        payload.prompts = validatePrompts(mapPrompts());
       }
 
       console.log('Onboarding update payload:', JSON.stringify(payload, null, 2));
@@ -4235,7 +4257,7 @@ async function handleOnboardingCommand(interaction, guildConfig) {
         }
 
         await updateOnboarding({
-          defaultChannelIds: [...defaultChannelIds, channel.id]
+          defaultChannels: [...defaultChannelIds, channel.id]
         });
 
         return interaction.editReply({
@@ -4263,7 +4285,7 @@ async function handleOnboardingCommand(interaction, guildConfig) {
           });
         }
 
-        await updateOnboarding({ defaultChannelIds: newChannelIds });
+        await updateOnboarding({ defaultChannels: newChannelIds });
 
         return interaction.editReply({
           embeds: [await successEmbed(interaction.guild.id, 'Channel Removed',
@@ -4289,9 +4311,9 @@ async function handleOnboardingCommand(interaction, guildConfig) {
             if (prompt.singleSelect) flags.push('1️⃣ Single');
             else flags.push('🔢 Multi');
 
-            let optionsList = prompt.options.map(o => {
-              const roleCount = o.roleIds?.length || 0;
-              const channelCount = o.channelIds?.length || 0;
+            let optionsList = Array.from(prompt.options.values()).map(o => {
+              const roleCount = o.roles?.size || 0;
+              const channelCount = o.channels?.size || 0;
               return `    • ${o.title}${roleCount > 0 ? ` (${roleCount} roles)` : ''}${channelCount > 0 ? ` (${channelCount} ch)` : ''}`;
             }).join('\n');
 
@@ -4336,8 +4358,8 @@ async function handleOnboardingCommand(interaction, guildConfig) {
             title: optionTitle,
             description: null,
             emoji: null,
-            roleIds: optionRole ? [optionRole.id] : [],
-            channelIds: optionChannel ? [optionChannel.id] : []
+            roles: optionRole ? [optionRole.id] : [],
+            channels: optionChannel ? [optionChannel.id] : []
           }]
         };
 
@@ -4433,12 +4455,12 @@ async function handleOnboardingCommand(interaction, guildConfig) {
         if (prompt.options.size === 0) {
           embed.setDescription('*No options configured*');
         } else {
-          const optionsList = prompt.options.map((opt, index) => {
-            const roles = opt.roleIds?.length > 0
-              ? `\n     Roles: ${opt.roleIds.map(id => `<@&${id}>`).join(', ')}`
+          const optionsList = Array.from(prompt.options.values()).map((opt, index) => {
+            const roles = opt.roles?.size > 0
+              ? `\n     Roles: ${Array.from(opt.roles.keys()).map(id => `<@&${id}>`).join(', ')}`
               : '';
-            const channels = opt.channelIds?.length > 0
-              ? `\n     Channels: ${opt.channelIds.map(id => `<#${id}>`).join(', ')}`
+            const channels = opt.channels?.size > 0
+              ? `\n     Channels: ${Array.from(opt.channels.keys()).map(id => `<#${id}>`).join(', ')}`
               : '';
             const emoji = opt.emoji ? `${opt.emoji.name || opt.emoji} ` : '';
 
@@ -4489,8 +4511,8 @@ async function handleOnboardingCommand(interaction, guildConfig) {
               title: title,
               description: description || null,
               emoji: emoji,
-              channelIds: channel ? [channel.id] : [],
-              roleIds: role ? [role.id] : []
+              channels: channel ? [channel.id] : [],
+              roles: role ? [role.id] : []
             });
           }
           return promptData;
@@ -4547,12 +4569,12 @@ async function handleOnboardingCommand(interaction, guildConfig) {
           if (original.id === questionId) {
             const opt = promptData.options.find(o => o.id === optionId);
             if (opt) {
-              if (!opt.roleIds) opt.roleIds = [];
+              if (!opt.roles) opt.roles = [];
               if (remove) {
-                opt.roleIds = opt.roleIds.filter(id => id !== role.id);
+                opt.roles = opt.roles.filter(id => id !== role.id);
               } else {
-                if (!opt.roleIds.includes(role.id)) {
-                  opt.roleIds.push(role.id);
+                if (!opt.roles.includes(role.id)) {
+                  opt.roles.push(role.id);
                 }
               }
             }
@@ -4585,12 +4607,12 @@ async function handleOnboardingCommand(interaction, guildConfig) {
           if (original.id === questionId) {
             const opt = promptData.options.find(o => o.id === optionId);
             if (opt) {
-              if (!opt.channelIds) opt.channelIds = [];
+              if (!opt.channels) opt.channels = [];
               if (remove) {
-                opt.channelIds = opt.channelIds.filter(id => id !== channel.id);
+                opt.channels = opt.channels.filter(id => id !== channel.id);
               } else {
-                if (!opt.channelIds.includes(channel.id)) {
-                  opt.channelIds.push(channel.id);
+                if (!opt.channels.includes(channel.id)) {
+                  opt.channels.push(channel.id);
                 }
               }
             }
