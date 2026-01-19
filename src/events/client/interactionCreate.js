@@ -4070,10 +4070,22 @@ async function handleOnboardingCommand(interaction, guildConfig) {
   try {
     const onboarding = await interaction.guild.fetchOnboarding();
 
-    // Safe access to onboarding properties (may be undefined if not set up)
-    const defaultChannelIds = onboarding.defaultChannelIds || [];
-    const prompts = onboarding.prompts || new Map();
+    // Debug: log raw onboarding object keys to see what properties exist
+    console.log('Raw onboarding properties:', Object.keys(onboarding));
+    console.log('Raw defaultChannelIds:', onboarding.defaultChannelIds);
+    console.log('Raw defaultChannels:', onboarding.defaultChannels);
     
+    // Discord.js GuildOnboarding has defaultChannelIds (array) AND defaultChannels (Collection)
+    // Let's check both
+    let defaultChannelIds = [];
+    if (onboarding.defaultChannelIds && onboarding.defaultChannelIds.length > 0) {
+      defaultChannelIds = onboarding.defaultChannelIds;
+    } else if (onboarding.defaultChannels && onboarding.defaultChannels.size > 0) {
+      defaultChannelIds = Array.from(onboarding.defaultChannels.keys());
+    }
+    
+    const prompts = onboarding.prompts || new Map();
+
     // Debug: log current onboarding state
     console.log('Current onboarding state:', {
       enabled: onboarding.enabled,
