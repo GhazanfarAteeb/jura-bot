@@ -4111,12 +4111,13 @@ async function handleOnboardingCommand(interaction, guildConfig) {
 
       // Include prompts - either the updated ones or existing (mapped properly)
       if (updates.prompts !== undefined) {
-        payload.prompts = updates.prompts;
+        // Filter out prompts with no options (Discord requires 1-50 options per prompt)
+        payload.prompts = updates.prompts.filter(p => p.options && p.options.length > 0);
       } else if (prompts.size > 0) {
-        // Only send existing prompts if they have valid options (with roles/channels)
+        // Only send existing prompts if they have valid options (at least 1 option with roles/channels)
         const mappedPrompts = mapPrompts();
-        const validPrompts = mappedPrompts.filter(p => 
-          p.options.length === 0 || p.options.every(o => 
+        const validPrompts = mappedPrompts.filter(p =>
+          p.options.length > 0 && p.options.every(o =>
             (o.roleIds && o.roleIds.length > 0) || (o.channelIds && o.channelIds.length > 0)
           )
         );
@@ -4330,6 +4331,7 @@ async function handleOnboardingCommand(interaction, guildConfig) {
             `**Title:** ${title}\n` +
             `**Single Select:** ${singleSelect ? 'Yes' : 'No'}\n` +
             `**Required:** ${required ? 'Yes' : 'No'}\n\n` +
+            `⚠️ **Note:** Questions need at least 1 option to appear in onboarding.\n` +
             `Use \`/onboarding options add\` to add answer options.`)]
         });
       }
