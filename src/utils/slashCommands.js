@@ -1220,6 +1220,183 @@ const slashCommands = [
       subcommand.setName('stats')
         .setDescription('View confession statistics'))
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+
+  // Onboarding Management Command
+  new SlashCommandBuilder()
+    .setName('onboarding')
+    .setDescription('Manage server onboarding settings, questions, and default channels')
+    .addSubcommandGroup(group =>
+      group.setName('settings')
+        .setDescription('Manage onboarding settings')
+        .addSubcommand(subcommand =>
+          subcommand.setName('view')
+            .setDescription('View current onboarding settings'))
+        .addSubcommand(subcommand =>
+          subcommand.setName('enable')
+            .setDescription('Enable server onboarding'))
+        .addSubcommand(subcommand =>
+          subcommand.setName('disable')
+            .setDescription('Disable server onboarding')))
+    .addSubcommandGroup(group =>
+      group.setName('channels')
+        .setDescription('Manage default channels')
+        .addSubcommand(subcommand =>
+          subcommand.setName('list')
+            .setDescription('View default channels'))
+        .addSubcommand(subcommand =>
+          subcommand.setName('add')
+            .setDescription('Add a default channel')
+            .addChannelOption(option =>
+              option.setName('channel')
+                .setDescription('Channel to add as default')
+                .setRequired(true)))
+        .addSubcommand(subcommand =>
+          subcommand.setName('remove')
+            .setDescription('Remove a default channel')
+            .addChannelOption(option =>
+              option.setName('channel')
+                .setDescription('Channel to remove')
+                .setRequired(true))))
+    .addSubcommandGroup(group =>
+      group.setName('questions')
+        .setDescription('Manage onboarding questions')
+        .addSubcommand(subcommand =>
+          subcommand.setName('list')
+            .setDescription('View all questions'))
+        .addSubcommand(subcommand =>
+          subcommand.setName('add')
+            .setDescription('Create a new question')
+            .addStringOption(option =>
+              option.setName('title')
+                .setDescription('Question title/text')
+                .setRequired(true)
+                .setMaxLength(100))
+            .addBooleanOption(option =>
+              option.setName('required')
+                .setDescription('Is this question required?')
+                .setRequired(false))
+            .addBooleanOption(option =>
+              option.setName('single_select')
+                .setDescription('Can only select one answer?')
+                .setRequired(false)))
+        .addSubcommand(subcommand =>
+          subcommand.setName('edit')
+            .setDescription('Edit a question')
+            .addStringOption(option =>
+              option.setName('question')
+                .setDescription('Select the question to edit')
+                .setRequired(true)
+                .setAutocomplete(true))
+            .addStringOption(option =>
+              option.setName('title')
+                .setDescription('New title (leave empty to keep current)')
+                .setRequired(false)
+                .setMaxLength(100))
+            .addBooleanOption(option =>
+              option.setName('required')
+                .setDescription('Is this question required?')
+                .setRequired(false))
+            .addBooleanOption(option =>
+              option.setName('single_select')
+                .setDescription('Can only select one answer?')
+                .setRequired(false)))
+        .addSubcommand(subcommand =>
+          subcommand.setName('delete')
+            .setDescription('Delete a question')
+            .addStringOption(option =>
+              option.setName('question')
+                .setDescription('Select the question to delete')
+                .setRequired(true)
+                .setAutocomplete(true))))
+    .addSubcommandGroup(group =>
+      group.setName('options')
+        .setDescription('Manage question options/answers')
+        .addSubcommand(subcommand =>
+          subcommand.setName('list')
+            .setDescription('View options for a question')
+            .addStringOption(option =>
+              option.setName('question')
+                .setDescription('Select the question')
+                .setRequired(true)
+                .setAutocomplete(true)))
+        .addSubcommand(subcommand =>
+          subcommand.setName('add')
+            .setDescription('Add an option to a question')
+            .addStringOption(option =>
+              option.setName('question')
+                .setDescription('Select the question')
+                .setRequired(true)
+                .setAutocomplete(true))
+            .addStringOption(option =>
+              option.setName('title')
+                .setDescription('Option title')
+                .setRequired(true)
+                .setMaxLength(50))
+            .addStringOption(option =>
+              option.setName('description')
+                .setDescription('Option description')
+                .setRequired(false)
+                .setMaxLength(100))
+            .addStringOption(option =>
+              option.setName('emoji')
+                .setDescription('Emoji for this option')
+                .setRequired(false)))
+        .addSubcommand(subcommand =>
+          subcommand.setName('remove')
+            .setDescription('Remove an option from a question')
+            .addStringOption(option =>
+              option.setName('question')
+                .setDescription('Select the question')
+                .setRequired(true)
+                .setAutocomplete(true))
+            .addStringOption(option =>
+              option.setName('option')
+                .setDescription('Select the option to remove')
+                .setRequired(true)
+                .setAutocomplete(true)))
+        .addSubcommand(subcommand =>
+          subcommand.setName('role')
+            .setDescription('Add/remove a role assignment for an option')
+            .addStringOption(option =>
+              option.setName('question')
+                .setDescription('Select the question')
+                .setRequired(true)
+                .setAutocomplete(true))
+            .addStringOption(option =>
+              option.setName('option')
+                .setDescription('Select the option')
+                .setRequired(true)
+                .setAutocomplete(true))
+            .addRoleOption(option =>
+              option.setName('role')
+                .setDescription('Role to assign')
+                .setRequired(true))
+            .addBooleanOption(option =>
+              option.setName('remove')
+                .setDescription('Remove this role instead of adding?')
+                .setRequired(false)))
+        .addSubcommand(subcommand =>
+          subcommand.setName('channel')
+            .setDescription('Add/remove a channel assignment for an option')
+            .addStringOption(option =>
+              option.setName('question')
+                .setDescription('Select the question')
+                .setRequired(true)
+                .setAutocomplete(true))
+            .addStringOption(option =>
+              option.setName('option')
+                .setDescription('Select the option')
+                .setRequired(true)
+                .setAutocomplete(true))
+            .addChannelOption(option =>
+              option.setName('channel')
+                .setDescription('Channel to assign')
+                .setRequired(true))
+            .addBooleanOption(option =>
+              option.setName('remove')
+                .setDescription('Remove this channel instead of adding?')
+                .setRequired(false))))
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
 ];
 
 export async function registerSlashCommands(client) {

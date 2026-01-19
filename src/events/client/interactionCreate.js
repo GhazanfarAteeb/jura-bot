@@ -1,10 +1,15 @@
-import { Events, Collection, PermissionFlagsBits, MessageFlags } from 'discord.js';
+import { Events, Collection, PermissionFlagsBits, MessageFlags, GuildOnboardingPromptType } from 'discord.js';
 import logger from '../../utils/logger.js';
 import Guild from '../../models/Guild.js';
 
 export default {
   name: Events.InteractionCreate,
   async execute(interaction, client) {
+    // Handle autocomplete interactions
+    if (interaction.isAutocomplete()) {
+      return handleAutocomplete(interaction);
+    }
+
     if (!interaction.isChatInputCommand()) return;
 
     // Ignore DM interactions - commands only work in guilds
@@ -37,7 +42,7 @@ export default {
     );
 
     // Handle special slash commands that need custom handling
-    const specialCommands = ['automod', 'lockdown', 'setrole', 'setchannel', 'slashcommands', 'refreshcache', 'birthdaysettings', 'setbirthday', 'config', 'setup', 'welcome', 'manageshop', 'verify', 'cmdchannels', 'logs', 'autorole', 'feature', 'giveaway', 'award', 'noxp', 'setoverlay', 'confession'];
+    const specialCommands = ['automod', 'lockdown', 'setrole', 'setchannel', 'slashcommands', 'refreshcache', 'birthdaysettings', 'setbirthday', 'config', 'setup', 'welcome', 'manageshop', 'verify', 'cmdchannels', 'logs', 'autorole', 'feature', 'giveaway', 'award', 'noxp', 'setoverlay', 'confession', 'onboarding'];
     if (specialCommands.includes(interaction.commandName)) {
       return handleSpecialCommand(interaction, client, guildConfig, hasAdminRole, hasModRole);
     }
@@ -306,6 +311,9 @@ async function handleSpecialCommand(interaction, client, guildConfig, hasAdminRo
         break;
       case 'confession':
         await handleConfessionCommand(interaction, client, guildConfig);
+        break;
+      case 'onboarding':
+        await handleOnboardingCommand(interaction, guildConfig);
         break;
     }
   } catch (error) {
@@ -4005,5 +4013,558 @@ async function handleConfessionCommand(interaction, client, guildConfig) {
       await interaction.editReply({ embeds: [embed] });
       break;
     }
+  }
+}
+
+// Autocomplete handler
+async function handleAutocomplete(interaction) {
+  if (interaction.commandName !== 'onboarding') return;
+
+  const focusedOption = interaction.options.getFocused(true);
+  
+  try {
+    const onboarding = await interaction.guild.fetchOnboarding();
+    let choices = [];
+
+    if (focusedOption.name === 'question') {
+      // Return list of questions
+      choices = onboarding.prompts.map(p => ({
+        name: p.title.substring(0, 100),
+        value: p.id
+      }));
+    } else if (focusedOption.name === 'option') {
+      // Get the selected question first
+      const questionId = interaction.options.getString('question');
+      if (questionId) {
+        const prompt = onboarding.prompts.find(p => p.id === questionId);
+        if (prompt) {
+          choices = prompt.options.map(o => ({
+            name: o.title.substring(0, 100),
+            value: o.id
+          }));
+        }
+      }
+    }
+
+    // Filter based on what user has typed
+    const filtered = choices.filter(choice =>
+      choice.name.toLowerCase().includes(focusedOption.value.toLowerCase())
+    );
+
+    await interaction.respond(filtered.slice(0, 25));
+  } catch (error) {
+    console.error('Autocomplete error:', error);
+    await interaction.respond([]);
+  }
+}
+
+// Onboarding command handler
+async function handleOnboardingCommand(interaction, guildConfig) {
+  const { successEmbed, errorEmbed, infoEmbed, GLYPHS } = await import('../../utils/embeds.js');
+  const { EmbedBuilder } = await import('discord.js');
+
+  const group = interaction.options.getSubcommandGroup();
+  const subcommand = interaction.options.getSubcommand();
+
+  try {
+    const onboarding = await interaction.guild.fetchOnboarding();
+
+    // Helper to build prompts array for update
+    const mapPrompts = (modifier) => {
+      return onboarding.prompts.map(p => {
+        const promptData = {
+          id: p.id,
+          title: p.title,
+          singleSelect: p.singleSelect,
+          required: p.required,
+          inOnboarding: p.inOnboarding,
+          type: p.type,
+          options: p.options.map(o => ({
+            id: o.id,
+            title: o.title,
+            description: o.description,
+            emoji: o.emoji,
+            channelIds: o.channelIds || [],
+            roleIds: o.roleIds || []
+          }))
+        };
+        return modifier ? modifier(promptData, p) : promptData;
+      });
+    };
+
+    const updateOnboarding = async (updates) => {
+      await interaction.guild.editOnboarding({
+        enabled: updates.enabled ?? onboarding.enabled,
+        defaultChannelIds: updates.defaultChannelIds ?? onboarding.defaultChannelIds,
+        prompts: updates.prompts ?? mapPrompts()
+      });
+    };
+
+    // SETTINGS GROUP
+    if (group === 'settings') {
+      if (subcommand === 'view') {
+        const embed = new EmbedBuilder()
+          .setTitle('『 Onboarding Settings 』')
+          .setColor(guildConfig.embedStyle?.color || '#5865F2')
+          .setDescription(`Server onboarding configuration for **${interaction.guild.name}**`)
+          .addFields(
+            {
+              name: '📊 Status',
+              value: [
+                `**Enabled:** ${onboarding.enabled ? '✅ Yes' : '❌ No'}`,
+                `**Mode:** ${onboarding.mode === 0 ? 'Default' : 'Advanced'}`,
+              ].join('\n'),
+              inline: true
+            },
+            {
+              name: '📺 Default Channels',
+              value: onboarding.defaultChannelIds.length > 0
+                ? onboarding.defaultChannelIds.map(id => `<#${id}>`).join('\n')
+                : '*No default channels*',
+              inline: true
+            },
+            {
+              name: '❓ Questions',
+              value: `${onboarding.prompts.size} question(s) configured`,
+              inline: true
+            }
+          );
+
+        if (onboarding.prompts.size > 0) {
+          const questionsList = onboarding.prompts.map((prompt, index) => {
+            const flags = [];
+            if (prompt.required) flags.push('Required');
+            if (prompt.singleSelect) flags.push('Single');
+            else flags.push('Multi');
+            
+            return `**${index + 1}.** ${prompt.title}\n   └ ${prompt.options.size} options | ${flags.join(', ')}`;
+          }).join('\n');
+
+          embed.addFields({
+            name: '📝 Questions List',
+            value: questionsList.substring(0, 1024) || '*None*',
+            inline: false
+          });
+        }
+
+        embed.setTimestamp();
+        return interaction.editReply({ embeds: [embed] });
+      }
+
+      if (subcommand === 'enable') {
+        if (onboarding.defaultChannelIds.length === 0) {
+          return interaction.editReply({
+            embeds: [await errorEmbed(interaction.guild.id, 'Cannot Enable',
+              `${GLYPHS.ERROR} You need at least **1 default channel** before enabling onboarding.\n\n` +
+              `Use \`/onboarding channels add\` to add one.`)]
+          });
+        }
+
+        await updateOnboarding({ enabled: true });
+        return interaction.editReply({
+          embeds: [await successEmbed(interaction.guild.id, 'Onboarding Enabled',
+            `${GLYPHS.SUCCESS} Server onboarding has been enabled!`)]
+        });
+      }
+
+      if (subcommand === 'disable') {
+        await updateOnboarding({ enabled: false });
+        return interaction.editReply({
+          embeds: [await successEmbed(interaction.guild.id, 'Onboarding Disabled',
+            `${GLYPHS.SUCCESS} Server onboarding has been disabled.`)]
+        });
+      }
+    }
+
+    // CHANNELS GROUP
+    if (group === 'channels') {
+      if (subcommand === 'list') {
+        const embed = new EmbedBuilder()
+          .setTitle('『 Default Channels 』')
+          .setColor(guildConfig.embedStyle?.color || '#5865F2')
+          .setDescription(
+            onboarding.defaultChannelIds.length > 0
+              ? onboarding.defaultChannelIds.map((id, i) => `**${i + 1}.** <#${id}>`).join('\n')
+              : '*No default channels configured*'
+          )
+          .setFooter({ text: `${onboarding.defaultChannelIds.length} default channel(s)` })
+          .setTimestamp();
+
+        return interaction.editReply({ embeds: [embed] });
+      }
+
+      if (subcommand === 'add') {
+        const channel = interaction.options.getChannel('channel');
+
+        if (onboarding.defaultChannelIds.includes(channel.id)) {
+          return interaction.editReply({
+            embeds: [await errorEmbed(interaction.guild.id, 'Already Added',
+              `${GLYPHS.ERROR} ${channel} is already a default channel.`)]
+          });
+        }
+
+        await updateOnboarding({
+          defaultChannelIds: [...onboarding.defaultChannelIds, channel.id]
+        });
+
+        return interaction.editReply({
+          embeds: [await successEmbed(interaction.guild.id, 'Channel Added',
+            `${GLYPHS.SUCCESS} ${channel} has been added to default channels.`)]
+        });
+      }
+
+      if (subcommand === 'remove') {
+        const channel = interaction.options.getChannel('channel');
+
+        if (!onboarding.defaultChannelIds.includes(channel.id)) {
+          return interaction.editReply({
+            embeds: [await errorEmbed(interaction.guild.id, 'Not Found',
+              `${GLYPHS.ERROR} ${channel} is not a default channel.`)]
+          });
+        }
+
+        const newChannelIds = onboarding.defaultChannelIds.filter(id => id !== channel.id);
+
+        if (onboarding.enabled && newChannelIds.length === 0) {
+          return interaction.editReply({
+            embeds: [await errorEmbed(interaction.guild.id, 'Cannot Remove',
+              `${GLYPHS.ERROR} You need at least 1 default channel while onboarding is enabled.`)]
+          });
+        }
+
+        await updateOnboarding({ defaultChannelIds: newChannelIds });
+
+        return interaction.editReply({
+          embeds: [await successEmbed(interaction.guild.id, 'Channel Removed',
+            `${GLYPHS.SUCCESS} ${channel} has been removed from default channels.`)]
+        });
+      }
+    }
+
+    // QUESTIONS GROUP
+    if (group === 'questions') {
+      if (subcommand === 'list') {
+        const embed = new EmbedBuilder()
+          .setTitle('『 Onboarding Questions 』')
+          .setColor(guildConfig.embedStyle?.color || '#5865F2');
+
+        if (onboarding.prompts.size === 0) {
+          embed.setDescription('*No questions configured*');
+        } else {
+          const questionsList = onboarding.prompts.map((prompt, index) => {
+            const flags = [];
+            if (prompt.required) flags.push('📌 Required');
+            else flags.push('📎 Optional');
+            if (prompt.singleSelect) flags.push('1️⃣ Single');
+            else flags.push('🔢 Multi');
+
+            let optionsList = prompt.options.map(o => {
+              const roleCount = o.roleIds?.length || 0;
+              const channelCount = o.channelIds?.length || 0;
+              return `    • ${o.title}${roleCount > 0 ? ` (${roleCount} roles)` : ''}${channelCount > 0 ? ` (${channelCount} ch)` : ''}`;
+            }).join('\n');
+
+            return `**${index + 1}. ${prompt.title}**\n` +
+              `   ${flags.join(' | ')}\n` +
+              (optionsList ? `${optionsList}\n` : '   *No options*\n');
+          }).join('\n');
+
+          embed.setDescription(questionsList.substring(0, 4000));
+        }
+
+        embed.setFooter({ text: `${onboarding.prompts.size} question(s)` });
+        embed.setTimestamp();
+
+        return interaction.editReply({ embeds: [embed] });
+      }
+
+      if (subcommand === 'add') {
+        const title = interaction.options.getString('title');
+        const required = interaction.options.getBoolean('required') ?? false;
+        const singleSelect = interaction.options.getBoolean('single_select') ?? false;
+
+        const newPrompt = {
+          title: title,
+          singleSelect: singleSelect,
+          required: required,
+          inOnboarding: true,
+          type: GuildOnboardingPromptType.MultipleChoice,
+          options: []
+        };
+
+        await updateOnboarding({
+          prompts: [...mapPrompts(), newPrompt]
+        });
+
+        return interaction.editReply({
+          embeds: [await successEmbed(interaction.guild.id, 'Question Created',
+            `${GLYPHS.SUCCESS} Question created!\n\n` +
+            `**Title:** ${title}\n` +
+            `**Single Select:** ${singleSelect ? 'Yes' : 'No'}\n` +
+            `**Required:** ${required ? 'Yes' : 'No'}\n\n` +
+            `Use \`/onboarding options add\` to add answer options.`)]
+        });
+      }
+
+      if (subcommand === 'edit') {
+        const questionId = interaction.options.getString('question');
+        const newTitle = interaction.options.getString('title');
+        const required = interaction.options.getBoolean('required');
+        const singleSelect = interaction.options.getBoolean('single_select');
+
+        const prompt = onboarding.prompts.find(p => p.id === questionId);
+        if (!prompt) {
+          return interaction.editReply({
+            embeds: [await errorEmbed(interaction.guild.id, 'Not Found',
+              `${GLYPHS.ERROR} Question not found. Please select from the dropdown.`)]
+          });
+        }
+
+        const updatedPrompts = mapPrompts((promptData, original) => {
+          if (original.id === questionId) {
+            if (newTitle) promptData.title = newTitle;
+            if (required !== null) promptData.required = required;
+            if (singleSelect !== null) promptData.singleSelect = singleSelect;
+          }
+          return promptData;
+        });
+
+        await updateOnboarding({ prompts: updatedPrompts });
+
+        const changes = [];
+        if (newTitle) changes.push(`Title → ${newTitle}`);
+        if (required !== null) changes.push(`Required → ${required ? 'Yes' : 'No'}`);
+        if (singleSelect !== null) changes.push(`Single Select → ${singleSelect ? 'Yes' : 'No'}`);
+
+        return interaction.editReply({
+          embeds: [await successEmbed(interaction.guild.id, 'Question Updated',
+            `${GLYPHS.SUCCESS} Question **"${prompt.title}"** updated!\n\n${changes.join('\n') || 'No changes made'}`)]
+        });
+      }
+
+      if (subcommand === 'delete') {
+        const questionId = interaction.options.getString('question');
+
+        const prompt = onboarding.prompts.find(p => p.id === questionId);
+        if (!prompt) {
+          return interaction.editReply({
+            embeds: [await errorEmbed(interaction.guild.id, 'Not Found',
+              `${GLYPHS.ERROR} Question not found.`)]
+          });
+        }
+
+        const updatedPrompts = mapPrompts().filter(p => p.id !== questionId);
+        await updateOnboarding({ prompts: updatedPrompts });
+
+        return interaction.editReply({
+          embeds: [await successEmbed(interaction.guild.id, 'Question Deleted',
+            `${GLYPHS.SUCCESS} Question **"${prompt.title}"** has been deleted.`)]
+        });
+      }
+    }
+
+    // OPTIONS GROUP
+    if (group === 'options') {
+      const questionId = interaction.options.getString('question');
+      const prompt = onboarding.prompts.find(p => p.id === questionId);
+
+      if (!prompt) {
+        return interaction.editReply({
+          embeds: [await errorEmbed(interaction.guild.id, 'Not Found',
+            `${GLYPHS.ERROR} Question not found. Please select from the dropdown.`)]
+        });
+      }
+
+      if (subcommand === 'list') {
+        const embed = new EmbedBuilder()
+          .setTitle(`『 Options: ${prompt.title} 』`)
+          .setColor(guildConfig.embedStyle?.color || '#5865F2');
+
+        if (prompt.options.size === 0) {
+          embed.setDescription('*No options configured*');
+        } else {
+          const optionsList = prompt.options.map((opt, index) => {
+            const roles = opt.roleIds?.length > 0 
+              ? `\n     Roles: ${opt.roleIds.map(id => `<@&${id}>`).join(', ')}`
+              : '';
+            const channels = opt.channelIds?.length > 0
+              ? `\n     Channels: ${opt.channelIds.map(id => `<#${id}>`).join(', ')}`
+              : '';
+            const emoji = opt.emoji ? `${opt.emoji.name || opt.emoji} ` : '';
+            
+            return `**${index + 1}. ${emoji}${opt.title}**` +
+              (opt.description ? `\n   ${opt.description}` : '') +
+              roles + channels;
+          }).join('\n\n');
+
+          embed.setDescription(optionsList.substring(0, 4000));
+        }
+
+        embed.setFooter({ text: `${prompt.options.size} option(s)` });
+        embed.setTimestamp();
+
+        return interaction.editReply({ embeds: [embed] });
+      }
+
+      if (subcommand === 'add') {
+        const title = interaction.options.getString('title');
+        const description = interaction.options.getString('description');
+        const emojiInput = interaction.options.getString('emoji');
+
+        let emoji = null;
+        if (emojiInput) {
+          const customEmojiMatch = emojiInput.match(/<a?:(\w+):(\d+)>/);
+          if (customEmojiMatch) {
+            emoji = { id: customEmojiMatch[2], name: customEmojiMatch[1] };
+          } else {
+            emoji = { id: null, name: emojiInput };
+          }
+        }
+
+        const updatedPrompts = mapPrompts((promptData, original) => {
+          if (original.id === questionId) {
+            promptData.options.push({
+              title: title,
+              description: description || null,
+              emoji: emoji,
+              channelIds: [],
+              roleIds: []
+            });
+          }
+          return promptData;
+        });
+
+        await updateOnboarding({ prompts: updatedPrompts });
+
+        return interaction.editReply({
+          embeds: [await successEmbed(interaction.guild.id, 'Option Added',
+            `${GLYPHS.SUCCESS} Option **"${title}"** added to question **"${prompt.title}"**!`)]
+        });
+      }
+
+      if (subcommand === 'remove') {
+        const optionId = interaction.options.getString('option');
+        const option = prompt.options.find(o => o.id === optionId);
+
+        if (!option) {
+          return interaction.editReply({
+            embeds: [await errorEmbed(interaction.guild.id, 'Not Found',
+              `${GLYPHS.ERROR} Option not found. Please select from the dropdown.`)]
+          });
+        }
+
+        const updatedPrompts = mapPrompts((promptData, original) => {
+          if (original.id === questionId) {
+            promptData.options = promptData.options.filter(o => o.id !== optionId);
+          }
+          return promptData;
+        });
+
+        await updateOnboarding({ prompts: updatedPrompts });
+
+        return interaction.editReply({
+          embeds: [await successEmbed(interaction.guild.id, 'Option Removed',
+            `${GLYPHS.SUCCESS} Option **"${option.title}"** has been removed.`)]
+        });
+      }
+
+      if (subcommand === 'role') {
+        const optionId = interaction.options.getString('option');
+        const role = interaction.options.getRole('role');
+        const remove = interaction.options.getBoolean('remove') ?? false;
+
+        const option = prompt.options.find(o => o.id === optionId);
+        if (!option) {
+          return interaction.editReply({
+            embeds: [await errorEmbed(interaction.guild.id, 'Not Found',
+              `${GLYPHS.ERROR} Option not found.`)]
+          });
+        }
+
+        const updatedPrompts = mapPrompts((promptData, original) => {
+          if (original.id === questionId) {
+            const opt = promptData.options.find(o => o.id === optionId);
+            if (opt) {
+              if (!opt.roleIds) opt.roleIds = [];
+              if (remove) {
+                opt.roleIds = opt.roleIds.filter(id => id !== role.id);
+              } else {
+                if (!opt.roleIds.includes(role.id)) {
+                  opt.roleIds.push(role.id);
+                }
+              }
+            }
+          }
+          return promptData;
+        });
+
+        await updateOnboarding({ prompts: updatedPrompts });
+
+        return interaction.editReply({
+          embeds: [await successEmbed(interaction.guild.id, remove ? 'Role Removed' : 'Role Added',
+            `${GLYPHS.SUCCESS} ${remove ? 'Removed' : 'Added'} ${role} ${remove ? 'from' : 'to'} option **"${option.title}"**.`)]
+        });
+      }
+
+      if (subcommand === 'channel') {
+        const optionId = interaction.options.getString('option');
+        const channel = interaction.options.getChannel('channel');
+        const remove = interaction.options.getBoolean('remove') ?? false;
+
+        const option = prompt.options.find(o => o.id === optionId);
+        if (!option) {
+          return interaction.editReply({
+            embeds: [await errorEmbed(interaction.guild.id, 'Not Found',
+              `${GLYPHS.ERROR} Option not found.`)]
+          });
+        }
+
+        const updatedPrompts = mapPrompts((promptData, original) => {
+          if (original.id === questionId) {
+            const opt = promptData.options.find(o => o.id === optionId);
+            if (opt) {
+              if (!opt.channelIds) opt.channelIds = [];
+              if (remove) {
+                opt.channelIds = opt.channelIds.filter(id => id !== channel.id);
+              } else {
+                if (!opt.channelIds.includes(channel.id)) {
+                  opt.channelIds.push(channel.id);
+                }
+              }
+            }
+          }
+          return promptData;
+        });
+
+        await updateOnboarding({ prompts: updatedPrompts });
+
+        return interaction.editReply({
+          embeds: [await successEmbed(interaction.guild.id, remove ? 'Channel Removed' : 'Channel Added',
+            `${GLYPHS.SUCCESS} ${remove ? 'Removed' : 'Added'} ${channel} ${remove ? 'from' : 'to'} option **"${option.title}"**.`)]
+        });
+      }
+    }
+
+  } catch (error) {
+    console.error('Onboarding command error:', error);
+
+    if (error.code === 50001) {
+      return interaction.editReply({
+        embeds: [await errorEmbed(interaction.guild.id, 'Missing Access',
+          `${GLYPHS.ERROR} I don't have permission to manage onboarding.`)]
+      });
+    }
+
+    if (error.code === 30029) {
+      return interaction.editReply({
+        embeds: [await errorEmbed(interaction.guild.id, 'Community Required',
+          `${GLYPHS.ERROR} Onboarding requires a **Community Server**.\n\nEnable Community in Server Settings.`)]
+      });
+    }
+
+    return interaction.editReply({
+      embeds: [await errorEmbed(interaction.guild.id, 'Error',
+        `${GLYPHS.ERROR} An error occurred: ${error.message}`)]
+    });
   }
 }
