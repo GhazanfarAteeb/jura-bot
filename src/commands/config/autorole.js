@@ -107,6 +107,15 @@ export default {
           return message.reply({ embeds: [embed] });
         }
 
+        // Warn if trying to add a color role to autorole
+        if (role.name.startsWith('🎨 ')) {
+          const embed = await errorEmbed(message.guild.id, 'Color Role Detected',
+            `${GLYPHS.ERROR} ${role} is a color role and should not be added to auto roles!\n\n` +
+            `Color roles are meant to be selected by members via the color roles panel, not assigned automatically.`
+          );
+          return message.reply({ embeds: [embed] });
+        }
+
         if (guildConfig.autoRole.roles.includes(role.id)) {
           const embed = await errorEmbed(message.guild.id, 'Already Added',
             `${GLYPHS.ERROR} ${role} is already in the auto role list!`

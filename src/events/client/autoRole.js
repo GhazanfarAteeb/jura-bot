@@ -17,13 +17,28 @@ export default {
     try {
       const guildConfig = await Guild.getGuild(member.guild.id, member.guild.name);
 
-      // Check if auto role is enabled
-      if (!guildConfig.autoRole?.enabled) return;
+      // Check if auto role is enabled (check both possible config locations due to legacy/slash command differences)
+      const autoRoleConfig = guildConfig.autoRole || guildConfig.autorole;
+      if (!autoRoleConfig?.enabled) return;
 
       // Get roles based on whether the member is a bot or user
-      const rolesToAssign = member.user.bot
-        ? guildConfig.autoRole.botRoles || []
-        : guildConfig.autoRole.roles || [];
+      // Combine roles from both possible config locations
+      let rolesToAssign;
+      if (member.user.bot) {
+        rolesToAssign = [
+          ...(guildConfig.autoRole?.botRoles || []),
+          ...(guildConfig.autorole?.botRoles || [])
+        ];
+      } else {
+        rolesToAssign = [
+          ...(guildConfig.autoRole?.roles || []),
+          ...(guildConfig.autorole?.roles || []),
+          ...(guildConfig.autorole?.humanRoles || [])
+        ];
+      }
+      
+      // Remove duplicates
+      rolesToAssign = [...new Set(rolesToAssign)];
 
       if (rolesToAssign.length === 0) return;
 
@@ -34,13 +49,19 @@ export default {
         // Check if bot can assign this role
         if (role.position >= member.guild.members.me.roles.highest.position) return false;
         if (role.managed) return false;
+        // Skip color roles - they should never be auto-assigned
+        // Color roles are meant to be selected via reaction roles panel
+        if (role.name.startsWith('🎨 ')) {
+          console.log(`[AutoRole] Skipping color role "${role.name}" - color roles should not be auto-assigned`);
+          return false;
+        }
         return true;
       });
 
       if (validRoles.length === 0) return;
 
-      // Assign roles after delay
-      const delay = guildConfig.autoRole.delay || 0;
+      // Assign roles after delay (check both config locations)
+      const delay = guildConfig.autoRole?.delay || guildConfig.autorole?.delay || 0;
 
       const assignRoles = async () => {
         try {

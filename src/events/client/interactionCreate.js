@@ -2463,6 +2463,16 @@ async function handleAutoroleCommand(interaction, guildConfig) {
       const role = interaction.options.getRole('role');
       const type = interaction.options.getString('type') || 'all';
 
+      // Prevent adding color roles to autorole
+      if (role.name.startsWith('🎨 ')) {
+        await interaction.editReply({
+          embeds: [await errorEmbed(interaction.guild.id, 'Color Role Detected',
+            `${GLYPHS.ERROR} ${role} is a color role and should not be added to auto-roles!\n\n` +
+            `Color roles are meant to be selected by members via the color roles panel, not assigned automatically.`)]
+        });
+        return;
+      }
+
       let targetArray;
       let displayType;
       if (type === 'humans') {

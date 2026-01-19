@@ -32,9 +32,24 @@ async function logMemberUpdate(oldMember, newMember) {
     // Skip if oldMember is partial (cache incomplete) - this causes false positives
     if (oldMember.partial) return;
 
-    // Skip if the old member's roles cache is empty (except @everyone) - indicates incomplete cache
+    // Skip if the old member's roles cache is incomplete
     // This prevents false role change logs when the bot restarts or member data is fetched
+    // Check 1: Old member only has @everyone but new member has more
     if (oldMember.roles.cache.size <= 1 && newMember.roles.cache.size > 1) return;
+    
+    // Check 2: If the difference in roles is suspiciously large (more than 5 roles added at once),
+    // this is likely a cache issue, not a real bulk role assignment
+    const guildId = newMember.guild.id;
+    const addedRolesCount = newMember.roles.cache.filter(role =>
+      role.id !== guildId && !oldMember.roles.cache.has(role.id)
+    ).size;
+    
+    // If more than 5 roles appear to be added at once, skip - this is almost certainly a cache issue
+    // Real bulk role assignments are rare and would typically be from an admin manually editing
+    if (addedRolesCount > 5) {
+      console.log(`[MemberLogging] Skipping suspicious bulk role add for ${newMember.user.tag}: ${addedRolesCount} roles`);
+      return;
+    }
 
     const guildConfig = await Guild.getGuild(newMember.guild.id, newMember.guild.name);
 
