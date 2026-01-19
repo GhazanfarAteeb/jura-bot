@@ -4088,9 +4088,10 @@ async function handleOnboardingCommand(interaction, guildConfig) {
             id: o.id,
             title: o.title,
             description: o.description,
-            emoji: o.emoji,
-            channelIds: o.channelIds || [],
-            roleIds: o.roleIds || []
+            emoji: o.emoji ? { id: o.emoji.id, name: o.emoji.name } : null,
+            // Discord.js uses `roles` and `channels` (Collections), convert to IDs
+            channelIds: o.channels ? Array.from(o.channels.keys()) : [],
+            roleIds: o.roles ? Array.from(o.roles.keys()) : []
           }))
         };
         return modifier ? modifier(promptData, p) : promptData;
@@ -4105,7 +4106,7 @@ async function handleOnboardingCommand(interaction, guildConfig) {
       // Always include defaultChannelIds
       if (updates.defaultChannelIds !== undefined) {
         payload.defaultChannelIds = updates.defaultChannelIds;
-      } else {
+      } else if (defaultChannelIds.length > 0) {
         payload.defaultChannelIds = defaultChannelIds;
       }
 
@@ -4126,6 +4127,7 @@ async function handleOnboardingCommand(interaction, guildConfig) {
         }
       }
 
+      console.log('Onboarding update payload:', JSON.stringify(payload, null, 2));
       await interaction.guild.editOnboarding(payload);
     };
 
