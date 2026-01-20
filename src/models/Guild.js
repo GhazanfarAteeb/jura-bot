@@ -163,6 +163,11 @@ const guildSchema = new mongoose.Schema({
       mentionUser: { type: Boolean, default: true },
       greetingText: { type: String, default: '💎 {user} just boosted the server!' }
     },
+    boosterRoleSystem: {
+      enabled: { type: Boolean, default: false },
+      roleId: String, // The temporary booster role to assign
+      duration: { type: Number, default: 24 } // Duration in hours before role is removed
+    },
     leaveSystem: {
       enabled: { type: Boolean, default: false },
       channel: String,
