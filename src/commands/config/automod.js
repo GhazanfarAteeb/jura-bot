@@ -195,8 +195,9 @@ async function handleBadwords(message, args, guildConfig) {
           `${GLYPHS.SUCCESS} Removed word(s) from the filter.\n` +
           `Total words: ${filteredWords.length}`)]
       });
+    }
 
-    case 'list':
+    case 'list': {
       const wordList = guildConfig.features.autoMod.badWords.words || [];
       if (wordList.length === 0) {
         return message.reply({
@@ -211,6 +212,7 @@ async function handleBadwords(message, args, guildConfig) {
           `**Total Words:** ${wordList.length}\n\n` +
           `**Preview (masked):**\n${maskedWords.join(', ')}${wordList.length > 30 ? '...' : ''}`)]
       });
+    }
 
     case 'action': {
       const newAction = args[1]?.toLowerCase();
@@ -308,7 +310,7 @@ async function handleBadwords(message, args, guildConfig) {
     }
 
     case 'ignoredlist':
-    case 'ignored':
+    case 'ignored': {
       const ignoredList = guildConfig.features.autoMod.badWords.ignoredWords || [];
       if (ignoredList.length === 0) {
         return message.reply({
@@ -323,6 +325,7 @@ async function handleBadwords(message, args, guildConfig) {
           `**Total Ignored Words:** ${ignoredList.length}\n\n` +
           `**Words:**\n${displayWords}${ignoredList.length > 50 ? '\n\n*...and more*' : ''}`)]
       });
+    }
 
     default:
       return message.reply({
