@@ -32,8 +32,7 @@ export default {
     switch (setting) {
       case 'enable':
       case 'on':
-        guildConfig.features.autoMod.enabled = true;
-        await guildConfig.save();
+        await Guild.updateGuild(message.guild.id, { $set: { 'features.autoMod.enabled': true } });
         return message.reply({
           embeds: [await successEmbed(message.guild.id, 'AutoMod Enabled',
             `${GLYPHS.SUCCESS} AutoMod has been enabled for this server.`)]
@@ -41,8 +40,7 @@ export default {
 
       case 'disable':
       case 'off':
-        guildConfig.features.autoMod.enabled = false;
-        await guildConfig.save();
+        await Guild.updateGuild(message.guild.id, { $set: { 'features.autoMod.enabled': false } });
         return message.reply({
           embeds: [await successEmbed(message.guild.id, 'AutoMod Disabled',
             `${GLYPHS.SUCCESS} AutoMod has been disabled for this server.`)]
@@ -155,8 +153,7 @@ async function handleBadwords(message, args, guildConfig) {
   switch (action) {
     case 'enable':
     case 'on':
-      guildConfig.features.autoMod.badWords.enabled = true;
-      await guildConfig.save();
+      await Guild.updateGuild(message.guild.id, { $set: { 'features.autoMod.badWords.enabled': true } });
       return message.reply({
         embeds: [await successEmbed(message.guild.id, 'Bad Words Filter Enabled',
           `${GLYPHS.SUCCESS} Bad words filter is now enabled.`)]
@@ -164,14 +161,13 @@ async function handleBadwords(message, args, guildConfig) {
 
     case 'disable':
     case 'off':
-      guildConfig.features.autoMod.badWords.enabled = false;
-      await guildConfig.save();
+      await Guild.updateGuild(message.guild.id, { $set: { 'features.autoMod.badWords.enabled': false } });
       return message.reply({
         embeds: [await successEmbed(message.guild.id, 'Bad Words Filter Disabled',
           `${GLYPHS.SUCCESS} Bad words filter is now disabled.`)]
       });
 
-    case 'add':
+    case 'add': {
       const addWords = args.slice(1).join(' ').split(',').map(w => w.trim().toLowerCase()).filter(w => w);
       if (addWords.length === 0) {
         return message.reply({
@@ -179,24 +175,25 @@ async function handleBadwords(message, args, guildConfig) {
             'Please provide words to add (comma separated).')]
         });
       }
-      const existingWords = guildConfig.features.autoMod.badWords.words || [];
-      guildConfig.features.autoMod.badWords.words = [...new Set([...existingWords, ...addWords])];
-      await guildConfig.save();
+      const existingWords = guildConfig.features.autoMod.badWords?.words || [];
+      const newWordsList = [...new Set([...existingWords, ...addWords])];
+      await Guild.updateGuild(message.guild.id, { $set: { 'features.autoMod.badWords.words': newWordsList } });
       return message.reply({
         embeds: [await successEmbed(message.guild.id, 'Words Added',
           `${GLYPHS.SUCCESS} Added ${addWords.length} word(s) to the filter.\n` +
-          `Total words: ${guildConfig.features.autoMod.badWords.words.length}`)]
+          `Total words: ${newWordsList.length}`)]
       });
+    }
 
-    case 'remove':
+    case 'remove': {
       const removeWords = args.slice(1).join(' ').split(',').map(w => w.trim().toLowerCase());
-      guildConfig.features.autoMod.badWords.words = (guildConfig.features.autoMod.badWords.words || [])
+      const filteredWords = (guildConfig.features.autoMod.badWords?.words || [])
         .filter(w => !removeWords.includes(w));
-      await guildConfig.save();
+      await Guild.updateGuild(message.guild.id, { $set: { 'features.autoMod.badWords.words': filteredWords } });
       return message.reply({
         embeds: [await successEmbed(message.guild.id, 'Words Removed',
           `${GLYPHS.SUCCESS} Removed word(s) from the filter.\n` +
-          `Total words: ${guildConfig.features.autoMod.badWords.words.length}`)]
+          `Total words: ${filteredWords.length}`)]
       });
 
     case 'list':
@@ -215,7 +212,7 @@ async function handleBadwords(message, args, guildConfig) {
           `**Preview (masked):**\n${maskedWords.join(', ')}${wordList.length > 30 ? '...' : ''}`)]
       });
 
-    case 'action':
+    case 'action': {
       const newAction = args[1]?.toLowerCase();
       if (!['delete', 'warn', 'timeout', 'kick'].includes(newAction)) {
         return message.reply({
@@ -223,14 +220,14 @@ async function handleBadwords(message, args, guildConfig) {
             'Valid actions: delete, warn, timeout, kick')]
         });
       }
-      guildConfig.features.autoMod.badWords.action = newAction;
-      await guildConfig.save();
+      await Guild.updateGuild(message.guild.id, { $set: { 'features.autoMod.badWords.action': newAction } });
       return message.reply({
         embeds: [await successEmbed(message.guild.id, 'Action Updated',
           `${GLYPHS.SUCCESS} Bad words action set to: **${newAction}**`)]
       });
+    }
 
-    case 'timeout':
+    case 'timeout': {
       const duration = parseInt(args[1]);
       if (isNaN(duration) || duration < 60 || duration > 604800) {
         return message.reply({
@@ -238,14 +235,14 @@ async function handleBadwords(message, args, guildConfig) {
             'Duration must be between 60 and 604800 seconds (1 min to 1 week).')]
         });
       }
-      guildConfig.features.autoMod.badWords.timeoutDuration = duration;
-      await guildConfig.save();
+      await Guild.updateGuild(message.guild.id, { $set: { 'features.autoMod.badWords.timeoutDuration': duration } });
       return message.reply({
         embeds: [await successEmbed(message.guild.id, 'Timeout Duration Updated',
           `${GLYPHS.SUCCESS} Timeout duration set to: **${duration}** seconds`)]
       });
+    }
 
-    case 'builtin':
+    case 'builtin': {
       const builtinToggle = args[1]?.toLowerCase();
       if (!['on', 'off', 'enable', 'disable'].includes(builtinToggle)) {
         return message.reply({
@@ -253,15 +250,16 @@ async function handleBadwords(message, args, guildConfig) {
             'Use `automod badwords builtin on` or `automod badwords builtin off`')]
         });
       }
-      guildConfig.features.autoMod.badWords.useBuiltInList = ['on', 'enable'].includes(builtinToggle);
-      await guildConfig.save();
+      const useBuiltIn = ['on', 'enable'].includes(builtinToggle);
+      await Guild.updateGuild(message.guild.id, { $set: { 'features.autoMod.badWords.useBuiltInList': useBuiltIn } });
       return message.reply({
         embeds: [await successEmbed(message.guild.id, 'Built-in Word List Updated',
-          `${GLYPHS.SUCCESS} Built-in word list is now **${guildConfig.features.autoMod.badWords.useBuiltInList ? 'enabled' : 'disabled'}**\n` +
+          `${GLYPHS.SUCCESS} Built-in word list is now **${useBuiltIn ? 'enabled' : 'disabled'}**\n` +
           `The built-in list contains ${builtInCount} common inappropriate words.`)]
       });
+    }
 
-    case 'escalate':
+    case 'escalate': {
       const escalateToggle = args[1]?.toLowerCase();
       if (!['on', 'off', 'enable', 'disable'].includes(escalateToggle)) {
         return message.reply({
@@ -269,16 +267,17 @@ async function handleBadwords(message, args, guildConfig) {
             'Use `automod badwords escalate on` or `automod badwords escalate off`')]
         });
       }
-      guildConfig.features.autoMod.badWords.autoEscalate = ['on', 'enable'].includes(escalateToggle);
-      await guildConfig.save();
+      const autoEscalate = ['on', 'enable'].includes(escalateToggle);
+      await Guild.updateGuild(message.guild.id, { $set: { 'features.autoMod.badWords.autoEscalate': autoEscalate } });
       return message.reply({
         embeds: [await successEmbed(message.guild.id, 'Auto-Escalate Updated',
-          `${GLYPHS.SUCCESS} Auto-escalate is now **${guildConfig.features.autoMod.badWords.autoEscalate ? 'enabled' : 'disabled'}**\n` +
+          `${GLYPHS.SUCCESS} Auto-escalate is now **${autoEscalate ? 'enabled' : 'disabled'}**\n` +
           `When enabled, extreme slurs will auto-escalate to kick action.`)]
       });
+    }
 
     case 'ignore':
-    case 'whitelist':
+    case 'whitelist': {
       const ignoreWords = args.slice(1).join(' ').split(',').map(w => w.trim().toLowerCase()).filter(w => w);
       if (ignoreWords.length === 0) {
         return message.reply({
@@ -286,28 +285,29 @@ async function handleBadwords(message, args, guildConfig) {
             'Please provide words to ignore (comma separated).')]
         });
       }
-      const existingIgnored = guildConfig.features.autoMod.badWords.ignoredWords || [];
-      guildConfig.features.autoMod.badWords.ignoredWords = [...new Set([...existingIgnored, ...ignoreWords])];
-      await guildConfig.save();
+      const existingIgnored = guildConfig.features.autoMod.badWords?.ignoredWords || [];
+      const newIgnoredList = [...new Set([...existingIgnored, ...ignoreWords])];
+      await Guild.updateGuild(message.guild.id, { $set: { 'features.autoMod.badWords.ignoredWords': newIgnoredList } });
       return message.reply({
         embeds: [await successEmbed(message.guild.id, 'Words Ignored',
           `${GLYPHS.SUCCESS} Added ${ignoreWords.length} word(s) to whitelist.\n` +
           `These words will not trigger the filter.`)]
       });
+    }
 
     case 'unignore':
-    case 'unwhitelist':
+    case 'unwhitelist': {
       const unignoreWords = args.slice(1).join(' ').split(',').map(w => w.trim().toLowerCase());
-      guildConfig.features.autoMod.badWords.ignoredWords = (guildConfig.features.autoMod.badWords.ignoredWords || [])
+      const filteredIgnored = (guildConfig.features.autoMod.badWords?.ignoredWords || [])
         .filter(w => !unignoreWords.includes(w));
-      await guildConfig.save();
+      await Guild.updateGuild(message.guild.id, { $set: { 'features.autoMod.badWords.ignoredWords': filteredIgnored } });
       return message.reply({
         embeds: [await successEmbed(message.guild.id, 'Words Unignored',
           `${GLYPHS.SUCCESS} Removed word(s) from whitelist.`)]
       });
+    }
 
     case 'ignoredlist':
-    case 'whitelist':
     case 'ignored':
       const ignoredList = guildConfig.features.autoMod.badWords.ignoredWords || [];
       if (ignoredList.length === 0) {
@@ -353,16 +353,14 @@ async function handleAntispam(message, args, guildConfig) {
   switch (action) {
     case 'enable':
     case 'on':
-      guildConfig.features.autoMod.antiSpam.enabled = true;
-      await guildConfig.save();
+      await Guild.updateGuild(message.guild.id, { $set: { 'features.autoMod.antiSpam.enabled': true } });
       return message.reply({
         embeds: [await successEmbed(message.guild.id, 'Anti-Spam Enabled', `${GLYPHS.SUCCESS} Anti-spam is now enabled.`)]
       });
 
     case 'disable':
     case 'off':
-      guildConfig.features.autoMod.antiSpam.enabled = false;
-      await guildConfig.save();
+      await Guild.updateGuild(message.guild.id, { $set: { 'features.autoMod.antiSpam.enabled': false } });
       return message.reply({
         embeds: [await successEmbed(message.guild.id, 'Anti-Spam Disabled', `${GLYPHS.SUCCESS} Anti-spam is now disabled.`)]
       });
@@ -374,8 +372,7 @@ async function handleAntispam(message, args, guildConfig) {
           embeds: [await errorEmbed(message.guild.id, 'Invalid Limit', 'Message limit must be between 2 and 20.')]
         });
       }
-      guildConfig.features.autoMod.antiSpam.messageLimit = limit;
-      await guildConfig.save();
+      await Guild.updateGuild(message.guild.id, { $set: { 'features.autoMod.antiSpam.messageLimit': limit } });
       return message.reply({
         embeds: [await successEmbed(message.guild.id, 'Limit Updated', `${GLYPHS.SUCCESS} Message limit set to: **${limit}**`)]
       });
@@ -387,8 +384,7 @@ async function handleAntispam(message, args, guildConfig) {
           embeds: [await errorEmbed(message.guild.id, 'Invalid Window', 'Time window must be between 3 and 30 seconds.')]
         });
       }
-      guildConfig.features.autoMod.antiSpam.timeWindow = window;
-      await guildConfig.save();
+      await Guild.updateGuild(message.guild.id, { $set: { 'features.autoMod.antiSpam.timeWindow': window } });
       return message.reply({
         embeds: [await successEmbed(message.guild.id, 'Window Updated', `${GLYPHS.SUCCESS} Time window set to: **${window}** seconds`)]
       });
@@ -400,8 +396,7 @@ async function handleAntispam(message, args, guildConfig) {
           embeds: [await errorEmbed(message.guild.id, 'Invalid Action', 'Valid actions: warn, timeout, mute, kick')]
         });
       }
-      guildConfig.features.autoMod.antiSpam.action = spamAction;
-      await guildConfig.save();
+      await Guild.updateGuild(message.guild.id, { $set: { 'features.autoMod.antiSpam.action': spamAction } });
       return message.reply({
         embeds: [await successEmbed(message.guild.id, 'Action Updated', `${GLYPHS.SUCCESS} Anti-spam action set to: **${spamAction}**`)]
       });
@@ -433,16 +428,14 @@ async function handleAntiraid(message, args, guildConfig) {
   switch (action) {
     case 'enable':
     case 'on':
-      guildConfig.features.autoMod.antiRaid.enabled = true;
-      await guildConfig.save();
+      await Guild.updateGuild(message.guild.id, { $set: { 'features.autoMod.antiRaid.enabled': true } });
       return message.reply({
         embeds: [await successEmbed(message.guild.id, 'Anti-Raid Enabled', `${GLYPHS.SUCCESS} Anti-raid is now enabled.`)]
       });
 
     case 'disable':
     case 'off':
-      guildConfig.features.autoMod.antiRaid.enabled = false;
-      await guildConfig.save();
+      await Guild.updateGuild(message.guild.id, { $set: { 'features.autoMod.antiRaid.enabled': false } });
       return message.reply({
         embeds: [await successEmbed(message.guild.id, 'Anti-Raid Disabled', `${GLYPHS.SUCCESS} Anti-raid is now disabled.`)]
       });
@@ -454,8 +447,7 @@ async function handleAntiraid(message, args, guildConfig) {
           embeds: [await errorEmbed(message.guild.id, 'Invalid Threshold', 'Join threshold must be between 5 and 50.')]
         });
       }
-      guildConfig.features.autoMod.antiRaid.joinThreshold = threshold;
-      await guildConfig.save();
+      await Guild.updateGuild(message.guild.id, { $set: { 'features.autoMod.antiRaid.joinThreshold': threshold } });
       return message.reply({
         embeds: [await successEmbed(message.guild.id, 'Threshold Updated', `${GLYPHS.SUCCESS} Join threshold set to: **${threshold}**`)]
       });
@@ -467,8 +459,7 @@ async function handleAntiraid(message, args, guildConfig) {
           embeds: [await errorEmbed(message.guild.id, 'Invalid Action', 'Valid actions: lockdown, kick, ban')]
         });
       }
-      guildConfig.features.autoMod.antiRaid.action = raidAction;
-      await guildConfig.save();
+      await Guild.updateGuild(message.guild.id, { $set: { 'features.autoMod.antiRaid.action': raidAction } });
       return message.reply({
         embeds: [await successEmbed(message.guild.id, 'Action Updated', `${GLYPHS.SUCCESS} Anti-raid action set to: **${raidAction}**`)]
       });
@@ -515,16 +506,14 @@ async function handleAntinuke(message, args, guildConfig) {
   switch (action) {
     case 'enable':
     case 'on':
-      guildConfig.features.autoMod.antiNuke.enabled = true;
-      await guildConfig.save();
+      await Guild.updateGuild(message.guild.id, { $set: { 'features.autoMod.antiNuke.enabled': true } });
       return message.reply({
         embeds: [await successEmbed(message.guild.id, 'Anti-Nuke Enabled', `${GLYPHS.SUCCESS} Anti-nuke is now enabled.`)]
       });
 
     case 'disable':
     case 'off':
-      guildConfig.features.autoMod.antiNuke.enabled = false;
-      await guildConfig.save();
+      await Guild.updateGuild(message.guild.id, { $set: { 'features.autoMod.antiNuke.enabled': false } });
       return message.reply({
         embeds: [await successEmbed(message.guild.id, 'Anti-Nuke Disabled', `${GLYPHS.SUCCESS} Anti-nuke is now disabled.`)]
       });
@@ -536,8 +525,7 @@ async function handleAntinuke(message, args, guildConfig) {
           embeds: [await errorEmbed(message.guild.id, 'Invalid Action', 'Valid actions: removeRoles, kick, ban')]
         });
       }
-      guildConfig.features.autoMod.antiNuke.action = nukeAction;
-      await guildConfig.save();
+      await Guild.updateGuild(message.guild.id, { $set: { 'features.autoMod.antiNuke.action': nukeAction } });
       return message.reply({
         embeds: [await successEmbed(message.guild.id, 'Action Updated', `${GLYPHS.SUCCESS} Anti-nuke action set to: **${nukeAction}**`)]
       });
@@ -549,13 +537,11 @@ async function handleAntinuke(message, args, guildConfig) {
           embeds: [await errorEmbed(message.guild.id, 'Missing User', 'Please mention a user to whitelist.')]
         });
       }
-      if (!guildConfig.features.autoMod.antiNuke.whitelistedUsers) {
-        guildConfig.features.autoMod.antiNuke.whitelistedUsers = [];
+      const currentWhitelist = guildConfig.features.autoMod.antiNuke?.whitelistedUsers || [];
+      if (!currentWhitelist.includes(whitelistUser.id)) {
+        currentWhitelist.push(whitelistUser.id);
       }
-      if (!guildConfig.features.autoMod.antiNuke.whitelistedUsers.includes(whitelistUser.id)) {
-        guildConfig.features.autoMod.antiNuke.whitelistedUsers.push(whitelistUser.id);
-      }
-      await guildConfig.save();
+      await Guild.updateGuild(message.guild.id, { $set: { 'features.autoMod.antiNuke.whitelistedUsers': currentWhitelist } });
       return message.reply({
         embeds: [await successEmbed(message.guild.id, 'User Whitelisted', `${GLYPHS.SUCCESS} ${whitelistUser.tag} is now whitelisted from anti-nuke.`)]
       });
@@ -567,9 +553,9 @@ async function handleAntinuke(message, args, guildConfig) {
           embeds: [await errorEmbed(message.guild.id, 'Missing User', 'Please mention a user to unwhitelist.')]
         });
       }
-      guildConfig.features.autoMod.antiNuke.whitelistedUsers = (guildConfig.features.autoMod.antiNuke.whitelistedUsers || [])
+      const filteredWhitelist = (guildConfig.features.autoMod.antiNuke?.whitelistedUsers || [])
         .filter(id => id !== unwhitelistUser.id);
-      await guildConfig.save();
+      await Guild.updateGuild(message.guild.id, { $set: { 'features.autoMod.antiNuke.whitelistedUsers': filteredWhitelist } });
       return message.reply({
         embeds: [await successEmbed(message.guild.id, 'User Unwhitelisted', `${GLYPHS.SUCCESS} ${unwhitelistUser.tag} is no longer whitelisted.`)]
       });
@@ -601,16 +587,14 @@ async function handleAntilinks(message, args, guildConfig) {
   switch (action) {
     case 'enable':
     case 'on':
-      guildConfig.features.autoMod.antiLinks.enabled = true;
-      await guildConfig.save();
+      await Guild.updateGuild(message.guild.id, { $set: { 'features.autoMod.antiLinks.enabled': true } });
       return message.reply({
         embeds: [await successEmbed(message.guild.id, 'Anti-Links Enabled', `${GLYPHS.SUCCESS} Anti-links is now enabled.`)]
       });
 
     case 'disable':
     case 'off':
-      guildConfig.features.autoMod.antiLinks.enabled = false;
-      await guildConfig.save();
+      await Guild.updateGuild(message.guild.id, { $set: { 'features.autoMod.antiLinks.enabled': false } });
       return message.reply({
         embeds: [await successEmbed(message.guild.id, 'Anti-Links Disabled', `${GLYPHS.SUCCESS} Anti-links is now disabled.`)]
       });
@@ -622,10 +606,11 @@ async function handleAntilinks(message, args, guildConfig) {
           embeds: [await errorEmbed(message.guild.id, 'Missing Domain', 'Please provide a domain to whitelist.')]
         });
       }
-      if (!guildConfig.features.autoMod.antiLinks.whitelistedDomains.includes(domain)) {
-        guildConfig.features.autoMod.antiLinks.whitelistedDomains.push(domain);
+      const currentDomains = guildConfig.features.autoMod.antiLinks?.whitelistedDomains || [];
+      if (!currentDomains.includes(domain)) {
+        currentDomains.push(domain);
       }
-      await guildConfig.save();
+      await Guild.updateGuild(message.guild.id, { $set: { 'features.autoMod.antiLinks.whitelistedDomains': currentDomains } });
       return message.reply({
         embeds: [await successEmbed(message.guild.id, 'Domain Whitelisted', `${GLYPHS.SUCCESS} \`${domain}\` is now whitelisted.`)]
       });
@@ -660,16 +645,14 @@ async function handleAntiinvites(message, args, guildConfig) {
   switch (action) {
     case 'enable':
     case 'on':
-      guildConfig.features.autoMod.antiInvites.enabled = true;
-      await guildConfig.save();
+      await Guild.updateGuild(message.guild.id, { $set: { 'features.autoMod.antiInvites.enabled': true } });
       return message.reply({
         embeds: [await successEmbed(message.guild.id, 'Anti-Invites Enabled', `${GLYPHS.SUCCESS} Anti-invites is now enabled.`)]
       });
 
     case 'disable':
     case 'off':
-      guildConfig.features.autoMod.antiInvites.enabled = false;
-      await guildConfig.save();
+      await Guild.updateGuild(message.guild.id, { $set: { 'features.autoMod.antiInvites.enabled': false } });
       return message.reply({
         embeds: [await successEmbed(message.guild.id, 'Anti-Invites Disabled', `${GLYPHS.SUCCESS} Anti-invites is now disabled.`)]
       });
@@ -681,8 +664,7 @@ async function handleAntiinvites(message, args, guildConfig) {
           embeds: [await errorEmbed(message.guild.id, 'Invalid Action', 'Valid actions: delete, warn, timeout, kick')]
         });
       }
-      guildConfig.features.autoMod.antiInvites.action = inviteAction;
-      await guildConfig.save();
+      await Guild.updateGuild(message.guild.id, { $set: { 'features.autoMod.antiInvites.action': inviteAction } });
       return message.reply({
         embeds: [await successEmbed(message.guild.id, 'Action Updated', `${GLYPHS.SUCCESS} Anti-invites action set to: **${inviteAction}**`)]
       });
