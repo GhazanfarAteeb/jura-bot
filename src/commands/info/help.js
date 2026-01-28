@@ -6,11 +6,12 @@ import Guild from '../../models/Guild.js';
 
 // Accurate command lists based on actual files
 const COMMANDS_BY_CATEGORY = {
-  admin: ['deployment', 'logs', 'award'],
+  admin: ['deployment', 'logs', 'award', 'botlogs', 'cleanup'],
   config: [
     'setup', 'config', 'feature', 'setprefix', 'setchannel', 'setrole', 'setcoin', 'setoverlay',
     'automod', 'automodignore', 'welcome', 'goodbye', 'boost', 'antinuke', 'autopublish', 'autorole', 'cmdchannels',
-    'manageshop', 'colorroles', 'levelroles', 'levelup', 'noxp', 'reactionroles', 'xpmultiplier', 'cleanup', 'logs', 'rules'
+    'manageshop', 'colorroles', 'levelroles', 'levelup', 'noxp', 'reactionroles', 'xpmultiplier', 'cleanup', 'logs', 'rules',
+    'starboard', 'onboarding', 'birthdayconfig'
   ],
   moderation: ['warn', 'kick', 'ban', 'purge', 'userhistory', 'timeout', 'untimeout', 'lockdown', 'verify'],
   economy: [
@@ -25,7 +26,7 @@ const COMMANDS_BY_CATEGORY = {
   community: [
     'setbirthday', 'birthdays', 'removebirthday', 'birthdaypreference', 'birthdayconfig', 'mybirthday',
     'requestbirthday', 'approvebday', 'rejectbday', 'birthdayrequests', 'cancelbirthday',
-    'createevent', 'events', 'joinevent', 'cancelevent', 'giveaway', 'starboard'
+    'createevent', 'events', 'joinevent', 'cancelevent', 'giveaway', 'starboard', 'confession'
   ],
   social: ['marry', 'divorce', 'badges'],
   fun: ['tictactoe', 'trivia'],
@@ -41,13 +42,17 @@ const SLASH_COMMANDS = [
   // Moderation
   'ban', 'kick', 'warn', 'timeout', 'purge', 'userhistory', 'untimeout', 'verify', 'lockdown',
   // Config
-  'welcome', 'autorole', 'noxp', 'automod', 'cmdchannels', 'logs', 'feature', 'setrole', 'setchannel', 'config', 'setup', 'manageshop', 'setprefix',
+  'welcome', 'goodbye', 'boost', 'autorole', 'noxp', 'automod', 'cmdchannels', 'logs', 'feature', 
+  'setrole', 'setchannel', 'config', 'setup', 'manageshop', 'setprefix', 'xpmultiplier', 
+  'levelroles', 'levelup', 'starboard', 'rules', 'autopublish', 'cleanup', 'onboarding',
   // Admin
-  'giveaway', 'award',
+  'giveaway', 'award', 'deployment', 'botlogs',
   // Music
   'play', 'pause', 'resume', 'skip', 'stop', 'queue', 'nowplaying', 'volume', 'shuffle', 'loop', 'seek', 'remove', 'clear', 'skipto',
   // Economy
-  'balance', 'daily', 'level', 'profile', 'shop', 'inventory', 'rep',
+  'balance', 'daily', 'level', 'profile', 'shop', 'inventory', 'rep', 'coinflip', 'slots', 'dice', 'roulette', 'blackjack', 'adventure',
+  // Community
+  'confession', 'birthday', 'event', 'starboard',
   // Info
   'help', 'ping', 'serverinfo', 'userinfo', 'channelinfo', 'roleinfo'
 ];

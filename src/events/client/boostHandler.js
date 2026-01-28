@@ -62,11 +62,26 @@ function buildBoostEmbed(member, boost, guildConfig) {
   const embed = new EmbedBuilder()
     .setColor(boost.embedColor || '#f47fff');
 
-  // Author section - show user info
-  embed.setAuthor({
-    name: member.user.username,
-    iconURL: member.user.displayAvatarURL({ dynamic: true, size: 128 })
-  });
+  // Author section
+  const authorType = boost.authorType || 'username';
+  if (authorType !== 'none') {
+    if (authorType === 'server') {
+      embed.setAuthor({
+        name: member.guild.name,
+        iconURL: member.guild.iconURL({ dynamic: true, size: 128 })
+      });
+    } else if (authorType === 'displayname') {
+      embed.setAuthor({
+        name: member.displayName || member.user.displayName || member.user.username,
+        iconURL: member.user.displayAvatarURL({ dynamic: true, size: 128 })
+      });
+    } else {
+      embed.setAuthor({
+        name: member.user.username,
+        iconURL: member.user.displayAvatarURL({ dynamic: true, size: 128 })
+      });
+    }
+  }
 
   // Title
   const title = boost.embedTitle;
@@ -86,6 +101,9 @@ function buildBoostEmbed(member, boost, guildConfig) {
     embed.setThumbnail(member.guild.iconURL({ dynamic: true, size: 256 }));
   } else if (boost.thumbnailUrl) {
     embed.setThumbnail(boost.thumbnailUrl);
+  } else if (boost.thumbnailType !== 'none' && boost.thumbnailType !== null) {
+    // Default to avatar if no specific type set
+    embed.setThumbnail(member.user.displayAvatarURL({ dynamic: true, size: 256 }));
   }
 
   // Footer

@@ -2580,8 +2580,52 @@ async function handleFeatureCommand(interaction, client, guildConfig) {
     afk: ['afk'],
     reminders: ['remind', 'reminder'],
     automod: ['automod'],
-    welcome: ['welcome']
+    welcome: ['welcome'],
+    boost: ['boost'] // Special feature toggle
   };
+
+  // Handle Boost System specially (feature toggle + commands)
+  if (featureType === 'boost') {
+    if (status === 'status') {
+      const boostConfig = guildConfig.features?.boostSystem || {};
+      const boostChannel = boostConfig.channel ? interaction.guild.channels.cache.get(boostConfig.channel) : null;
+      
+      const embed = new EmbedBuilder()
+        .setTitle('💎 Server Boost Announcements Status')
+        .setColor(boostConfig.enabled ? '#FF73FA' : '#FF4757')
+        .setDescription(
+          `**Status:** ${boostConfig.enabled ? '✅ Enabled' : '❌ Disabled'}\n` +
+          `**Channel:** ${boostChannel ? `<#${boostChannel.id}>` : 'Not set'}\n` +
+          `**Embed Mode:** ${boostConfig.embedEnabled !== false ? '✅' : '❌'}\n\n` +
+          `**Configure with:**\n` +
+          `• \`/boost channel\` - Set announcement channel\n` +
+          `• \`/boost message\` - Customize message\n` +
+          `• \`/boost test\` - Preview message`
+        )
+        .setFooter({ text: 'Use /feature type:boost to toggle on/off' });
+
+      return interaction.editReply({ embeds: [embed] });
+    }
+
+    const isEnabling = status === 'enable';
+    await Guild.updateGuild(guildId, {
+      $set: { 'features.boostSystem.enabled': isEnabling }
+    });
+
+    return interaction.editReply({
+      embeds: [await successEmbed(guildId,
+        `Boost Announcements ${isEnabling ? 'Enabled' : 'Disabled'}`,
+        `${GLYPHS.SUCCESS} **💎 Server Boost Announcements** have been ${isEnabling ? 'enabled' : 'disabled'}.\n\n` +
+        (isEnabling
+          ? `The bot will now send thank you messages when members boost the server.\n\n` +
+            `**Configure with:**\n` +
+            `• \`/boost channel\` - Set announcement channel\n` +
+            `• \`/boost message\` - Customize message\n` +
+            `• \`/boost test\` - Preview message`
+          : `Boost thank you messages have been disabled.`)
+      )]
+    });
+  }
 
   // Handle AI Chat specially (it's a feature toggle, not command-based)
   if (featureType === 'aichat') {
@@ -2696,7 +2740,8 @@ async function handleFeatureCommand(interaction, client, guildConfig) {
       afk: '💤 AFK',
       reminders: '⏰ Reminders',
       automod: '🛡️ AutoMod',
-      welcome: '👋 Welcome'
+      welcome: '👋 Welcome',
+      boost: '💎 Server Boost'
     };
     featureName = featureNames[featureType] || featureType;
   }

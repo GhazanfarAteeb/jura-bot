@@ -156,12 +156,13 @@ const guildSchema = new mongoose.Schema({
       embedColor: { type: String, default: '#f47fff' },
       embedTitle: String,
       bannerUrl: String,
-      thumbnailType: { type: String, enum: ['avatar', 'server', 'custom', null], default: 'avatar' },
+      thumbnailType: { type: String, enum: ['avatar', 'server', 'custom', 'none', null], default: 'avatar' },
       thumbnailUrl: String,
       footerText: String,
       showTimestamp: { type: Boolean, default: true },
       mentionUser: { type: Boolean, default: true },
-      greetingText: { type: String, default: '💎 {user} just boosted the server!' }
+      greetingText: { type: String, default: '💎 {user} just boosted the server!' },
+      authorType: { type: String, enum: ['username', 'displayname', 'server', 'none'], default: 'username' }
     },
     boosterRoleSystem: {
       enabled: { type: Boolean, default: false },

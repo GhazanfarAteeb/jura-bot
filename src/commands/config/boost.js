@@ -1,5 +1,6 @@
 import { PermissionFlagsBits, EmbedBuilder, ChannelType } from 'discord.js';
 import Guild from '../../models/Guild.js';
+import BoosterRole from '../../models/BoosterRole.js';
 import { successEmbed, errorEmbed, infoEmbed, GLYPHS } from '../../utils/embeds.js';
 import { hasModPerms, getPrefix } from '../../utils/helpers.js';
 import { parseBoostMessage, buildBoostEmbed } from '../../events/client/boostHandler.js';
@@ -31,27 +32,6 @@ export default {
     const action = args[0].toLowerCase();
 
     switch (action) {
-      case 'enable':
-      case 'on':
-        await Guild.updateGuild(message.guild.id, {
-          $set: { 'features.boostSystem.enabled': true }
-        });
-        return message.reply({
-          embeds: [await successEmbed(message.guild.id, 'Boost System Enabled',
-            `${GLYPHS.SUCCESS} Boost thank you messages are now enabled.\n\n` +
-            `Make sure to set a channel: \`${prefix}boost channel #channel\``)]
-        });
-
-      case 'disable':
-      case 'off':
-        await Guild.updateGuild(message.guild.id, {
-          $set: { 'features.boostSystem.enabled': false }
-        });
-        return message.reply({
-          embeds: [await successEmbed(message.guild.id, 'Boost System Disabled',
-            `${GLYPHS.SUCCESS} Boost thank you messages are now disabled.`)]
-        });
-
       case 'channel':
         const channel = message.mentions.channels.first() ||
           message.guild.channels.cache.get(args[1]);
@@ -415,6 +395,113 @@ export default {
       case 'help':
         return showHelp(message, prefix);
 
+      case 'author':
+        const authorOption = args[1]?.toLowerCase();
+
+        if (!authorOption) {
+          return message.reply({
+            embeds: [await infoEmbed(message.guild.id, 'Author Settings',
+              `**Current:** ${guildConfig.features?.boostSystem?.authorType || 'username (with avatar)'}\n\n` +
+              `\`${prefix}boost author username\` - Show username with avatar\n` +
+              `\`${prefix}boost author displayname\` - Show display name with avatar\n` +
+              `\`${prefix}boost author server\` - Show server name with icon\n` +
+              `\`${prefix}boost author none\` - No author section`)]
+          });
+        }
+
+        const validAuthorTypes = ['username', 'displayname', 'display', 'server', 'guild', 'none', 'remove'];
+        if (!validAuthorTypes.includes(authorOption)) {
+          return message.reply({
+            embeds: [await errorEmbed(message.guild.id, 'Invalid Option',
+              'Valid options: `username`, `displayname`, `server`, `none`')]
+          });
+        }
+
+        let authorType = authorOption;
+        if (authorOption === 'display') authorType = 'displayname';
+        if (authorOption === 'guild') authorType = 'server';
+        if (authorOption === 'remove') authorType = 'none';
+
+        await Guild.updateGuild(message.guild.id, {
+          $set: { 'features.boostSystem.authorType': authorType }
+        });
+
+        return message.reply({
+          embeds: [await successEmbed(message.guild.id, 'Author Setting Updated',
+            `${GLYPHS.SUCCESS} Author section set to: **${authorType}**`)]
+        });
+
+      case 'timestamp':
+        const timestampOption = args[1]?.toLowerCase();
+
+        if (!['on', 'off', 'enable', 'disable'].includes(timestampOption)) {
+          return message.reply({
+            embeds: [await errorEmbed(message.guild.id, 'Invalid Option',
+              `Use \`${prefix}boost timestamp on\` or \`${prefix}boost timestamp off\``)]
+          });
+        }
+
+        const timestampEnabled = ['on', 'enable'].includes(timestampOption);
+        await Guild.updateGuild(message.guild.id, {
+          $set: { 'features.boostSystem.showTimestamp': timestampEnabled }
+        });
+
+        return message.reply({
+          embeds: [await successEmbed(message.guild.id, 'Timestamp Setting Updated',
+            `${GLYPHS.SUCCESS} Timestamp is now **${timestampEnabled ? 'enabled' : 'disabled'}**`)]
+        });
+
+      case 'reset':
+        await Guild.updateGuild(message.guild.id, {
+          $set: {
+            'features.boostSystem': {
+              enabled: false,
+              channel: null,
+              message: null,
+              embedEnabled: true,
+              embedColor: '#f47fff',
+              embedTitle: null,
+              bannerUrl: null,
+              thumbnailUrl: null,
+              thumbnailType: 'avatar',
+              footerText: null,
+              showTimestamp: true,
+              mentionUser: true,
+              greetingText: null,
+              authorType: 'username'
+            }
+          }
+        });
+
+        return message.reply({
+          embeds: [await successEmbed(message.guild.id, 'Boost System Reset',
+            `${GLYPHS.SUCCESS} All boost message settings have been reset to defaults.`)]
+        });
+
+      // Booster Role System commands
+      case 'role':
+      case 'setrole':
+        return setBoosterRole(message, args, guildConfig, prefix);
+
+      case 'give':
+      case 'assign':
+        return giveBoosterRole(message, args, guildConfig, prefix);
+
+      case 'take':
+      case 'revoke':
+        return removeBoosterRole(message, args, guildConfig, prefix);
+
+      case 'list':
+      case 'active':
+        return listActiveBoosterRoles(message, guildConfig, prefix);
+
+      case 'duration':
+      case 'time':
+        return setRoleDuration(message, args, guildConfig, prefix);
+
+      case 'clearrole':
+        return clearBoosterRole(message, guildConfig, prefix);
+
       default:
         return message.reply({
           embeds: [await errorEmbed(message.guild.id, 'Unknown Option',
@@ -426,28 +513,28 @@ export default {
 
 async function showStatus(message, guildConfig, prefix) {
   const boost = guildConfig.features?.boostSystem || {};
+  const boosterRole = guildConfig.features?.boosterRoleSystem || {};
   const channel = boost.channel ? message.guild.channels.cache.get(boost.channel) : null;
+  const role = boosterRole.roleId ? message.guild.roles.cache.get(boosterRole.roleId) : null;
 
   const embed = new EmbedBuilder()
     .setColor(boost.embedColor || '#f47fff')
-    .setTitle('💎 Boost Thank You System')
-    .setDescription('Send thank you messages when someone boosts your server!')
-    .addFields(
-      { name: '▸ Status', value: boost.enabled ? '`✅ Enabled`' : '`❌ Disabled`', inline: true },
-      { name: '▸ Channel', value: channel ? `${channel}` : '`Not set`', inline: true },
-      { name: '▸ Embed', value: boost.embedEnabled !== false ? '`✅ On`' : '`❌ Off`', inline: true },
-      { name: '▸ Message', value: `\`\`\`${(boost.message || 'Thank you {user} for boosting {server}! 🎉').slice(0, 100)}\`\`\``, inline: false }
-    )
-    .addFields(
-      {
-        name: '📝 Commands', value:
-          `\`${prefix}boost enable\` - Enable boost messages\n` +
-          `\`${prefix}boost disable\` - Disable boost messages\n` +
-          `\`${prefix}boost channel #channel\` - Set boost channel\n` +
-          `\`${prefix}boost message <text>\` - Set thank you message\n` +
-          `\`${prefix}boost test\` - Send a test message\n` +
-          `\`${prefix}boost help\` - Show all options`, inline: false
-      }
+    .setTitle('『 Boost Thank You System 』')
+    .setDescription(
+      `**▸ Status:** ${boost.enabled ? '◉ Active' : '○ Inactive'}\n` +
+      `**▸ Channel:** ${channel || 'Not configured'}\n` +
+      `**▸ Embed Mode:** ${boost.embedEnabled !== false ? '◉' : '○'}\n` +
+      `**▸ Mention User:** ${boost.mentionUser !== false ? '◉' : '○'}\n` +
+      `**▸ Timestamp:** ${boost.showTimestamp !== false ? '◉' : '○'}\n\n` +
+      `**▸ Color:** ${boost.embedColor || '#f47fff'}\n` +
+      `**▸ Title:** ${boost.embedTitle ? 'Custom' : 'Default decorative'}\n` +
+      `**▸ Author:** ${boost.authorType || 'username'}\n` +
+      `**▸ Thumbnail:** ${boost.thumbnailType || boost.thumbnailUrl || 'avatar'}\n` +
+      `**▸ Banner:** ${boost.bannerUrl ? '◉ Set' : '○ Not set'}\n\n` +
+      `**▸ Temp Role:** ${role || 'Not set'}\n` +
+      `**▸ Role Duration:** ${boosterRole.duration || 24} hours\n\n` +
+      `**Current Message:**\n\`\`\`${(boost.message || 'Thank you {user} for boosting {server}! 🎉').slice(0, 100)}\`\`\`\n` +
+      `Type \`${prefix}boost help\` for all commands.`
     )
     .setFooter({ text: `Use ${prefix}boost help for all customization options` });
 
@@ -457,52 +544,64 @@ async function showStatus(message, guildConfig, prefix) {
 async function showHelp(message, prefix) {
   const helpEmbed = new EmbedBuilder()
     .setColor('#f47fff')
-    .setTitle('💎 Boost Message Configuration')
+    .setTitle('『 Boost Commands 』')
     .setDescription('All available commands for customizing boost thank you messages.')
     .addFields(
       {
         name: '🔧 Basic Setup', value:
-          `\`${prefix}boost enable\` - Enable boost messages\n` +
-          `\`${prefix}boost disable\` - Disable boost messages\n` +
-          `\`${prefix}boost channel #channel\` - Set boost channel\n` +
-          `\`${prefix}boost message <text>\` - Set thank you message`, inline: false
+          `${GLYPHS.DOT} \`${prefix}boost enable/disable\` - Toggle system\n` +
+          `${GLYPHS.DOT} \`${prefix}boost channel #channel\` - Set boost channel\n` +
+          `${GLYPHS.DOT} \`${prefix}boost test\` - Test boost message\n` +
+          `${GLYPHS.DOT} \`${prefix}boost preview\` - Preview current settings\n` +
+          `${GLYPHS.DOT} \`${prefix}boost reset\` - Reset all settings`, inline: false
       },
       {
-        name: '🎨 Embed Customization', value:
-          `\`${prefix}boost embed on/off\` - Toggle embed mode\n` +
-          `\`${prefix}boost color #hex\` - Set embed color\n` +
-          `\`${prefix}boost title <text>\` - Set embed title\n` +
-          `\`${prefix}boost footer <text>\` - Set embed footer\n` +
-          `\`${prefix}boost image <url>\` - Set banner image\n` +
-          `\`${prefix}boost thumbnail <type>\` - Set thumbnail`, inline: false
+        name: '📝 Content', value:
+          `${GLYPHS.DOT} \`${prefix}boost message <text>\` - Embed description\n` +
+          `${GLYPHS.DOT} \`${prefix}boost greeting <text>\` - Text above embed\n` +
+          `${GLYPHS.DOT} \`${prefix}boost title <text>\` - Embed title\n` +
+          `${GLYPHS.DOT} \`${prefix}boost footer <text>\` - Footer text`, inline: false
       },
       {
-        name: '💬 Content Options', value:
-          `\`${prefix}boost mention on/off\` - Toggle user ping\n` +
-          `\`${prefix}boost greeting <text>\` - Text above embed`, inline: false
+        name: '🎨 Appearance', value:
+          `${GLYPHS.DOT} \`${prefix}boost color #HEX\` - Embed color\n` +
+          `${GLYPHS.DOT} \`${prefix}boost image <url>\` - Banner image\n` +
+          `${GLYPHS.DOT} \`${prefix}boost thumbnail <url|avatar|server>\`\n` +
+          `${GLYPHS.DOT} \`${prefix}boost author <username|displayname|server|none>\``, inline: false
       },
       {
-        name: '🔍 Preview & Test', value:
-          `\`${prefix}boost test\` - Send test message to channel\n` +
-          `\`${prefix}boost preview\` - Preview in current channel`, inline: false
+        name: '⚙️ Toggles', value:
+          `${GLYPHS.DOT} \`${prefix}boost embed on/off\` - Toggle embed mode\n` +
+          `${GLYPHS.DOT} \`${prefix}boost mention on/off\` - Ping user above embed\n` +
+          `${GLYPHS.DOT} \`${prefix}boost timestamp on/off\` - Show timestamp`, inline: false
+      },
+      {
+        name: '🎭 Temporary Booster Role', value:
+          `${GLYPHS.DOT} \`${prefix}boost role @role\` - Set temp booster role\n` +
+          `${GLYPHS.DOT} \`${prefix}boost give @user [reason]\` - Give role to user\n` +
+          `${GLYPHS.DOT} \`${prefix}boost take @user\` - Remove role from user\n` +
+          `${GLYPHS.DOT} \`${prefix}boost duration <hours>\` - Set role duration\n` +
+          `${GLYPHS.DOT} \`${prefix}boost list\` - Show active booster roles\n` +
+          `${GLYPHS.DOT} \`${prefix}boost clearrole\` - Remove role config`, inline: false
       }
     );
 
   const varsEmbed = new EmbedBuilder()
     .setColor('#f47fff')
-    .setTitle('📋 Available Variables')
+    .setTitle('『 Variables 』')
     .setDescription(
-      '`{user}` - Mentions the user\n' +
-      '`{username}` - User\'s username\n' +
-      '`{displayname}` - User\'s display name\n' +
-      '`{tag}` - User\'s tag\n' +
-      '`{id}` - User\'s ID\n' +
-      '`{server}` - Server name\n' +
-      '`{membercount}` - Total member count\n' +
-      '`{boostcount}` - Total boost count\n' +
-      '`{boostlevel}` - Server boost level (0-3)\n' +
-      '`{avatar}` - User\'s avatar URL\n' +
-      '`\\n` - New line'
+      `Use these in message, title, footer, or greeting:\n\n` +
+      `${GLYPHS.DOT} \`{user}\` - Mentions the user (@user)\n` +
+      `${GLYPHS.DOT} \`{username}\` - Username\n` +
+      `${GLYPHS.DOT} \`{displayname}\` - Display name\n` +
+      `${GLYPHS.DOT} \`{tag}\` - User's tag\n` +
+      `${GLYPHS.DOT} \`{id}\` - User's ID\n` +
+      `${GLYPHS.DOT} \`{server}\` - Server name\n` +
+      `${GLYPHS.DOT} \`{membercount}\` - Member count\n` +
+      `${GLYPHS.DOT} \`{boostcount}\` - Total boost count\n` +
+      `${GLYPHS.DOT} \`{boostlevel}\` - Server boost level (0-3)\n` +
+      `${GLYPHS.DOT} \`{avatar}\` - Avatar URL\n` +
+      `${GLYPHS.DOT} \`\\n\` - New line`
     );
 
   return message.reply({ embeds: [helpEmbed, varsEmbed] });
@@ -543,5 +642,262 @@ async function sendTestBoost(message, guildConfig, prefix) {
   return message.reply({
     embeds: [await successEmbed(message.guild.id, 'Test Sent',
       `${GLYPHS.SUCCESS} Test boost message sent to ${channel}`)]
+  });
+}
+
+// ============================================
+// Booster Role System Functions
+// ============================================
+
+async function setBoosterRole(message, args, guildConfig, prefix) {
+  const role = message.mentions.roles.first() || message.guild.roles.cache.get(args[1]);
+
+  if (!role) {
+    return message.reply({
+      embeds: [await errorEmbed(message.guild.id, 'Role Not Found',
+        `${GLYPHS.ERROR} Please mention a valid role!\n\n**Usage:** \`${prefix}boost role @role\``)]
+    });
+  }
+
+  // Check role hierarchy
+  if (role.position >= message.guild.members.me.roles.highest.position) {
+    return message.reply({
+      embeds: [await errorEmbed(message.guild.id, 'Role Too High',
+        `${GLYPHS.ERROR} I cannot manage ${role} because it's higher than or equal to my highest role.`)]
+    });
+  }
+
+  if (role.managed) {
+    return message.reply({
+      embeds: [await errorEmbed(message.guild.id, 'Managed Role',
+        `${GLYPHS.ERROR} ${role} is managed by an integration and cannot be assigned manually.`)]
+    });
+  }
+
+  await Guild.updateGuild(message.guild.id, {
+    $set: {
+      'features.boosterRoleSystem.roleId': role.id,
+      'features.boosterRoleSystem.enabled': true
+    }
+  });
+
+  const duration = guildConfig.features?.boosterRoleSystem?.duration || 24;
+
+  return message.reply({
+    embeds: [await successEmbed(message.guild.id, 'Booster Role Set',
+      `${GLYPHS.SUCCESS} The temporary booster role has been set to ${role}.\n\n` +
+      `Users given this role will have it automatically removed after **${duration} hours**.`)]
+  });
+}
+
+async function giveBoosterRole(message, args, guildConfig, prefix) {
+  const boosterRoleId = guildConfig.features?.boosterRoleSystem?.roleId;
+
+  if (!boosterRoleId) {
+    return message.reply({
+      embeds: [await errorEmbed(message.guild.id, 'No Role Configured',
+        `${GLYPHS.ERROR} No booster role has been configured!\n\n**Usage:** \`${prefix}boost role @role\``)]
+    });
+  }
+
+  if (!guildConfig.features?.boosterRoleSystem?.enabled) {
+    return message.reply({
+      embeds: [await errorEmbed(message.guild.id, 'System Disabled',
+        `${GLYPHS.ERROR} The booster role system is disabled!\n\nSet a role first: \`${prefix}boost role @role\``)]
+    });
+  }
+
+  const member = message.mentions.members.first() || await message.guild.members.fetch(args[1]).catch(() => null);
+
+  if (!member) {
+    return message.reply({
+      embeds: [await errorEmbed(message.guild.id, 'User Not Found',
+        `${GLYPHS.ERROR} Please mention a valid user!\n\n**Usage:** \`${prefix}boost give @user [reason]\``)]
+    });
+  }
+
+  const role = message.guild.roles.cache.get(boosterRoleId);
+
+  if (!role) {
+    return message.reply({
+      embeds: [await errorEmbed(message.guild.id, 'Role Not Found',
+        `${GLYPHS.ERROR} The configured booster role no longer exists. Please set a new one.`)]
+    });
+  }
+
+  // Check if user already has the role
+  if (member.roles.cache.has(boosterRoleId)) {
+    // Update the expiry time
+    const duration = (guildConfig.features?.boosterRoleSystem?.duration || 24) * 60 * 60 * 1000;
+    const reason = args.slice(2).join(' ') || null;
+
+    await BoosterRole.addBoosterRole(
+      message.guild.id,
+      member.id,
+      boosterRoleId,
+      duration,
+      message.author.id,
+      reason
+    );
+
+    const expiresAt = new Date(Date.now() + duration);
+    return message.reply({
+      embeds: [await infoEmbed(message.guild.id, 'Role Extended',
+        `${GLYPHS.INFO} ${member}'s booster role duration has been extended!\n\n` +
+        `**Expires:** <t:${Math.floor(expiresAt.getTime() / 1000)}:R>`)]
+    });
+  }
+
+  try {
+    // Add the role to the user
+    await member.roles.add(role);
+
+    // Add to database for tracking
+    const duration = (guildConfig.features?.boosterRoleSystem?.duration || 24) * 60 * 60 * 1000;
+    const reason = args.slice(2).join(' ') || null;
+
+    await BoosterRole.addBoosterRole(
+      message.guild.id,
+      member.id,
+      boosterRoleId,
+      duration,
+      message.author.id,
+      reason
+    );
+
+    const expiresAt = new Date(Date.now() + duration);
+
+    return message.reply({
+      embeds: [await successEmbed(message.guild.id, 'Booster Role Given',
+        `${GLYPHS.SUCCESS} Successfully gave ${role} to ${member}!\n\n` +
+        `**Expires:** <t:${Math.floor(expiresAt.getTime() / 1000)}:F> (<t:${Math.floor(expiresAt.getTime() / 1000)}:R>)` +
+        (reason ? `\n**Reason:** ${reason}` : ''))]
+    });
+  } catch (error) {
+    console.error('Error giving booster role:', error);
+    return message.reply({
+      embeds: [await errorEmbed(message.guild.id, 'Error',
+        `${GLYPHS.ERROR} Failed to give the booster role. Make sure I have the proper permissions.`)]
+    });
+  }
+}
+
+async function removeBoosterRole(message, args, guildConfig, prefix) {
+  const boosterRoleId = guildConfig.features?.boosterRoleSystem?.roleId;
+
+  if (!boosterRoleId) {
+    return message.reply({
+      embeds: [await errorEmbed(message.guild.id, 'No Role Configured',
+        `${GLYPHS.ERROR} No booster role has been configured!`)]
+    });
+  }
+
+  const member = message.mentions.members.first() || await message.guild.members.fetch(args[1]).catch(() => null);
+
+  if (!member) {
+    return message.reply({
+      embeds: [await errorEmbed(message.guild.id, 'User Not Found',
+        `${GLYPHS.ERROR} Please mention a valid user!\n\n**Usage:** \`${prefix}boost take @user\``)]
+    });
+  }
+
+  const role = message.guild.roles.cache.get(boosterRoleId);
+
+  if (!member.roles.cache.has(boosterRoleId)) {
+    return message.reply({
+      embeds: [await errorEmbed(message.guild.id, 'No Role',
+        `${GLYPHS.ERROR} ${member} doesn't have the booster role.`)]
+    });
+  }
+
+  try {
+    // Remove the role from the user
+    if (role) {
+      await member.roles.remove(role);
+    }
+
+    // Remove from database
+    await BoosterRole.removeBoosterRole(message.guild.id, member.id, boosterRoleId);
+
+    return message.reply({
+      embeds: [await successEmbed(message.guild.id, 'Booster Role Removed',
+        `${GLYPHS.SUCCESS} Successfully removed the booster role from ${member}.`)]
+    });
+  } catch (error) {
+    console.error('Error removing booster role:', error);
+    return message.reply({
+      embeds: [await errorEmbed(message.guild.id, 'Error',
+        `${GLYPHS.ERROR} Failed to remove the booster role. Make sure I have the proper permissions.`)]
+    });
+  }
+}
+
+async function listActiveBoosterRoles(message, guildConfig, prefix) {
+  const activeRoles = await BoosterRole.getGuildBoosterRoles(message.guild.id);
+
+  if (activeRoles.length === 0) {
+    return message.reply({
+      embeds: [await infoEmbed(message.guild.id, 'No Active Booster Roles',
+        `${GLYPHS.INFO} There are no active temporary booster roles in this server.`)]
+    });
+  }
+
+  const fields = [];
+  for (const entry of activeRoles.slice(0, 25)) {
+    const member = await message.guild.members.fetch(entry.userId).catch(() => null);
+    const role = message.guild.roles.cache.get(entry.roleId);
+    const expiresTimestamp = Math.floor(entry.expiresAt.getTime() / 1000);
+
+    fields.push({
+      name: member ? member.user.tag : `User ID: ${entry.userId}`,
+      value: `**Role:** ${role ? role.toString() : 'Unknown'}\n` +
+        `**Expires:** <t:${expiresTimestamp}:R>\n` +
+        (entry.reason ? `**Reason:** ${entry.reason}` : ''),
+      inline: true
+    });
+  }
+
+  const embed = new EmbedBuilder()
+    .setTitle(`${GLYPHS.SPARKLE} Active Booster Roles`)
+    .setColor(guildConfig.embedStyle?.color || '#5865F2')
+    .setDescription(`Showing ${activeRoles.length} active booster role(s)`)
+    .addFields(fields)
+    .setFooter({ text: 'Roles are automatically removed when they expire' });
+
+  return message.reply({ embeds: [embed] });
+}
+
+async function setRoleDuration(message, args, guildConfig, prefix) {
+  const hours = parseInt(args[1]);
+
+  if (isNaN(hours) || hours < 1 || hours > 720) {
+    return message.reply({
+      embeds: [await errorEmbed(message.guild.id, 'Invalid Duration',
+        `${GLYPHS.ERROR} Please provide a valid duration between 1 and 720 hours (30 days).\n\n` +
+        `**Usage:** \`${prefix}boost duration <hours>\``)]
+    });
+  }
+
+  await Guild.updateGuild(message.guild.id, {
+    $set: { 'features.boosterRoleSystem.duration': hours }
+  });
+
+  return message.reply({
+    embeds: [await successEmbed(message.guild.id, 'Duration Updated',
+      `${GLYPHS.SUCCESS} Booster role duration has been set to **${hours} hours**.\n\n` +
+      `This will apply to new role assignments. Existing assignments will keep their original expiry time.`)]
+  });
+}
+
+async function clearBoosterRole(message, guildConfig, prefix) {
+  await Guild.updateGuild(message.guild.id, {
+    $unset: { 'features.boosterRoleSystem.roleId': '' },
+    $set: { 'features.boosterRoleSystem.enabled': false }
+  });
+
+  return message.reply({
+    embeds: [await successEmbed(message.guild.id, 'Booster Role Cleared',
+      `${GLYPHS.SUCCESS} The booster role configuration has been cleared.\n\n` +
+      `**Note:** Existing role assignments will still be tracked and removed when they expire.`)]
   });
 }

@@ -8,6 +8,31 @@ const __dirname = path.dirname(__filename);
 
 // Define slash commands for moderation
 const slashCommands = [
+  // ============================================
+  // HELP COMMAND - Comprehensive command list
+  // ============================================
+  new SlashCommandBuilder()
+    .setName('help')
+    .setDescription('『 RAPHAEL 』 Display available commands and system information, Master')
+    .addStringOption(option =>
+      option.setName('category')
+        .setDescription('Select a specific category to view')
+        .setRequired(false)
+        .addChoices(
+          { name: '🛡️ Moderation', value: 'moderation' },
+          { name: '⚙️ Configuration', value: 'config' },
+          { name: '💰 Economy', value: 'economy' },
+          { name: '📊 Leveling', value: 'leveling' },
+          { name: '🎂 Community', value: 'community' },
+          { name: '🎵 Music', value: 'music' },
+          { name: '🔧 Utility', value: 'utility' },
+          { name: '👑 Admin', value: 'admin' }
+        ))
+    .addStringOption(option =>
+      option.setName('command')
+        .setDescription('Get detailed help for a specific command')
+        .setRequired(false)),
+
   // Moderation Commands
   new SlashCommandBuilder()
     .setName('ban')
@@ -858,7 +883,7 @@ const slashCommands = [
   // Feature Management (Enable/Disable commands and features)
   new SlashCommandBuilder()
     .setName('feature')
-    .setDescription('Enable or disable bot commands and features')
+    .setDescription('『 RAPHAEL 』 Enable or disable bot commands and features, Master')
     .addStringOption(option =>
       option.setName('type')
         .setDescription('Select command/feature to manage')
@@ -876,13 +901,15 @@ const slashCommands = [
           { name: '🎉 Giveaways', value: 'giveaways' },
           { name: '📅 Events', value: 'events' },
           { name: '⭐ Starboard', value: 'starboard' },
+          // Server Messages
+          { name: '👋 Welcome Messages', value: 'welcome' },
+          { name: '💎 Server Boost Announcements', value: 'boost' },
           // Utility
           { name: '🎫 Tickets', value: 'tickets' },
           { name: '💤 AFK', value: 'afk' },
           { name: '⏰ Reminders', value: 'reminders' },
           // Moderation
           { name: '🛡️ AutoMod', value: 'automod' },
-          { name: '👋 Welcome Messages', value: 'welcome' },
           { name: '🤖 AI Chat (Raphael)', value: 'aichat' },
           { name: '😈 Troll Mode (AI Chat)', value: 'troll' },
           // Single commands
@@ -1418,6 +1445,629 @@ const slashCommands = [
                 .setDescription('Remove this channel instead of adding?')
                 .setRequired(false))))
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
+
+  // ============================================
+  // BOOST SYSTEM COMMAND
+  // ============================================
+  new SlashCommandBuilder()
+    .setName('boost')
+    .setDescription('『 RAPHAEL 』 Configure boost appreciation protocols and temporary booster roles, Master')
+    .addSubcommand(subcommand =>
+      subcommand.setName('status')
+        .setDescription('Analyze current boost configuration'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('test')
+        .setDescription('Execute test boost message'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('preview')
+        .setDescription('Preview boost message in current channel'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('reset')
+        .setDescription('Reset all boost settings to default'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('channel')
+        .setDescription('Designate boost message channel')
+        .addChannelOption(option =>
+          option.setName('channel')
+            .setDescription('Target channel for boost messages')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('message')
+        .setDescription('Configure boost message content')
+        .addStringOption(option =>
+          option.setName('text')
+            .setDescription('Message text. Variables: {user}, {username}, {server}, {boostcount}')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('title')
+        .setDescription('Set embed title')
+        .addStringOption(option =>
+          option.setName('text')
+            .setDescription('Title text (use "reset" for default, "none" to remove)')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('footer')
+        .setDescription('Set embed footer')
+        .addStringOption(option =>
+          option.setName('text')
+            .setDescription('Footer text (use "reset" for default, "none" to remove)')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('greeting')
+        .setDescription('Set greeting text above embed')
+        .addStringOption(option =>
+          option.setName('text')
+            .setDescription('Greeting text shown above embed. Use {user}')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('color')
+        .setDescription('Set embed color')
+        .addStringOption(option =>
+          option.setName('hex')
+            .setDescription('Hex color code (e.g., #f47fff) or "reset"')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('image')
+        .setDescription('Set banner image')
+        .addStringOption(option =>
+          option.setName('url')
+            .setDescription('Image URL or "remove" to delete')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('thumbnail')
+        .setDescription('Set thumbnail')
+        .addStringOption(option =>
+          option.setName('type')
+            .setDescription('Thumbnail type or URL')
+            .setRequired(true)
+            .addChoices(
+              { name: 'User Avatar', value: 'avatar' },
+              { name: 'Server Icon', value: 'server' },
+              { name: 'Remove', value: 'remove' }
+            )))
+    .addSubcommand(subcommand =>
+      subcommand.setName('author')
+        .setDescription('Set author section style')
+        .addStringOption(option =>
+          option.setName('type')
+            .setDescription('Author display type')
+            .setRequired(true)
+            .addChoices(
+              { name: 'Username (with avatar)', value: 'username' },
+              { name: 'Display Name (with avatar)', value: 'displayname' },
+              { name: 'Server (with icon)', value: 'server' },
+              { name: 'None', value: 'none' }
+            )))
+    .addSubcommand(subcommand =>
+      subcommand.setName('embed')
+        .setDescription('Toggle embed mode')
+        .addBooleanOption(option =>
+          option.setName('enabled')
+            .setDescription('Enable or disable embed mode')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('mention')
+        .setDescription('Toggle user mention above embed')
+        .addBooleanOption(option =>
+          option.setName('enabled')
+            .setDescription('Enable or disable user mention')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('timestamp')
+        .setDescription('Toggle timestamp in embed')
+        .addBooleanOption(option =>
+          option.setName('enabled')
+            .setDescription('Enable or disable timestamp')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('role')
+        .setDescription('Set temporary booster role')
+        .addRoleOption(option =>
+          option.setName('role')
+            .setDescription('Role to assign temporarily')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('give')
+        .setDescription('Assign temporary booster role to user')
+        .addUserOption(option =>
+          option.setName('user')
+            .setDescription('User to receive the role')
+            .setRequired(true))
+        .addStringOption(option =>
+          option.setName('reason')
+            .setDescription('Reason for assignment')
+            .setRequired(false)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('take')
+        .setDescription('Remove temporary booster role from user')
+        .addUserOption(option =>
+          option.setName('user')
+            .setDescription('User to remove role from')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('duration')
+        .setDescription('Set temporary role duration')
+        .addIntegerOption(option =>
+          option.setName('hours')
+            .setDescription('Duration in hours (1-720)')
+            .setRequired(true)
+            .setMinValue(1)
+            .setMaxValue(720)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('list')
+        .setDescription('Display active temporary booster roles'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('clearrole')
+        .setDescription('Clear temporary booster role configuration'))
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
+
+  // ============================================
+  // GOODBYE SYSTEM COMMAND
+  // ============================================
+  new SlashCommandBuilder()
+    .setName('goodbye')
+    .setDescription('『 RAPHAEL 』 Configure departure message protocols, Master')
+    .addSubcommand(subcommand =>
+      subcommand.setName('enable')
+        .setDescription('Activate goodbye message system'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('disable')
+        .setDescription('Deactivate goodbye message system'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('status')
+        .setDescription('Analyze current goodbye configuration'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('test')
+        .setDescription('Execute test goodbye message'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('preview')
+        .setDescription('Preview goodbye message in current channel'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('reset')
+        .setDescription('Reset all goodbye settings to default'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('channel')
+        .setDescription('Designate goodbye message channel')
+        .addChannelOption(option =>
+          option.setName('channel')
+            .setDescription('Target channel for goodbye messages')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('message')
+        .setDescription('Configure goodbye message content')
+        .addStringOption(option =>
+          option.setName('text')
+            .setDescription('Message text. Variables: {user}, {username}, {server}, {membercount}')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('title')
+        .setDescription('Set embed title')
+        .addStringOption(option =>
+          option.setName('text')
+            .setDescription('Title text (use "reset" for default, "none" to remove)')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('footer')
+        .setDescription('Set embed footer')
+        .addStringOption(option =>
+          option.setName('text')
+            .setDescription('Footer text (use "reset" for default, "none" to remove)')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('color')
+        .setDescription('Set embed color')
+        .addStringOption(option =>
+          option.setName('hex')
+            .setDescription('Hex color code (e.g., #FF4757) or "reset"')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('image')
+        .setDescription('Set banner image')
+        .addStringOption(option =>
+          option.setName('url')
+            .setDescription('Image URL or "remove" to delete')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('thumbnail')
+        .setDescription('Set thumbnail')
+        .addStringOption(option =>
+          option.setName('type')
+            .setDescription('Thumbnail type')
+            .setRequired(true)
+            .addChoices(
+              { name: 'User Avatar', value: 'avatar' },
+              { name: 'Server Icon', value: 'server' },
+              { name: 'Remove', value: 'remove' }
+            )))
+    .addSubcommand(subcommand =>
+      subcommand.setName('embed')
+        .setDescription('Toggle embed mode')
+        .addBooleanOption(option =>
+          option.setName('enabled')
+            .setDescription('Enable or disable embed mode')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('timestamp')
+        .setDescription('Toggle timestamp in embed')
+        .addBooleanOption(option =>
+          option.setName('enabled')
+            .setDescription('Enable or disable timestamp')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('showjoindate')
+        .setDescription('Toggle showing when user joined')
+        .addBooleanOption(option =>
+          option.setName('enabled')
+            .setDescription('Show join date in goodbye message')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('showmembercount')
+        .setDescription('Toggle showing member count')
+        .addBooleanOption(option =>
+          option.setName('enabled')
+            .setDescription('Show member count in goodbye message')
+            .setRequired(true)))
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
+
+  // ============================================
+  // XP MULTIPLIER COMMAND
+  // ============================================
+  new SlashCommandBuilder()
+    .setName('xpmultiplier')
+    .setDescription('『 RAPHAEL 』 Configure XP multiplier protocols for specific roles, Master')
+    .addSubcommand(subcommand =>
+      subcommand.setName('add')
+        .setDescription('Add XP multiplier for a role')
+        .addRoleOption(option =>
+          option.setName('role')
+            .setDescription('Role to add multiplier for')
+            .setRequired(true))
+        .addNumberOption(option =>
+          option.setName('multiplier')
+            .setDescription('Multiplier value (e.g., 1.5 for 50% more XP)')
+            .setRequired(true)
+            .setMinValue(0.1)
+            .setMaxValue(10)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('remove')
+        .setDescription('Remove XP multiplier from a role')
+        .addRoleOption(option =>
+          option.setName('role')
+            .setDescription('Role to remove multiplier from')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('list')
+        .setDescription('Display all configured XP multipliers'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('booster')
+        .setDescription('Set multiplier for server boosters')
+        .addNumberOption(option =>
+          option.setName('multiplier')
+            .setDescription('Multiplier for boosters (default: 1.5)')
+            .setRequired(true)
+            .setMinValue(1)
+            .setMaxValue(10)))
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
+
+  // ============================================
+  // LEVEL ROLES COMMAND
+  // ============================================
+  new SlashCommandBuilder()
+    .setName('levelroles')
+    .setDescription('『 RAPHAEL 』 Configure role rewards for leveling up, Master')
+    .addSubcommand(subcommand =>
+      subcommand.setName('add')
+        .setDescription('Add a level role reward')
+        .addIntegerOption(option =>
+          option.setName('level')
+            .setDescription('Level required to earn the role')
+            .setRequired(true)
+            .setMinValue(1)
+            .setMaxValue(1000))
+        .addRoleOption(option =>
+          option.setName('role')
+            .setDescription('Role to assign at this level')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('remove')
+        .setDescription('Remove a level role reward')
+        .addIntegerOption(option =>
+          option.setName('level')
+            .setDescription('Level to remove reward from')
+            .setRequired(true)
+            .setMinValue(1)
+            .setMaxValue(1000)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('list')
+        .setDescription('Display all level role rewards'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('clear')
+        .setDescription('Remove all level role rewards'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('sync')
+        .setDescription('Sync all members to their correct level roles'))
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles),
+
+  // ============================================
+  // LEVEL UP MESSAGE COMMAND
+  // ============================================
+  new SlashCommandBuilder()
+    .setName('levelup')
+    .setDescription('『 RAPHAEL 』 Configure level up announcement protocols, Master')
+    .addSubcommand(subcommand =>
+      subcommand.setName('enable')
+        .setDescription('Activate level up announcements'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('disable')
+        .setDescription('Deactivate level up announcements'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('status')
+        .setDescription('Analyze current level up configuration'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('channel')
+        .setDescription('Designate level up announcement channel')
+        .addChannelOption(option =>
+          option.setName('channel')
+            .setDescription('Channel for level up messages (leave empty for current channel)')
+            .setRequired(false)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('message')
+        .setDescription('Configure level up message')
+        .addStringOption(option =>
+          option.setName('text')
+            .setDescription('Message text. Variables: {user}, {level}, {xp}')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('embed')
+        .setDescription('Toggle embed mode')
+        .addBooleanOption(option =>
+          option.setName('enabled')
+            .setDescription('Enable or disable embed mode')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('color')
+        .setDescription('Set embed color')
+        .addStringOption(option =>
+          option.setName('hex')
+            .setDescription('Hex color code (e.g., #FFD700)')
+            .setRequired(true)))
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
+
+  // ============================================
+  // STARBOARD COMMAND
+  // ============================================
+  new SlashCommandBuilder()
+    .setName('starboard')
+    .setDescription('『 RAPHAEL 』 Configure starboard system parameters, Master')
+    .addSubcommand(subcommand =>
+      subcommand.setName('enable')
+        .setDescription('Activate starboard system'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('disable')
+        .setDescription('Deactivate starboard system'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('status')
+        .setDescription('Analyze current starboard configuration'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('channel')
+        .setDescription('Designate starboard channel')
+        .addChannelOption(option =>
+          option.setName('channel')
+            .setDescription('Channel for starred messages')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('threshold')
+        .setDescription('Set minimum stars required')
+        .addIntegerOption(option =>
+          option.setName('amount')
+            .setDescription('Number of stars required (1-50)')
+            .setRequired(true)
+            .setMinValue(1)
+            .setMaxValue(50)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('emoji')
+        .setDescription('Set star emoji')
+        .addStringOption(option =>
+          option.setName('emoji')
+            .setDescription('Emoji to use for starring')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('selfstar')
+        .setDescription('Toggle self-starring')
+        .addBooleanOption(option =>
+          option.setName('enabled')
+            .setDescription('Allow users to star their own messages')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('ignore')
+        .setDescription('Add channel to starboard ignore list')
+        .addChannelOption(option =>
+          option.setName('channel')
+            .setDescription('Channel to ignore')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('unignore')
+        .setDescription('Remove channel from starboard ignore list')
+        .addChannelOption(option =>
+          option.setName('channel')
+            .setDescription('Channel to unignore')
+            .setRequired(true)))
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
+
+  // ============================================
+  // RULES COMMAND
+  // ============================================
+  new SlashCommandBuilder()
+    .setName('rules')
+    .setDescription('『 RAPHAEL 』 Manage and display server rules, Master')
+    .addSubcommand(subcommand =>
+      subcommand.setName('add')
+        .setDescription('Add a new rule')
+        .addStringOption(option =>
+          option.setName('rule')
+            .setDescription('The rule text')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('remove')
+        .setDescription('Remove a rule')
+        .addIntegerOption(option =>
+          option.setName('number')
+            .setDescription('Rule number to remove')
+            .setRequired(true)
+            .setMinValue(1)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('edit')
+        .setDescription('Edit an existing rule')
+        .addIntegerOption(option =>
+          option.setName('number')
+            .setDescription('Rule number to edit')
+            .setRequired(true)
+            .setMinValue(1))
+        .addStringOption(option =>
+          option.setName('text')
+            .setDescription('New rule text')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('list')
+        .setDescription('Display all rules'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('send')
+        .setDescription('Send rules embed to a channel')
+        .addChannelOption(option =>
+          option.setName('channel')
+            .setDescription('Channel to send rules to')
+            .setRequired(false)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('clear')
+        .setDescription('Clear all rules'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('title')
+        .setDescription('Set rules embed title')
+        .addStringOption(option =>
+          option.setName('text')
+            .setDescription('Title for rules embed')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('color')
+        .setDescription('Set rules embed color')
+        .addStringOption(option =>
+          option.setName('hex')
+            .setDescription('Hex color code')
+            .setRequired(true)))
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
+
+  // ============================================
+  // AUTOPUBLISH COMMAND
+  // ============================================
+  new SlashCommandBuilder()
+    .setName('autopublish')
+    .setDescription('『 RAPHAEL 』 Auto-publish messages in announcement channels, Master')
+    .addSubcommand(subcommand =>
+      subcommand.setName('enable')
+        .setDescription('Enable auto-publish'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('disable')
+        .setDescription('Disable auto-publish'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('add')
+        .setDescription('Add announcement channel to auto-publish')
+        .addChannelOption(option =>
+          option.setName('channel')
+            .setDescription('Announcement channel')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('remove')
+        .setDescription('Remove channel from auto-publish')
+        .addChannelOption(option =>
+          option.setName('channel')
+            .setDescription('Channel to remove')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('list')
+        .setDescription('View auto-publish channels'))
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
+
+  // ============================================
+  // CLEANUP COMMAND (Admin)
+  // ============================================
+  new SlashCommandBuilder()
+    .setName('cleanup')
+    .setDescription('『 RAPHAEL 』 Purge old data and perform maintenance, Master')
+    .addSubcommand(subcommand =>
+      subcommand.setName('inactive')
+        .setDescription('Remove data for inactive members')
+        .addIntegerOption(option =>
+          option.setName('days')
+            .setDescription('Days of inactivity threshold')
+            .setRequired(true)
+            .setMinValue(30)
+            .setMaxValue(365)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('left')
+        .setDescription('Remove data for members who left'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('bots')
+        .setDescription('Remove data for bot accounts'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('stats')
+        .setDescription('View cleanup statistics'))
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+
+  // ============================================
+  // DEPLOYMENT COMMAND (Admin)
+  // ============================================
+  new SlashCommandBuilder()
+    .setName('deployment')
+    .setDescription('『 RAPHAEL 』 Log deployment and build information, Master')
+    .addSubcommand(subcommand =>
+      subcommand.setName('start')
+        .setDescription('Log deployment start'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('complete')
+        .setDescription('Log deployment completion')
+        .addStringOption(option =>
+          option.setName('version')
+            .setDescription('Version number')
+            .setRequired(false)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('rollback')
+        .setDescription('Log deployment rollback')
+        .addStringOption(option =>
+          option.setName('version')
+            .setDescription('Version to rollback to')
+            .setRequired(false))
+        .addStringOption(option =>
+          option.setName('reason')
+            .setDescription('Reason for rollback')
+            .setRequired(false)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('status')
+        .setDescription('View deployment logs status'))
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+
+  // ============================================
+  // BOT LOGS COMMAND (Admin)
+  // ============================================
+  new SlashCommandBuilder()
+    .setName('botlogs')
+    .setDescription('『 RAPHAEL 』 View and manage bot log files, Master')
+    .addSubcommand(subcommand =>
+      subcommand.setName('stats')
+        .setDescription('View log statistics'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('clean')
+        .setDescription('Clean old log files')
+        .addIntegerOption(option =>
+          option.setName('days')
+            .setDescription('Keep logs newer than X days')
+            .setRequired(true)
+            .setMinValue(7)
+            .setMaxValue(90)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('types')
+        .setDescription('View available log types'))
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+
 ];
 
 export async function registerSlashCommands(client) {
