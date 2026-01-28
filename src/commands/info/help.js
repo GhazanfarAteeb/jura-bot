@@ -42,8 +42,8 @@ const SLASH_COMMANDS = [
   // Moderation
   'ban', 'kick', 'warn', 'timeout', 'purge', 'userhistory', 'untimeout', 'verify', 'lockdown',
   // Config
-  'welcome', 'goodbye', 'boost', 'autorole', 'noxp', 'automod', 'cmdchannels', 'logs', 'feature', 
-  'setrole', 'setchannel', 'config', 'setup', 'manageshop', 'setprefix', 'xpmultiplier', 
+  'welcome', 'goodbye', 'boost', 'autorole', 'noxp', 'automod', 'cmdchannels', 'logs', 'feature',
+  'setrole', 'setchannel', 'config', 'setup', 'manageshop', 'setprefix', 'xpmultiplier',
   'levelroles', 'levelup', 'starboard', 'rules', 'autopublish', 'cleanup', 'onboarding',
   // Admin
   'giveaway', 'award', 'deployment', 'botlogs',

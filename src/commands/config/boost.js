@@ -502,6 +502,204 @@ export default {
       case 'clearrole':
         return clearBoosterRole(message, guildConfig, prefix);
 
+      // Boost Tier Rewards commands
+      case 'tier':
+      case 'tiers':
+      case 'rewards':
+        return handleBoostTiers(message, args, guildConfig, prefix);
+
+      case 'addtier':
+      case 'settier':
+        return addBoostTier(message, args, guildConfig, prefix);
+
+      case 'removetier':
+      case 'deletetier':
+        return removeBoostTier(message, args, guildConfig, prefix);
+
+      case 'listtiers':
+      case 'tierlist':
+        return listBoostTiers(message, guildConfig, prefix);
+
+      case 'cleartiers':
+        return clearBoostTiers(message, guildConfig, prefix);
+
+      case 'stackable':
+        return setTierStackable(message, args, guildConfig, prefix);
+
+      // Booster Perks Announcement commands (text)
+      case 'perks':
+      case 'perk':
+      case 'announcement':
+        return handlePerksCommand(message, args, guildConfig, prefix);
+
+      case 'publish':
+      case 'send':
+        return publishPerksAnnouncement(message, guildConfig, prefix);
+
+      // Booster Perks Announcement commands (slash)
+      case 'perks-channel':
+        const perksChannel = message.mentions?.channels?.first() ||
+          message.guild.channels.cache.get(args[1]);
+        if (perksChannel) {
+          await Guild.updateGuild(message.guild.id, {
+            $set: { 'features.boostSystem.perksAnnouncement.channel': perksChannel.id }
+          });
+          return message.reply({
+            embeds: [await successEmbed(message.guild.id, 'Perks Channel Set',
+              `${GLYPHS.SUCCESS} Booster perks announcements will be sent to ${perksChannel}\n\nUse \`/boost perks-publish\` to send the announcement.`)]
+          });
+        }
+        return message.reply({
+          embeds: [await errorEmbed(message.guild.id, 'No Channel', 'Please provide a channel.')]
+        });
+
+      case 'perks-message':
+        const perksMsg = args.slice(1).join(' ');
+        if (perksMsg) {
+          await Guild.updateGuild(message.guild.id, {
+            $set: { 'features.boostSystem.perksAnnouncement.message': perksMsg }
+          });
+          return message.reply({
+            embeds: [await successEmbed(message.guild.id, 'Perks Message Updated',
+              `${GLYPHS.SUCCESS} Booster perks message has been updated!`)]
+          });
+        }
+        return message.reply({
+          embeds: [await errorEmbed(message.guild.id, 'No Message', 'Please provide a message.')]
+        });
+
+      case 'perks-title':
+        const perksTitle = args.slice(1).join(' ');
+        if (perksTitle?.toLowerCase() === 'reset') {
+          await Guild.updateGuild(message.guild.id, {
+            $unset: { 'features.boostSystem.perksAnnouncement.embedTitle': '' }
+          });
+          return message.reply({
+            embeds: [await successEmbed(message.guild.id, 'Title Reset', 'Perks embed title has been reset to default.')]
+          });
+        }
+        if (perksTitle) {
+          await Guild.updateGuild(message.guild.id, {
+            $set: { 'features.boostSystem.perksAnnouncement.embedTitle': perksTitle }
+          });
+          return message.reply({
+            embeds: [await successEmbed(message.guild.id, 'Title Updated', `Perks embed title set to: **${perksTitle}**`)]
+          });
+        }
+        return message.reply({
+          embeds: [await errorEmbed(message.guild.id, 'No Title', 'Please provide a title.')]
+        });
+
+      case 'perks-color':
+        const perksColor = args[1];
+        if (perksColor?.toLowerCase() === 'reset') {
+          await Guild.updateGuild(message.guild.id, {
+            $set: { 'features.boostSystem.perksAnnouncement.embedColor': '#f47fff' }
+          });
+          return message.reply({
+            embeds: [await successEmbed(message.guild.id, 'Color Reset', 'Perks embed color has been reset to default (#f47fff).')]
+          });
+        }
+        if (perksColor && /^#?([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(perksColor)) {
+          const finalColor = perksColor.startsWith('#') ? perksColor : `#${perksColor}`;
+          await Guild.updateGuild(message.guild.id, {
+            $set: { 'features.boostSystem.perksAnnouncement.embedColor': finalColor }
+          });
+          return message.reply({
+            embeds: [await successEmbed(message.guild.id, 'Color Updated', `Perks embed color set to: **${finalColor}**`)]
+          });
+        }
+        return message.reply({
+          embeds: [await errorEmbed(message.guild.id, 'Invalid Color', 'Please provide a valid hex color code.')]
+        });
+
+      case 'perks-image':
+        const perksImageUrl = args[1];
+        if (perksImageUrl?.toLowerCase() === 'remove') {
+          await Guild.updateGuild(message.guild.id, {
+            $unset: { 'features.boostSystem.perksAnnouncement.bannerUrl': '' }
+          });
+          return message.reply({
+            embeds: [await successEmbed(message.guild.id, 'Banner Removed', 'Perks banner image has been removed.')]
+          });
+        }
+        if (perksImageUrl?.startsWith('http')) {
+          await Guild.updateGuild(message.guild.id, {
+            $set: { 'features.boostSystem.perksAnnouncement.bannerUrl': perksImageUrl }
+          });
+          return message.reply({
+            embeds: [await successEmbed(message.guild.id, 'Banner Set', 'Perks banner image has been updated!')]
+          });
+        }
+        return message.reply({
+          embeds: [await errorEmbed(message.guild.id, 'Invalid URL', 'Please provide a valid image URL or "remove".')]
+        });
+
+      case 'perks-thumbnail':
+        const perksThumbnail = args[1]?.toLowerCase();
+        if (perksThumbnail === 'server') {
+          await Guild.updateGuild(message.guild.id, {
+            $set: { 'features.boostSystem.perksAnnouncement.thumbnailType': 'server' }
+          });
+          return message.reply({
+            embeds: [await successEmbed(message.guild.id, 'Thumbnail Updated', 'Perks thumbnail set to server icon.')]
+          });
+        } else if (perksThumbnail === 'remove') {
+          await Guild.updateGuild(message.guild.id, {
+            $set: { 'features.boostSystem.perksAnnouncement.thumbnailType': 'none' }
+          });
+          return message.reply({
+            embeds: [await successEmbed(message.guild.id, 'Thumbnail Removed', 'Perks thumbnail has been removed.')]
+          });
+        }
+        return message.reply({
+          embeds: [await errorEmbed(message.guild.id, 'Invalid Option', 'Use "server" or "remove".')]
+        });
+
+      case 'perks-footer':
+        const perksFooter = args.slice(1).join(' ');
+        if (perksFooter?.toLowerCase() === 'reset') {
+          await Guild.updateGuild(message.guild.id, {
+            $unset: { 'features.boostSystem.perksAnnouncement.footerText': '' }
+          });
+          return message.reply({
+            embeds: [await successEmbed(message.guild.id, 'Footer Removed', 'Perks footer has been removed.')]
+          });
+        }
+        if (perksFooter) {
+          await Guild.updateGuild(message.guild.id, {
+            $set: { 'features.boostSystem.perksAnnouncement.footerText': perksFooter }
+          });
+          return message.reply({
+            embeds: [await successEmbed(message.guild.id, 'Footer Updated', `Perks footer set to: **${perksFooter}**`)]
+          });
+        }
+        return message.reply({
+          embeds: [await errorEmbed(message.guild.id, 'No Footer', 'Please provide footer text.')]
+        });
+
+      case 'perks-tierlist':
+        const perksTierList = args[1]?.toLowerCase() === 'true';
+        await Guild.updateGuild(message.guild.id, {
+          $set: { 'features.boostSystem.perksAnnouncement.showTierList': perksTierList }
+        });
+        return message.reply({
+          embeds: [await successEmbed(message.guild.id, 'Tier List Setting Updated',
+            `${GLYPHS.SUCCESS} Auto tier list in perks announcement is now **${perksTierList ? 'enabled' : 'disabled'}**.`)]
+        });
+
+      case 'perks-preview':
+        return previewPerksAnnouncement(message, guildConfig, prefix);
+
+      case 'perks-publish':
+        return publishPerksAnnouncement(message, guildConfig, prefix);
+
+      case 'perks-status':
+        return showPerksStatus(message, guildConfig, prefix);
+
+      case 'perks-reset':
+        return resetPerksSettings(message, guildConfig, prefix);
+
       default:
         return message.reply({
           embeds: [await errorEmbed(message.guild.id, 'Unknown Option',
@@ -549,11 +747,11 @@ async function showHelp(message, prefix) {
     .addFields(
       {
         name: '🔧 Basic Setup', value:
-          `${GLYPHS.DOT} \`${prefix}boost enable/disable\` - Toggle system\n` +
           `${GLYPHS.DOT} \`${prefix}boost channel #channel\` - Set boost channel\n` +
           `${GLYPHS.DOT} \`${prefix}boost test\` - Test boost message\n` +
           `${GLYPHS.DOT} \`${prefix}boost preview\` - Preview current settings\n` +
-          `${GLYPHS.DOT} \`${prefix}boost reset\` - Reset all settings`, inline: false
+          `${GLYPHS.DOT} \`${prefix}boost reset\` - Reset all settings\n` +
+          `${GLYPHS.DOT} \`${prefix}feature enable/disable boost\` - Toggle system`, inline: false
       },
       {
         name: '📝 Content', value:
@@ -583,6 +781,24 @@ async function showHelp(message, prefix) {
           `${GLYPHS.DOT} \`${prefix}boost duration <hours>\` - Set role duration\n` +
           `${GLYPHS.DOT} \`${prefix}boost list\` - Show active booster roles\n` +
           `${GLYPHS.DOT} \`${prefix}boost clearrole\` - Remove role config`, inline: false
+      },
+      {
+        name: '💎 Boost Tier Rewards', value:
+          `${GLYPHS.DOT} \`${prefix}boost addtier <count> @role\` - Add tier reward\n` +
+          `${GLYPHS.DOT} \`${prefix}boost removetier <count>\` - Remove tier\n` +
+          `${GLYPHS.DOT} \`${prefix}boost listtiers\` - View all tiers\n` +
+          `${GLYPHS.DOT} \`${prefix}boost stackable <count> <on/off>\` - Stack setting\n` +
+          `${GLYPHS.DOT} \`${prefix}boost cleartiers\` - Clear all tiers`, inline: false
+      },
+      {
+        name: '📢 Booster Perks Announcement', value:
+          `${GLYPHS.DOT} \`${prefix}boost perks channel #channel\` - Set perks channel\n` +
+          `${GLYPHS.DOT} \`${prefix}boost perks message <text>\` - Set perks message\n` +
+          `${GLYPHS.DOT} \`${prefix}boost perks title <text>\` - Set title\n` +
+          `${GLYPHS.DOT} \`${prefix}boost perks color #HEX\` - Set color\n` +
+          `${GLYPHS.DOT} \`${prefix}boost perks image <url>\` - Set banner\n` +
+          `${GLYPHS.DOT} \`${prefix}boost perks preview\` - Preview message\n` +
+          `${GLYPHS.DOT} \`${prefix}boost publish\` - Send announcement`, inline: false
       }
     );
 
@@ -598,7 +814,8 @@ async function showHelp(message, prefix) {
       `${GLYPHS.DOT} \`{id}\` - User's ID\n` +
       `${GLYPHS.DOT} \`{server}\` - Server name\n` +
       `${GLYPHS.DOT} \`{membercount}\` - Member count\n` +
-      `${GLYPHS.DOT} \`{boostcount}\` - Total boost count\n` +
+      `${GLYPHS.DOT} \`{boostcount}\` - Total server boost count\n` +
+      `${GLYPHS.DOT} \`{userboosts}\` - User's boost count\n` +
       `${GLYPHS.DOT} \`{boostlevel}\` - Server boost level (0-3)\n` +
       `${GLYPHS.DOT} \`{avatar}\` - Avatar URL\n` +
       `${GLYPHS.DOT} \`\\n\` - New line`
@@ -900,4 +1117,814 @@ async function clearBoosterRole(message, guildConfig, prefix) {
       `${GLYPHS.SUCCESS} The booster role configuration has been cleared.\n\n` +
       `**Note:** Existing role assignments will still be tracked and removed when they expire.`)]
   });
+}
+
+// ============================================
+// BOOST TIER REWARDS FUNCTIONS
+// ============================================
+
+async function handleBoostTiers(message, args, guildConfig, prefix) {
+  const subAction = args[1]?.toLowerCase();
+
+  if (!subAction) {
+    return listBoostTiers(message, guildConfig, prefix);
+  }
+
+  switch (subAction) {
+    case 'add':
+    case 'set':
+      return addBoostTier(message, args.slice(1), guildConfig, prefix);
+    case 'remove':
+    case 'delete':
+      return removeBoostTier(message, args.slice(1), guildConfig, prefix);
+    case 'list':
+      return listBoostTiers(message, guildConfig, prefix);
+    case 'clear':
+      return clearBoostTiers(message, guildConfig, prefix);
+    case 'help':
+      return showTierHelp(message, prefix);
+    default:
+      return showTierHelp(message, prefix);
+  }
+}
+
+async function addBoostTier(message, args, guildConfig, prefix) {
+  // Usage: boost addtier <boost_count> @role [stackable]
+  // or: boost tier add <boost_count> @role [stackable]
+  const boostCount = parseInt(args[1]);
+  const role = message.mentions.roles.first() || message.guild.roles.cache.get(args[2]);
+  const stackableArg = args[3]?.toLowerCase();
+
+  if (isNaN(boostCount) || boostCount < 1 || boostCount > 100) {
+    return message.reply({
+      embeds: [await errorEmbed(message.guild.id, 'Invalid Boost Count',
+        `${GLYPHS.ERROR} Please provide a valid boost count between 1 and 100.\n\n` +
+        `**Usage:** \`${prefix}boost addtier <boost_count> @role [stackable]\`\n` +
+        `**Example:** \`${prefix}boost addtier 2 @DoubleBooster\` - Reward for 2+ boosts`)]
+    });
+  }
+
+  if (!role) {
+    return message.reply({
+      embeds: [await errorEmbed(message.guild.id, 'No Role Specified',
+        `${GLYPHS.ERROR} Please mention a role or provide a role ID.\n\n` +
+        `**Usage:** \`${prefix}boost addtier <boost_count> @role\`\n` +
+        `**Example:** \`${prefix}boost addtier 3 @TripleBooster\``)]
+    });
+  }
+
+  // Check if role is manageable
+  if (role.position >= message.guild.members.me.roles.highest.position) {
+    return message.reply({
+      embeds: [await errorEmbed(message.guild.id, 'Role Too High',
+        `${GLYPHS.ERROR} I cannot manage the ${role} role as it's higher than my highest role.`)]
+    });
+  }
+
+  const stackable = stackableArg !== 'false' && stackableArg !== 'no';
+
+  // Get current tiers
+  const currentTiers = guildConfig.features?.boostSystem?.tierRewards || [];
+
+  // Check if this boost count already has a tier
+  const existingIndex = currentTiers.findIndex(t => t.boostCount === boostCount);
+
+  if (existingIndex !== -1) {
+    // Update existing tier
+    currentTiers[existingIndex] = { boostCount, roleId: role.id, stackable };
+  } else {
+    // Add new tier
+    currentTiers.push({ boostCount, roleId: role.id, stackable });
+  }
+
+  // Sort by boost count
+  currentTiers.sort((a, b) => a.boostCount - b.boostCount);
+
+  await Guild.updateGuild(message.guild.id, {
+    $set: { 'features.boostSystem.tierRewards': currentTiers }
+  });
+
+  return message.reply({
+    embeds: [await successEmbed(message.guild.id, 'Boost Tier Added',
+      `${GLYPHS.SUCCESS} **Tier ${boostCount}** reward has been ${existingIndex !== -1 ? 'updated' : 'added'}!\n\n` +
+      `**▸ Boosts Required:** ${boostCount}+\n` +
+      `**▸ Reward Role:** ${role}\n` +
+      `**▸ Stackable:** ${stackable ? 'Yes (keeps lower tier roles)' : 'No (replaces lower tier roles)'}\n\n` +
+      `*When a user reaches ${boostCount} boosts, they will receive this role.*`)]
+  });
+}
+
+async function removeBoostTier(message, args, guildConfig, prefix) {
+  // Usage: boost removetier <boost_count>
+  const boostCount = parseInt(args[1]);
+
+  if (isNaN(boostCount)) {
+    return message.reply({
+      embeds: [await errorEmbed(message.guild.id, 'Invalid Boost Count',
+        `${GLYPHS.ERROR} Please provide the boost count of the tier to remove.\n\n` +
+        `**Usage:** \`${prefix}boost removetier <boost_count>\`\n` +
+        `**Example:** \`${prefix}boost removetier 2\` - Remove tier for 2 boosts`)]
+    });
+  }
+
+  const currentTiers = guildConfig.features?.boostSystem?.tierRewards || [];
+  const tierIndex = currentTiers.findIndex(t => t.boostCount === boostCount);
+
+  if (tierIndex === -1) {
+    return message.reply({
+      embeds: [await errorEmbed(message.guild.id, 'Tier Not Found',
+        `${GLYPHS.ERROR} No tier found for ${boostCount} boosts.\n\n` +
+        `Use \`${prefix}boost listtiers\` to see all configured tiers.`)]
+    });
+  }
+
+  const removedTier = currentTiers.splice(tierIndex, 1)[0];
+  const removedRole = message.guild.roles.cache.get(removedTier.roleId);
+
+  await Guild.updateGuild(message.guild.id, {
+    $set: { 'features.boostSystem.tierRewards': currentTiers }
+  });
+
+  return message.reply({
+    embeds: [await successEmbed(message.guild.id, 'Boost Tier Removed',
+      `${GLYPHS.SUCCESS} **Tier ${boostCount}** has been removed!\n\n` +
+      `**▸ Removed Role:** ${removedRole || 'Unknown Role'}\n\n` +
+      `*Users who already have this role will keep it. Use \`${prefix}boost listtiers\` to see remaining tiers.*`)]
+  });
+}
+
+async function listBoostTiers(message, guildConfig, prefix) {
+  const tiers = guildConfig.features?.boostSystem?.tierRewards || [];
+
+  if (tiers.length === 0) {
+    return message.reply({
+      embeds: [await infoEmbed(message.guild.id, '💎 Boost Tier Rewards',
+        `No boost tier rewards configured.\n\n` +
+        `**Setup boost tiers to reward your boosters!**\n\n` +
+        `${GLYPHS.DOT} \`${prefix}boost addtier 1 @Booster\` - Reward for 1 boost\n` +
+        `${GLYPHS.DOT} \`${prefix}boost addtier 2 @DoubleBooster\` - Reward for 2 boosts\n` +
+        `${GLYPHS.DOT} \`${prefix}boost addtier 3 @TripleBooster\` - Reward for 3 boosts\n\n` +
+        `*Roles are automatically assigned when users reach the boost threshold.*`)]
+    });
+  }
+
+  // Sort tiers by boost count
+  const sortedTiers = [...tiers].sort((a, b) => a.boostCount - b.boostCount);
+
+  let tierList = '';
+  for (const tier of sortedTiers) {
+    const role = message.guild.roles.cache.get(tier.roleId);
+    const tierEmoji = getTierEmoji(tier.boostCount);
+    tierList += `${tierEmoji} **${tier.boostCount}+ Boosts** → ${role || 'Unknown Role'}\n`;
+    tierList += `   └─ Stackable: ${tier.stackable !== false ? '✅' : '❌'}\n`;
+  }
+
+  const embed = new EmbedBuilder()
+    .setTitle('💎 Boost Tier Rewards')
+    .setColor(guildConfig.features?.boostSystem?.embedColor || '#f47fff')
+    .setDescription(
+      `**Configured Tiers:**\n\n${tierList}\n\n` +
+      `**Commands:**\n` +
+      `${GLYPHS.DOT} \`${prefix}boost addtier <count> @role\` - Add tier\n` +
+      `${GLYPHS.DOT} \`${prefix}boost removetier <count>\` - Remove tier\n` +
+      `${GLYPHS.DOT} \`${prefix}boost cleartiers\` - Clear all tiers`
+    )
+    .setFooter({ text: `${tiers.length} tier(s) configured` });
+
+  return message.reply({ embeds: [embed] });
+}
+
+async function clearBoostTiers(message, guildConfig, prefix) {
+  const tiers = guildConfig.features?.boostSystem?.tierRewards || [];
+
+  if (tiers.length === 0) {
+    return message.reply({
+      embeds: [await infoEmbed(message.guild.id, 'No Tiers to Clear',
+        `There are no boost tier rewards configured.`)]
+    });
+  }
+
+  await Guild.updateGuild(message.guild.id, {
+    $set: { 'features.boostSystem.tierRewards': [] }
+  });
+
+  return message.reply({
+    embeds: [await successEmbed(message.guild.id, 'Boost Tiers Cleared',
+      `${GLYPHS.SUCCESS} All ${tiers.length} boost tier reward(s) have been removed.\n\n` +
+      `*Users who already have tier roles will keep them.*`)]
+  });
+}
+
+async function setTierStackable(message, args, guildConfig, prefix) {
+  // Usage: boost stackable <boost_count> <on/off>
+  const boostCount = parseInt(args[1]);
+  const setting = args[2]?.toLowerCase();
+
+  if (isNaN(boostCount)) {
+    return message.reply({
+      embeds: [await errorEmbed(message.guild.id, 'Invalid Boost Count',
+        `${GLYPHS.ERROR} Please provide the boost count of the tier.\n\n` +
+        `**Usage:** \`${prefix}boost stackable <boost_count> <on/off>\`\n` +
+        `**Example:** \`${prefix}boost stackable 2 off\` - Make tier 2 replace lower tiers`)]
+    });
+  }
+
+  if (!['on', 'off', 'true', 'false', 'yes', 'no'].includes(setting)) {
+    return message.reply({
+      embeds: [await errorEmbed(message.guild.id, 'Invalid Setting',
+        `${GLYPHS.ERROR} Please specify \`on\` or \`off\`.\n\n` +
+        `**Stackable ON:** Users keep all lower tier roles\n` +
+        `**Stackable OFF:** Higher tiers replace lower tier roles`)]
+    });
+  }
+
+  const currentTiers = guildConfig.features?.boostSystem?.tierRewards || [];
+  const tierIndex = currentTiers.findIndex(t => t.boostCount === boostCount);
+
+  if (tierIndex === -1) {
+    return message.reply({
+      embeds: [await errorEmbed(message.guild.id, 'Tier Not Found',
+        `${GLYPHS.ERROR} No tier found for ${boostCount} boosts.`)]
+    });
+  }
+
+  const stackable = ['on', 'true', 'yes'].includes(setting);
+  currentTiers[tierIndex].stackable = stackable;
+
+  await Guild.updateGuild(message.guild.id, {
+    $set: { 'features.boostSystem.tierRewards': currentTiers }
+  });
+
+  return message.reply({
+    embeds: [await successEmbed(message.guild.id, 'Tier Setting Updated',
+      `${GLYPHS.SUCCESS} **Tier ${boostCount}** stackable setting is now **${stackable ? 'ON' : 'OFF'}**.\n\n` +
+      (stackable
+        ? `Users will keep lower tier roles when reaching this tier.`
+        : `Lower tier roles will be removed when users reach this tier.`))]
+  });
+}
+
+async function showTierHelp(message, prefix) {
+  const embed = new EmbedBuilder()
+    .setColor('#f47fff')
+    .setTitle('💎 Boost Tier Rewards Help')
+    .setDescription(
+      `Reward your boosters with special roles based on how many times they've boosted!\n\n` +
+      `**Commands:**\n\n` +
+      `${GLYPHS.DOT} \`${prefix}boost addtier <count> @role\`\n` +
+      `  Add a tier reward (e.g., \`addtier 2 @DoubleBooster\`)\n\n` +
+      `${GLYPHS.DOT} \`${prefix}boost removetier <count>\`\n` +
+      `  Remove a tier reward\n\n` +
+      `${GLYPHS.DOT} \`${prefix}boost listtiers\`\n` +
+      `  View all configured tiers\n\n` +
+      `${GLYPHS.DOT} \`${prefix}boost cleartiers\`\n` +
+      `  Remove all tier rewards\n\n` +
+      `${GLYPHS.DOT} \`${prefix}boost stackable <count> <on/off>\`\n` +
+      `  Set whether tier roles stack\n\n` +
+      `**Example Setup:**\n` +
+      `\`${prefix}boost addtier 1 @Booster\` - 1 boost\n` +
+      `\`${prefix}boost addtier 2 @DoubleBooster\` - 2 boosts\n` +
+      `\`${prefix}boost addtier 5 @SuperBooster\` - 5 boosts\n\n` +
+      `*Roles are automatically assigned when users reach the boost threshold.*`
+    )
+    .setFooter({ text: 'Stackable: ON = keep all roles | OFF = replace with higher tier' });
+
+  return message.reply({ embeds: [embed] });
+}
+
+function getTierEmoji(boostCount) {
+  if (boostCount >= 10) return '💠';
+  if (boostCount >= 5) return '🌟';
+  if (boostCount >= 3) return '⭐';
+  if (boostCount >= 2) return '✨';
+  return '💎';
+}
+
+// ============================================
+// BOOSTER PERKS ANNOUNCEMENT FUNCTIONS
+// ============================================
+
+async function handlePerksCommand(message, args, guildConfig, prefix) {
+  const subAction = args[1]?.toLowerCase();
+
+  if (!subAction) {
+    return showPerksStatus(message, guildConfig, prefix);
+  }
+
+  switch (subAction) {
+    case 'channel':
+      return setPerksChannel(message, args.slice(1), guildConfig, prefix);
+    case 'message':
+    case 'msg':
+    case 'description':
+    case 'desc':
+      return setPerksMessage(message, args.slice(1), guildConfig, prefix);
+    case 'title':
+      return setPerksTitle(message, args.slice(1), guildConfig, prefix);
+    case 'color':
+    case 'colour':
+      return setPerksColor(message, args.slice(1), guildConfig, prefix);
+    case 'image':
+    case 'banner':
+      return setPerksBanner(message, args.slice(1), guildConfig, prefix);
+    case 'thumbnail':
+    case 'thumb':
+      return setPerksThumbnail(message, args.slice(1), guildConfig, prefix);
+    case 'footer':
+      return setPerksFooter(message, args.slice(1), guildConfig, prefix);
+    case 'preview':
+      return previewPerksAnnouncement(message, guildConfig, prefix);
+    case 'publish':
+    case 'send':
+      return publishPerksAnnouncement(message, guildConfig, prefix);
+    case 'tierlist':
+    case 'showtiers':
+      return togglePerksTierList(message, args.slice(1), guildConfig, prefix);
+    case 'reset':
+      return resetPerksSettings(message, guildConfig, prefix);
+    case 'help':
+    default:
+      return showPerksHelp(message, prefix);
+  }
+}
+
+async function showPerksStatus(message, guildConfig, prefix) {
+  const perks = guildConfig.features?.boostSystem?.perksAnnouncement || {};
+  const tiers = guildConfig.features?.boostSystem?.tierRewards || [];
+  const channel = perks.channel ? message.guild.channels.cache.get(perks.channel) : null;
+
+  const embed = new EmbedBuilder()
+    .setColor(perks.embedColor || '#f47fff')
+    .setTitle('📢 Booster Perks Announcement Status')
+    .setDescription(
+      `**▸ Perks Channel:** ${channel || 'Not configured'}\n` +
+      `**▸ Show Tier List:** ${perks.showTierList !== false ? '◉' : '○'}\n` +
+      `**▸ Embed Color:** ${perks.embedColor || '#f47fff'}\n` +
+      `**▸ Title:** ${perks.embedTitle || 'Default'}\n` +
+      `**▸ Banner:** ${perks.bannerUrl ? '◉ Set' : '○ Not set'}\n` +
+      `**▸ Thumbnail:** ${perks.thumbnailType || 'server'}\n` +
+      `**▸ Configured Tiers:** ${tiers.length}\n\n` +
+      `**Current Message:**\n\`\`\`${(perks.message || 'Check out the amazing perks for our server boosters! 💎').slice(0, 100)}\`\`\`\n` +
+      `Use \`${prefix}boost perks help\` for all commands.\n` +
+      `Use \`${prefix}boost publish\` to send the announcement.`
+    )
+    .setFooter({ text: perks.lastPublished ? `Last published: ${new Date(perks.lastPublished).toLocaleDateString()}` : 'Never published' });
+
+  return message.reply({ embeds: [embed] });
+}
+
+async function setPerksChannel(message, args, guildConfig, prefix) {
+  const channel = message.mentions.channels.first() ||
+    message.guild.channels.cache.get(args[1]);
+
+  if (!channel) {
+    return message.reply({
+      embeds: [await errorEmbed(message.guild.id, 'No Channel',
+        `${GLYPHS.ERROR} Please mention a channel or provide a channel ID.\n\n` +
+        `**Usage:** \`${prefix}boost perks channel #booster-perks\``)]
+    });
+  }
+
+  if (channel.type !== ChannelType.GuildText && channel.type !== ChannelType.GuildAnnouncement) {
+    return message.reply({
+      embeds: [await errorEmbed(message.guild.id, 'Invalid Channel',
+        'Please select a text or announcement channel.')]
+    });
+  }
+
+  await Guild.updateGuild(message.guild.id, {
+    $set: { 'features.boostSystem.perksAnnouncement.channel': channel.id }
+  });
+
+  return message.reply({
+    embeds: [await successEmbed(message.guild.id, 'Perks Channel Set',
+      `${GLYPHS.SUCCESS} Booster perks announcements will be sent to ${channel}\n\n` +
+      `Use \`${prefix}boost publish\` to send the announcement.`)]
+  });
+}
+
+async function setPerksMessage(message, args, guildConfig, prefix) {
+  const perksMsg = args.slice(1).join(' ');
+
+  if (!perksMsg) {
+    const currentMsg = guildConfig.features?.boostSystem?.perksAnnouncement?.message || 'Check out the amazing perks for our server boosters! 💎';
+    return message.reply({
+      embeds: [await infoEmbed(message.guild.id, 'Perks Message',
+        `**Current Message:**\n${currentMsg}\n\n` +
+        `**Usage:** \`${prefix}boost perks message <your message>\`\n\n` +
+        `**Variables:**\n` +
+        `${GLYPHS.DOT} \`{server}\` - Server name\n` +
+        `${GLYPHS.DOT} \`{boostcount}\` - Total boost count\n` +
+        `${GLYPHS.DOT} \`{boostlevel}\` - Server boost level\n` +
+        `${GLYPHS.DOT} \`{membercount}\` - Member count`)]
+    });
+  }
+
+  await Guild.updateGuild(message.guild.id, {
+    $set: { 'features.boostSystem.perksAnnouncement.message': perksMsg }
+  });
+
+  return message.reply({
+    embeds: [await successEmbed(message.guild.id, 'Perks Message Updated',
+      `${GLYPHS.SUCCESS} Booster perks message has been updated!\n\n` +
+      `**New Message:**\n${perksMsg.slice(0, 200)}${perksMsg.length > 200 ? '...' : ''}`)]
+  });
+}
+
+async function setPerksTitle(message, args, guildConfig, prefix) {
+  const title = args.slice(1).join(' ');
+
+  if (!title) {
+    return message.reply({
+      embeds: [await errorEmbed(message.guild.id, 'No Title',
+        `${GLYPHS.ERROR} Please provide a title.\n\n` +
+        `**Usage:** \`${prefix}boost perks title 💎 Booster Perks & Rewards\`\n` +
+        `Use \`${prefix}boost perks title reset\` to reset to default.`)]
+    });
+  }
+
+  if (title.toLowerCase() === 'reset') {
+    await Guild.updateGuild(message.guild.id, {
+      $unset: { 'features.boostSystem.perksAnnouncement.embedTitle': '' }
+    });
+    return message.reply({
+      embeds: [await successEmbed(message.guild.id, 'Title Reset',
+        `${GLYPHS.SUCCESS} Perks embed title has been reset to default.`)]
+    });
+  }
+
+  await Guild.updateGuild(message.guild.id, {
+    $set: { 'features.boostSystem.perksAnnouncement.embedTitle': title }
+  });
+
+  return message.reply({
+    embeds: [await successEmbed(message.guild.id, 'Title Updated',
+      `${GLYPHS.SUCCESS} Perks embed title set to: **${title}**`)]
+  });
+}
+
+async function setPerksColor(message, args, guildConfig, prefix) {
+  const color = args[1];
+
+  if (!color) {
+    return message.reply({
+      embeds: [await errorEmbed(message.guild.id, 'No Color',
+        `${GLYPHS.ERROR} Please provide a hex color code.\n\n` +
+        `**Usage:** \`${prefix}boost perks color #f47fff\``)]
+    });
+  }
+
+  if (color.toLowerCase() === 'reset') {
+    await Guild.updateGuild(message.guild.id, {
+      $set: { 'features.boostSystem.perksAnnouncement.embedColor': '#f47fff' }
+    });
+    return message.reply({
+      embeds: [await successEmbed(message.guild.id, 'Color Reset',
+        `${GLYPHS.SUCCESS} Perks embed color has been reset to default (#f47fff).`)]
+    });
+  }
+
+  const hexRegex = /^#?([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
+  if (!hexRegex.test(color)) {
+    return message.reply({
+      embeds: [await errorEmbed(message.guild.id, 'Invalid Color',
+        `${GLYPHS.ERROR} Please provide a valid hex color code (e.g., #f47fff).`)]
+    });
+  }
+
+  const finalColor = color.startsWith('#') ? color : `#${color}`;
+  await Guild.updateGuild(message.guild.id, {
+    $set: { 'features.boostSystem.perksAnnouncement.embedColor': finalColor }
+  });
+
+  return message.reply({
+    embeds: [await successEmbed(message.guild.id, 'Color Updated',
+      `${GLYPHS.SUCCESS} Perks embed color set to: **${finalColor}**`)]
+  });
+}
+
+async function setPerksBanner(message, args, guildConfig, prefix) {
+  const url = args[1];
+
+  if (!url) {
+    return message.reply({
+      embeds: [await errorEmbed(message.guild.id, 'No URL',
+        `${GLYPHS.ERROR} Please provide an image URL.\n\n` +
+        `**Usage:** \`${prefix}boost perks image <url>\`\n` +
+        `Use \`${prefix}boost perks image remove\` to remove.`)]
+    });
+  }
+
+  if (url.toLowerCase() === 'remove' || url.toLowerCase() === 'reset') {
+    await Guild.updateGuild(message.guild.id, {
+      $unset: { 'features.boostSystem.perksAnnouncement.bannerUrl': '' }
+    });
+    return message.reply({
+      embeds: [await successEmbed(message.guild.id, 'Banner Removed',
+        `${GLYPHS.SUCCESS} Perks banner image has been removed.`)]
+    });
+  }
+
+  // Basic URL validation
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    return message.reply({
+      embeds: [await errorEmbed(message.guild.id, 'Invalid URL',
+        `${GLYPHS.ERROR} Please provide a valid image URL starting with http:// or https://`)]
+    });
+  }
+
+  await Guild.updateGuild(message.guild.id, {
+    $set: { 'features.boostSystem.perksAnnouncement.bannerUrl': url }
+  });
+
+  return message.reply({
+    embeds: [await successEmbed(message.guild.id, 'Banner Set',
+      `${GLYPHS.SUCCESS} Perks banner image has been updated!`)]
+  });
+}
+
+async function setPerksThumbnail(message, args, guildConfig, prefix) {
+  const option = args[1]?.toLowerCase();
+
+  if (!option) {
+    return message.reply({
+      embeds: [await infoEmbed(message.guild.id, 'Thumbnail Options',
+        `**Usage:** \`${prefix}boost perks thumbnail <option>\`\n\n` +
+        `**Options:**\n` +
+        `${GLYPHS.DOT} \`server\` - Server icon\n` +
+        `${GLYPHS.DOT} \`<url>\` - Custom image URL\n` +
+        `${GLYPHS.DOT} \`remove\` - No thumbnail`)]
+    });
+  }
+
+  if (option === 'server' || option === 'guild') {
+    await Guild.updateGuild(message.guild.id, {
+      $set: { 'features.boostSystem.perksAnnouncement.thumbnailType': 'server' },
+      $unset: { 'features.boostSystem.perksAnnouncement.thumbnailUrl': '' }
+    });
+    return message.reply({
+      embeds: [await successEmbed(message.guild.id, 'Thumbnail Updated',
+        `${GLYPHS.SUCCESS} Perks thumbnail set to server icon.`)]
+    });
+  }
+
+  if (option === 'remove' || option === 'none') {
+    await Guild.updateGuild(message.guild.id, {
+      $set: { 'features.boostSystem.perksAnnouncement.thumbnailType': 'none' },
+      $unset: { 'features.boostSystem.perksAnnouncement.thumbnailUrl': '' }
+    });
+    return message.reply({
+      embeds: [await successEmbed(message.guild.id, 'Thumbnail Removed',
+        `${GLYPHS.SUCCESS} Perks thumbnail has been removed.`)]
+    });
+  }
+
+  // Custom URL
+  if (option.startsWith('http://') || option.startsWith('https://')) {
+    await Guild.updateGuild(message.guild.id, {
+      $set: {
+        'features.boostSystem.perksAnnouncement.thumbnailType': 'custom',
+        'features.boostSystem.perksAnnouncement.thumbnailUrl': option
+      }
+    });
+    return message.reply({
+      embeds: [await successEmbed(message.guild.id, 'Thumbnail Updated',
+        `${GLYPHS.SUCCESS} Perks thumbnail set to custom image.`)]
+    });
+  }
+
+  return message.reply({
+    embeds: [await errorEmbed(message.guild.id, 'Invalid Option',
+      `${GLYPHS.ERROR} Invalid option. Use \`server\`, \`remove\`, or a valid image URL.`)]
+  });
+}
+
+async function setPerksFooter(message, args, guildConfig, prefix) {
+  const footer = args.slice(1).join(' ');
+
+  if (!footer) {
+    return message.reply({
+      embeds: [await errorEmbed(message.guild.id, 'No Footer',
+        `${GLYPHS.ERROR} Please provide footer text.\n\n` +
+        `**Usage:** \`${prefix}boost perks footer Thank you for supporting us!\`\n` +
+        `Use \`${prefix}boost perks footer reset\` to remove.`)]
+    });
+  }
+
+  if (footer.toLowerCase() === 'reset' || footer.toLowerCase() === 'remove') {
+    await Guild.updateGuild(message.guild.id, {
+      $unset: { 'features.boostSystem.perksAnnouncement.footerText': '' }
+    });
+    return message.reply({
+      embeds: [await successEmbed(message.guild.id, 'Footer Removed',
+        `${GLYPHS.SUCCESS} Perks footer has been removed.`)]
+    });
+  }
+
+  await Guild.updateGuild(message.guild.id, {
+    $set: { 'features.boostSystem.perksAnnouncement.footerText': footer }
+  });
+
+  return message.reply({
+    embeds: [await successEmbed(message.guild.id, 'Footer Updated',
+      `${GLYPHS.SUCCESS} Perks footer set to: **${footer}**`)]
+  });
+}
+
+async function togglePerksTierList(message, args, guildConfig, prefix) {
+  const option = args[1]?.toLowerCase();
+
+  if (!['on', 'off', 'enable', 'disable'].includes(option)) {
+    return message.reply({
+      embeds: [await errorEmbed(message.guild.id, 'Invalid Option',
+        `${GLYPHS.ERROR} Use \`${prefix}boost perks tierlist on\` or \`off\`\n\n` +
+        `When enabled, the tier rewards list will be automatically included in the perks announcement.`)]
+    });
+  }
+
+  const enabled = ['on', 'enable'].includes(option);
+  await Guild.updateGuild(message.guild.id, {
+    $set: { 'features.boostSystem.perksAnnouncement.showTierList': enabled }
+  });
+
+  return message.reply({
+    embeds: [await successEmbed(message.guild.id, 'Tier List Setting Updated',
+      `${GLYPHS.SUCCESS} Auto tier list in perks announcement is now **${enabled ? 'enabled' : 'disabled'}**.`)]
+  });
+}
+
+async function previewPerksAnnouncement(message, guildConfig, prefix) {
+  const embed = buildPerksEmbed(message.guild, guildConfig);
+
+  await message.reply({
+    embeds: [await infoEmbed(message.guild.id, 'Perks Preview',
+      'Here\'s how your booster perks announcement will look:')]
+  });
+
+  await message.channel.send({ embeds: [embed] });
+}
+
+async function publishPerksAnnouncement(message, guildConfig, prefix) {
+  const perks = guildConfig.features?.boostSystem?.perksAnnouncement || {};
+  const channelId = perks.channel;
+
+  if (!channelId) {
+    return message.reply({
+      embeds: [await errorEmbed(message.guild.id, 'No Channel Set',
+        `${GLYPHS.ERROR} Please set a perks announcement channel first.\n\n` +
+        `**Usage:** \`${prefix}boost perks channel #booster-perks\``)]
+    });
+  }
+
+  const channel = message.guild.channels.cache.get(channelId);
+  if (!channel) {
+    return message.reply({
+      embeds: [await errorEmbed(message.guild.id, 'Channel Not Found',
+        `${GLYPHS.ERROR} The configured perks channel no longer exists. Please set a new one.`)]
+    });
+  }
+
+  // Check permissions
+  const permissions = channel.permissionsFor(message.guild.members.me);
+  if (!permissions?.has(['SendMessages', 'EmbedLinks'])) {
+    return message.reply({
+      embeds: [await errorEmbed(message.guild.id, 'Missing Permissions',
+        `${GLYPHS.ERROR} I don't have permission to send messages in ${channel}.`)]
+    });
+  }
+
+  const embed = buildPerksEmbed(message.guild, guildConfig);
+
+  try {
+    await channel.send({ embeds: [embed] });
+
+    // Update last published timestamp
+    await Guild.updateGuild(message.guild.id, {
+      $set: { 'features.boostSystem.perksAnnouncement.lastPublished': new Date() }
+    });
+
+    return message.reply({
+      embeds: [await successEmbed(message.guild.id, 'Announcement Published!',
+        `${GLYPHS.SUCCESS} Booster perks announcement has been sent to ${channel}!`)]
+    });
+  } catch (error) {
+    console.error('[BOOST PERKS] Error publishing announcement:', error);
+    return message.reply({
+      embeds: [await errorEmbed(message.guild.id, 'Failed to Publish',
+        `${GLYPHS.ERROR} Failed to send the announcement. Please check my permissions.`)]
+    });
+  }
+}
+
+async function resetPerksSettings(message, guildConfig, prefix) {
+  await Guild.updateGuild(message.guild.id, {
+    $set: {
+      'features.boostSystem.perksAnnouncement': {
+        channel: null,
+        message: 'Check out the amazing perks for our server boosters! 💎',
+        embedEnabled: true,
+        embedColor: '#f47fff',
+        embedTitle: '💎 Booster Perks & Rewards',
+        bannerUrl: null,
+        thumbnailType: 'server',
+        thumbnailUrl: null,
+        footerText: null,
+        showTimestamp: true,
+        showTierList: true,
+        lastPublished: null
+      }
+    }
+  });
+
+  return message.reply({
+    embeds: [await successEmbed(message.guild.id, 'Perks Settings Reset',
+      `${GLYPHS.SUCCESS} All booster perks announcement settings have been reset to defaults.`)]
+  });
+}
+
+function buildPerksEmbed(guild, guildConfig) {
+  const perks = guildConfig.features?.boostSystem?.perksAnnouncement || {};
+  const tiers = guildConfig.features?.boostSystem?.tierRewards || [];
+
+  const embed = new EmbedBuilder()
+    .setColor(perks.embedColor || '#f47fff')
+    .setTitle(perks.embedTitle || '💎 Booster Perks & Rewards');
+
+  // Parse message with variables
+  let description = (perks.message || 'Check out the amazing perks for our server boosters! 💎')
+    .replace(/{server}/gi, guild.name)
+    .replace(/{boostcount}/gi, (guild.premiumSubscriptionCount || 0).toString())
+    .replace(/{boostlevel}/gi, guild.premiumTier.toString())
+    .replace(/{membercount}/gi, guild.memberCount.toString())
+    .replace(/\\n/g, '\n');
+
+  // Add tier list if enabled
+  if (perks.showTierList !== false && tiers.length > 0) {
+    const sortedTiers = [...tiers].sort((a, b) => a.boostCount - b.boostCount);
+    let tierList = '\n\n**🏆 Tier Rewards:**\n';
+
+    for (const tier of sortedTiers) {
+      const role = guild.roles.cache.get(tier.roleId);
+      const tierEmoji = getTierEmoji(tier.boostCount);
+      tierList += `${tierEmoji} **${tier.boostCount}+ Boost${tier.boostCount > 1 ? 's' : ''}** → ${role || 'Role not found'}\n`;
+    }
+
+    description += tierList;
+  }
+
+  embed.setDescription(description);
+
+  // Thumbnail
+  if (perks.thumbnailType === 'server' || !perks.thumbnailType) {
+    embed.setThumbnail(guild.iconURL({ dynamic: true, size: 256 }));
+  } else if (perks.thumbnailType === 'custom' && perks.thumbnailUrl) {
+    embed.setThumbnail(perks.thumbnailUrl);
+  }
+
+  // Banner
+  if (perks.bannerUrl) {
+    embed.setImage(perks.bannerUrl);
+  }
+
+  // Footer
+  if (perks.footerText) {
+    embed.setFooter({ text: perks.footerText });
+  } else {
+    embed.setFooter({ text: `Server Boost Level: ${guild.premiumTier} • ${guild.premiumSubscriptionCount || 0} Boosts` });
+  }
+
+  // Timestamp
+  if (perks.showTimestamp !== false) {
+    embed.setTimestamp();
+  }
+
+  return embed;
+}
+
+async function showPerksHelp(message, prefix) {
+  const embed = new EmbedBuilder()
+    .setColor('#f47fff')
+    .setTitle('📢 Booster Perks Announcement Help')
+    .setDescription(
+      `Create and publish a customizable booster perks announcement!\n\n` +
+      `**Channel Setup:**\n` +
+      `${GLYPHS.DOT} \`${prefix}boost perks channel #channel\` - Set announcement channel\n\n` +
+      `**Content:**\n` +
+      `${GLYPHS.DOT} \`${prefix}boost perks message <text>\` - Set description\n` +
+      `${GLYPHS.DOT} \`${prefix}boost perks title <text>\` - Set title\n` +
+      `${GLYPHS.DOT} \`${prefix}boost perks footer <text>\` - Set footer\n\n` +
+      `**Appearance:**\n` +
+      `${GLYPHS.DOT} \`${prefix}boost perks color #HEX\` - Set color\n` +
+      `${GLYPHS.DOT} \`${prefix}boost perks image <url>\` - Set banner\n` +
+      `${GLYPHS.DOT} \`${prefix}boost perks thumbnail <server|url|remove>\`\n\n` +
+      `**Actions:**\n` +
+      `${GLYPHS.DOT} \`${prefix}boost perks preview\` - Preview announcement\n` +
+      `${GLYPHS.DOT} \`${prefix}boost publish\` - Send to channel\n` +
+      `${GLYPHS.DOT} \`${prefix}boost perks tierlist on/off\` - Auto-show tiers\n` +
+      `${GLYPHS.DOT} \`${prefix}boost perks reset\` - Reset all settings\n\n` +
+      `**Variables:** {server}, {boostcount}, {boostlevel}, {membercount}`
+    )
+    .setFooter({ text: 'This is separate from the boost notification channel!' });
+
+  return message.reply({ embeds: [embed] });
 }

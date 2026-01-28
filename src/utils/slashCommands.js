@@ -1599,6 +1599,125 @@ const slashCommands = [
     .addSubcommand(subcommand =>
       subcommand.setName('clearrole')
         .setDescription('Clear temporary booster role configuration'))
+    // Boost Tier Rewards subcommands
+    .addSubcommand(subcommand =>
+      subcommand.setName('addtier')
+        .setDescription('Add a boost tier reward role')
+        .addIntegerOption(option =>
+          option.setName('boosts')
+            .setDescription('Number of boosts required (1-100)')
+            .setRequired(true)
+            .setMinValue(1)
+            .setMaxValue(100))
+        .addRoleOption(option =>
+          option.setName('role')
+            .setDescription('Role to assign at this tier')
+            .setRequired(true))
+        .addBooleanOption(option =>
+          option.setName('stackable')
+            .setDescription('Keep lower tier roles? (default: true)')
+            .setRequired(false)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('removetier')
+        .setDescription('Remove a boost tier reward')
+        .addIntegerOption(option =>
+          option.setName('boosts')
+            .setDescription('Boost count of the tier to remove')
+            .setRequired(true)
+            .setMinValue(1)
+            .setMaxValue(100)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('listtiers')
+        .setDescription('Display all configured boost tier rewards'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('cleartiers')
+        .setDescription('Remove all boost tier rewards'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('stackable')
+        .setDescription('Set whether a tier role stacks with lower tiers')
+        .addIntegerOption(option =>
+          option.setName('boosts')
+            .setDescription('Boost count of the tier')
+            .setRequired(true)
+            .setMinValue(1)
+            .setMaxValue(100))
+        .addBooleanOption(option =>
+          option.setName('enabled')
+            .setDescription('Stack with lower tier roles?')
+            .setRequired(true)))
+    // Booster Perks Announcement subcommands
+    .addSubcommand(subcommand =>
+      subcommand.setName('perks-channel')
+        .setDescription('Set the channel for booster perks announcements')
+        .addChannelOption(option =>
+          option.setName('channel')
+            .setDescription('Channel for perks announcements')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('perks-message')
+        .setDescription('Set the perks announcement message')
+        .addStringOption(option =>
+          option.setName('text')
+            .setDescription('Message text. Variables: {server}, {boostcount}, {boostlevel}, {membercount}')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('perks-title')
+        .setDescription('Set perks embed title')
+        .addStringOption(option =>
+          option.setName('text')
+            .setDescription('Title text (use "reset" for default)')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('perks-color')
+        .setDescription('Set perks embed color')
+        .addStringOption(option =>
+          option.setName('hex')
+            .setDescription('Hex color code (e.g., #f47fff)')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('perks-image')
+        .setDescription('Set perks banner image')
+        .addStringOption(option =>
+          option.setName('url')
+            .setDescription('Image URL or "remove" to delete')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('perks-thumbnail')
+        .setDescription('Set perks thumbnail')
+        .addStringOption(option =>
+          option.setName('type')
+            .setDescription('Thumbnail type')
+            .setRequired(true)
+            .addChoices(
+              { name: 'Server Icon', value: 'server' },
+              { name: 'Remove', value: 'remove' }
+            )))
+    .addSubcommand(subcommand =>
+      subcommand.setName('perks-footer')
+        .setDescription('Set perks embed footer')
+        .addStringOption(option =>
+          option.setName('text')
+            .setDescription('Footer text (use "reset" to remove)')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('perks-tierlist')
+        .setDescription('Toggle automatic tier list in perks announcement')
+        .addBooleanOption(option =>
+          option.setName('enabled')
+            .setDescription('Show tier rewards list in announcement?')
+            .setRequired(true)))
+    .addSubcommand(subcommand =>
+      subcommand.setName('perks-preview')
+        .setDescription('Preview booster perks announcement'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('perks-publish')
+        .setDescription('Publish booster perks announcement to configured channel'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('perks-status')
+        .setDescription('View booster perks announcement configuration'))
+    .addSubcommand(subcommand =>
+      subcommand.setName('perks-reset')
+        .setDescription('Reset all perks announcement settings'))
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
 
   // ============================================

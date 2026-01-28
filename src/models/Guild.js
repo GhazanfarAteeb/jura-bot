@@ -162,7 +162,29 @@ const guildSchema = new mongoose.Schema({
       showTimestamp: { type: Boolean, default: true },
       mentionUser: { type: Boolean, default: true },
       greetingText: { type: String, default: '💎 {user} just boosted the server!' },
-      authorType: { type: String, enum: ['username', 'displayname', 'server', 'none'], default: 'username' }
+      authorType: { type: String, enum: ['username', 'displayname', 'server', 'none'], default: 'username' },
+      // Boost tier rewards - roles assigned based on number of boosts
+      tierRewards: [{
+        boostCount: { type: Number, required: true }, // Number of boosts required (1, 2, 3, etc.)
+        roleId: String, // Role to assign at this tier
+        stackable: { type: Boolean, default: true } // Whether to keep lower tier roles
+      }],
+      showTierInMessage: { type: Boolean, default: true }, // Show current tier in boost message
+      // Booster Perks Announcement - separate channel for tier info announcement
+      perksAnnouncement: {
+        channel: String, // Channel for booster perks announcement (different from boost notification)
+        message: { type: String, default: 'Check out the amazing perks for our server boosters! 💎' },
+        embedEnabled: { type: Boolean, default: true },
+        embedColor: { type: String, default: '#f47fff' },
+        embedTitle: { type: String, default: '💎 Booster Perks & Rewards' },
+        bannerUrl: String,
+        thumbnailType: { type: String, enum: ['server', 'custom', 'none', null], default: 'server' },
+        thumbnailUrl: String,
+        footerText: String,
+        showTimestamp: { type: Boolean, default: true },
+        showTierList: { type: Boolean, default: true }, // Auto-show tier list in announcement
+        lastPublished: Date // Track when last published
+      }
     },
     boosterRoleSystem: {
       enabled: { type: Boolean, default: false },

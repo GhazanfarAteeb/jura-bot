@@ -2589,7 +2589,7 @@ async function handleFeatureCommand(interaction, client, guildConfig) {
     if (status === 'status') {
       const boostConfig = guildConfig.features?.boostSystem || {};
       const boostChannel = boostConfig.channel ? interaction.guild.channels.cache.get(boostConfig.channel) : null;
-      
+
       const embed = new EmbedBuilder()
         .setTitle('💎 Server Boost Announcements Status')
         .setColor(boostConfig.enabled ? '#FF73FA' : '#FF4757')
@@ -2618,10 +2618,10 @@ async function handleFeatureCommand(interaction, client, guildConfig) {
         `${GLYPHS.SUCCESS} **💎 Server Boost Announcements** have been ${isEnabling ? 'enabled' : 'disabled'}.\n\n` +
         (isEnabling
           ? `The bot will now send thank you messages when members boost the server.\n\n` +
-            `**Configure with:**\n` +
-            `• \`/boost channel\` - Set announcement channel\n` +
-            `• \`/boost message\` - Customize message\n` +
-            `• \`/boost test\` - Preview message`
+          `**Configure with:**\n` +
+          `• \`/boost channel\` - Set announcement channel\n` +
+          `• \`/boost message\` - Customize message\n` +
+          `• \`/boost test\` - Preview message`
           : `Boost thank you messages have been disabled.`)
       )]
     });
