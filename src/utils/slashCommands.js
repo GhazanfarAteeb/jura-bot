@@ -1599,6 +1599,14 @@ const slashCommands = [
     .addSubcommand(subcommand =>
       subcommand.setName('clearrole')
         .setDescription('Clear temporary booster role configuration'))
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
+
+  // ============================================
+  // BOOSTER PERKS & TIER REWARDS COMMAND
+  // ============================================
+  new SlashCommandBuilder()
+    .setName('boostperks')
+    .setDescription('『 RAPHAEL 』 Configure boost tier rewards and perks announcements, Master')
     // Boost Tier Rewards subcommands
     .addSubcommand(subcommand =>
       subcommand.setName('addtier')
@@ -1632,14 +1640,7 @@ const slashCommands = [
     .addSubcommand(subcommand =>
       subcommand.setName('cleartiers')
         .setDescription('Remove all boost tier rewards'))
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
-
-  // ============================================
-  // BOOSTER PERKS ANNOUNCEMENT COMMAND
-  // ============================================
-  new SlashCommandBuilder()
-    .setName('boostperks')
-    .setDescription('『 RAPHAEL 』 Configure booster perks announcement system, Master')
+    // Perks Announcement subcommands
     .addSubcommand(subcommand =>
       subcommand.setName('status')
         .setDescription('View booster perks announcement configuration'))
