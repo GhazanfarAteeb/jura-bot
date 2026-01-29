@@ -7,7 +7,7 @@ export default {
   name: 'purge',
   description: 'Delete multiple messages',
   usage: '<amount> [@user]',
-  aliases: ['clear', 'clean', 'delete'],
+  aliases: ['clean', 'delete'],
   permissions: {
     user: PermissionFlagsBits.ManageMessages,
     client: PermissionFlagsBits.ManageMessages

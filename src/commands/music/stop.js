@@ -14,7 +14,7 @@ export default class Stop extends Command {
                 usage: '',
                 examples: ['stop']
             },
-            aliases: ['disconnect', 'dc', 'leave'],
+            aliases: ['disconnect', 'dc', 'leave', 'end'],
             category: 'music',
             cooldown: 3,
             args: false,

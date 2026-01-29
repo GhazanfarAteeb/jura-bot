@@ -6,7 +6,7 @@ import Guild from '../../models/Guild.js';
 
 // Accurate command lists based on actual files
 const COMMANDS_BY_CATEGORY = {
-  admin: ['deployment', 'logs', 'award', 'botlogs', 'cleanup'],
+  admin: ['deployment', 'award', 'botlogs'],
   config: [
     'setup', 'config', 'feature', 'setprefix', 'setchannel', 'setrole', 'setcoin', 'setoverlay',
     'automod', 'automodignore', 'welcome', 'goodbye', 'boost', 'boostperks', 'antinuke', 'autopublish', 'autorole', 'cmdchannels',
@@ -21,7 +21,7 @@ const COMMANDS_BY_CATEGORY = {
   gambling: ['coinflip', 'slots', 'dice', 'roulette', 'blackjack'],
   music: [
     'play', 'pause', 'resume', 'skip', 'stop', 'queue', 'nowplaying', 'volume',
-    'shuffle', 'loop', 'seek', 'remove', 'clear', 'skipto'
+    'shuffle', 'loop', 'seek', 'remove', 'clearqueue', 'skipto'
   ],
   community: [
     'setbirthday', 'birthdays', 'removebirthday', 'birthdaypreference', 'birthdayconfig', 'mybirthday',
@@ -48,7 +48,7 @@ const SLASH_COMMANDS = [
   // Admin
   'giveaway', 'award', 'deployment', 'botlogs',
   // Music
-  'play', 'pause', 'resume', 'skip', 'stop', 'queue', 'nowplaying', 'volume', 'shuffle', 'loop', 'seek', 'remove', 'clear', 'skipto',
+  'play', 'pause', 'resume', 'skip', 'stop', 'queue', 'nowplaying', 'volume', 'shuffle', 'loop', 'seek', 'remove', 'clearqueue', 'skipto',
   // Economy
   'balance', 'daily', 'level', 'profile', 'shop', 'inventory', 'rep', 'coinflip', 'slots', 'dice', 'roulette', 'blackjack', 'adventure',
   // Community

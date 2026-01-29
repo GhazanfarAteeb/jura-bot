@@ -8,13 +8,13 @@ import Command from '../../structures/Command.js';
 export default class Clear extends Command {
   constructor(client) {
     super(client, {
-      name: 'clear',
+      name: 'clearqueue',
       description: {
         content: 'Clear the music queue',
         usage: '',
-        examples: ['clear']
+        examples: ['clearqueue']
       },
-      aliases: ['clearqueue', 'cq'],
+      aliases: ['cq', 'emptyqueue'],
       category: 'music',
       cooldown: 5,
       args: false,

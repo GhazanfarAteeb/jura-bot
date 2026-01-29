@@ -7,7 +7,7 @@ export default {
   name: 'remind',
   description: 'Configure temporal alerts for future notification, Master',
   usage: '<time> <message> | list | delete <id>',
-  aliases: ['reminder', 'remindme', 'rm'],
+  aliases: ['reminder', 'remindme', 'setreminder'],
   cooldown: 5,
 
   async execute(message, args) {

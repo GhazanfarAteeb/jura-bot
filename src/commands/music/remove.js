@@ -14,7 +14,7 @@ export default class Remove extends Command {
         usage: '<position>',
         examples: ['remove 3', 'remove 1']
       },
-      aliases: ['rm'],
+      aliases: [],
       category: 'music',
       cooldown: 3,
       args: true,

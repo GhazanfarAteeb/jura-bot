@@ -17,11 +17,11 @@ const LOG_TYPES = {
 };
 
 export default {
-  name: 'logs',
+  name: 'setlogs',
   description: 'Configure logging channels',
-  usage: 'logs | logs set <type> #channel | logs disable <type> | logs all #channel',
+  usage: 'setlogs | setlogs set <type> #channel | setlogs disable <type> | setlogs all #channel',
   category: 'config',
-  aliases: ['logging', 'setlog', 'logchannel'],
+  aliases: ['logs', 'logging', 'setlog', 'logchannel'],
   permissions: [PermissionFlagsBits.ManageGuild],
   cooldown: 5,
 

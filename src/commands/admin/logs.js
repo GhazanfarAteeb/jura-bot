@@ -10,9 +10,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 export default {
-  name: 'logs',
+  name: 'botlogs',
   description: 'View bot logs and statistics',
-  usage: 'logs [stats|clean|types]',
+  usage: 'botlogs [stats|clean|types]',
+  aliases: ['blogs', 'systemlogs'],
   category: 'admin',
   permissions: [], // Custom permission check below
   execute: async (message, args) => {
