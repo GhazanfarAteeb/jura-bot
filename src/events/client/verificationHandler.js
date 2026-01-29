@@ -15,6 +15,70 @@ import { generateCaptchaImage, generateCaptchaCode } from '../../utils/captchaGe
 const verificationCooldowns = new Map();
 const COOLDOWN_DURATION = 30000; // 30 seconds between attempts
 
+// Helper function to log verification events
+async function logVerification(member, verificationType, guildConfig) {
+  try {
+    if (!guildConfig.channels.memberLog) return;
+
+    const logChannel = member.guild.channels.cache.get(guildConfig.channels.memberLog);
+    if (!logChannel) return;
+
+    const embed = new EmbedBuilder()
+      .setTitle('✅ Member Verified')
+      .setColor('#00FF7F')
+      .setDescription(`**${member.user.username}** has successfully verified`)
+      .addFields(
+        { name: 'Member', value: `${member.user.tag}`, inline: true },
+        { name: 'Verification Type', value: verificationType.charAt(0).toUpperCase() + verificationType.slice(1), inline: true },
+        { name: 'Verified By', value: '⚙️ System (Self-Verification)', inline: true }
+      )
+      .setThumbnail(member.user.displayAvatarURL())
+      .setFooter({ text: `User ID: ${member.id}` })
+      .setTimestamp();
+
+    await logChannel.send({ embeds: [embed] });
+  } catch (error) {
+    console.error('Error logging verification:', error);
+  }
+}
+
+// Helper function to log manual verification
+async function logManualVerification(member, executor, guildConfig) {
+  try {
+    if (!guildConfig.channels.memberLog) return;
+
+    const logChannel = member.guild.channels.cache.get(guildConfig.channels.memberLog);
+    if (!logChannel) return;
+
+    let verifiedByText;
+    if (executor.bot) {
+      verifiedByText = `🤖 ${executor.username} (Bot)`;
+    } else {
+      verifiedByText = `👤 ${executor.username}`;
+    }
+
+    const embed = new EmbedBuilder()
+      .setTitle('✅ Member Manually Verified')
+      .setColor('#00CED1')
+      .setDescription(`**${member.user.username}** was manually verified`)
+      .addFields(
+        { name: 'Member', value: `${member.user.tag}`, inline: true },
+        { name: 'Verification Type', value: 'Manual', inline: true },
+        { name: 'Verified By', value: verifiedByText, inline: true }
+      )
+      .setThumbnail(member.user.displayAvatarURL())
+      .setFooter({ text: `User ID: ${member.id}` })
+      .setTimestamp();
+
+    await logChannel.send({ embeds: [embed] });
+  } catch (error) {
+    console.error('Error logging manual verification:', error);
+  }
+}
+
+// Export the manual verification logger for use in verify command
+export { logManualVerification };
+
 export default {
   name: 'interactionCreate',
 
@@ -134,6 +198,9 @@ async function handleButtonVerification(interaction, verification, verifiedRole,
     }
     
     await verification.verify('button');
+    
+    // Log the verification
+    await logVerification(member, 'button', guildConfig);
 
     const embed = new EmbedBuilder()
       .setColor('#00FF00')
@@ -309,6 +376,9 @@ async function handleCaptchaVerification(interaction, verification, verifiedRole
           }
           
           await currentVerification.verify('captcha');
+          
+          // Log the verification
+          await logVerification(member, 'captcha', guildConfig);
 
           const successEmbed = new EmbedBuilder()
             .setColor('#00FF00')

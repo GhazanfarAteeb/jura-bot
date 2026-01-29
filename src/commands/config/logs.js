@@ -121,11 +121,9 @@ export default {
     }
 
     const log = LOG_TYPES[logType];
-    guildConfig.channels[log.field] = channel.id;
-    await guildConfig.save();
-
-    // Clear cache
-    if (global.guildCache) global.guildCache.delete(guildId);
+    await Guild.updateGuild(guildId, {
+      $set: { [`channels.${log.field}`]: channel.id }
+    });
 
     const embed = await successEmbed(guildId, 'Log Channel Set',
       `${GLYPHS.SUCCESS} ${log.emoji} **${log.name}** will now be sent to ${channel}.\n\n` +
@@ -149,11 +147,9 @@ export default {
     }
 
     const log = LOG_TYPES[logType];
-    guildConfig.channels[log.field] = null;
-    await guildConfig.save();
-
-    // Clear cache
-    if (global.guildCache) global.guildCache.delete(guildId);
+    await Guild.updateGuild(guildId, {
+      $set: { [`channels.${log.field}`]: null }
+    });
 
     const embed = await successEmbed(guildId, 'Log Disabled',
       `${GLYPHS.SUCCESS} ${log.emoji} **${log.name}** has been disabled.`
@@ -181,14 +177,12 @@ export default {
       return message.reply({ embeds: [embed] });
     }
 
-    // Set all log channels
+    // Set all log channels - build update object
+    const updateObj = {};
     for (const [key, log] of Object.entries(LOG_TYPES)) {
-      guildConfig.channels[log.field] = channel.id;
+      updateObj[`channels.${log.field}`] = channel.id;
     }
-    await guildConfig.save();
-
-    // Clear cache
-    if (global.guildCache) global.guildCache.delete(guildId);
+    await Guild.updateGuild(guildId, { $set: updateObj });
 
     const embed = await successEmbed(guildId, 'All Logs Set',
       `${GLYPHS.SUCCESS} All log types will now be sent to ${channel}.\n\n` +

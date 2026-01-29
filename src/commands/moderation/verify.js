@@ -2,6 +2,7 @@ import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionF
 import Guild from '../../models/Guild.js';
 import Verification from '../../models/Verification.js';
 import { getPrefix } from '../../utils/helpers.js';
+import { logManualVerification } from '../../events/client/verificationHandler.js';
 
 export default {
   name: 'verify',
@@ -73,13 +74,13 @@ export default {
         collector.on('collect', async interaction => {
           const type = interaction.customId.split('_')[2];
 
-          // Save type
-          if (!guildConfig.features.verificationSystem) {
-            guildConfig.features.verificationSystem = {};
-          }
-          guildConfig.features.verificationSystem.type = type;
-          guildConfig.features.verificationSystem.enabled = true;
-          await guildConfig.save();
+          // Save type using updateGuild
+          await Guild.updateGuild(guildId, {
+            $set: {
+              'features.verificationSystem.type': type,
+              'features.verificationSystem.enabled': true
+            }
+          });
 
           // Ask for verified role
           const roleEmbed = new EmbedBuilder()
@@ -95,9 +96,12 @@ export default {
 
           roleCollector.on('collect', async roleMsg => {
             const role = roleMsg.mentions.roles.first();
-            guildConfig.features.verificationSystem.role = role.id;
-            guildConfig.roles.verifiedRole = role.id;
-            await guildConfig.save();
+            await Guild.updateGuild(guildId, {
+              $set: {
+                'features.verificationSystem.role': role.id,
+                'roles.verifiedRole': role.id
+              }
+            });
 
             // Ask for channel
             const channelEmbed = new EmbedBuilder()
@@ -112,11 +116,15 @@ export default {
 
             channelCollector.on('collect', async channelMsg => {
               const channel = channelMsg.mentions.channels.first();
-              guildConfig.features.verificationSystem.channel = channel.id;
-              await guildConfig.save();
-
+              await Guild.updateGuild(guildId, {
+                $set: { 'features.verificationSystem.channel': channel.id }
+              });
+              
+              // Refetch guildConfig for sendVerificationPanel
+              const updatedGuildConfig = await Guild.getGuild(guildId);
+              
               // Send panel
-              await sendVerificationPanel(channel, guildConfig, client);
+              await sendVerificationPanel(channel, updatedGuildConfig, client);
 
               const completeEmbed = new EmbedBuilder()
                 .setColor('#00FF7F')
@@ -168,6 +176,9 @@ export default {
           // Update verification record
           const verification = await Verification.getVerification(guildId, targetUser.id);
           await verification.verify(`staff:${message.author.id}`);
+          
+          // Log the manual verification
+          await logManualVerification(targetUser, message.author, guildConfig);
 
           const embed = new EmbedBuilder()
             .setColor('#00FF7F')
@@ -198,54 +209,59 @@ export default {
           return message.reply({ embeds: [configEmbed] });
         }
 
-        if (!guildConfig.features.verificationSystem) {
-          guildConfig.features.verificationSystem = {};
-        }
-
         switch (setting) {
           case 'type':
             if (!['button', 'captcha', 'reaction'].includes(value)) {
               return message.reply('**Error:** Type must be: button, captcha, or reaction, Master.');
             }
-            guildConfig.features.verificationSystem.type = value;
-            await guildConfig.save();
+            await Guild.updateGuild(guildId, {
+              $set: { 'features.verificationSystem.type': value }
+            });
             return message.reply(`**Confirmed:** Verification type set to **${value}**, Master.`);
 
           case 'role':
             const role = message.mentions.roles.first();
             if (!role) return message.reply('**Error:** Please mention a role, Master.');
-            guildConfig.features.verificationSystem.role = role.id;
-            guildConfig.roles.verifiedRole = role.id;
-            await guildConfig.save();
+            await Guild.updateGuild(guildId, {
+              $set: {
+                'features.verificationSystem.role': role.id,
+                'roles.verifiedRole': role.id
+              }
+            });
             return message.reply(`**Confirmed:** Verified role set to ${role}, Master.`);
 
           case 'unverifiedrole':
             if (value?.toLowerCase() === 'remove' || value?.toLowerCase() === 'none') {
-              guildConfig.features.verificationSystem.unverifiedRole = undefined;
-              await guildConfig.save();
+              await Guild.updateGuild(guildId, {
+                $unset: { 'features.verificationSystem.unverifiedRole': '' }
+              });
               return message.reply('**Confirmed:** Unverified role cleared, Master.');
             }
             const unverifiedRole = message.mentions.roles.first();
             if (!unverifiedRole) return message.reply('**Error:** Please mention a role or use `remove` to clear, Master.');
-            guildConfig.features.verificationSystem.unverifiedRole = unverifiedRole.id;
-            await guildConfig.save();
+            await Guild.updateGuild(guildId, {
+              $set: { 'features.verificationSystem.unverifiedRole': unverifiedRole.id }
+            });
             return message.reply(`**Confirmed:** Unverified role set to ${unverifiedRole}. This role will be **removed** when a user verifies, Master.`);
 
           case 'channel':
             const channel = message.mentions.channels.first();
             if (!channel) return message.reply('**Error:** Please mention a channel, Master.');
-            guildConfig.features.verificationSystem.channel = channel.id;
-            await guildConfig.save();
+            await Guild.updateGuild(guildId, {
+              $set: { 'features.verificationSystem.channel': channel.id }
+            });
             return message.reply(`**Confirmed:** Verification channel set to ${channel}, Master.`);
 
           case 'enable':
-            guildConfig.features.verificationSystem.enabled = true;
-            await guildConfig.save();
+            await Guild.updateGuild(guildId, {
+              $set: { 'features.verificationSystem.enabled': true }
+            });
             return message.reply('**Confirmed:** Verification system activated, Master.');
 
           case 'disable':
-            guildConfig.features.verificationSystem.enabled = false;
-            await guildConfig.save();
+            await Guild.updateGuild(guildId, {
+              $set: { 'features.verificationSystem.enabled': false }
+            });
             return message.reply('**Notice:** Verification system deactivated, Master.');
         }
         break;

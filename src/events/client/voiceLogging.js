@@ -14,6 +14,37 @@ export default {
     }
 };
 
+// Helper to fetch who performed the action from audit logs
+async function getVoiceActionExecutor(guild, targetId, actionType) {
+    try {
+        // Wait a bit for audit log to be created
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        const auditLogs = await guild.fetchAuditLogs({
+            limit: 5,
+            type: actionType
+        });
+
+        const relevantLog = auditLogs.entries.find(entry => {
+            const timeDiff = Date.now() - entry.createdTimestamp;
+            return entry.target?.id === targetId && timeDiff < 5000; // Within 5 seconds
+        });
+
+        if (relevantLog) {
+            const executor = relevantLog.executor;
+            if (executor.bot) {
+                return { name: executor.username, type: 'bot', user: executor };
+            }
+            return { name: executor.username, type: 'user', user: executor };
+        }
+
+        return null;
+    } catch (error) {
+        // Missing permissions to view audit logs
+        return null;
+    }
+}
+
 async function logVoiceUpdate(oldState, newState) {
     try {
         const member = newState.member || oldState.member;
@@ -43,12 +74,19 @@ async function logVoiceUpdate(oldState, newState) {
                 .setFooter({ text: `User ID: ${member.id}` })
                 .setTimestamp();
         }
-        // User left a voice channel
+        // User left a voice channel (could be disconnect by admin)
         else if (oldState.channel && !newState.channel) {
+            // Check if user was disconnected by someone
+            const executor = await getVoiceActionExecutor(guild, member.id, AuditLogEvent.MemberDisconnect);
+            
+            const wasDisconnected = executor !== null;
+            
             embed = new EmbedBuilder()
-                .setTitle('🔇 Voice Channel Leave')
-                .setColor('#ED4245')
-                .setDescription(`${member} left a voice channel`)
+                .setTitle(wasDisconnected ? '🔌 Voice Disconnect' : '🔇 Voice Channel Leave')
+                .setColor(wasDisconnected ? '#FF6B6B' : '#ED4245')
+                .setDescription(wasDisconnected 
+                    ? `${member} was disconnected from voice` 
+                    : `${member} left a voice channel`)
                 .addFields(
                     { name: 'Member', value: `${member.user.tag}`, inline: true },
                     { name: 'Channel', value: `${oldState.channel.name}`, inline: true }
@@ -56,13 +94,27 @@ async function logVoiceUpdate(oldState, newState) {
                 .setThumbnail(member.user.displayAvatarURL())
                 .setFooter({ text: `User ID: ${member.id}` })
                 .setTimestamp();
+            
+            if (wasDisconnected && executor) {
+                const byText = executor.type === 'bot' 
+                    ? `🤖 ${executor.name} (Bot)` 
+                    : `👤 ${executor.name}`;
+                embed.addFields({ name: 'Disconnected By', value: byText, inline: true });
+            }
         }
-        // User switched voice channels
+        // User switched voice channels (could be moved by admin)
         else if (oldState.channel && newState.channel && oldState.channel.id !== newState.channel.id) {
+            // Check if user was moved by someone
+            const executor = await getVoiceActionExecutor(guild, member.id, AuditLogEvent.MemberMove);
+            
+            const wasMoved = executor !== null;
+            
             embed = new EmbedBuilder()
-                .setTitle('🔀 Voice Channel Switch')
-                .setColor('#5865F2')
-                .setDescription(`${member} switched voice channels`)
+                .setTitle(wasMoved ? '📤 Voice Move' : '🔀 Voice Channel Switch')
+                .setColor(wasMoved ? '#FFA500' : '#5865F2')
+                .setDescription(wasMoved 
+                    ? `${member} was moved to another channel` 
+                    : `${member} switched voice channels`)
                 .addFields(
                     { name: 'Member', value: `${member.user.tag}`, inline: true },
                     { name: 'From', value: `${oldState.channel.name}`, inline: true },
@@ -71,22 +123,25 @@ async function logVoiceUpdate(oldState, newState) {
                 .setThumbnail(member.user.displayAvatarURL())
                 .setFooter({ text: `User ID: ${member.id}` })
                 .setTimestamp();
+            
+            if (wasMoved && executor) {
+                const byText = executor.type === 'bot' 
+                    ? `🤖 ${executor.name} (Bot)` 
+                    : `👤 ${executor.name}`;
+                embed.addFields({ name: 'Moved By', value: byText, inline: true });
+            }
         }
-        // User muted/deafened
+        // Voice state changes (mute/deafen/stream/video)
         else if (oldState.channel && newState.channel) {
             const changes = [];
+            const serverChanges = [];
 
+            // Self-performed actions
             if (oldState.selfMute !== newState.selfMute) {
                 changes.push(newState.selfMute ? '🔇 Self Muted' : '🔊 Self Unmuted');
             }
             if (oldState.selfDeaf !== newState.selfDeaf) {
                 changes.push(newState.selfDeaf ? '🔇 Self Deafened' : '🔊 Self Undeafened');
-            }
-            if (oldState.serverMute !== newState.serverMute) {
-                changes.push(newState.serverMute ? '🔇 Server Muted' : '🔊 Server Unmuted');
-            }
-            if (oldState.serverDeaf !== newState.serverDeaf) {
-                changes.push(newState.serverDeaf ? '🔇 Server Deafened' : '🔊 Server Undeafened');
             }
             if (oldState.streaming !== newState.streaming) {
                 changes.push(newState.streaming ? '📺 Started Streaming' : '📺 Stopped Streaming');
@@ -95,7 +150,51 @@ async function logVoiceUpdate(oldState, newState) {
                 changes.push(newState.selfVideo ? '📹 Camera On' : '📹 Camera Off');
             }
 
-            if (changes.length > 0) {
+            // Server-enforced actions (by admin/bot)
+            if (oldState.serverMute !== newState.serverMute) {
+                serverChanges.push({
+                    action: newState.serverMute ? '🔇 Server Muted' : '🔊 Server Unmuted',
+                    type: 'mute'
+                });
+            }
+            if (oldState.serverDeaf !== newState.serverDeaf) {
+                serverChanges.push({
+                    action: newState.serverDeaf ? '🔇 Server Deafened' : '🔊 Server Undeafened',
+                    type: 'deafen'
+                });
+            }
+
+            // Handle server-enforced changes with executor info
+            if (serverChanges.length > 0) {
+                // Try to find who performed the server mute/deafen
+                const executor = await getVoiceActionExecutor(guild, member.id, AuditLogEvent.MemberUpdate);
+                
+                const serverChangeText = serverChanges.map(c => c.action).join('\n');
+                
+                embed = new EmbedBuilder()
+                    .setTitle('🎙️ Server Voice Action')
+                    .setColor('#FF9500')
+                    .setDescription(`${member}'s voice state was changed by server`)
+                    .addFields(
+                        { name: 'Member', value: `${member.user.tag}`, inline: true },
+                        { name: 'Channel', value: `${newState.channel.name}`, inline: true },
+                        { name: 'Action', value: serverChangeText, inline: false }
+                    )
+                    .setThumbnail(member.user.displayAvatarURL())
+                    .setFooter({ text: `User ID: ${member.id}` })
+                    .setTimestamp();
+                
+                if (executor) {
+                    const byText = executor.type === 'bot' 
+                        ? `🤖 ${executor.name} (Bot)` 
+                        : `👤 ${executor.name}`;
+                    embed.addFields({ name: 'By', value: byText, inline: true });
+                } else {
+                    embed.addFields({ name: 'By', value: '⚙️ System', inline: true });
+                }
+            }
+            // Handle self-performed changes
+            else if (changes.length > 0) {
                 embed = new EmbedBuilder()
                     .setTitle('🎙️ Voice State Update')
                     .setColor('#FEE75C')
@@ -103,7 +202,8 @@ async function logVoiceUpdate(oldState, newState) {
                     .addFields(
                         { name: 'Member', value: `${member.user.tag}`, inline: true },
                         { name: 'Channel', value: `${newState.channel.name}`, inline: true },
-                        { name: 'Changes', value: changes.join('\n'), inline: false }
+                        { name: 'Changes', value: changes.join('\n'), inline: false },
+                        { name: 'By', value: '👤 Self', inline: true }
                     )
                     .setThumbnail(member.user.displayAvatarURL())
                     .setFooter({ text: `User ID: ${member.id}` })

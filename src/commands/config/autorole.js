@@ -63,8 +63,9 @@ export default {
           return message.reply({ embeds: [embed] });
         }
 
-        guildConfig.autoRole.enabled = true;
-        await guildConfig.save();
+        await Guild.updateGuild(message.guild.id, {
+          $set: { 'autoRole.enabled': true }
+        });
 
         const embed = await successEmbed(message.guild.id, 'Auto Role Enabled',
           `${GLYPHS.SUCCESS} New members will now automatically receive configured roles.`
@@ -73,8 +74,9 @@ export default {
       }
 
       case 'disable': {
-        guildConfig.autoRole.enabled = false;
-        await guildConfig.save();
+        await Guild.updateGuild(message.guild.id, {
+          $set: { 'autoRole.enabled': false }
+        });
 
         const embed = await successEmbed(message.guild.id, 'Auto Role Disabled',
           `${GLYPHS.SUCCESS} Auto role assignment has been disabled.`
@@ -123,11 +125,12 @@ export default {
           return message.reply({ embeds: [embed] });
         }
 
-        guildConfig.autoRole.roles.push(role.id);
-        await guildConfig.save();
+        await Guild.updateGuild(message.guild.id, {
+          $push: { 'autoRole.roles': role.id }
+        });
 
         const embed = await successEmbed(message.guild.id, 'Role Added',
-          `${GLYPHS.SUCCESS} ${role} will now be assigned to new members!\n\n**Total Roles:** ${guildConfig.autoRole.roles.length}`
+          `${GLYPHS.SUCCESS} ${role} will now be assigned to new members!\n\n**Total Roles:** ${guildConfig.autoRole.roles.length + 1}`
         );
         return message.reply({ embeds: [embed] });
       }
@@ -150,11 +153,12 @@ export default {
           return message.reply({ embeds: [embed] });
         }
 
-        guildConfig.autoRole.roles.splice(index, 1);
-        await guildConfig.save();
+        await Guild.updateGuild(message.guild.id, {
+          $pull: { 'autoRole.roles': role.id }
+        });
 
         const embed = await successEmbed(message.guild.id, 'Role Removed',
-          `${GLYPHS.SUCCESS} ${role} has been removed from auto roles.\n\n**Remaining Roles:** ${guildConfig.autoRole.roles.length}`
+          `${GLYPHS.SUCCESS} ${role} has been removed from auto roles.\n\n**Remaining Roles:** ${guildConfig.autoRole.roles.length - 1}`
         );
         return message.reply({ embeds: [embed] });
       }
@@ -169,8 +173,9 @@ export default {
           return message.reply({ embeds: [embed] });
         }
 
-        guildConfig.autoRole.delay = delay * 1000; // Convert to milliseconds
-        await guildConfig.save();
+        await Guild.updateGuild(message.guild.id, {
+          $set: { 'autoRole.delay': delay * 1000 }  // Convert to milliseconds
+        });
 
         const embed = await successEmbed(message.guild.id, 'Delay Updated',
           delay === 0
@@ -236,8 +241,9 @@ export default {
             return message.reply({ embeds: [embed] });
           }
 
-          guildConfig.autoRole.botRoles.push(role.id);
-          await guildConfig.save();
+          await Guild.updateGuild(message.guild.id, {
+            $push: { 'autoRole.botRoles': role.id }
+          });
 
           const embed = await successEmbed(message.guild.id, 'Bot Role Added',
             `${GLYPHS.SUCCESS} ${role} will now be assigned to new bots!`
@@ -254,8 +260,9 @@ export default {
             return message.reply({ embeds: [embed] });
           }
 
-          guildConfig.autoRole.botRoles.splice(index, 1);
-          await guildConfig.save();
+          await Guild.updateGuild(message.guild.id, {
+            $pull: { 'autoRole.botRoles': role.id }
+          });
 
           const embed = await successEmbed(message.guild.id, 'Bot Role Removed',
             `${GLYPHS.SUCCESS} ${role} has been removed from bot auto roles.`

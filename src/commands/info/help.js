@@ -9,9 +9,9 @@ const COMMANDS_BY_CATEGORY = {
   admin: ['deployment', 'logs', 'award', 'botlogs', 'cleanup'],
   config: [
     'setup', 'config', 'feature', 'setprefix', 'setchannel', 'setrole', 'setcoin', 'setoverlay',
-    'automod', 'automodignore', 'welcome', 'goodbye', 'boost', 'antinuke', 'autopublish', 'autorole', 'cmdchannels',
+    'automod', 'automodignore', 'welcome', 'goodbye', 'boost', 'boostperks', 'antinuke', 'autopublish', 'autorole', 'cmdchannels',
     'manageshop', 'colorroles', 'levelroles', 'levelup', 'noxp', 'reactionroles', 'xpmultiplier', 'cleanup', 'logs', 'rules',
-    'starboard', 'onboarding', 'birthdayconfig'
+    'starboard', 'onboarding', 'birthdayconfig', 'fixlogs'
   ],
   moderation: ['warn', 'kick', 'ban', 'purge', 'userhistory', 'timeout', 'untimeout', 'lockdown', 'verify'],
   economy: [
@@ -42,7 +42,7 @@ const SLASH_COMMANDS = [
   // Moderation
   'ban', 'kick', 'warn', 'timeout', 'purge', 'userhistory', 'untimeout', 'verify', 'lockdown',
   // Config
-  'welcome', 'goodbye', 'boost', 'autorole', 'noxp', 'automod', 'cmdchannels', 'logs', 'feature',
+  'welcome', 'goodbye', 'boost', 'boostperks', 'autorole', 'noxp', 'automod', 'cmdchannels', 'logs', 'feature',
   'setrole', 'setchannel', 'config', 'setup', 'manageshop', 'setprefix', 'xpmultiplier',
   'levelroles', 'levelup', 'starboard', 'rules', 'autopublish', 'cleanup', 'onboarding',
   // Admin
@@ -128,33 +128,141 @@ const CATEGORY_INFO = {
 
 // Command examples for detailed help
 const COMMAND_EXAMPLES = {
+  // Moderation
   ban: ['ban @user', 'ban @user spamming', 'ban @user raiding --delete'],
   kick: ['kick @user', 'kick @user breaking rules'],
   warn: ['warn @user', 'warn @user inappropriate language'],
   timeout: ['timeout @user 10m', 'timeout @user 1h spamming', 'timeout @user 1d'],
+  untimeout: ['untimeout @user'],
   purge: ['purge 50', 'purge 20 @user', 'purge 100'],
+  lockdown: ['lockdown', 'lockdown #channel', 'lockdown unlock'],
+  verify: ['verify setup', 'verify panel', 'verify manual @user', 'verify config type button', 'verify config role @Verified', 'verify config unverifiedrole @Unverified', 'verify config channel #verify', 'verify config enable', 'verify config disable', 'verify status'],
+  userhistory: ['userhistory @user', 'userhistory 123456789'],
+  
+  // Music
   play: ['play never gonna give you up', 'play https://youtube.com/watch?v=...', 'play lofi hip hop'],
+  skip: ['skip', 'skip 3'],
+  volume: ['volume 50', 'volume 100'],
+  seek: ['seek 1:30', 'seek 0:45'],
+  loop: ['loop track', 'loop queue', 'loop off'],
+  remove: ['remove 3'],
+  skipto: ['skipto 5'],
+  
+  // Economy
   daily: ['daily'],
   balance: ['balance', 'balance @user'],
   level: ['level', 'level @user'],
   shop: ['shop', 'shop buy 1'],
-  setbirthday: ['setbirthday 25 12', 'setbirthday 01 01'],
-  giveaway: ['giveaway 1h 1 Discord Nitro', 'giveaway 24h 3 Steam Gift Card'],
-  top: ['top coins', 'top level', 'top rep'],
-  leaderboard: ['leaderboard coins', 'leaderboard level'],
-  avatar: ['avatar', 'avatar @user'],
-  poll: ['poll "Should we have movie night?"'],
+  inventory: ['inventory', 'inventory @user'],
+  profile: ['profile', 'profile @user'],
+  setprofile: ['setprofile bio Hello world!', 'setprofile title Warrior'],
+  setbackground: ['setbackground <url>', 'setbackground reset'],
+  rep: ['rep @user'],
+  claim: ['claim'],
+  adventure: ['adventure'],
+  
+  // Gambling
   coinflip: ['coinflip heads 100', 'coinflip tails 500'],
   blackjack: ['blackjack 100', 'blackjack 1000'],
   slots: ['slots 50', 'slots 200'],
-  automod: ['automod enable antispam', 'automod config antiraid', 'automod status'],
+  dice: ['dice 100', 'dice 500 high'],
+  roulette: ['roulette 100 red', 'roulette 500 black', 'roulette 200 7'],
+  
+  // Config - AutoMod
+  automod: ['automod enable', 'automod disable', 'automod status', 'automod badwords add word1,word2', 'automod antispam on', 'automod antiraid on'],
   automodignore: ['automodignore add channel #general', 'automodignore remove channel #general', 'automodignore add role @Moderator', 'automodignore list'],
-  setoverlay: ['setoverlay color #FF5733', 'setoverlay opacity 0.7', 'setoverlay color #000000 opacity 0.5', 'setoverlay reset'],
-  feature: ['feature economy enable', 'feature gambling disable', 'feature aichat enable', 'feature list'],
-  lockdown: ['lockdown', 'lockdown #channel', 'lockdown unlock'],
-  verify: ['verify setup', 'verify panel', 'verify manual @user', 'verify config role @Verified', 'verify config unverifiedrole @Unverified', 'verify status'],
+  antinuke: ['antinuke enable', 'antinuke disable', 'antinuke whitelist @user', 'antinuke status'],
+  
+  // Config - Welcome/Goodbye
   welcome: ['welcome enable', 'welcome disable', 'welcome channel #welcome', 'welcome message Welcome {user} to {server}!', 'welcome title ✦ Welcome ✦', 'welcome color #5432A6', 'welcome image <url>', 'welcome thumbnail avatar', 'welcome author username', 'welcome mention on', 'welcome greet Hey {user}!', 'welcome role @Member', 'welcome status', 'welcome test', 'welcome reset'],
+  goodbye: ['goodbye enable', 'goodbye disable', 'goodbye channel #goodbye', 'goodbye message Goodbye {user}!', 'goodbye status', 'goodbye test', 'goodbye reset'],
+  
+  // Config - Boost
+  boost: ['boost status', 'boost channel #boosts', 'boost message Thanks {user} for boosting!', 'boost title 💎 New Booster!', 'boost color #f47fff', 'boost embed on', 'boost mention on', 'boost image <url>', 'boost thumbnail avatar', 'boost author username', 'boost test', 'boost preview', 'boost reset', 'boost role @BoosterRole', 'boost give @user', 'boost take @user', 'boost duration 24', 'boost list', 'boost addtier 1 @Tier1Role', 'boost removetier 1', 'boost listtiers', 'boost cleartiers'],
+  boostperks: ['boostperks status', 'boostperks channel #perks', 'boostperks message Check out our booster perks!', 'boostperks title 💎 Booster Perks', 'boostperks color #f47fff', 'boostperks image <url>', 'boostperks preview', 'boostperks publish', 'boostperks reset'],
+  
+  // Config - Auto Role
+  autorole: ['autorole enable', 'autorole disable', 'autorole add @Member', 'autorole remove @Member', 'autorole delay 5', 'autorole bot add @BotRole', 'autorole bot remove @BotRole', 'autorole list'],
+  
+  // Config - Logs
+  logs: ['logs', 'logs set mod #mod-logs', 'logs set message #message-logs', 'logs set voice #voice-logs', 'logs set member #member-logs', 'logs set server #server-logs', 'logs set join #join-logs', 'logs set leave #leave-logs', 'logs set alert #alert-logs', 'logs disable mod', 'logs all #all-logs', 'logs list'],
+  
+  // Config - Levels
+  levelroles: ['levelroles add 5 @Level5', 'levelroles remove 5', 'levelroles list'],
+  levelup: ['levelup channel #level-up', 'levelup message Congrats {user}! Level {level}!', 'levelup status'],
   noxp: ['noxp add #channel', 'noxp remove #channel', 'noxp list', 'noxp clear'],
+  xpmultiplier: ['xpmultiplier set @Booster 1.5', 'xpmultiplier remove @Booster', 'xpmultiplier list'],
+  
+  // Config - Other
+  setoverlay: ['setoverlay color #FF5733', 'setoverlay opacity 0.7', 'setoverlay color #000000 opacity 0.5', 'setoverlay reset'],
+  feature: ['feature economy enable', 'feature gambling disable', 'feature aichat enable', 'feature boost enable', 'feature list'],
+  setup: ['setup'],
+  config: ['config prefix !', 'config status'],
+  setprefix: ['setprefix !', 'setprefix ?'],
+  setchannel: ['setchannel modlog #mod-logs', 'setchannel welcome #welcome'],
+  setrole: ['setrole admin @Admin', 'setrole mod @Moderator', 'setrole muted @Muted'],
+  cmdchannels: ['cmdchannels add economy #bot-commands', 'cmdchannels remove economy #bot-commands', 'cmdchannels list'],
+  colorroles: ['colorroles setup #color-roles', 'colorroles list'],
+  reactionroles: ['reactionroles create', 'reactionroles add', 'reactionroles list'],
+  starboard: ['starboard channel #starboard', 'starboard threshold 3', 'starboard status'],
+  rules: ['rules set 1 No spamming', 'rules remove 5', 'rules list', 'rules post #rules'],
+  manageshop: ['manageshop add "Cool Badge" 1000 badge', 'manageshop remove 1', 'manageshop list'],
+  
+  // Community - Birthdays
+  setbirthday: ['setbirthday 25 12', 'setbirthday 01 01 2000'],
+  mybirthday: ['mybirthday'],
+  birthdays: ['birthdays', 'birthdays january'],
+  removebirthday: ['removebirthday @user'],
+  cancelbirthday: ['cancelbirthday'],
+  birthdaypreference: ['birthdaypreference dm on', 'birthdaypreference ping off'],
+  birthdayconfig: ['birthdayconfig channel #birthdays', 'birthdayconfig role @Birthday', 'birthdayconfig message Happy Birthday {user}!', 'birthdayconfig status'],
+  requestbirthday: ['requestbirthday 25 12'],
+  approvebday: ['approvebday @user'],
+  rejectbday: ['rejectbday @user'],
+  birthdayrequests: ['birthdayrequests'],
+  
+  // Community - Events & Giveaways
+  giveaway: ['giveaway 1h 1 Discord Nitro', 'giveaway 24h 3 Steam Gift Card'],
+  createevent: ['createevent "Movie Night" 2h Join us for a movie!'],
+  events: ['events'],
+  joinevent: ['joinevent 1'],
+  cancelevent: ['cancelevent 1'],
+  confession: ['confession I love this server'],
+  
+  // Utility
+  top: ['top coins', 'top level', 'top rep'],
+  leaderboard: ['leaderboard coins', 'leaderboard level'],
+  avatar: ['avatar', 'avatar @user'],
+  banner: ['banner', 'banner @user'],
+  poll: ['poll "Should we have movie night?"', 'poll "Best color?" Red Blue Green'],
+  afk: ['afk', 'afk brb dinner'],
+  remind: ['remind 1h Check the oven', 'remind 30m Meeting'],
+  tempvc: ['tempvc create Gaming', 'tempvc limit 5', 'tempvc rename Chill Zone'],
+  ticket: ['ticket create', 'ticket close', 'ticket add @user'],
+  embed: ['embed create', 'embed edit <messageId>'],
+  steal: ['steal :emoji:'],
+  
+  // Info
+  help: ['help', 'help ban', 'help economy', 'help config'],
+  serverinfo: ['serverinfo'],
+  userinfo: ['userinfo', 'userinfo @user'],
+  roleinfo: ['roleinfo @Role'],
+  channelinfo: ['channelinfo #channel'],
+  checkuser: ['checkuser @user', 'checkuser 123456789'],
+  ping: ['ping'],
+  
+  // Social
+  marry: ['marry @user'],
+  divorce: ['divorce'],
+  badges: ['badges', 'badges @user'],
+  
+  // Fun
+  tictactoe: ['tictactoe @user'],
+  trivia: ['trivia', 'trivia science'],
+  meme: ['meme'],
+  gif: ['gif cat', 'gif dance'],
+  
+  // AI Chat
   aichat: ['@Raphael hello!', '@Raphael what is the weather?', 'Reply to bot messages']
 };
 

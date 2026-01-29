@@ -1632,57 +1632,54 @@ const slashCommands = [
     .addSubcommand(subcommand =>
       subcommand.setName('cleartiers')
         .setDescription('Remove all boost tier rewards'))
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
+
+  // ============================================
+  // BOOSTER PERKS ANNOUNCEMENT COMMAND
+  // ============================================
+  new SlashCommandBuilder()
+    .setName('boostperks')
+    .setDescription('『 RAPHAEL 』 Configure booster perks announcement system, Master')
     .addSubcommand(subcommand =>
-      subcommand.setName('stackable')
-        .setDescription('Set whether a tier role stacks with lower tiers')
-        .addIntegerOption(option =>
-          option.setName('boosts')
-            .setDescription('Boost count of the tier')
-            .setRequired(true)
-            .setMinValue(1)
-            .setMaxValue(100))
-        .addBooleanOption(option =>
-          option.setName('enabled')
-            .setDescription('Stack with lower tier roles?')
-            .setRequired(true)))
-    // Booster Perks Announcement subcommands
+      subcommand.setName('status')
+        .setDescription('View booster perks announcement configuration'))
     .addSubcommand(subcommand =>
-      subcommand.setName('perks-channel')
+      subcommand.setName('channel')
         .setDescription('Set the channel for booster perks announcements')
         .addChannelOption(option =>
           option.setName('channel')
             .setDescription('Channel for perks announcements')
             .setRequired(true)))
     .addSubcommand(subcommand =>
-      subcommand.setName('perks-message')
+      subcommand.setName('message')
         .setDescription('Set the perks announcement message')
         .addStringOption(option =>
           option.setName('text')
             .setDescription('Message text. Variables: {server}, {boostcount}, {boostlevel}, {membercount}')
             .setRequired(true)))
     .addSubcommand(subcommand =>
-      subcommand.setName('perks-title')
+      subcommand.setName('title')
         .setDescription('Set perks embed title')
         .addStringOption(option =>
           option.setName('text')
             .setDescription('Title text (use "reset" for default)')
             .setRequired(true)))
     .addSubcommand(subcommand =>
-      subcommand.setName('perks-color')
+      subcommand.setName('color')
         .setDescription('Set perks embed color')
         .addStringOption(option =>
           option.setName('hex')
             .setDescription('Hex color code (e.g., #f47fff)')
             .setRequired(true)))
     .addSubcommand(subcommand =>
-      subcommand.setName('perks-image')
+      subcommand.setName('image')
         .setDescription('Set perks banner image')
         .addStringOption(option =>
           option.setName('url')
             .setDescription('Image URL or "remove" to delete')
             .setRequired(true)))
     .addSubcommand(subcommand =>
-      subcommand.setName('perks-thumbnail')
+      subcommand.setName('thumbnail')
         .setDescription('Set perks thumbnail')
         .addStringOption(option =>
           option.setName('type')
@@ -1693,30 +1690,27 @@ const slashCommands = [
               { name: 'Remove', value: 'remove' }
             )))
     .addSubcommand(subcommand =>
-      subcommand.setName('perks-footer')
+      subcommand.setName('footer')
         .setDescription('Set perks embed footer')
         .addStringOption(option =>
           option.setName('text')
             .setDescription('Footer text (use "reset" to remove)')
             .setRequired(true)))
     .addSubcommand(subcommand =>
-      subcommand.setName('perks-tierlist')
+      subcommand.setName('tierlist')
         .setDescription('Toggle automatic tier list in perks announcement')
         .addBooleanOption(option =>
           option.setName('enabled')
             .setDescription('Show tier rewards list in announcement?')
             .setRequired(true)))
     .addSubcommand(subcommand =>
-      subcommand.setName('perks-preview')
+      subcommand.setName('preview')
         .setDescription('Preview booster perks announcement'))
     .addSubcommand(subcommand =>
-      subcommand.setName('perks-publish')
+      subcommand.setName('publish')
         .setDescription('Publish booster perks announcement to configured channel'))
     .addSubcommand(subcommand =>
-      subcommand.setName('perks-status')
-        .setDescription('View booster perks announcement configuration'))
-    .addSubcommand(subcommand =>
-      subcommand.setName('perks-reset')
+      subcommand.setName('reset')
         .setDescription('Reset all perks announcement settings'))
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
 
