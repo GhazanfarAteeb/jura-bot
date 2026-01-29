@@ -11,6 +11,7 @@ const LOG_TYPES = {
   server: { name: 'Server Log', emoji: '⚙️', field: 'serverLog', description: 'Channel, role, server changes' },
   join: { name: 'Join Log', emoji: '📥', field: 'joinLog', description: 'Member joins' },
   leave: { name: 'Leave Log', emoji: '📤', field: 'leaveLog', description: 'Member leaves' },
+  verification: { name: 'Verification Log', emoji: '✅', field: 'verificationLog', description: 'Member verifications (button, captcha, manual)' },
   alert: { name: 'Alert Log', emoji: '🚨', field: 'alertLog', description: 'Security alerts' },
   ticket: { name: 'Ticket Log', emoji: '🎫', field: 'ticketLog', description: 'Ticket activity' }
 };

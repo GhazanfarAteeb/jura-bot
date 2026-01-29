@@ -287,6 +287,7 @@ const guildSchema = new mongoose.Schema({
     eventChannel: String,
     welcomeChannel: String,
     ticketLog: String,
+    verificationLog: String, // For verification activity
     ticketCategory: String, // Category for ticket channels
     ticketPanelChannel: String, // Channel for ticket panel
     botStatus: String,

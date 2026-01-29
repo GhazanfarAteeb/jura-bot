@@ -18,9 +18,11 @@ const COOLDOWN_DURATION = 30000; // 30 seconds between attempts
 // Helper function to log verification events
 async function logVerification(member, verificationType, guildConfig) {
   try {
-    if (!guildConfig.channels.memberLog) return;
+    // Use verificationLog if set, fall back to memberLog
+    const logChannelId = guildConfig.channels.verificationLog || guildConfig.channels.memberLog;
+    if (!logChannelId) return;
 
-    const logChannel = member.guild.channels.cache.get(guildConfig.channels.memberLog);
+    const logChannel = member.guild.channels.cache.get(logChannelId);
     if (!logChannel) return;
 
     const embed = new EmbedBuilder()
@@ -45,9 +47,11 @@ async function logVerification(member, verificationType, guildConfig) {
 // Helper function to log manual verification
 async function logManualVerification(member, executor, guildConfig) {
   try {
-    if (!guildConfig.channels.memberLog) return;
+    // Use verificationLog if set, fall back to memberLog
+    const logChannelId = guildConfig.channels.verificationLog || guildConfig.channels.memberLog;
+    if (!logChannelId) return;
 
-    const logChannel = member.guild.channels.cache.get(guildConfig.channels.memberLog);
+    const logChannel = member.guild.channels.cache.get(logChannelId);
     if (!logChannel) return;
 
     let verifiedByText;
