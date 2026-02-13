@@ -89,7 +89,7 @@ async function logVoiceUpdate(oldState, newState) {
                     : `${member} left a voice channel`)
                 .addFields(
                     { name: 'Member', value: `${member.user.tag}`, inline: true },
-                    { name: 'Channel', value: `${oldState.channel.name}`, inline: true }
+                    { name: 'Channel', value: `${oldState.channel?.name || 'Unknown'}`, inline: true }
                 )
                 .setThumbnail(member.user.displayAvatarURL())
                 .setFooter({ text: `User ID: ${member.id}` })
@@ -117,8 +117,8 @@ async function logVoiceUpdate(oldState, newState) {
                     : `${member} switched voice channels`)
                 .addFields(
                     { name: 'Member', value: `${member.user.tag}`, inline: true },
-                    { name: 'From', value: `${oldState.channel.name}`, inline: true },
-                    { name: 'To', value: `${newState.channel.name}`, inline: true }
+                    { name: 'From', value: `${oldState.channel?.name || 'Unknown'}`, inline: true },
+                    { name: 'To', value: `${newState.channel?.name || 'Unknown'}`, inline: true }
                 )
                 .setThumbnail(member.user.displayAvatarURL())
                 .setFooter({ text: `User ID: ${member.id}` })

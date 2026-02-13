@@ -92,7 +92,33 @@ export default {
                 }
             }
             
-            await member.save();
+            // Save with retry logic for version conflicts
+            let retryCount = 0;
+            const maxRetries = 3;
+            
+            while (retryCount < maxRetries) {
+                try {
+                    await member.save();
+                    break; // Success, exit retry loop
+                } catch (saveError) {
+                    if (saveError.name === 'VersionError' && retryCount < maxRetries - 1) {
+                        retryCount++;
+                        // Refetch the document to get the latest version
+                        member = await Member.findOne({ userId, guildId });
+                        if (!member) break; // Member was deleted, exit
+                        
+                        // Reapply the stats update
+                        member.stats = member.stats || {};
+                        member.stats.messagesCount = (member.stats.messagesCount || 0) + 1;
+                        member.stats.lastMessageAt = new Date();
+                        
+                        console.log(`[StatsTracker] Version conflict, retrying (${retryCount}/${maxRetries})`);
+                        continue;
+                    } else {
+                        throw saveError; // Re-throw if not version error or max retries reached
+                    }
+                }
+            }
             
             // === XP SYSTEM (Guild-Specific) ===
             await handleXPGain(message, client, userId, guildId);

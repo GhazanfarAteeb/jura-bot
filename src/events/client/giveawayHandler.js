@@ -133,6 +133,11 @@ async function updateGiveawayMessage(interaction, giveaway) {
 // Export function to check and end giveaways (called from scheduler)
 export async function checkGiveaways(client) {
   try {
+    // Check if database is connected before proceeding
+    if (!client.db || !client.db.testConnection || !(await client.db.testConnection())) {
+      console.log('[Giveaways] Database not connected, skipping check');
+      return;
+    }
     const endedGiveaways = await Giveaway.getActiveGiveaways();
 
     for (const giveaway of endedGiveaways) {

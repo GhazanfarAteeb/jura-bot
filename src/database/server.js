@@ -1,5 +1,6 @@
 import Music from '../models/Music.js';
 import Guild from '../models/Guild.js';
+import mongoose from 'mongoose';
 
 export default class ServerData {
   constructor() {
@@ -10,6 +11,16 @@ export default class ServerData {
     this.cache = new Map();
     this.cacheTTL = 15 * 60 * 1000; // 15 minutes (increased from 5)
     this.maxCacheSize = 1000; // Increased from 500 for better caching
+  }
+
+  // Test database connection
+  async testConnection() {
+    try {
+      return mongoose.connection.readyState === 1;
+    } catch (error) {
+      console.error('Database connection test failed:', error);
+      return false;
+    }
   }
 
   clearExpiredCache() {

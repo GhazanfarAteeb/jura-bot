@@ -34,7 +34,7 @@ async function logMessageDelete(message) {
   try {
     const guildConfig = await Guild.getGuild(message.guild.id, message.guild.name);
 
-    if (!guildConfig.channels.messageLog) return;
+    if (!guildConfig?.channels?.messageLog) return;
 
     const logChannel = message.guild.channels.cache.get(guildConfig.channels.messageLog);
     if (!logChannel) return;
@@ -100,7 +100,7 @@ async function logBulkDelete(messages, channel) {
 
     const guildConfig = await Guild.getGuild(channel.guild.id, channel.guild.name);
 
-    if (!guildConfig.channels.messageLog) return;
+    if (!guildConfig?.channels?.messageLog) return;
 
     const logChannel = channel.guild.channels.cache.get(guildConfig.channels.messageLog);
     if (!logChannel) return;

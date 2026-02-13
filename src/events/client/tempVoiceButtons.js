@@ -52,6 +52,26 @@ async function getUserTempChannel(interaction) {
 }
 
 /**
+ * Helper function to safely respond to interactions that might have expired
+ */
+async function safeInteractionReply(interaction, options) {
+  try {
+    if (interaction.replied || interaction.deferred) {
+      return await interaction.editReply(options);
+    } else {
+      return await interaction.reply(options);
+    }
+  } catch (error) {
+    if (error.code === 10062) {
+      // Unknown interaction - it has expired
+      console.log('[TempVoice] Interaction expired, cannot respond');
+      return null;
+    }
+    throw error;
+  }
+}
+
+/**
  * Handle TempVoice button interactions
  */
 async function handleTempVCButton(interaction) {
@@ -606,14 +626,20 @@ async function handleTempVCModal(interaction) {
     case 'status': {
       const status = interaction.fields.getTextInputValue('channel_status');
       
+      // Voice channels don't support setStatus - this is a text channel feature
+      // Instead, we'll save it to the database and show it in channel info
       try {
-        // Voice channels support status in Discord
-        await channel.setStatus(status || null);
+        await TempVoice.findOneAndUpdate(
+          { channelId: channel.id }, 
+          { customStatus: status || null }
+        );
         
         const embed = new EmbedBuilder()
           .setColor(0x57F287)
           .setTitle('📝 Status Set')
-          .setDescription(status ? `Channel status set to: **${status}**` : 'Channel status has been cleared.')
+          .setDescription(status 
+            ? `Channel status saved: **${status}**\n*Note: Voice channels don't show status visually, but it's saved in your channel info.*`
+            : 'Channel status has been cleared.')
           .setFooter({ text: 'Raphael Temp Voice' });
 
         return interaction.reply({ embeds: [embed], ephemeral: true });

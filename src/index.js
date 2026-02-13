@@ -7,6 +7,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { readdirSync } from 'fs';
 import { initializeSchedulers } from './utils/schedulers.js';
+import { setupGlobalErrorHandlers } from './utils/errorHandlers.js';
 import express from 'express';
 import Guild from './models/Guild.js';
 import logger from './utils/logger.js';
@@ -17,6 +18,9 @@ import redis from './utils/redis.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Setup global error handlers
+setupGlobalErrorHandlers();
 
 // Express app for health checks
 const app = express();
@@ -323,7 +327,7 @@ async function initialize() {
   logger.startup(`Bot started successfully in ${duration}ms`);
 
   // Initialize events after client is ready
-  client.once('ready', async () => {
+  client.once('clientReady', async () => {
     console.log('[RAPHAEL] Client connection established.');
     console.log(`   Logged in as: ${client.user.tag}`);
     console.log(`   Guilds: ${client.guilds.cache.size}`);

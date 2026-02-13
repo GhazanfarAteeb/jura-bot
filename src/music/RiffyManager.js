@@ -60,12 +60,28 @@ class RiffyManager {
 
     // Node error
     this.riffy.on('nodeError', (node, error) => {
-      // Ignore FiltersChangedEvent - it's not a real error
-      if (error?.message?.includes('FiltersChangedEvent')) {
-        return; // Silently ignore this event
+      // Ignore known harmless events that aren't actual errors
+      const ignoredEvents = [
+        'FiltersChangedEvent',
+        'PlayerCreatedEvent',
+        'VolumeChangedEvent',
+        'PlayerConnectedEvent',
+        'PlayerDisconnectedEvent',
+        'PlayerUpdatedEvent'
+      ];
+      
+      if (ignoredEvents.some(event => error?.message?.includes(event))) {
+        return; // Silently ignore these events
       }
-      logger.error(`[RIFFY] Node ${node.name} encountered an error: ${error.message}`);
-      console.error(`[RAPHAEL] Lavalink node ${node.name} error:`, error.message);
+      
+      // Only log actual connection errors and real issues
+      if (error?.code === 'ECONNREFUSED' || error?.message?.includes('connect ECONNREFUSED')) {
+        logger.warn(`[RIFFY] Node ${node?.name || 'Unknown'} connection refused - Lavalink server may be down`);
+        console.log(`[RAPHAEL] Lavalink node ${node?.name || 'Unknown'} connection refused - server may be down`);
+      } else {
+        logger.error(`[RIFFY] Node ${node?.name || 'Unknown'} encountered an error: ${error?.message || error}`);
+        console.error(`[RAPHAEL] Lavalink node ${node?.name || 'Unknown'} error:`, error?.message || error);
+      }
     });
 
     // Node disconnect

@@ -1,13 +1,14 @@
 import { EmbedBuilder } from 'discord.js';
 import Reminder from '../../models/Reminder.js';
 import Guild from '../../models/Guild.js';
+import { safeDbOperation } from '../../utils/errorHandlers.js';
 
 /**
  * Check and send due reminders
  * Should be called periodically (e.g., every 30 seconds)
  */
 export async function checkReminders(client) {
-  try {
+  return safeDbOperation(async () => {
     const dueReminders = await Reminder.getDueReminders();
 
     if (dueReminders.length > 0) {
@@ -79,6 +80,7 @@ export async function checkReminders(client) {
   } catch (error) {
     console.error('Error checking reminders:', error);
   }
+  });
 }
 
 function formatTimeAgo(date) {
