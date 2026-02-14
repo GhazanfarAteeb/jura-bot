@@ -77,9 +77,7 @@ export async function checkReminders(client) {
         await reminder.complete();
       }
     }
-  } catch (error) {
-    console.error('Error checking reminders:', error);
-  }
+
   });
 }
 
