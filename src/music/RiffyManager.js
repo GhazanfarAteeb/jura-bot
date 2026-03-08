@@ -170,6 +170,7 @@ class RiffyManager {
       voiceChannel: voiceChannelId,
       textChannel: textChannelId,
       deaf: true,
+      mute: false,
     });
   }
 

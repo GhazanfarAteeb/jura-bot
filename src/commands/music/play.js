@@ -166,13 +166,21 @@ export default class Play extends Command {
 
     // Create or get player
     let player = client.riffy.players.get(ctx.guild.id);
-
+    console.log(
+      `[Music] Player lookup for guild ${ctx.guild.id}:`,
+      player ? "Found existing player" : "No player found, creating new one",
+    );
+    console.log(
+      `[Music] Voice channel for member ${member.user.tag}:`,
+      voiceChannel ? voiceChannel.name : "Not in a voice channel",
+    );
     if (!player) {
       player = client.riffy.createConnection({
         guildId: ctx.guild.id,
         voiceChannel: voiceChannel.id,
         textChannel: ctx.channel.id,
         deaf: true,
+        mute: false,
       });
 
       // Intercept Connection.updatePlayerVoiceData to prevent NodeLink from
