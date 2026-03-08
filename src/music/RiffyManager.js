@@ -3,9 +3,9 @@
  * Handles all music functionality using Riffy library
  */
 
-import { Riffy } from 'riffy';
-import musicConfig from './config.js';
-import logger from '../utils/logger.js';
+import { Riffy } from "riffy";
+import musicConfig from "./config.js";
+import logger from "../utils/logger.js";
 
 class RiffyManager {
   constructor(client) {
@@ -17,7 +17,7 @@ class RiffyManager {
    * Initialize Riffy with the client
    */
   initialize() {
-    logger.info('Initializing Riffy Music Manager...');
+    logger.info("Initializing Riffy Music Manager...");
 
     this.riffy = new Riffy(this.client, musicConfig.nodes, {
       send: (payload) => {
@@ -25,7 +25,7 @@ class RiffyManager {
         if (guild) guild.shard.send(payload);
       },
       defaultSearchPlatform: musicConfig.defaultSearchPlatform,
-      restVersion: musicConfig.restVersion
+      restVersion: musicConfig.restVersion,
     });
 
     // Attach riffy to client for global access
@@ -34,7 +34,7 @@ class RiffyManager {
     // Setup event listeners
     this.setupEvents();
 
-    logger.info('Riffy Music Manager initialized successfully');
+    logger.info("Riffy Music Manager initialized successfully");
     return this.riffy;
   }
 
@@ -44,7 +44,9 @@ class RiffyManager {
   initializePlayer() {
     if (this.riffy && this.client.user) {
       this.riffy.init(this.client.user.id);
-      logger.info('Riffy player initialized with bot ID: ' + this.client.user.id);
+      logger.info(
+        "Riffy player initialized with bot ID: " + this.client.user.id,
+      );
     }
   }
 
@@ -53,85 +55,95 @@ class RiffyManager {
    */
   setupEvents() {
     // Node connected
-    this.riffy.on('nodeConnect', (node) => {
+    this.riffy.on("nodeConnect", (node) => {
       logger.info(`[RIFFY] Node ${node.name} has connected.`);
       console.log(`[RAPHAEL] Lavalink node ${node.name} connected.`);
     });
 
     // Node error
-    this.riffy.on('nodeError', (node, error) => {
+    this.riffy.on("nodeError", (node, error) => {
       // Ignore known harmless events that aren't actual errors
       const ignoredEvents = [
-        'FiltersChangedEvent',
-        'PlayerCreatedEvent',
-        'VolumeChangedEvent',
-        'PlayerConnectedEvent',
-        'PlayerDisconnectedEvent',
-        'PlayerUpdatedEvent'
+        "FiltersChangedEvent",
+        "PlayerCreatedEvent",
+        "VolumeChangedEvent",
+        "PlayerConnectedEvent",
+        "PlayerDisconnectedEvent",
+        "PlayerUpdatedEvent",
       ];
-      
-      if (ignoredEvents.some(event => error?.message?.includes(event))) {
+
+      if (ignoredEvents.some((event) => error?.message?.includes(event))) {
         return; // Silently ignore these events
       }
-      
+
       // Only log actual connection errors and real issues
-      if (error?.code === 'ECONNREFUSED' || error?.message?.includes('connect ECONNREFUSED')) {
-        logger.warn(`[RIFFY] Node ${node?.name || 'Unknown'} connection refused - Lavalink server may be down`);
-        console.log(`[RAPHAEL] Lavalink node ${node?.name || 'Unknown'} connection refused - server may be down`);
+      if (
+        error?.code === "ECONNREFUSED" ||
+        error?.message?.includes("connect ECONNREFUSED")
+      ) {
+        logger.warn(
+          `[RIFFY] Node ${node?.name || "Unknown"} connection refused - Lavalink server may be down`,
+        );
+        console.log(
+          `[RAPHAEL] Lavalink node ${node?.name || "Unknown"} connection refused - server may be down`,
+        );
       } else {
-        logger.error(`[RIFFY] Node ${node?.name || 'Unknown'} encountered an error: ${error?.message || error}`);
-        console.error(`[RAPHAEL] Lavalink node ${node?.name || 'Unknown'} error:`, error?.message || error);
+        logger.error(
+          `[RIFFY] Node ${node?.name || "Unknown"} encountered an error: ${error?.message || error}`,
+        );
+        console.error(
+          `[RAPHAEL] Lavalink node ${node?.name || "Unknown"} error:`,
+          error?.message || error,
+        );
       }
     });
 
     // Node disconnect
-    this.riffy.on('nodeDisconnect', (node) => {
+    this.riffy.on("nodeDisconnect", (node) => {
       logger.warn(`[RIFFY] Node ${node.name} has disconnected.`);
       console.log(`[RAPHAEL] Lavalink node ${node.name} disconnected.`);
     });
 
     // Track start
-    this.riffy.on('trackStart', async (player, track) => {
-      this.client.emit('musicTrackStart', player, track);
+    this.riffy.on("trackStart", async (player, track) => {
+      this.client.emit("musicTrackStart", player, track);
     });
 
     // Track end
-    this.riffy.on('trackEnd', async (player, track) => {
-      this.client.emit('musicTrackEnd', player, track);
+    this.riffy.on("trackEnd", async (player, track) => {
+      this.client.emit("musicTrackEnd", player, track);
     });
 
     // Track error
-    this.riffy.on('trackError', async (player, track, payload) => {
-      this.client.emit('musicTrackError', player, track, payload);
+    this.riffy.on("trackError", async (player, track, payload) => {
+      this.client.emit("musicTrackError", player, track, payload);
     });
 
     // Queue end
-    this.riffy.on('queueEnd', async (player) => {
-      this.client.emit('musicQueueEnd', player);
+    this.riffy.on("queueEnd", async (player) => {
+      this.client.emit("musicQueueEnd", player);
     });
 
     // Player create
-    this.riffy.on('playerCreate', (player) => {
+    this.riffy.on("playerCreate", (player) => {
       logger.info(`[RIFFY] Player created for guild ${player.guildId}`);
     });
 
     // Player destroy
-    this.riffy.on('playerDestroy', (player) => {
+    this.riffy.on("playerDestroy", (player) => {
       logger.info(`[RIFFY] Player destroyed for guild ${player.guildId}`);
     });
 
-    // Debug events - critical for diagnosing connection issues
-    this.riffy.on('debug', (...args) => {
-      const msg = args.join(' ');
-      // Only log connection-related debug messages
-      if (msg.includes('CONNECTION') || msg.includes('play()') || msg.includes('Rest') || msg.includes('playerUpdate') || msg.includes('Voice') || msg.includes('connectionRestored') || msg.includes('Waiting') || msg.includes('Timed out')) {
+    // Debug events
+    this.riffy.on("debug", (...args) => {
+      const msg = args.join(" ");
+      if (
+        msg.includes("Voice Connection has been closed") ||
+        msg.includes("play() CONNECTION CHECK") ||
+        msg.includes("Timed out")
+      ) {
         console.log(`[RIFFY Debug] ${msg}`);
       }
-    });
-
-    // playerUpdate events
-    this.riffy.on('playerUpdate', (player, packet) => {
-      console.log(`[RIFFY playerUpdate] Guild ${player.guildId} - connected: ${packet.state?.connected}, position: ${packet.state?.position}`);
     });
   }
 
@@ -143,7 +155,7 @@ class RiffyManager {
       guildId: guildId,
       voiceChannel: voiceChannelId,
       textChannel: textChannelId,
-      deaf: true
+      deaf: true,
     });
   }
 

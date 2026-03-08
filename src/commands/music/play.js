@@ -8,45 +8,60 @@ import { EmbedBuilder } from "discord.js";
 import { getRandomFooter } from "../../utils/raphael.js";
 
 /**
- * Attempt to play, retrying once with a fresh connection if the first attempt fails.
+ * Bypass player.play()'s connected check by sending voice + track together
+ * in a single REST request. NodeLink disconnects voice (code 4017) when no
+ * track is loaded, so we must send both atomically.
  */
-async function safePlay(client, player, ctx, voiceChannel) {
-  console.log(
-    `[Music Debug] About to play - connected: ${player.connected}, isReady: ${player.connection?.isReady}, establishing: ${player.connection?.establishing}, queue: ${player.queue.length}`,
-  );
+async function safePlay(client, player) {
+  // Wait for Discord voice credentials to arrive and be sent to the node.
+  // This may throw on timeout, but we still try to play if credentials exist.
   try {
-    await player.play();
-    console.log(`[Music Debug] Play succeeded`);
+    await player.connection.resolve();
+  } catch (e) {
+    console.log(
+      `[Music] connection.resolve() failed: ${e.message} — will attempt play anyway`,
+    );
+  }
+
+  if (!player.queue.length) return false;
+
+  // Dequeue and resolve the track (mirrors what player.play() does internally)
+  player.current = player.queue.shift();
+  if (!player.current.track) {
+    player.current = await player.current.resolve(player.riffy);
+  }
+  player.playing = true;
+  player.position = 0;
+
+  // Build a combined payload: voice credentials + track in one PATCH.
+  // This prevents NodeLink from dropping voice before it has a track to play.
+  const data = {
+    track: { encoded: player.current.track },
+  };
+
+  const vc = player.connection.voice;
+  if (vc.sessionId && vc.endpoint && vc.token) {
+    data.voice = {
+      sessionId: vc.sessionId,
+      endpoint: vc.endpoint,
+      token: vc.token,
+    };
+  }
+
+  try {
+    await player.node.rest.updatePlayer({
+      guildId: player.guildId,
+      data,
+    });
+    console.log("[Music] Combined voice+track REST request succeeded");
     return true;
   } catch (err) {
-    console.error("[Music] First play attempt failed:", err.message);
-    // Retry: destroy stale player, create fresh connection, and try again
-    try {
-      // Save queue before destroying (Queue extends Array)
-      const savedQueue = [...player.queue];
-      player.destroy();
-      client.riffy.players.delete(ctx.guild.id);
-
-      const newPlayer = client.riffy.createConnection({
-        guildId: ctx.guild.id,
-        voiceChannel: voiceChannel.id,
-        textChannel: ctx.channel.id,
-        deaf: true,
-      });
-      console.log(`[Music Debug] Retry: created fresh player, connected: ${newPlayer.connected}`);
-
-      // Restore queue
-      for (const track of savedQueue) {
-        newPlayer.queue.add(track);
-      }
-
-      await newPlayer.play();
-      console.log(`[Music Debug] Retry play succeeded`);
-      return true;
-    } catch (retryErr) {
-      console.error("[Music] Retry play also failed:", retryErr.message);
-      return false;
-    }
+    console.error("[Music] Combined voice+track REST request failed:", err.message);
+    // Restore queue state so the track isn't lost
+    player.queue.unshift(player.current);
+    player.current = null;
+    player.playing = false;
+    return false;
   }
 }
 
@@ -138,9 +153,6 @@ export default class Play extends Command {
         textChannel: ctx.channel.id,
         deaf: true,
       });
-      console.log(
-        `[Music Debug] Created new player for guild ${ctx.guild.id}, connected: ${player.connected}, connection.isReady: ${player.connection?.isReady}`,
-      );
     }
 
     // Resolve the query
@@ -191,7 +203,7 @@ export default class Play extends Command {
       await ctx.sendMessage({ embeds: [embed] });
 
       if (!player.playing && !player.paused) {
-        const success = await safePlay(client, player, ctx, voiceChannel);
+        const success = await safePlay(client, player);
         if (!success) {
           return ctx.sendMessage({
             embeds: [
@@ -252,7 +264,7 @@ export default class Play extends Command {
       await ctx.sendMessage({ embeds: [embed] });
 
       if (!player.playing && !player.paused) {
-        const success = await safePlay(client, player, ctx, voiceChannel);
+        const success = await safePlay(client, player);
         if (!success) {
           return ctx.sendMessage({
             embeds: [
