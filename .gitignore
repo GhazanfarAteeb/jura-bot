@@ -6,6 +6,9 @@ yarn.lock
 # Environment variables
 .env
 
+# Docker override (keep example, ignore local overrides)
+docker-compose.override.yml
+
 # Logs
 logs/
 *.log

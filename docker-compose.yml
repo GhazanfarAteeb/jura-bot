@@ -1,0 +1,41 @@
+services:
+  raphael:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: raphael-bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - NODELINK_HOST=nodelink_app
+      - NODELINK_PORT=3000
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - raphael-net
+    volumes:
+      - ./logs:/app/logs
+
+  redis:
+    image: redis:7-alpine
+    container_name: raphael-redis
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+    networks:
+      - raphael-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  redis-data:
+
+networks:
+  raphael-net:
+    driver: bridge

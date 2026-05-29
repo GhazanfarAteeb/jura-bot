@@ -356,6 +356,20 @@ async function initialize() {
   await connectRedis();
   await loadCommands();
 
+  // Initialize Moonlink before login so the DiscordJs connector's
+  // once("clientReady") listener is registered before the bot connects.
+  // The connector calls manager.init() automatically when clientReady fires.
+  try {
+    riffyManager.initialize();
+    console.log("[RAPHAEL] Audio subsystem initialized.");
+  } catch (error) {
+    logger.error("Failed to initialize music system:", error);
+    console.error(
+      "[RAPHAEL] Audio subsystem initialization failure:",
+      error.message,
+    );
+  }
+
   // Login to Discord first
   await client.login(process.env.DISCORD_TOKEN);
 
@@ -369,19 +383,6 @@ async function initialize() {
     console.log(`   Logged in as: ${client.user.tag}`);
     console.log(`   Guilds: ${client.guilds.cache.size}`);
     console.log(`   WS Status: ${client.ws.status}, Ping: ${client.ws.ping}ms`);
-
-    // Initialize Riffy Music System
-    try {
-      riffyManager.initialize();
-      riffyManager.initializePlayer();
-      console.log("[RAPHAEL] Audio subsystem initialized.");
-    } catch (error) {
-      logger.error("Failed to initialize music system:", error);
-      console.error(
-        "[RAPHAEL] Audio subsystem initialization failure:",
-        error.message,
-      );
-    }
 
     // Load event handlers
     await loadEvents();

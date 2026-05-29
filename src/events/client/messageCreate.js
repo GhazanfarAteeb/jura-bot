@@ -176,12 +176,12 @@ class MessageCreate extends Event {
         }
       }
       if (command.player.active) {
-        const player = this.client.riffy?.players.get(message.guildId);
+        const player = this.client.moonlink?.players.get(message.guildId);
         if (!player)
           return await safeReply({
             content: "**Notice:** No audio is currently playing, Master.",
           });
-        if ((!player.queue || player.queue.length === 0) && !player.current)
+        if ((!player.queue || player.queue.size === 0) && !player.current)
           return await safeReply({
             content: "**Notice:** The playback queue is empty, Master.",
           });

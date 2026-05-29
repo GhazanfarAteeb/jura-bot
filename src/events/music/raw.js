@@ -1,10 +1,12 @@
 /**
- * Raw Event Handler for Riffy
- * Required to update voice state for Lavalink
+ * Raw Event Handler — no-op
+ *
+ * moonlink.js Connectors.DiscordJs() registers its own client.on("raw", ...)
+ * listener that forwards VOICE_STATE_UPDATE and VOICE_SERVER_UPDATE packets
+ * to the manager automatically. Nothing needs to be done here.
  */
 
 import Event from "../../structures/Event.js";
-import { GatewayDispatchEvents } from "discord.js";
 
 class RawEvent extends Event {
   constructor(client, file) {
@@ -13,8 +15,8 @@ class RawEvent extends Event {
     });
   }
 
-  async run(data) {
-    // Only handle voice state and voice server updates
+  async run() {
+    // Handled by moonlink.js Connector internally
   }
 }
 

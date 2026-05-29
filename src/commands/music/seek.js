@@ -3,53 +3,56 @@
  * Seek to a specific position in the track
  */
 
-import Command from '../../structures/Command.js';
+import Command from "../../structures/Command.js";
 
 export default class Seek extends Command {
   constructor(client) {
     super(client, {
-      name: 'seek',
+      name: "seek",
       description: {
-        content: 'Seek to a specific position in the track',
-        usage: '<time>',
-        examples: ['seek 1:30', 'seek 90', 'seek 2:00:00']
+        content: "Seek to a specific position in the track",
+        usage: "<time>",
+        examples: ["seek 1:30", "seek 90", "seek 2:00:00"],
       },
       aliases: [],
-      category: 'music',
+      category: "music",
       cooldown: 3,
       args: true,
       player: {
         voice: true,
         dj: false,
         active: true,
-        djPerm: null
+        djPerm: null,
       },
       permissions: {
         dev: false,
-        client: ['SendMessages', 'ViewChannel', 'EmbedLinks'],
-        user: []
+        client: ["SendMessages", "ViewChannel", "EmbedLinks"],
+        user: [],
       },
       slashCommand: true,
       options: [
         {
-          name: 'time',
-          description: 'The time to seek to (e.g., 1:30 or 90)',
+          name: "time",
+          description: "The time to seek to (e.g., 1:30 or 90)",
           type: 3, // STRING
-          required: true
-        }
-      ]
+          required: true,
+        },
+      ],
     });
   }
 
   async run(client, ctx, args) {
-    const player = client.riffy?.players.get(ctx.guild.id);
+    const player = client.moonlink?.players.get(ctx.guild.id);
 
     if (!player) {
       return ctx.sendMessage({
-        embeds: [{
-          color: 0xff4757,
-          description: '**Warning:** No active audio session detected, Master.'
-        }]
+        embeds: [
+          {
+            color: 0xff4757,
+            description:
+              "**Warning:** No active audio session detected, Master.",
+          },
+        ],
       });
     }
 
@@ -58,16 +61,19 @@ export default class Seek extends Command {
     // Parse time input
     let seekTime = 0;
 
-    if (timeArg.includes(':')) {
+    if (timeArg.includes(":")) {
       // Format: mm:ss or hh:mm:ss
-      const parts = timeArg.split(':').map(Number);
+      const parts = timeArg.split(":").map(Number);
 
       if (parts.some(isNaN)) {
         return ctx.sendMessage({
-          embeds: [{
-            color: 0xff4757,
-            description: '**Error:** Invalid time format. Use `mm:ss` or `hh:mm:ss`, Master.'
-          }]
+          embeds: [
+            {
+              color: 0xff4757,
+              description:
+                "**Error:** Invalid time format. Use `mm:ss` or `hh:mm:ss`, Master.",
+            },
+          ],
         });
       }
 
@@ -85,21 +91,26 @@ export default class Seek extends Command {
 
     if (isNaN(seekTime) || seekTime < 0) {
       return ctx.sendMessage({
-        embeds: [{
-          color: 0xff4757,
-          description: '**Error:** Invalid time value detected, Master.'
-        }]
+        embeds: [
+          {
+            color: 0xff4757,
+            description: "**Error:** Invalid time value detected, Master.",
+          },
+        ],
       });
     }
 
-    const duration = player.current?.info?.length || 0;
+    const duration = player.current?.duration || 0;
 
     if (seekTime > duration) {
       return ctx.sendMessage({
-        embeds: [{
-          color: 0xff4757,
-          description: '**Warning:** Seek position exceeds track duration, Master.'
-        }]
+        embeds: [
+          {
+            color: 0xff4757,
+            description:
+              "**Warning:** Seek position exceeds track duration, Master.",
+          },
+        ],
       });
     }
 
@@ -112,16 +123,18 @@ export default class Seek extends Command {
       const hours = Math.floor(ms / (1000 * 60 * 60));
 
       if (hours > 0) {
-        return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        return `${hours}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
       }
-      return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+      return `${minutes}:${seconds.toString().padStart(2, "0")}`;
     };
 
     return ctx.sendMessage({
-      embeds: [{
-        color: 0x00ced1,
-        description: `**Confirmed:** Playback position adjusted to **${formatTime(seekTime)}**, Master.`
-      }]
+      embeds: [
+        {
+          color: 0x00ced1,
+          description: `**Confirmed:** Playback position adjusted to **${formatTime(seekTime)}**, Master.`,
+        },
+      ],
     });
   }
 }
